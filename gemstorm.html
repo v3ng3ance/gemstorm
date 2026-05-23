@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GemStorm ✦ Match-3</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0612;
+    --gold: #f0c060;
+    --gold2: #ffd980;
+    --purple: #7c4dff;
+    --border: rgba(240,192,96,0.25);
+    --text: #e8d8ff;
+    --muted: rgba(200,180,255,0.5);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Cinzel', serif;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  body {
+    background:
+      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(100,40,200,0.35) 0%, transparent 65%),
+      radial-gradient(ellipse 60% 40% at 15% 100%, rgba(40,20,100,0.4) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 50% at 85% 80%, rgba(80,20,140,0.3) 0%, transparent 55%),
+      #0a0612;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+    gap: 18px;
+  }
+
+  /* ── Stars ── */
+  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .star {
+    position: absolute; border-radius: 50%; background: white;
+    animation: twinkle var(--d,3s) ease-in-out infinite var(--delay,0s);
+  }
+  @keyframes twinkle {
+    0%,100%{opacity:.1;transform:scale(1)} 50%{opacity:.8;transform:scale(1.4)}
+  }
+
+  /* ── Everything above the board ── */
+  .game-wrapper { position: relative; z-index: 1; width: 100%; max-width: 520px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+
+  .title {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(26px, 6vw, 44px);
+    font-weight: 700;
+    background: linear-gradient(135deg, #ffd980, #f0c060, #e0a030, #ffd980);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 4s linear infinite;
+    letter-spacing: 4px;
+    text-align: center;
+  }
+  @keyframes shimmer { to { background-position: 200% center; } }
+  .title-sub { font-size: 10px; letter-spacing: 6px; color: var(--muted); text-align: center; margin-top: -2px; }
+
+  .stats-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; justify-content: center; width: 100%; }
+  .stat-box {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 18px;
+    text-align: center;
+    min-width: 80px;
+  }
+  .stat-label { font-size: 9px; letter-spacing: 3px; color: var(--muted); margin-bottom: 3px; }
+  .stat-value { font-size: 22px; font-weight: 700; color: var(--gold); text-shadow: 0 0 16px rgba(240,192,96,.6); }
+  .stat-value.pop { animation: statPop .3s ease; }
+  @keyframes statPop { 50%{transform:scale(1.4);color:#fff} }
+
+  .level-wrap { text-align: center; }
+  .level-label { font-size: 9px; letter-spacing: 3px; color: var(--muted); margin-bottom: 5px; }
+  .level-bar-bg { width: 200px; background: rgba(255,255,255,.06); border-radius: 4px; height: 7px; overflow: hidden; border: 1px solid var(--border); }
+  .level-bar { height: 100%; background: linear-gradient(90deg, var(--purple), var(--gold)); border-radius: 4px; transition: width .5s; box-shadow: 0 0 8px rgba(120,60,255,.6); }
+  .level-xp { font-size: 9px; letter-spacing: 2px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Board ── */
+  .board-container { position: relative; width: 100%; display: flex; justify-content: center; }
+  .board-frame {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: clamp(8px, 2vw, 16px);
+    box-shadow: 0 0 40px rgba(100,40,200,.3), inset 0 1px 0 rgba(255,255,255,.08);
+    position: relative;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: clamp(2px, .8vw, 5px);
+  }
+  .cell {
+    width:  clamp(36px, 9vw, 56px);
+    height: clamp(36px, 9vw, 56px);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; cursor: pointer; position: relative;
+    user-select: none;
+  }
+  .gem {
+    width:  clamp(30px, 7.5vw, 48px);
+    height: clamp(30px, 7.5vw, 48px);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(18px, 4.5vw, 28px);
+    position: relative;
+    transition: transform .15s, filter .15s, opacity .2s;
+  }
+  .gem::before {
+    content:''; position:absolute; inset:0; border-radius:7px;
+    background: linear-gradient(135deg, rgba(255,255,255,.3) 0%, transparent 55%);
+    pointer-events:none;
+  }
+  .gem-0{background:linear-gradient(135deg,#ff4466,#cc1144);box-shadow:0 2px 12px rgba(255,50,80,.5)}
+  .gem-1{background:linear-gradient(135deg,#44aaff,#1166cc);box-shadow:0 2px 12px rgba(50,130,255,.5)}
+  .gem-2{background:linear-gradient(135deg,#44ee88,#11aa44);box-shadow:0 2px 12px rgba(50,200,100,.5)}
+  .gem-3{background:linear-gradient(135deg,#ffcc22,#ff8800);box-shadow:0 2px 12px rgba(255,180,30,.5)}
+  .gem-4{background:linear-gradient(135deg,#cc44ff,#8800cc);box-shadow:0 2px 12px rgba(180,50,255,.5)}
+  .gem-5{background:linear-gradient(135deg,#ff8844,#cc4400);box-shadow:0 2px 12px rgba(255,120,50,.5)}
+  .gem-6{background:linear-gradient(135deg,#44ffee,#0088aa);box-shadow:0 2px 12px rgba(50,220,200,.5)}
+
+  .cell.selected .gem { transform:scale(1.18); animation:selPulse .8s ease-in-out infinite; }
+  @keyframes selPulse {
+    0%,100%{box-shadow:0 0 0 3px #fff,0 0 20px rgba(255,255,255,.5)}
+    50%{box-shadow:0 0 0 3px var(--gold),0 0 28px rgba(240,192,96,.8)}
+  }
+  .cell.hint .gem { animation:hintBounce .5s ease-in-out 2; }
+  @keyframes hintBounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2) rotate(10deg)} }
+  .gem.matched { animation:matchExplode .4s ease forwards; }
+  @keyframes matchExplode { 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.8} 100%{transform:scale(0);opacity:0} }
+  .gem.falling { animation:fall .3s cubic-bezier(.3,0,.7,1); }
+  @keyframes fall { 0%{transform:translateY(-60px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+  .gem.swap-right{animation:swR .25s ease}.gem.swap-left{animation:swL .25s ease}
+  .gem.swap-up{animation:swU .25s ease}.gem.swap-down{animation:swD .25s ease}
+  @keyframes swR{50%{transform:translateX(clamp(40px,9vw,60px))}}
+  @keyframes swL{50%{transform:translateX(clamp(-60px,-9vw,-40px))}}
+  @keyframes swU{50%{transform:translateY(clamp(-60px,-9vw,-40px))}}
+  @keyframes swD{50%{transform:translateY(clamp(40px,9vw,60px))}}
+
+  /* ── Floating score ── */
+  .score-popup {
+    position:absolute; font-family:'Cinzel',serif; font-weight:700;
+    font-size:clamp(14px,3vw,20px); color:var(--gold);
+    text-shadow:0 0 10px rgba(240,192,96,.8); pointer-events:none;
+    z-index:100; animation:scoreFloat 1s ease forwards; white-space:nowrap;
+  }
+  @keyframes scoreFloat{0%{transform:translateY(0) scale(.5);opacity:1}100%{transform:translateY(-55px) scale(1.2);opacity:0}}
+
+  /* ── Particles ── */
+  .particle{position:absolute;border-radius:50%;pointer-events:none;z-index:50;animation:pFly var(--dur,.6s) ease forwards;}
+  @keyframes pFly{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
+
+  /* ── Combo banner ── */
+  .combo-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:200;text-align:center;pointer-events:none;}
+  .combo-banner.show{animation:comboBurst 1.2s ease forwards;}
+  @keyframes comboBurst{0%{transform:translate(-50%,-50%) scale(0);opacity:0}20%{transform:translate(-50%,-50%) scale(1.3);opacity:1}70%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-60%) scale(.8);opacity:0}}
+  .combo-text{font-family:'Cinzel Decorative',serif;font-size:clamp(22px,5vw,36px);font-weight:700;background:linear-gradient(135deg,#fff,var(--gold),#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:4px;}
+  .combo-sub{font-size:13px;color:var(--gold);letter-spacing:4px;margin-top:4px;}
+
+  /* ── Bottom buttons ── */
+  .bottom-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;}
+  .btn{
+    font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;
+    padding:10px 22px;border-radius:8px;border:1px solid var(--border);
+    background:rgba(255,255,255,.05);color:var(--gold);cursor:pointer;
+    transition:all .2s;text-transform:uppercase;
+  }
+  .btn:hover{background:rgba(255,255,255,.1);box-shadow:0 0 20px rgba(240,192,96,.3);transform:translateY(-1px);}
+  .btn:active{transform:translateY(0);}
+
+  /* ── Game over overlay ── */
+  .go-overlay{
+    position:fixed;inset:0;background:rgba(5,2,15,.92);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    z-index:1000;backdrop-filter:blur(8px);
+    opacity:0;pointer-events:none;transition:opacity .5s;
+    padding:20px; text-align:center;
+  }
+  .go-overlay.show{opacity:1;pointer-events:all;}
+  .go-title{font-family:'Cinzel Decorative',serif;font-size:clamp(28px,8vw,48px);color:var(--gold);text-shadow:0 0 40px rgba(240,192,96,.8);margin-bottom:8px;}
+  .go-score{font-size:clamp(18px,4vw,28px);color:var(--text);margin-bottom:10px;}
+  .go-best{font-size:13px;color:var(--muted);margin-bottom:28px;letter-spacing:2px;}
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="game-wrapper">
+
+  <div>
+    <div class="title">✦ GemStorm ✦</div>
+    <div class="title-sub">MATCH · THREE · MAGIC</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-label">SCOR</div>
+      <div class="stat-value" id="score-display">0</div>
+    </div>
+
+    <div class="level-wrap">
+      <div class="level-label">NIVEL <span id="level-num">1</span></div>
+      <div class="level-bar-bg"><div class="level-bar" id="level-bar" style="width:0%"></div></div>
+      <div class="level-xp"><span id="xp-val">0</span> / <span id="xp-max">500</span></div>
+    </div>
+
+    <div class="stat-box">
+      <div class="stat-label">MIȘCĂRI</div>
+      <div class="stat-value" id="moves-display">30</div>
+    </div>
+  </div>
+
+  <div class="board-container">
+    <div class="board-frame">
+      <div class="board" id="board"></div>
+    </div>
+    <div class="combo-banner" id="combo-banner">
+      <div class="combo-text" id="combo-text">COMBO!</div>
+      <div class="combo-sub" id="combo-sub">×2</div>
+    </div>
+  </div>
+
+  <div class="bottom-row">
+    <button class="btn" onclick="newGame()">✦ JOC NOU</button>
+    <button class="btn" onclick="showHint()">INDICIU</button>
+    <div class="stat-box" style="min-width:70px">
+      <div class="stat-label">RECORD</div>
+      <div class="stat-value" style="font-size:16px" id="best-display">0</div>
+    </div>
+  </div>
+
+</div><!-- .game-wrapper -->
+
+<div class="go-overlay" id="go-overlay">
+  <div class="go-title">GAME OVER</div>
+  <div class="go-score">Scor: <span id="go-score-val">0</span></div>
+  <div class="go-best" id="go-best-txt"></div>
+  <button class="btn" style="font-size:14px;padding:14px 36px" onclick="newGame()">JOACĂ DIN NOU</button>
+</div>
+
+<script>
+const ROWS=8,COLS=8,GEM_COUNT=7;
+const GEMS=['💎','🔵','🟢','🟡','🔮','🟠','🩵'];
+let board=[],selected=null,score=0,moves=30,level=1,xp=0,xpMax=500;
+let best=parseInt(localStorage.getItem('gemstorm_best')||'0');
+let busy=false,combo=0;
+
+function createStars(){
+  const c=document.getElementById('stars');
+  for(let i=0;i<80;i++){
+    const s=document.createElement('div');s.className='star';
+    const sz=Math.random()*2.5+.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:${Math.random()*4}s`;
+    c.appendChild(s);
+  }
+}
+
+function randGem(){return Math.floor(Math.random()*GEM_COUNT);}
+
+function initBoard(){
+  board=[];
+  for(let r=0;r<ROWS;r++){
+    board.push([]);
+    for(let c=0;c<COLS;c++){
+      let g;
+      do{g=randGem();}while(
+        (c>=2&&board[r][c-1]===g&&board[r][c-2]===g)||
+        (r>=2&&board[r-1][c]===g&&board[r-2][c]===g)
+      );
+      board[r].push(g);
+    }
+  }
+}
+
+function render(){
+  const el=document.getElementById('board');
+  el.innerHTML='';
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS;c++){
+      const cell=document.createElement('div');
+      cell.className='cell';
+      cell.dataset.r=r;cell.dataset.c=c;
+      if(selected&&selected[0]===r&&selected[1]===c)cell.classList.add('selected');
+      const gem=document.createElement('div');
+      gem.className=`gem gem-${board[r][c]}`;
+      gem.textContent=GEMS[board[r][c]];
+      cell.appendChild(gem);
+      cell.addEventListener('click',()=>handleClick(r,c));
+      el.appendChild(cell);
+    }
+  }
+  document.getElementById('score-display').textContent=score;
+  document.getElementById('moves-display').textContent=moves;
+  document.getElementById('level-num').textContent=level;
+  document.getElementById('xp-val').textContent=xp;
+  document.getElementById('xp-max').textContent=xpMax;
+  document.getElementById('level-bar').style.width=Math.min(100,(xp/xpMax)*100)+'%';
+  document.getElementById('best-display').textContent=best;
+}
+
+function getCell(r,c){return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);}
+
+async function handleClick(r,c){
+  if(busy)return;
+  if(!selected){selected=[r,c];render();}
+  else{
+    const[sr,sc]=selected;
+    if(sr===r&&sc===c){selected=null;render();return;}
+    if(isAdj(sr,sc,r,c)){selected=null;await trySwap(sr,sc,r,c);}
+    else{selected=[r,c];render();}
+  }
+}
+
+function isAdj(r1,c1,r2,c2){return(Math.abs(r1-r2)+Math.abs(c1-c2))===1;}
+
+async function trySwap(r1,c1,r2,c2){
+  busy=true;
+  animSwap(r1,c1,r2,c2);await sleep(260);
+  [board[r1][c1],board[r2][c2]]=[board[r2][c2],board[r1][c1]];
+  const m=findMatches();
+  if(!m.length){
+    animSwap(r1,c1,r2,c2);await sleep(260);
+    [board[r1][c1],board[r2][c2]]=[board[r2][c2],board[r1][c1]];
+    render();busy=false;return;
+  }
+  moves--;combo=0;render();
+  await processMatches(m);
+  if(moves<=0){endGame();return;}
+  busy=false;
+}
+
+function animSwap(r1,c1,r2,c2){
+  const dir=r1===r2?(c2>c1?'right':'left'):(r2>r1?'down':'up');
+  const rev={right:'left',left:'right',up:'down',down:'up'};
+  const g1=getCell(r1,c1)?.querySelector('.gem');
+  const g2=getCell(r2,c2)?.querySelector('.gem');
+  if(g1){g1.classList.add(`swap-${dir}`);setTimeout(()=>g1.classList.remove(`swap-${dir}`),250);}
+  if(g2){g2.classList.add(`swap-${rev[dir]}`);setTimeout(()=>g2.classList.remove(`swap-${rev[dir]}`),250);}
+}
+
+function findMatches(){
+  const m=new Set();
+  for(let r=0;r<ROWS;r++)
+    for(let c=0;c<COLS-2;c++)
+      if(board[r][c]===board[r][c+1]&&board[r][c]===board[r][c+2]){
+        let l=3;while(c+l<COLS&&board[r][c]===board[r][c+l])l++;
+        for(let k=0;k<l;k++)m.add(`${r},${c+k}`);
+      }
+  for(let c=0;c<COLS;c++)
+    for(let r=0;r<ROWS-2;r++)
+      if(board[r][c]===board[r+1][c]&&board[r][c]===board[r+2][c]){
+        let l=3;while(r+l<ROWS&&board[r][c]===board[r+l][c])l++;
+        for(let k=0;k<l;k++)m.add(`${r+k},${c}`);
+      }
+  return[...m].map(s=>s.split(',').map(Number));
+}
+
+async function processMatches(matches){
+  if(!matches.length){combo=0;return;}
+  combo++;
+  const pts=matches.length*10*(1+(combo-1)*0.5);
+  score+=Math.round(pts);xp+=Math.round(pts);
+  if(xp>=xpMax){
+    xp-=xpMax;level++;xpMax=Math.floor(xpMax*1.4);moves+=5;
+    showCombo('LEVEL UP!',`Nivel ${level}`);await sleep(600);
+  }else if(combo>=3){
+    showCombo(`COMBO ×${combo}`,`+${Math.round(pts)} puncte`);await sleep(600);
+  }
+  if(score>best){best=score;localStorage.setItem('gemstorm_best',best);}
+  for(const[r,c]of matches){
+    const el=getCell(r,c)?.querySelector('.gem');
+    if(el)el.classList.add('matched');
+    spawnParticles(r,c,board[r][c]);
+  }
+  showScorePopup(matches,pts);
+  await sleep(420);
+  for(const[r,c]of matches)board[r][c]=-1;
+  await gravity();await sleep(100);
+  const nm=findMatches();render();
+  if(nm.length)await processMatches(nm);
+}
+
+async function gravity(){
+  for(let c=0;c<COLS;c++){
+    let emp=[];
+    for(let r=ROWS-1;r>=0;r--){
+      if(board[r][c]===-1)emp.push(r);
+      else if(emp.length){
+        const t=emp.shift();
+        board[t][c]=board[r][c];board[r][c]=-1;emp.push(r);
+      }
+    }
+    for(let r=0;r<ROWS;r++)if(board[r][c]===-1)board[r][c]=randGem();
+  }
+  render();
+  document.querySelectorAll('.gem').forEach(el=>{
+    el.classList.add('falling');setTimeout(()=>el.classList.remove('falling'),350);
+  });
+  await sleep(350);
+}
+
+function showScorePopup(matches,pts){
+  const bc=document.querySelector('.board-container');
+  if(!matches.length)return;
+  const[r,c]=matches[Math.floor(matches.length/2)];
+  const p=document.createElement('div');p.className='score-popup';
+  p.textContent=`+${Math.round(pts)}`;
+  const cell=getCell(r,c);
+  if(cell){
+    const cr=cell.getBoundingClientRect();
+    const br=bc.getBoundingClientRect();
+    p.style.left=(cr.left-br.left+cr.width/2)+'px';
+    p.style.top=(cr.top-br.top)+'px';
+  }
+  bc.appendChild(p);setTimeout(()=>p.remove(),1000);
+}
+
+function spawnParticles(r,c,gemType){
+  const colors=['#ff4466','#44aaff','#44ee88','#ffcc22','#cc44ff','#ff8844','#44ffee'];
+  const bc=document.querySelector('.board-container');
+  const cell=getCell(r,c);if(!cell)return;
+  const cr=cell.getBoundingClientRect();
+  const br=bc.getBoundingClientRect();
+  const cx=cr.left-br.left+cr.width/2;
+  const cy=cr.top-br.top+cr.height/2;
+  for(let i=0;i<6;i++){
+    const pEl=document.createElement('div');pEl.className='particle';
+    const angle=(i/6)*Math.PI*2;const dist=25+Math.random()*20;
+    pEl.style.cssText=`left:${cx}px;top:${cy}px;width:5px;height:5px;background:${colors[gemType]};--dx:${Math.cos(angle)*dist}px;--dy:${Math.sin(angle)*dist}px;--dur:${.4+Math.random()*.3}s`;
+    bc.appendChild(pEl);setTimeout(()=>pEl.remove(),700);
+  }
+}
+
+function showCombo(text,sub){
+  const b=document.getElementById('combo-banner');
+  document.getElementById('combo-text').textContent=text;
+  document.getElementById('combo-sub').textContent=sub;
+  b.classList.remove('show');void b.offsetWidth;b.classList.add('show');
+  setTimeout(()=>b.classList.remove('show'),1200);
+}
+
+function showHint(){
+  if(busy)return;
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+    if(c+1<COLS){
+      [board[r][c],board[r][c+1]]=[board[r][c+1],board[r][c]];
+      if(findMatches().length){
+        [board[r][c],board[r][c+1]]=[board[r][c+1],board[r][c]];
+        render();
+        const c1=getCell(r,c),c2=getCell(r,c+1);
+        c1?.classList.add('hint');c2?.classList.add('hint');
+        setTimeout(()=>{c1?.classList.remove('hint');c2?.classList.remove('hint');},1000);
+        return;
+      }
+      [board[r][c],board[r][c+1]]=[board[r][c+1],board[r][c]];
+    }
+    if(r+1<ROWS){
+      [board[r][c],board[r+1][c]]=[board[r+1][c],board[r][c]];
+      if(findMatches().length){
+        [board[r][c],board[r+1][c]]=[board[r+1][c],board[r][c]];
+        render();
+        const c1=getCell(r,c),c2=getCell(r+1,c);
+        c1?.classList.add('hint');c2?.classList.add('hint');
+        setTimeout(()=>{c1?.classList.remove('hint');c2?.classList.remove('hint');},1000);
+        return;
+      }
+      [board[r][c],board[r+1][c]]=[board[r+1][c],board[r][c]];
+    }
+  }
+}
+
+function endGame(){
+  busy=true;
+  document.getElementById('go-score-val').textContent=score;
+  document.getElementById('go-best-txt').textContent=score>=best?'✦ NOU RECORD! ✦':`Record: ${best}`;
+  document.getElementById('go-overlay').classList.add('show');
+}
+
+function newGame(){
+  document.getElementById('go-overlay').classList.remove('show');
+  score=0;moves=30;level=1;xp=0;xpMax=500;
+  selected=null;busy=false;combo=0;
+  initBoard();render();
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+createStars();
+newGame();
+</script>
+</body>
+</html>
