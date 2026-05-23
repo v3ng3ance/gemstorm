@@ -3,612 +3,693 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GemStorm ✦</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+<title>GemBlast ✦ Match-3</title>
 <style>
-:root{
-  --gold:#f0c060;--purple:#7c4dff;
-  --border:rgba(240,192,96,.25);--text:#e8d8ff;--muted:rgba(200,180,255,.5);
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Raleway:wght@300;400;600&display=swap');
+
+:root {
+  --bg:#0a0a1a; --panel:#12122a; --border:#2a2a5a;
+  --gold:#f0c040; --glow:#8060ff; --text:#c8c8ff; --dim:#6060a0;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{
-  min-height:100vh;overflow-y:auto;overflow-x:hidden;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%,rgba(100,40,200,.35) 0%,transparent 65%),
-    radial-gradient(ellipse 60% 40% at 15% 100%,rgba(40,20,100,.4) 0%,transparent 55%),
-    #0a0612;
-  color:var(--text);font-family:'Cinzel',serif;
-  display:flex;flex-direction:column;align-items:center;padding:24px 12px 48px;gap:18px;
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Raleway',sans-serif;
+  min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-start;
+  padding:20px 12px 40px;
+  gap:10px;
+  overflow-x:hidden;
+  position:relative;
 }
-.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
-.star{position:absolute;border-radius:50%;background:#fff;
-  animation:twinkle var(--d,3s) ease-in-out infinite var(--dl,0s)}
-@keyframes twinkle{0%,100%{opacity:.1}50%{opacity:.7}}
+body::before {
+  content:'';position:fixed;inset:0;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%,rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 70% 60%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 45% 80%,rgba(255,255,255,.25) 0%,transparent 100%),
+    radial-gradient(1px 1px at 85% 20%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 10% 70%,rgba(255,255,255,.2) 0%,transparent 100%),
+    radial-gradient(2px 2px at 55% 45%,rgba(180,160,255,.4) 0%,transparent 100%),
+    radial-gradient(600px 600px at 50% 50%,rgba(40,20,80,.6) 0%,transparent 100%);
+  pointer-events:none;z-index:0;
+}
+h1 {
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(1.3rem,4vw,2rem);
+  letter-spacing:.12em;color:var(--gold);
+  text-shadow:0 0 20px rgba(240,192,64,.7),0 0 60px rgba(240,192,64,.3);
+  text-align:center;position:relative;z-index:1;
+}
+.subtitle {
+  font-size:.65rem;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--dim);text-align:center;position:relative;z-index:1;
+}
+.game-wrap {
+  display:flex;gap:20px;align-items:flex-start;
+  flex-wrap:wrap;justify-content:center;
+  position:relative;z-index:1;width:100%;max-width:760px;
+}
+.side-panel {
+  display:flex;flex-direction:column;gap:12px;min-width:130px;max-width:150px;flex:1;
+}
+.stat-box {
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:12px 16px;text-align:center;
+  box-shadow:0 0 20px rgba(80,60,160,.2);
+}
+.stat-label {
+  font-size:.58rem;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:4px;
+}
+.stat-val {
+  font-family:'Cinzel Decorative',serif;font-size:1.4rem;
+  color:var(--gold);text-shadow:0 0 10px rgba(240,192,64,.5);
+}
+.level-bar-wrap {
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:12px 16px;
+  box-shadow:0 0 20px rgba(80,60,160,.2);
+}
+.level-bar-bg {
+  height:7px;background:#1e1e40;border-radius:4px;
+  margin-top:7px;overflow:hidden;
+}
+.level-bar-fill {
+  height:100%;
+  background:linear-gradient(90deg,#8060ff,#f0c040);
+  border-radius:4px;transition:width .4s ease;
+  box-shadow:0 0 8px rgba(128,96,255,.8);
+}
+.btn {
+  background:linear-gradient(135deg,#2a1a60,#1a0a40);
+  border:1px solid var(--border);color:var(--text);
+  font-family:'Raleway',sans-serif;font-size:.72rem;
+  letter-spacing:.18em;text-transform:uppercase;
+  padding:9px 14px;border-radius:8px;cursor:pointer;
+  transition:all .2s;width:100%;
+  box-shadow:0 0 10px rgba(80,60,160,.2);
+}
+.btn:hover{background:linear-gradient(135deg,#3a2a80,#2a1a60);box-shadow:0 0 20px rgba(80,60,160,.5);color:#fff;}
+.btn.gold{background:linear-gradient(135deg,#6a4a00,#4a3000);border-color:var(--gold);color:var(--gold);}
+.btn.gold:hover{box-shadow:0 0 20px rgba(240,192,64,.4);}
 
-.wrap{position:relative;z-index:1;width:100%;max-width:500px;
-  display:flex;flex-direction:column;align-items:center;gap:16px}
-.title{font-family:'Cinzel Decorative',serif;font-size:clamp(24px,6vw,42px);font-weight:700;
-  background:linear-gradient(135deg,#ffd980,#f0c060,#e0a030,#ffd980);background-size:200% auto;
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  animation:shimmer 4s linear infinite;letter-spacing:4px;text-align:center}
-@keyframes shimmer{to{background-position:200% center}}
-.sub{font-size:10px;letter-spacing:6px;color:var(--muted);text-align:center}
+.board-container {
+  position:relative;
+  border:2px solid var(--border);border-radius:16px;padding:8px;
+  background:rgba(10,10,30,.8);
+  box-shadow:0 0 40px rgba(80,60,160,.4),0 0 80px rgba(80,60,160,.15),
+             inset 0 0 40px rgba(0,0,0,.5);
+}
+#gameCanvas{display:block;border-radius:10px;cursor:pointer;touch-action:none;}
 
-.stats{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center}
-.sbox{background:rgba(255,255,255,.04);border:1px solid var(--border);
-  border-radius:10px;padding:8px 16px;text-align:center}
-.slabel{font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:3px}
-.sval{font-size:20px;font-weight:700;color:var(--gold);text-shadow:0 0 14px rgba(240,192,96,.6)}
-.lvl-wrap{text-align:center}
-.lvl-label{font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:5px}
-.lvl-bg{width:190px;height:7px;background:rgba(255,255,255,.06);
-  border-radius:4px;border:1px solid var(--border);overflow:hidden}
-.lvl-bar{height:100%;background:linear-gradient(90deg,var(--purple),var(--gold));
-  border-radius:4px;transition:width .5s}
-.lvl-xp{font-size:9px;letter-spacing:2px;color:var(--muted);margin-top:3px}
+/* Score pop & particles — positioned relative to board-container */
+.score-pop {
+  position:absolute;
+  font-family:'Cinzel Decorative',serif;font-size:1rem;
+  color:var(--gold);text-shadow:0 0 8px rgba(240,192,64,.8);
+  pointer-events:none;z-index:20;
+  animation:float-up .9s ease-out forwards;white-space:nowrap;
+}
+@keyframes float-up{0%{transform:translateY(0);opacity:1}100%{transform:translateY(-55px);opacity:0}}
+.burst-p {
+  position:absolute;width:7px;height:7px;border-radius:50%;
+  pointer-events:none;z-index:10;
+  animation:burst .5s ease-out forwards;
+}
+@keyframes burst{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
+.combo-badge {
+  position:absolute;top:-6px;right:-6px;
+  background:linear-gradient(135deg,#f0c040,#ff8020);
+  color:#000;font-family:'Cinzel Decorative',serif;
+  font-size:.52rem;font-weight:900;padding:3px 7px;
+  border-radius:20px;z-index:25;
+  animation:badge-pop .4s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;
+}
+@keyframes badge-pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 
-.board-wrap{position:relative}
-.board-frame{
-  background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;
-  padding:clamp(8px,2vw,14px);
-  box-shadow:0 0 40px rgba(80,20,180,.4),inset 0 1px 0 rgba(255,255,255,.07)
+/* Game-over overlay inside board */
+#message {
+  display:none;position:absolute;inset:0;
+  background:rgba(0,0,10,.88);border-radius:14px;
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;z-index:30;
 }
-#board{display:grid;grid-template-columns:repeat(8,1fr);gap:clamp(2px,1vw,5px)}
+#message.visible{display:flex;}
+#message h2{font-family:'Cinzel Decorative',serif;color:var(--gold);font-size:1.4rem;
+  text-shadow:0 0 20px rgba(240,192,64,.8);text-align:center;}
+#message p{color:var(--dim);font-size:.82rem;text-align:center;padding:0 16px;}
+#message .btn{width:auto;padding:11px 28px;margin-top:6px;}
 
-/* ── cell is the fixed slot, never moves ── */
-.cell{
-  width:clamp(34px,10vw,54px);height:clamp(34px,10vw,54px);
-  position:relative;cursor:pointer;user-select:none;
-  border-radius:8px;overflow:visible;
+@media(max-width:520px){
+  .side-panel{flex-direction:row;max-width:100%;min-width:0;flex-wrap:wrap;justify-content:center;}
+  .stat-box,.level-bar-wrap{flex:1;min-width:90px;}
+  .btn{font-size:.62rem;padding:8px 10px;}
 }
-
-/*
-  .inner is the animating layer — it slides, falls, explodes.
-  It sits inside .cell via absolute positioning.
-  We NEVER change .inner's class during animation — only after.
-*/
-.inner{
-  position:absolute;inset:5%;border-radius:7px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:clamp(14px,4vw,24px);font-weight:700;
-  will-change:transform,opacity;
-  /* No CSS transition — all motion is JS-driven keyframes */
-}
-.inner::before{
-  content:'';position:absolute;inset:0;border-radius:7px;
-  background:linear-gradient(135deg,rgba(255,255,255,.28) 0%,transparent 55%);
-  pointer-events:none;z-index:1
-}
-/* 7 gem colours */
-.g0{background:linear-gradient(135deg,#ff4466,#cc1144);box-shadow:0 2px 10px rgba(255,50,80,.5)}
-.g1{background:linear-gradient(135deg,#44aaff,#1166cc);box-shadow:0 2px 10px rgba(50,130,255,.5)}
-.g2{background:linear-gradient(135deg,#44ee88,#11aa44);box-shadow:0 2px 10px rgba(50,200,100,.5)}
-.g3{background:linear-gradient(135deg,#ffcc22,#ff8800);box-shadow:0 2px 10px rgba(255,180,30,.5)}
-.g4{background:linear-gradient(135deg,#cc44ff,#8800cc);box-shadow:0 2px 10px rgba(180,50,255,.5)}
-.g5{background:linear-gradient(135deg,#ff8844,#cc4400);box-shadow:0 2px 10px rgba(255,120,50,.5)}
-.g6{background:linear-gradient(135deg,#44ffee,#0088aa);box-shadow:0 2px 10px rgba(50,220,200,.5)}
-
-/* selected ring — added/removed as class, no anim reset needed */
-.inner.sel{
-  box-shadow:0 0 0 3px #fff,0 0 20px rgba(255,255,255,.5);
-  animation:selP .8s ease-in-out infinite!important
-}
-@keyframes selP{
-  0%,100%{box-shadow:0 0 0 3px #fff,0 0 18px rgba(255,255,255,.4)}
-  50%{box-shadow:0 0 0 3px var(--gold),0 0 26px rgba(240,192,96,.8)}
-}
-.inner.hint{animation:hintW .45s ease-in-out 2!important}
-@keyframes hintW{0%,100%{transform:scale(1)}50%{transform:scale(1.2) rotate(11deg)}}
-
-/* keyframes used by JS .style.animation = */
-@keyframes kExplode{
-  0%  {transform:scale(1);  opacity:1}
-  50% {transform:scale(1.55);opacity:.7}
-  100%{transform:scale(0);  opacity:0}
-}
-@keyframes kFall{
-  from{transform:translateY(var(--fy));opacity:0}
-  to  {transform:translateY(0);opacity:1}
-}
-@keyframes kSlide{
-  0%  {transform:translate(0,0)}
-  48% {transform:translate(var(--tx),var(--ty))}
-  100%{transform:translate(0,0)}
-}
-
-/* UI overlays */
-.popup{position:absolute;font-family:'Cinzel',serif;font-weight:700;
-  font-size:clamp(13px,3vw,18px);color:var(--gold);
-  text-shadow:0 0 8px rgba(240,192,96,.8);pointer-events:none;z-index:200;
-  animation:popUp 1s ease forwards;white-space:nowrap}
-@keyframes popUp{0%{transform:translateY(0) scale(.5);opacity:1}100%{transform:translateY(-50px) scale(1.15);opacity:0}}
-.part{position:absolute;border-radius:50%;pointer-events:none;z-index:150;
-  animation:pFly var(--dur,.5s) ease forwards}
-@keyframes pFly{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
-.combo-ov{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
-  z-index:300;text-align:center;pointer-events:none}
-.combo-ov.show{animation:cBurst 1.2s ease forwards}
-@keyframes cBurst{
-  0%  {transform:translate(-50%,-50%) scale(0);opacity:0}
-  20% {transform:translate(-50%,-50%) scale(1.3);opacity:1}
-  70% {transform:translate(-50%,-50%) scale(1);opacity:1}
-  100%{transform:translate(-50%,-60%) scale(.8);opacity:0}
-}
-.ct{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5vw,34px);font-weight:700;
-  background:linear-gradient(135deg,#fff,var(--gold),#fff);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
-.cs{font-size:13px;color:var(--gold);letter-spacing:4px;margin-top:4px}
-.btns{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
-.btn{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;padding:10px 20px;
-  border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.05);
-  color:var(--gold);cursor:pointer;transition:all .2s;text-transform:uppercase}
-.btn:hover{background:rgba(255,255,255,.1);box-shadow:0 0 18px rgba(240,192,96,.3);transform:translateY(-1px)}
-.btn:active{transform:translateY(0)}
-.goover{position:fixed;inset:0;background:rgba(5,2,15,.92);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  z-index:1000;backdrop-filter:blur(8px);
-  opacity:0;pointer-events:none;transition:opacity .5s;padding:20px;text-align:center}
-.goover.show{opacity:1;pointer-events:all}
-.go-t{font-family:'Cinzel Decorative',serif;font-size:clamp(26px,7vw,46px);color:var(--gold);
-  text-shadow:0 0 30px rgba(240,192,96,.8);margin-bottom:8px}
-.go-s{font-size:clamp(16px,4vw,26px);margin-bottom:8px}
-.go-b{font-size:13px;color:var(--muted);margin-bottom:26px;letter-spacing:2px}
 </style>
 </head>
 <body>
-<div class="stars" id="stars"></div>
-<div class="wrap">
-  <div>
-    <div class="title">✦ GemStorm ✦</div>
-    <div class="sub">MATCH · THREE · MAGIC</div>
-  </div>
-  <div class="stats">
-    <div class="sbox"><div class="slabel">SCOR</div><div class="sval" id="sScore">0</div></div>
-    <div class="lvl-wrap">
-      <div class="lvl-label">NIVEL <span id="sLevel">1</span></div>
-      <div class="lvl-bg"><div class="lvl-bar" id="lvlBar" style="width:0%"></div></div>
-      <div class="lvl-xp"><span id="sXp">0</span> / <span id="sXpMax">500</span></div>
+<h1>✦ GemBlast ✦</h1>
+<p class="subtitle">Match 3 · No Ads · Pure Bliss</p>
+
+<div class="game-wrap">
+  <div class="side-panel">
+    <div class="stat-box">
+      <div class="stat-label">Scor</div>
+      <div class="stat-val" id="score-disp">0</div>
     </div>
-    <div class="sbox"><div class="slabel">MIȘCĂRI</div><div class="sval" id="sMoves">30</div></div>
+    <div class="level-bar-wrap">
+      <div class="stat-label">Nivel <span id="level-disp">1</span></div>
+      <div class="level-bar-bg"><div class="level-bar-fill" id="level-bar" style="width:0%"></div></div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Record</div>
+      <div class="stat-val" id="best-disp">0</div>
+    </div>
+    <button class="btn gold" onclick="G.hint()">💡 Indiciu</button>
+    <button class="btn" onclick="G.newGame()">↺ Joc Nou</button>
   </div>
-  <div class="board-wrap">
-    <div class="board-frame"><div id="board"></div></div>
-    <div class="combo-ov" id="comboEl">
-      <div class="ct" id="comboT"></div>
-      <div class="cs" id="comboS"></div>
+
+  <div class="board-container" id="boardWrap">
+    <canvas id="gameCanvas"></canvas>
+    <div id="message">
+      <h2 id="msg-title">Nicio mutare!</h2>
+      <p id="msg-sub">Tabla se resetează...</p>
+      <button class="btn gold" onclick="G.newGame()">Joacă din nou</button>
     </div>
   </div>
-  <div class="btns">
-    <button class="btn" onclick="newGame()">✦ JOC NOU</button>
-    <button class="btn" onclick="doHint()">INDICIU</button>
-    <div class="sbox" style="min-width:68px">
-      <div class="slabel">RECORD</div>
-      <div class="sval" style="font-size:15px" id="sBest">0</div>
-    </div>
-  </div>
-</div>
-<div class="goover" id="goEl">
-  <div class="go-t">GAME OVER</div>
-  <div class="go-s">Scor: <span id="goScore">0</span></div>
-  <div class="go-b" id="goBest"></div>
-  <button class="btn" style="font-size:13px;padding:13px 32px" onclick="newGame()">JOACĂ DIN NOU</button>
 </div>
 
 <script>
-// ─────────────────────────────────────────────────────────────
-//  Constants
-// ─────────────────────────────────────────────────────────────
-const ROWS=8, COLS=8, GN=7;
-const SYM  = ['♦','★','●','▲','■','◆','✿'];
-const GCOL = ['#ff4466','#44aaff','#44ee88','#ffcc22','#cc44ff','#ff8844','#44ffee'];
-const EX_MS = 320;   // explode duration
-const FL_MS = 230;   // fall duration
-const SW_MS = 190;   // swap duration
+// ═══════════════════════════════════════════════════════
+//  GEMS — same style as the reference model (circles
+//  with radial gradient + highlight dot)
+// ═══════════════════════════════════════════════════════
+const GEMS = [
+  {color:'#ff3355', name:'Ruby'},
+  {color:'#3388ff', name:'Sapphire'},
+  {color:'#33cc66', name:'Emerald'},
+  {color:'#ffcc22', name:'Topaz'},
+  {color:'#aa44ff', name:'Amethyst'},
+  {color:'#ff7722', name:'Amber'},
+  {color:'#44ddff', name:'Diamond'},
+];
+const LEVEL_THRESHOLDS = [0,500,1200,2200,3500,5200,7500,10500,14000,19000,99999];
+const ROWS=8, COLS=8, GN=GEMS.length;
 
-// ─────────────────────────────────────────────────────────────
-//  State
-// ─────────────────────────────────────────────────────────────
-let grid = [];        // [r][c] = 0-6
-let inners = [];      // [r][c] = .inner DOM element (STABLE, never replaced)
-let sel = null;
-let score=0, moves=30, level=1, xp=0, xpMax=500;
-let best = +(localStorage.getItem('gs4')||0);
-let busy = false, combo = 0;
+// ═══════════════════════════════════════════════════════
+//  CANVAS SETUP
+// ═══════════════════════════════════════════════════════
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+let CELL=56, GAP=3, BOARD_PX;
 
-// ─────────────────────────────────────────────────────────────
-//  Stars (one-time)
-// ─────────────────────────────────────────────────────────────
-(()=>{
-  const c=document.getElementById('stars');
-  for(let i=0;i<70;i++){
-    const s=document.createElement('div'); s.className='star';
-    const z=Math.random()*2+.4;
-    s.style.cssText=`width:${z}px;height:${z}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--dl:${Math.random()*4}s`;
-    c.appendChild(s);
+function resize(){
+  const maxW = Math.min(window.innerWidth - 180, 500);
+  CELL = Math.max(36, Math.floor((maxW - GAP*(COLS-1)) / COLS));
+  BOARD_PX = CELL*COLS + GAP*(COLS-1);
+  canvas.width  = BOARD_PX;
+  canvas.height = BOARD_PX;
+}
+window.addEventListener('resize',()=>{resize();});
+
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let board=[], sel=null;
+let score=0, best=+(localStorage.getItem('gb_best')||0), level=1;
+let busy=false, comboCount=0;
+
+// Per-cell animation: {type, t, dur, ...extra}
+// All mutations go through these — never touch other cells
+let anims=[];          // anims[r][c]
+let particles=[];      // [{x,y,vx,vy,r,alpha,color}]
+let floaters=[];       // score pops drawn on canvas
+
+function initAnims(){
+  anims=[];
+  for(let r=0;r<ROWS;r++){anims.push([]);for(let c=0;c<COLS;c++)anims[r].push(null);}
+}
+
+// ═══════════════════════════════════════════════════════
+//  RAF LOOP
+// ═══════════════════════════════════════════════════════
+let lastT=null;
+function loop(ts){
+  requestAnimationFrame(loop);
+  const dt = lastT ? Math.min((ts-lastT)/1000, 0.05) : 0.016;
+  lastT=ts;
+
+  // advance per-cell anims
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const a=anims[r][c]; if(!a) continue;
+    a.t += dt/a.dur;
+    if(a.t>=1){a.t=1; const cb=a.onDone; anims[r][c]=null; if(cb) cb();}
   }
-})();
+  // particles
+  for(const p of particles){
+    p.x+=p.vx*dt*60; p.y+=p.vy*dt*60; p.vy+=0.25*dt*60;
+    p.alpha-=dt*2.8; p.r*=0.96;
+  }
+  particles=particles.filter(p=>p.alpha>0&&p.r>0.2);
+  // floaters
+  for(const f of floaters){ f.y-=dt*50; f.alpha-=dt*1.4; }
+  floaters=floaters.filter(f=>f.alpha>0);
 
-// ─────────────────────────────────────────────────────────────
-//  Build board DOM once (never rebuilt)
-// ─────────────────────────────────────────────────────────────
-function buildBoard(){
-  const board = document.getElementById('board');
-  board.innerHTML = '';
-  inners = [];
+  drawAll();
+}
+
+// ═══════════════════════════════════════════════════════
+//  EASING
+// ═══════════════════════════════════════════════════════
+function easeOut(t){return 1-Math.pow(1-t,3);}
+function easeInOut(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
+function easeOutBack(t){const c=1.70158;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2);}
+function easeOutBounce(t){
+  const n=7.5625,d=2.75;
+  if(t<1/d)return n*t*t;
+  if(t<2/d)return n*(t-=1.5/d)*t+.75;
+  if(t<2.5/d)return n*(t-=2.25/d)*t+.9375;
+  return n*(t-=2.625/d)*t+.984375;
+}
+
+// ═══════════════════════════════════════════════════════
+//  DRAW
+// ═══════════════════════════════════════════════════════
+function cellXY(r,c){ return {x:c*(CELL+GAP), y:r*(CELL+GAP)}; }
+
+function drawAll(){
+  ctx.clearRect(0,0,BOARD_PX,BOARD_PX);
+
+  // board bg
+  ctx.fillStyle='rgba(10,8,28,.6)';
+  roundRect(ctx,0,0,BOARD_PX,BOARD_PX,10); ctx.fill();
+
+  // cells
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const {x,y}=cellXY(r,c);
+    // cell bg
+    ctx.fillStyle='rgba(255,255,255,.03)';
+    roundRect(ctx,x,y,CELL,CELL,6); ctx.fill();
+
+    const v=board[r][c];
+    if(v===-1) continue;
+
+    const a=anims[r][c];
+    let ox=0,oy=0,scale=1,alpha=1;
+
+    if(a){
+      if(a.type==='explode'){
+        scale=1+easeOut(a.t)*0.55; alpha=1-a.t;
+      } else if(a.type==='fall'){
+        const e=easeOutBounce(a.t);
+        oy=(1-e)*a.fromY; alpha=Math.min(1,a.t*6);
+      } else if(a.type==='swap'){
+        const e=a.t<.5?easeInOut(a.t*2):easeInOut((1-a.t)*2);
+        ox=a.dx*e; oy=a.dy*e;
+      } else if(a.type==='sel'){
+        scale=1+Math.sin(a.t*Math.PI*8)*0.04;
+      } else if(a.type==='hint'){
+        scale=1+Math.sin(a.t*Math.PI*6)*0.1;
+        alpha=0.5+0.5*Math.sin(a.t*Math.PI*6);
+      }
+    }
+
+    const isSel=sel&&sel[0]===r&&sel[1]===c;
+    const cx=x+CELL/2+ox, cy=y+CELL/2+oy;
+    const gemR=(CELL*0.38)*scale;
+
+    ctx.save();
+    ctx.globalAlpha=alpha;
+
+    // selected highlight bg
+    if(isSel){
+      ctx.fillStyle='rgba(255,255,255,.09)';
+      roundRect(ctx,x+ox,y+oy,CELL,CELL,6); ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.4)';
+      ctx.lineWidth=2;
+      roundRect(ctx,x+ox+1,y+oy+1,CELL-2,CELL-2,6); ctx.stroke();
+    }
+
+    // glow
+    ctx.shadowColor=GEMS[v].color;
+    ctx.shadowBlur=isSel?22:8;
+
+    // main circle — radial gradient like reference model
+    const g=ctx.createRadialGradient(cx-gemR*.28,cy-gemR*.28,gemR*.05,cx,cy,gemR);
+    g.addColorStop(0,lighten(GEMS[v].color,70));
+    g.addColorStop(0.45,GEMS[v].color);
+    g.addColorStop(1,darken(GEMS[v].color,50));
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(cx,cy,gemR,0,Math.PI*2); ctx.fill();
+
+    ctx.shadowBlur=0;
+
+    // specular highlight (top-left dot like reference)
+    const hg=ctx.createRadialGradient(cx-gemR*.3,cy-gemR*.35,0,cx-gemR*.3,cy-gemR*.35,gemR*.45);
+    hg.addColorStop(0,'rgba(255,255,255,.55)');
+    hg.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle=hg;
+    ctx.beginPath(); ctx.arc(cx,cy,gemR,0,Math.PI*2); ctx.fill();
+
+    // rim
+    ctx.strokeStyle='rgba(255,255,255,.12)';
+    ctx.lineWidth=1.2;
+    ctx.beginPath(); ctx.arc(cx,cy,gemR-.6,0,Math.PI*2); ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // particles
+  for(const p of particles){
+    ctx.save();
+    ctx.globalAlpha=p.alpha;
+    ctx.fillStyle=p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+
+  // floating score texts
+  for(const f of floaters){
+    ctx.save();
+    ctx.globalAlpha=f.alpha;
+    ctx.font=`bold ${CELL*.32}px 'Cinzel Decorative',serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='#f0c040';
+    ctx.shadowColor='#f0c040'; ctx.shadowBlur=10;
+    ctx.fillText(f.text,f.x,f.y);
+    ctx.restore();
+  }
+}
+
+function lighten(hex,amt){
+  return '#'+hex.replace(/[0-9a-f]{2}/gi,m=>Math.min(255,parseInt(m,16)+amt).toString(16).padStart(2,'0'));
+}
+function darken(hex,amt){
+  return '#'+hex.replace(/[0-9a-f]{2}/gi,m=>Math.max(0,parseInt(m,16)-amt).toString(16).padStart(2,'0'));
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+}
+
+// ═══════════════════════════════════════════════════════
+//  INPUT
+// ═══════════════════════════════════════════════════════
+function getRC(e){
+  const rect=canvas.getBoundingClientRect();
+  const px=(e.clientX??e.touches[0].clientX)-rect.left;
+  const py=(e.clientY??e.touches[0].clientY)-rect.top;
+  const c=Math.floor(px/(CELL+GAP)), r=Math.floor(py/(CELL+GAP));
+  if(r<0||r>=ROWS||c<0||c>=COLS)return null;
+  return [r,c];
+}
+canvas.addEventListener('click',e=>{const rc=getRC(e);if(rc)onCell(rc[0],rc[1]);});
+canvas.addEventListener('touchend',e=>{e.preventDefault();const rc=getRC(e);if(rc)onCell(rc[0],rc[1]);},{passive:false});
+
+function onCell(r,c){
+  if(busy||board[r][c]===-1)return;
+  if(!sel){
+    sel=[r,c];
+    // idle sel animation
+    anims[r][c]={type:'sel',t:0,dur:999};
+    return;
+  }
+  const[sr,sc]=sel;
+  if(sr===r&&sc===c){
+    sel=null; anims[r][c]=null; return;
+  }
+  if(Math.abs(sr-r)+Math.abs(sc-c)===1){
+    anims[sr][sc]=null; sel=null;
+    doSwap(sr,sc,r,c);
+  } else {
+    anims[sr][sc]=null;
+    sel=[r,c];
+    anims[r][c]={type:'sel',t:0,dur:999};
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  GRID
+// ═══════════════════════════════════════════════════════
+function rnd(){return Math.floor(Math.random()*GN);}
+function makeBoard(){
+  board=[];
   for(let r=0;r<ROWS;r++){
-    inners.push([]);
+    board.push([]);
     for(let c=0;c<COLS;c++){
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      const inner = document.createElement('div');
-      inner.className = `inner g${grid[r][c]}`;
-      inner.textContent = SYM[grid[r][c]];
-      cell.appendChild(inner);
-      board.appendChild(cell);
-      inners[r].push(inner);
-      ;(function(rr,cc){ cell.addEventListener('click',()=>onClick(rr,cc)); })(r,c);
+      let v;
+      do{v=rnd();}while(
+        (c>=2&&board[r][c-1]===v&&board[r][c-2]===v)||
+        (r>=2&&board[r-1][c]===v&&board[r-2][c]===v)
+      );
+      board[r].push(v);
     }
   }
 }
 
-// Silently update the visual of a gem (no animation triggered).
-// Only safe to call when the element is NOT currently animating.
-function setGemVisual(r, c){
-  const el = inners[r][c];
-  const v  = grid[r][c];
-  // replace only the colour class, keep everything else
-  el.className = `inner g${v}`;
-  el.textContent = SYM[v];
-}
-
-// ─────────────────────────────────────────────────────────────
-//  Stats
-// ─────────────────────────────────────────────────────────────
-function updateStats(){
-  document.getElementById('sScore').textContent = score;
-  document.getElementById('sMoves').textContent = moves;
-  document.getElementById('sLevel').textContent = level;
-  document.getElementById('sXp').textContent    = xp;
-  document.getElementById('sXpMax').textContent = xpMax;
-  document.getElementById('lvlBar').style.width = Math.min(100,xp/xpMax*100)+'%';
-  document.getElementById('sBest').textContent  = best;
-}
-
-// ─────────────────────────────────────────────────────────────
-//  Selection
-// ─────────────────────────────────────────────────────────────
-function setSel(r,c){
-  if(sel) inners[sel[0]][sel[1]].classList.remove('sel');
-  sel=[r,c];
-  inners[r][c].classList.add('sel');
-}
-function clearSel(){
-  if(sel) inners[sel[0]][sel[1]].classList.remove('sel');
-  sel=null;
-}
-
-// ─────────────────────────────────────────────────────────────
-//  Click
-// ─────────────────────────────────────────────────────────────
-async function onClick(r,c){
-  if(busy) return;
-  if(!sel){ setSel(r,c); return; }
-  const[sr,sc]=sel;
-  if(sr===r&&sc===c){ clearSel(); return; }
-  if(Math.abs(sr-r)+Math.abs(sc-c)===1){
-    clearSel();
-    await trySwap(sr,sc,r,c);
-  } else {
-    setSel(r,c);
+// ═══════════════════════════════════════════════════════
+//  SWAP
+// ═══════════════════════════════════════════════════════
+const SW=0.18;
+function doSwap(r1,c1,r2,c2){
+  busy=true;
+  const dx=(c2-c1)*(CELL+GAP), dy=(r2-r1)*(CELL+GAP);
+  let d1=false,d2=false;
+  function afterBoth(){
+    // swap data
+    const t=board[r1][c1];board[r1][c1]=board[r2][c2];board[r2][c2]=t;
+    const m=findMatches();
+    if(!m.length){
+      // swap back
+      const t2=board[r1][c1];board[r1][c1]=board[r2][c2];board[r2][c2]=t2;
+      let e1=false,e2=false;
+      function afterBack(){if(e1&&e2){busy=false;}}
+      anims[r1][c1]={type:'swap',t:0,dur:SW,dx:-dx,dy:-dy,onDone:()=>{e1=true;afterBack();}};
+      anims[r2][c2]={type:'swap',t:0,dur:SW,dx: dx,dy: dy,onDone:()=>{e2=true;afterBack();}};
+      return;
+    }
+    comboCount=0;
+    resolveMatches(m);
   }
+  anims[r1][c1]={type:'swap',t:0,dur:SW,dx, dy,onDone:()=>{d1=true;if(d1&&d2)afterBoth();}};
+  anims[r2][c2]={type:'swap',t:0,dur:SW,dx:-dx,dy:-dy,onDone:()=>{d2=true;if(d1&&d2)afterBoth();}};
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Swap
-// ─────────────────────────────────────────────────────────────
-async function trySwap(r1,c1,r2,c2){
-  busy = true;
-  // animate visually first
-  await animSlide(r1,c1,r2,c2);
-  // swap data
-  const t=grid[r1][c1]; grid[r1][c1]=grid[r2][c2]; grid[r2][c2]=t;
-  // update visuals (elements are at rest after animSlide)
-  setGemVisual(r1,c1); setGemVisual(r2,c2);
-
-  const m = findMatches();
-  if(!m.length){
-    // slide back
-    await animSlide(r1,c1,r2,c2);
-    const t2=grid[r1][c1]; grid[r1][c1]=grid[r2][c2]; grid[r2][c2]=t2;
-    setGemVisual(r1,c1); setGemVisual(r2,c2);
-    busy=false; return;
-  }
-  moves--; combo=0; updateStats();
-  await cascade(m);
-  if(moves<=0){ endGame(); return; }
-  busy=false;
-}
-
-// Slide two gems toward each other and back (or pass-through illusion).
-// Uses CSS custom properties so NO class changes happen.
-function animSlide(r1,c1,r2,c2){
-  const g1=inners[r1][c1], g2=inners[r2][c2];
-  const b1=g1.getBoundingClientRect(), b2=g2.getBoundingClientRect();
-  const dx=b2.left-b1.left, dy=b2.top-b1.top;
-
-  // stop any lingering animation without a reflow flush on unrelated gems
-  g1.style.animation='none'; g2.style.animation='none';
-  // read offsetHeight ONLY on these two — forced reflow scoped to them
-  g1.getBoundingClientRect(); g2.getBoundingClientRect();
-
-  g1.style.setProperty('--tx', dx+'px'); g1.style.setProperty('--ty', dy+'px');
-  g2.style.setProperty('--tx',-dx+'px'); g2.style.setProperty('--ty',-dy+'px');
-  g1.style.zIndex=5; g2.style.zIndex=5;
-  g1.style.animation=`kSlide ${SW_MS}ms ease`;
-  g2.style.animation=`kSlide ${SW_MS}ms ease`;
-
-  return new Promise(res=>setTimeout(()=>{
-    g1.style.animation=''; g1.style.zIndex='';
-    g2.style.animation=''; g2.style.zIndex='';
-    res();
-  }, SW_MS+10));
-}
-
-// ─────────────────────────────────────────────────────────────
-//  Match finding
-// ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════
+//  MATCH
+// ═══════════════════════════════════════════════════════
 function findMatches(){
   const hit=new Set();
   for(let r=0;r<ROWS;r++){
     for(let c=0;c<COLS-2;){
-      const v=grid[r][c]; let l=1;
-      while(c+l<COLS&&grid[r][c+l]===v) l++;
-      if(l>=3) for(let k=0;k<l;k++) hit.add(r*COLS+c+k);
+      const v=board[r][c];let l=1;
+      while(c+l<COLS&&board[r][c+l]===v)l++;
+      if(l>=3)for(let k=0;k<l;k++)hit.add(r*COLS+c+k);
       c+=l;
     }
   }
   for(let c=0;c<COLS;c++){
     for(let r=0;r<ROWS-2;){
-      const v=grid[r][c]; let l=1;
-      while(r+l<ROWS&&grid[r+l][c]===v) l++;
-      if(l>=3) for(let k=0;k<l;k++) hit.add((r+k)*COLS+c);
+      const v=board[r][c];let l=1;
+      while(r+l<ROWS&&board[r+l][c]===v)l++;
+      if(l>=3)for(let k=0;k<l;k++)hit.add((r+k)*COLS+c);
       r+=l;
     }
   }
-  return [...hit].map(i=>[Math.floor(i/COLS), i%COLS]);
+  return[...hit].map(i=>[Math.floor(i/COLS),i%COLS]);
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Cascade — the key: only touch affected elements
-// ─────────────────────────────────────────────────────────────
-async function cascade(matches){
-  if(!matches.length){ combo=0; return; }
-  combo++;
-  const pts = matches.length*10*combo;
-  score+=pts; xp+=pts;
-  if(xp>=xpMax){
-    xp-=xpMax; level++; xpMax=Math.floor(xpMax*1.4); moves+=5;
-    showCombo('LEVEL UP!',`Nivel ${level}`);
-  } else if(combo>=3){
-    showCombo(`COMBO ×${combo}`,`+${pts}`);
-  }
-  if(score>best){ best=score; localStorage.setItem('gs4',best); }
-  updateStats();
+// ═══════════════════════════════════════════════════════
+//  CASCADE
+// ═══════════════════════════════════════════════════════
+const EX=0.28, FL=0.28;
 
-  // ── Step 1: explode only matched cells ──────────────────────
-  const matchSet = new Set(matches.map(([r,c])=>r*COLS+c));
-  for(const [r,c] of matches){
-    spawnParticles(r,c,grid[r][c]);
-    const el=inners[r][c];
-    el.style.animation='none';
-    el.getBoundingClientRect();           // flush only this element
-    el.style.animation=`kExplode ${EX_MS}ms ease forwards`;
-  }
-  showPopup(matches, pts);
-  await sleep(EX_MS);
+function resolveMatches(matches){
+  comboCount++;
+  const pts=matches.length*10*comboCount;
+  score+=pts;
+  if(score>best){best=score;localStorage.setItem('gb_best',best);}
+  updateUI();
+  // score floater at center of matches
+  const mr=matches.reduce((s,[r])=>s+r,0)/matches.length;
+  const mc=matches.reduce((s,[,c])=>s+c,0)/matches.length;
+  const {x,y}=cellXY(Math.round(mr),Math.round(mc));
+  floaters.push({x:x+CELL/2,y:y+CELL/2,text:(comboCount>1?`×${comboCount} `:'+')+pts,alpha:1});
 
-  // ── Step 2: compute gravity per column, update grid data ────
-  // For every cell, determine: new value + how many rows it fell
-  // We never touch cells that didn't change.
-  const fallInfo = []; // {r,c,newVal,dropRows,isNew}
+  if(comboCount>1) showComboBadge(comboCount);
+
+  // explode matched — only these cells
+  const matchSet=new Set(matches.map(([r,c])=>r*COLS+c));
+  let pending=matches.length;
+  for(const[r,c]of matches){
+    spawnParticles(r,c,board[r][c]);
+    anims[r][c]={type:'explode',t:0,dur:EX,onDone:()=>{
+      board[r][c]=-1;
+      if(--pending===0) doGravity(matchSet);
+    }};
+  }
+}
+
+function doGravity(matchSet){
+  // compute per-column, set board data, schedule fall anims
+  // only cells that actually move get an anim
+  const step=CELL+GAP;
+  let totalPending=0;
+  const fallJobs=[];
 
   for(let c=0;c<COLS;c++){
-    // collect survivors bottom→top
-    const survivors=[];
+    const stack=[];
+    for(let r=ROWS-1;r>=0;r--)if(board[r][c]!==-1)stack.push(board[r][c]);
+    const numNew=ROWS-stack.length;
+    for(let i=0;i<numNew;i++)stack.push(rnd());
     for(let r=ROWS-1;r>=0;r--){
-      if(!matchSet.has(r*COLS+c)) survivors.push({val:grid[r][c], origRow:r});
-    }
-    const numNew = ROWS - survivors.length;
-
-    // build new column bottom→top
-    // survivors[0] = was at bottom, stays at bottom
-    // new gems fill the top
-    const newCol = []; // newCol[0]=bottom row
-    for(let i=0;i<survivors.length;i++) newCol.push(survivors[i]);
-    for(let i=0;i<numNew;i++) newCol.push({val:rnd(), origRow:-1, isNew:true});
-
-    for(let r=ROWS-1;r>=0;r--){
-      const slotIdx = ROWS-1-r;   // newCol[0] = row ROWS-1
-      const entry   = newCol[slotIdx];
-      const newVal  = entry.val;
-      const oldVal  = grid[r][c];
-
-      grid[r][c] = newVal;
-
-      // How far does this gem fall?
-      // It falls from origRow to r  (positive = downward)
-      const origRow = entry.origRow;
-      let dropRows;
-      if(entry.isNew){
-        // enters from above the board: starts at (r - (ROWS + some offset)) visually
-        dropRows = null; // handled separately
-      } else {
-        dropRows = r - origRow; // >0 means fell down
-      }
-
-      const needsUpdate = entry.isNew || dropRows > 0 || matchSet.has(r*COLS+c);
-      if(needsUpdate){
-        fallInfo.push({r, c, newVal, dropRows, isNew:!!entry.isNew});
+      const nv=stack[ROWS-1-r];
+      let emptyBelow=0;
+      for(let rr=r+1;rr<ROWS;rr++)if(matchSet.has(rr*COLS+c))emptyBelow++;
+      const wasMatch=matchSet.has(r*COLS+c);
+      board[r][c]=nv;
+      if(wasMatch||emptyBelow>0){
+        const fromY=wasMatch ? -(r+1)*step : -emptyBelow*step;
+        fallJobs.push({r,c,fromY,delay:(ROWS-1-r)*0.018});
+        totalPending++;
       }
     }
   }
 
-  // ── Step 3: apply visual updates in one rAF batch ───────────
-  // Measure cell height once (from a stable, non-animating cell)
-  const sampleCell = inners[0][0].parentElement;
-  const cellH = sampleCell.getBoundingClientRect().height;
-  const gap   = parseFloat(getComputedStyle(document.getElementById('board')).gap)||4;
-  const step  = cellH + gap;
+  if(!totalPending){checkChain();return;}
 
-  await new Promise(res=>requestAnimationFrame(()=>{
-    for(const {r,c,newVal,dropRows,isNew} of fallInfo){
-      const el = inners[r][c];
-      // 1. Stop explode / previous anim silently
-      el.style.animation = 'none';
-      // 2. Update visual class/text — element is invisible (opacity:0 from explode forwards, or will be set below)
-      el.className = `inner g${newVal}`;
-      el.textContent = SYM[newVal];
-      // 3. Set fall start offset
-      let fromPx;
-      if(isNew){
-        // gem comes from above the board
-        fromPx = -(r+1)*step - step*0.5;
-      } else {
-        fromPx = -dropRows * step;
-      }
-      el.style.setProperty('--fy', fromPx+'px');
-      // 4. Start fall animation with stagger (bottom gems land first)
-      const delay = (ROWS-1-r)*15;
-      el.style.opacity='0';
-      setTimeout(()=>{
-        el.style.opacity='';
-        el.style.animation=`kFall ${FL_MS}ms cubic-bezier(.22,.6,.36,1) both`;
-        setTimeout(()=>{ el.style.animation=''; }, FL_MS+10);
-      }, delay);
-    }
-    res();
-  }));
-
-  await sleep(FL_MS + ROWS*15 + 20);
-
-  // ── Step 4: chain ─────────────────────────────────────────
-  const nm = findMatches();
-  if(nm.length) await cascade(nm);
-  else combo=0;
+  let landed=0;
+  for(const{r,c,fromY,delay}of fallJobs){
+    setTimeout(()=>{
+      anims[r][c]={type:'fall',t:0,dur:FL,fromY,onDone:()=>{
+        if(++landed===totalPending)checkChain();
+      }};
+    },delay*1000);
+  }
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Hint
-// ─────────────────────────────────────────────────────────────
-function doHint(){
-  if(busy) return;
-  const f=findHint();
-  if(!f){ alert('Nicio mutare! Joc nou...'); newGame(); return; }
-  const[r1,c1,r2,c2]=f;
-  [inners[r1][c1], inners[r2][c2]].forEach(el=>{
-    el.style.animation='none';
-    el.getBoundingClientRect();
-    el.classList.add('hint');
-    setTimeout(()=>el.classList.remove('hint'), 950);
-  });
+function checkChain(){
+  const nm=findMatches();
+  if(nm.length){resolveMatches(nm);}
+  else{
+    comboCount=0;busy=false;
+    if(!hasMoves())showNoMoves();
+  }
 }
+
+// ═══════════════════════════════════════════════════════
+//  PARTICLES (canvas-based, no DOM)
+// ═══════════════════════════════════════════════════════
+function spawnParticles(r,c,type){
+  const {x,y}=cellXY(r,c);
+  const cx=x+CELL/2, cy=y+CELL/2;
+  const col=GEMS[type].color;
+  for(let i=0;i<9;i++){
+    const a=Math.random()*Math.PI*2, spd=1.2+Math.random()*2.2;
+    particles.push({x:cx,y:cy,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd-0.8,
+      r:2.5+Math.random()*2.5,alpha:1,color:col});
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  COMBO BADGE (DOM, outside canvas — brief flash)
+// ═══════════════════════════════════════════════════════
+function showComboBadge(n){
+  const wrap=document.getElementById('boardWrap');
+  const old=wrap.querySelector('.combo-badge'); if(old)old.remove();
+  const el=document.createElement('div'); el.className='combo-badge';
+  el.textContent=`${n}× COMBO!`;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(),1300);
+}
+
+// ═══════════════════════════════════════════════════════
+//  HINT
+// ═══════════════════════════════════════════════════════
 function findHint(){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    for(const[nr,nc] of [[r,c+1],[r+1,c]]){
-      if(nr>=ROWS||nc>=COLS) continue;
-      const t=grid[r][c]; grid[r][c]=grid[nr][nc]; grid[nr][nc]=t;
+    for(const[nr,nc]of[[r,c+1],[r+1,c]]){
+      if(nr>=ROWS||nc>=COLS)continue;
+      const t=board[r][c];board[r][c]=board[nr][nc];board[nr][nc]=t;
       const ok=findMatches().length>0;
-      grid[nr][nc]=grid[r][c]; grid[r][c]=t;
-      if(ok) return[r,c,nr,nc];
+      board[nr][nc]=board[r][c];board[r][c]=t;
+      if(ok)return[[r,c],[nr,nc]];
     }
   }
   return null;
 }
 
-// ─────────────────────────────────────────────────────────────
-//  Visual helpers
-// ─────────────────────────────────────────────────────────────
-function showPopup(matches,pts){
-  const bw=document.querySelector('.board-wrap');
-  const[r,c]=matches[Math.floor(matches.length/2)];
-  const cell=inners[r][c].parentElement;
-  const cr=cell.getBoundingClientRect(), br=bw.getBoundingClientRect();
-  const p=document.createElement('div'); p.className='popup';
-  p.textContent=`+${pts}`;
-  p.style.left=(cr.left-br.left+cr.width/2-16)+'px';
-  p.style.top=(cr.top-br.top)+'px';
-  bw.appendChild(p); setTimeout(()=>p.remove(),1050);
-}
-
-function spawnParticles(r,c,type){
-  const bw=document.querySelector('.board-wrap');
-  const cell=inners[r][c].parentElement;
-  const cr=cell.getBoundingClientRect(), br=bw.getBoundingClientRect();
-  const cx=cr.left-br.left+cr.width/2, cy=cr.top-br.top+cr.height/2;
-  for(let i=0;i<7;i++){
-    const p=document.createElement('div'); p.className='part';
-    const a=(i/7)*Math.PI*2, d=18+Math.random()*20;
-    p.style.cssText=`left:${cx}px;top:${cy}px;width:5px;height:5px;background:${GCOL[type]};--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px;--dur:${.28+Math.random()*.2}s`;
-    bw.appendChild(p); setTimeout(()=>p.remove(),540);
-  }
-}
-
-function showCombo(text,sub){
-  const el=document.getElementById('comboEl');
-  document.getElementById('comboT').textContent=text;
-  document.getElementById('comboS').textContent=sub;
-  el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),1200);
-}
-
-// ─────────────────────────────────────────────────────────────
-//  Game over / New game
-// ─────────────────────────────────────────────────────────────
-function endGame(){
-  busy=true;
-  document.getElementById('goScore').textContent=score;
-  document.getElementById('goBest').textContent=score>=best?'✦ NOU RECORD! ✦':`Record: ${best}`;
-  document.getElementById('goEl').classList.add('show');
-}
-
-function newGame(){
-  document.getElementById('goEl').classList.remove('show');
-  score=0; moves=30; level=1; xp=0; xpMax=500;
-  sel=null; busy=false; combo=0;
-  initGrid();
-  // If board already built, just update visuals in place
-  if(inners.length){
-    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) setGemVisual(r,c);
-  } else {
-    buildBoard();
-  }
-  updateStats();
-}
-
-function initGrid(){
-  grid=[];
-  for(let r=0;r<ROWS;r++){
-    grid.push([]);
-    for(let c=0;c<COLS;c++){
-      let v;
-      do{ v=rnd(); }while(
-        (c>=2&&grid[r][c-1]===v&&grid[r][c-2]===v)||
-        (r>=2&&grid[r-1][c]===v&&grid[r-2][c]===v)
-      );
-      grid[r].push(v);
+// ═══════════════════════════════════════════════════════
+//  MOVES CHECK
+// ═══════════════════════════════════════════════════════
+function hasMoves(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    for(const[nr,nc]of[[r,c+1],[r+1,c]]){
+      if(nr>=ROWS||nc>=COLS)continue;
+      const t=board[r][c];board[r][c]=board[nr][nc];board[nr][nc]=t;
+      const ok=findMatches().length>0;
+      board[nr][nc]=board[r][c];board[r][c]=t;
+      if(ok)return true;
     }
   }
+  return false;
 }
 
-function rnd(){ return Math.floor(Math.random()*GN); }
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+// ═══════════════════════════════════════════════════════
+//  UI
+// ═══════════════════════════════════════════════════════
+function updateUI(){
+  document.getElementById('score-disp').textContent=score.toLocaleString();
+  document.getElementById('best-disp').textContent=best.toLocaleString();
+  const lvl=LEVEL_THRESHOLDS.findIndex(v=>score<v);
+  const curLevel=Math.max(1,lvl-1||LEVEL_THRESHOLDS.length-1);
+  level=Math.max(level,curLevel);
+  document.getElementById('level-disp').textContent=level;
+  const lo=LEVEL_THRESHOLDS[level-1]||0, hi=LEVEL_THRESHOLDS[level]||99999;
+  const pct=Math.min(100,Math.round((score-lo)/(hi-lo)*100));
+  document.getElementById('level-bar').style.width=pct+'%';
+}
 
-// ─────────────────────────────────────────────────────────────
-//  Init
-// ─────────────────────────────────────────────────────────────
-initGrid();
-buildBoard();
-updateStats();
+function showNoMoves(){
+  document.getElementById('msg-title').textContent='Nicio mutare!';
+  document.getElementById('msg-sub').textContent=`Scor final: ${score}. Se resetează...`;
+  document.getElementById('message').classList.add('visible');
+  setTimeout(()=>{document.getElementById('message').classList.remove('visible');G.newGame();},2400);
+}
+
+// ═══════════════════════════════════════════════════════
+//  PUBLIC API
+// ═══════════════════════════════════════════════════════
+const G = {
+  newGame(){
+    document.getElementById('message').classList.remove('visible');
+    score=0; level=1; comboCount=0; sel=null; busy=false;
+    particles=[]; floaters=[];
+    makeBoard(); initAnims(); updateUI();
+  },
+  hint(){
+    if(busy)return;
+    const h=findHint();
+    if(!h)return;
+    for(const[r,c]of h){
+      anims[r][c]={type:'hint',t:0,dur:0.9};
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+resize();
+G.newGame();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
