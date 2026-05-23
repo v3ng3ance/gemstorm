@@ -320,6 +320,10 @@ function drawAll(){
     const isSel=sel&&sel[0]===r&&sel[1]===c;
     const cx=x+CELL/2+ox, cy=y+CELL/2+oy;
     const gemR=(CELL*0.38)*scale;
+    const vc=gemColor(v);
+    const isFlame=v>=BONUS_FLAME&&v<BONUS_STAR;
+    const isStar=v>=BONUS_STAR&&v<BONUS_HYPER;
+    const isHyper=v>=BONUS_HYPER;
 
     ctx.save();
     ctx.globalAlpha=alpha;
@@ -333,30 +337,58 @@ function drawAll(){
       roundRect(ctx,x+ox+1,y+oy+1,CELL-2,CELL-2,6); ctx.stroke();
     }
 
-    // glow
-    ctx.shadowColor=GEMS[v].color;
-    ctx.shadowBlur=isSel?22:8;
+    // glow — bonus gems glow brighter
+    ctx.shadowColor=isHyper?'#ffffff':isStar?'#ffff00':isFlame?'#ff8800':GEMS[vc].color;
+    ctx.shadowBlur=isHyper?30:isStar?24:isFlame?18:isSel?22:8;
 
-    // main circle — radial gradient like reference model
+    // main circle
     const g=ctx.createRadialGradient(cx-gemR*.28,cy-gemR*.28,gemR*.05,cx,cy,gemR);
-    g.addColorStop(0,lighten(GEMS[v].color,70));
-    g.addColorStop(0.45,GEMS[v].color);
-    g.addColorStop(1,darken(GEMS[v].color,50));
+    if(isHyper){
+      g.addColorStop(0,'#ffffff'); g.addColorStop(0.4,'#cc88ff'); g.addColorStop(1,'#440088');
+    } else {
+      g.addColorStop(0,lighten(GEMS[vc].color,70));
+      g.addColorStop(0.45,GEMS[vc].color);
+      g.addColorStop(1,darken(GEMS[vc].color,50));
+    }
     ctx.fillStyle=g;
     ctx.beginPath(); ctx.arc(cx,cy,gemR,0,Math.PI*2); ctx.fill();
-
     ctx.shadowBlur=0;
 
-    // specular highlight (top-left dot like reference)
+    // specular highlight
     const hg=ctx.createRadialGradient(cx-gemR*.3,cy-gemR*.35,0,cx-gemR*.3,cy-gemR*.35,gemR*.45);
     hg.addColorStop(0,'rgba(255,255,255,.55)');
     hg.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle=hg;
-    ctx.beginPath(); ctx.arc(cx,cy,gemR,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(cx,cy,gemR,0,Math.PI*2); ctx.fill();
+
+    // bonus overlays
+    if(isFlame){
+      // spinning star points drawn as lines
+      const spokes=6, t=Date.now()/600;
+      ctx.strokeStyle='rgba(255,200,50,.8)'; ctx.lineWidth=1.5;
+      for(let i=0;i<spokes;i++){
+        const a=t+i*Math.PI*2/spokes;
+        ctx.beginPath();
+        ctx.moveTo(cx+Math.cos(a)*gemR*.35,cy+Math.sin(a)*gemR*.35);
+        ctx.lineTo(cx+Math.cos(a)*gemR*.88,cy+Math.sin(a)*gemR*.88);
+        ctx.stroke();
+      }
+    } else if(isStar){
+      // rotating ring
+      const t=Date.now()/400;
+      ctx.strokeStyle='rgba(255,255,100,.9)'; ctx.lineWidth=2;
+      ctx.setLineDash([4,4]); ctx.lineDashOffset=-t*8;
+      ctx.beginPath(); ctx.arc(cx,cy,gemR*.72,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
+    } else if(isHyper){
+      // cross lines
+      const t=Date.now()/300;
+      ctx.strokeStyle=`rgba(255,255,255,${0.5+0.5*Math.sin(t)})`; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx-gemR*.8,cy); ctx.lineTo(cx+gemR*.8,cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,cy-gemR*.8); ctx.lineTo(cx,cy+gemR*.8); ctx.stroke();
+    }
 
     // rim
-    ctx.strokeStyle='rgba(255,255,255,.12)';
-    ctx.lineWidth=1.2;
+    ctx.strokeStyle='rgba(255,255,255,.12)'; ctx.lineWidth=1.2;
     ctx.beginPath(); ctx.arc(cx,cy,gemR-.6,0,Math.PI*2); ctx.stroke();
 
     ctx.restore();
@@ -466,7 +498,7 @@ function doSwap(r1,c1,r2,c2){
     // swap data
     const t=board[r1][c1];board[r1][c1]=board[r2][c2];board[r2][c2]=t;
     const m=findMatches();
-    if(!m.length){
+    if(!m){
       // swap back
       const t2=board[r1][c1];board[r1][c1]=board[r2][c2];board[r2][c2]=t2;
       let e1=false,e2=false;
@@ -483,27 +515,95 @@ function doSwap(r1,c1,r2,c2){
 }
 
 // ═══════════════════════════════════════════════════════
-//  MATCH
+//  BONUS GEM TYPES
+//  board stores: 0-6 = normal gem color
+//                100+color = Flame gem  (4 in a row → clears 3×3)
+//                200+color = Star gem   (5 in a row → clears whole color)
+//                300       = Hypercube  (L/T shape → clears row+col)
+// ═══════════════════════════════════════════════════════
+const BONUS_FLAME=100, BONUS_STAR=200, BONUS_HYPER=300;
+function gemColor(v){ return v>=BONUS_HYPER?0:v>=BONUS_STAR?v-BONUS_STAR:v>=BONUS_FLAME?v-BONUS_FLAME:v; }
+function isBonus(v){ return v>=BONUS_FLAME; }
+
+// ═══════════════════════════════════════════════════════
+//  MATCH FINDING — returns {cells, bonus}
+//  bonus = null | {type:'flame'|'star'|'hyper', r, c, color}
 // ═══════════════════════════════════════════════════════
 function findMatches(){
-  const hit=new Set();
+  // returns array of match-groups, each group = {cells:[[r,c],...], len, dir, bonus}
+  const used=new Set();
+  const groups=[];
+
+  // horizontal runs
   for(let r=0;r<ROWS;r++){
     for(let c=0;c<COLS-2;){
-      const v=board[r][c];let l=1;
-      while(c+l<COLS&&board[r][c+l]===v)l++;
-      if(l>=3)for(let k=0;k<l;k++)hit.add(r*COLS+c+k);
+      const v=board[r][c]; if(v===-1){c++;continue;}
+      const vc=gemColor(v); let l=1;
+      while(c+l<COLS&&gemColor(board[r][c+l])===vc&&board[r][c+l]!==-1)l++;
+      if(l>=3){
+        const cells=[];
+        for(let k=0;k<l;k++)cells.push([r,c+k]);
+        groups.push({cells,len:l,dir:'h',r,c,color:vc});
+      }
       c+=l;
     }
   }
+  // vertical runs
   for(let c=0;c<COLS;c++){
     for(let r=0;r<ROWS-2;){
-      const v=board[r][c];let l=1;
-      while(r+l<ROWS&&board[r+l][c]===v)l++;
-      if(l>=3)for(let k=0;k<l;k++)hit.add((r+k)*COLS+c);
+      const v=board[r][c]; if(v===-1){r++;continue;}
+      const vc=gemColor(v); let l=1;
+      while(r+l<ROWS&&gemColor(board[r+l][c])===vc&&board[r+l][c]!==-1)l++;
+      if(l>=3){
+        const cells=[];
+        for(let k=0;k<l;k++)cells.push([r+k,c]);
+        groups.push({cells,len:l,dir:'v',r,c,color:vc});
+      }
       r+=l;
     }
   }
-  return[...hit].map(i=>[Math.floor(i/COLS),i%COLS]);
+
+  if(!groups.length) return null;
+
+  // Merge overlapping groups into match events
+  // For each group determine bonus type and pivot cell
+  const allCells=new Set();
+  const bonuses=[];
+
+  // Detect L/T: a cell that appears in both an H and V group of ≥3
+  const hMap=new Map(), vMap=new Map();
+  for(const g of groups){
+    if(g.dir==='h') for(const[r,c]of g.cells){ const k=r*COLS+c; hMap.set(k,g); }
+    else            for(const[r,c]of g.cells){ const k=r*COLS+c; vMap.set(k,g); }
+  }
+
+  // find L/T intersections
+  const ltDone=new Set();
+  for(const[k,hg]of hMap){
+    if(vMap.has(k)&&!ltDone.has(k)){
+      const vg=vMap.get(k);
+      const pivot=[Math.floor(k/COLS),k%COLS];
+      const combined=new Set([...hg.cells.map(([r,c])=>r*COLS+c),...vg.cells.map(([r,c])=>r*COLS+c)]);
+      bonuses.push({type:'hyper',pivot,cells:[...combined].map(i=>[Math.floor(i/COLS),i%COLS]),color:hg.color});
+      for(const i of combined)ltDone.add(i);
+      for(const i of combined)allCells.add(i);
+    }
+  }
+
+  // remaining groups
+  for(const g of groups){
+    const remaining=g.cells.filter(([r,c])=>!ltDone.has(r*COLS+c));
+    if(remaining.length<3) continue;
+    const pivot=remaining[Math.floor(remaining.length/2)];
+    let type='normal';
+    if(g.len>=5) type='star';
+    else if(g.len===4) type='flame';
+    bonuses.push({type,pivot,cells:remaining,color:g.color});
+    for(const[r,c]of remaining)allCells.add(r*COLS+c);
+  }
+
+  if(!allCells.size) return null;
+  return bonuses; // array of match events
 }
 
 // ═══════════════════════════════════════════════════════
@@ -511,28 +611,88 @@ function findMatches(){
 // ═══════════════════════════════════════════════════════
 const EX=0.28, FL=0.28;
 
-function resolveMatches(matches){
+// Expand a bonus gem activation into a set of cells to destroy
+function expandBonus(r,c,v,destroySet){
+  if(v>=BONUS_HYPER){
+    // hypercube: clear entire row and column
+    for(let cc=0;cc<COLS;cc++) destroySet.add(r*COLS+cc);
+    for(let rr=0;rr<ROWS;rr++) destroySet.add(rr*COLS+c);
+  } else if(v>=BONUS_STAR){
+    // star: clear all gems of same color
+    const col=v-BONUS_STAR;
+    for(let rr=0;rr<ROWS;rr++) for(let cc=0;cc<COLS;cc++)
+      if(gemColor(board[rr][cc])===col) destroySet.add(rr*COLS+cc);
+  } else if(v>=BONUS_FLAME){
+    // flame: clear 3×3 around
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS) destroySet.add(nr*COLS+nc);
+    }
+  }
+}
+
+function resolveMatches(groups){
   comboCount++;
-  const pts=matches.length*10*comboCount;
+
+  // Build full destroy set, expanding any bonus gems hit
+  const destroySet=new Set();
+  const bonusCreations=[]; // {r,c,bonusType,color} — place after explosion
+
+  for(const g of groups){
+    for(const[r,c]of g.cells){
+      destroySet.add(r*COLS+c);
+      // if this cell contains a bonus gem, trigger it
+      if(isBonus(board[r][c])) expandBonus(r,c,board[r][c],destroySet);
+    }
+    // determine if this match creates a new bonus
+    if(g.type==='flame'||g.type==='star'||g.type==='hyper'){
+      bonusCreations.push({r:g.pivot[0],c:g.pivot[1],btype:g.type,color:g.color});
+    }
+  }
+
+  // Score: base 10 per gem, ×length bonus, ×combo
+  let pts=0;
+  for(const g of groups){
+    const len=g.cells.length;
+    const lenBonus=len>=5?4:len===4?2:1;
+    pts+=len*10*lenBonus;
+  }
+  pts=Math.round(pts*comboCount);
   score+=pts;
   if(score>best){best=score;localStorage.setItem('gb_best',best);}
   updateUI();
-  // score floater at center of matches
-  const mr=matches.reduce((s,[r])=>s+r,0)/matches.length;
-  const mc=matches.reduce((s,[,c])=>s+c,0)/matches.length;
+
+  // Floater
+  const allCells=[...new Set(groups.flatMap(g=>g.cells.map(([r,c])=>r*COLS+c)))].map(i=>[Math.floor(i/COLS),i%COLS]);
+  const mr=allCells.reduce((s,[r])=>s+r,0)/allCells.length;
+  const mc=allCells.reduce((s,[,c])=>s+c,0)/allCells.length;
   const {x,y}=cellXY(Math.round(mr),Math.round(mc));
-  floaters.push({x:x+CELL/2,y:y+CELL/2,text:(comboCount>1?`×${comboCount} `:'+')+pts,alpha:1});
+  const bonusLabel=groups.some(g=>g.type==='star')?'⭐ ':groups.some(g=>g.type==='flame')?'🔥 ':groups.some(g=>g.type==='hyper')?'💥 ':'';
+  floaters.push({x:x+CELL/2,y:y+CELL/2,text:bonusLabel+(comboCount>1?`×${comboCount} `:'+')+pts,alpha:1});
 
-  if(comboCount>1) showComboBadge(comboCount);
+  if(comboCount>1||groups.some(g=>g.type!=='normal')) showComboBadge(comboCount,groups);
 
-  // explode matched — only these cells
-  const matchSet=new Set(matches.map(([r,c])=>r*COLS+c));
-  let pending=matches.length;
-  for(const[r,c]of matches){
-    spawnParticles(r,c,board[r][c]);
+  // Explode all cells in destroySet
+  const matchSet=new Set(destroySet);
+  let pending=[...destroySet].length;
+  if(pending===0){doGravity(new Set());return;}
+
+  for(const idx of destroySet){
+    const r=Math.floor(idx/COLS),c=idx%COLS;
+    if(board[r][c]===-1){pending--;continue;}
+    spawnParticles(r,c,gemColor(board[r][c]));
     anims[r][c]={type:'explode',t:0,dur:EX,onDone:()=>{
       board[r][c]=-1;
-      if(--pending===0) doGravity(matchSet);
+      if(--pending===0){
+        // place bonus gems before gravity
+        for(const{r:br,c:bc,btype,color}of bonusCreations){
+          if(board[br][bc]===-1){
+            board[br][bc]=btype==='star'?BONUS_STAR+color:btype==='hyper'?BONUS_HYPER:BONUS_FLAME+color;
+            matchSet.delete(br*COLS+bc); // don't fill this slot
+          }
+        }
+        doGravity(matchSet);
+      }
     }};
   }
 }
@@ -577,7 +737,7 @@ function doGravity(matchSet){
 
 function checkChain(){
   const nm=findMatches();
-  if(nm.length){resolveMatches(nm);}
+  if(nm){resolveMatches(nm);}
   else{
     comboCount=0;busy=false;
     if(!hasMoves())showNoMoves();
@@ -601,13 +761,17 @@ function spawnParticles(r,c,type){
 // ═══════════════════════════════════════════════════════
 //  COMBO BADGE (DOM, outside canvas — brief flash)
 // ═══════════════════════════════════════════════════════
-function showComboBadge(n){
+function showComboBadge(n,groups){
   const wrap=document.getElementById('boardWrap');
   const old=wrap.querySelector('.combo-badge'); if(old)old.remove();
   const el=document.createElement('div'); el.className='combo-badge';
-  el.textContent=`${n}× COMBO!`;
+  const hasStar=groups&&groups.some(g=>g.type==='star');
+  const hasHyper=groups&&groups.some(g=>g.type==='hyper');
+  const hasFlame=groups&&groups.some(g=>g.type==='flame');
+  const label=hasHyper?'💥 Hypercube!':hasStar?'⭐ Star Gem!':hasFlame?'🔥 Flame Gem!':`${n}× Combo!`;
+  el.textContent=label;
   wrap.appendChild(el);
-  setTimeout(()=>el.remove(),1300);
+  setTimeout(()=>el.remove(),1400);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -618,7 +782,7 @@ function findHint(){
     for(const[nr,nc]of[[r,c+1],[r+1,c]]){
       if(nr>=ROWS||nc>=COLS)continue;
       const t=board[r][c];board[r][c]=board[nr][nc];board[nr][nc]=t;
-      const ok=findMatches().length>0;
+      const ok=!!findMatches();
       board[nr][nc]=board[r][c];board[r][c]=t;
       if(ok)return[[r,c],[nr,nc]];
     }
@@ -634,7 +798,7 @@ function hasMoves(){
     for(const[nr,nc]of[[r,c+1],[r+1,c]]){
       if(nr>=ROWS||nc>=COLS)continue;
       const t=board[r][c];board[r][c]=board[nr][nc];board[nr][nc]=t;
-      const ok=findMatches().length>0;
+      const ok=!!findMatches();
       board[nr][nc]=board[r][c];board[r][c]=t;
       if(ok)return true;
     }
