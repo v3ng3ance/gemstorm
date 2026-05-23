@@ -3,149 +3,165 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GemStorm ✦ Match-3</title>
+<title>GemStorm ✦</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0612;
-    --gold: #f0c060;
-    --purple: #7c4dff;
-    --border: rgba(240,192,96,0.25);
-    --text: #e8d8ff;
-    --muted: rgba(200,180,255,0.5);
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html { scroll-behavior: smooth; }
-  body {
-    width: 100%; min-height: 100vh; overflow-y: auto; overflow-x: hidden;
-    background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(100,40,200,.35) 0%, transparent 65%),
-                radial-gradient(ellipse 60% 40% at 15% 100%, rgba(40,20,100,.4) 0%, transparent 55%),
-                #0a0612;
-    color: var(--text);
-    font-family: 'Cinzel', serif;
-    display: flex; flex-direction: column; align-items: center;
-    padding: 24px 12px 48px; gap: 18px;
-  }
-  .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-  .star { position: absolute; border-radius: 50%; background: #fff;
-    animation: twinkle var(--d,3s) ease-in-out infinite var(--dl,0s); }
-  @keyframes twinkle { 0%,100%{opacity:.1} 50%{opacity:.7} }
+:root{
+  --gold:#f0c060;--purple:#7c4dff;
+  --border:rgba(240,192,96,.25);--text:#e8d8ff;--muted:rgba(200,180,255,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  min-height:100vh;overflow-y:auto;overflow-x:hidden;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%,rgba(100,40,200,.35) 0%,transparent 65%),
+    radial-gradient(ellipse 60% 40% at 15% 100%,rgba(40,20,100,.4) 0%,transparent 55%),
+    #0a0612;
+  color:var(--text);font-family:'Cinzel',serif;
+  display:flex;flex-direction:column;align-items:center;padding:24px 12px 48px;gap:18px;
+}
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.star{position:absolute;border-radius:50%;background:#fff;
+  animation:twinkle var(--d,3s) ease-in-out infinite var(--dl,0s)}
+@keyframes twinkle{0%,100%{opacity:.1}50%{opacity:.7}}
 
-  .wrap { position:relative; z-index:1; width:100%; max-width:500px; display:flex; flex-direction:column; align-items:center; gap:16px; }
+.wrap{position:relative;z-index:1;width:100%;max-width:500px;
+  display:flex;flex-direction:column;align-items:center;gap:16px}
+.title{font-family:'Cinzel Decorative',serif;font-size:clamp(24px,6vw,42px);font-weight:700;
+  background:linear-gradient(135deg,#ffd980,#f0c060,#e0a030,#ffd980);background-size:200% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:shimmer 4s linear infinite;letter-spacing:4px;text-align:center}
+@keyframes shimmer{to{background-position:200% center}}
+.sub{font-size:10px;letter-spacing:6px;color:var(--muted);text-align:center}
 
-  .title { font-family:'Cinzel Decorative',serif; font-size:clamp(24px,6vw,42px); font-weight:700;
-    background: linear-gradient(135deg,#ffd980,#f0c060,#e0a030,#ffd980);
-    background-size:200% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-    animation: shimmer 4s linear infinite; letter-spacing:4px; text-align:center; }
-  @keyframes shimmer { to { background-position:200% center; } }
-  .sub { font-size:10px; letter-spacing:6px; color:var(--muted); text-align:center; }
+.stats{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center}
+.sbox{background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:10px;padding:8px 16px;text-align:center}
+.slabel{font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:3px}
+.sval{font-size:20px;font-weight:700;color:var(--gold);text-shadow:0 0 14px rgba(240,192,96,.6)}
+.lvl-wrap{text-align:center}
+.lvl-label{font-size:9px;letter-spacing:3px;color:var(--muted);margin-bottom:5px}
+.lvl-bg{width:190px;height:7px;background:rgba(255,255,255,.06);
+  border-radius:4px;border:1px solid var(--border);overflow:hidden}
+.lvl-bar{height:100%;background:linear-gradient(90deg,var(--purple),var(--gold));
+  border-radius:4px;transition:width .5s}
+.lvl-xp{font-size:9px;letter-spacing:2px;color:var(--muted);margin-top:3px}
 
-  .stats { display:flex; gap:14px; align-items:center; flex-wrap:wrap; justify-content:center; }
-  .sbox { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:10px; padding:8px 16px; text-align:center; }
-  .slabel { font-size:9px; letter-spacing:3px; color:var(--muted); margin-bottom:3px; }
-  .sval { font-size:20px; font-weight:700; color:var(--gold); text-shadow:0 0 14px rgba(240,192,96,.6); }
+.board-wrap{position:relative}
+.board-frame{
+  background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;
+  padding:clamp(8px,2vw,14px);
+  box-shadow:0 0 40px rgba(80,20,180,.4),inset 0 1px 0 rgba(255,255,255,.07)
+}
+#board{display:grid;grid-template-columns:repeat(8,1fr);gap:clamp(2px,1vw,5px)}
 
-  .lvl-wrap { text-align:center; }
-  .lvl-label { font-size:9px; letter-spacing:3px; color:var(--muted); margin-bottom:5px; }
-  .lvl-bg { width:190px; height:7px; background:rgba(255,255,255,.06); border-radius:4px; border:1px solid var(--border); overflow:hidden; }
-  .lvl-bar { height:100%; background:linear-gradient(90deg,var(--purple),var(--gold)); border-radius:4px; transition:width .5s; }
-  .lvl-xp { font-size:9px; letter-spacing:2px; color:var(--muted); margin-top:3px; }
+/* ── cell is the fixed slot, never moves ── */
+.cell{
+  width:clamp(34px,10vw,54px);height:clamp(34px,10vw,54px);
+  position:relative;cursor:pointer;user-select:none;
+  border-radius:8px;overflow:visible;
+}
 
-  .board-wrap { position:relative; }
-  .board-frame {
-    background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:16px;
-    padding:clamp(8px,2vw,14px);
-    box-shadow:0 0 40px rgba(80,20,180,.4), inset 0 1px 0 rgba(255,255,255,.07);
-  }
-  #board { display:grid; grid-template-columns:repeat(8,1fr); gap:clamp(2px,1vw,5px); }
+/*
+  .inner is the animating layer — it slides, falls, explodes.
+  It sits inside .cell via absolute positioning.
+  We NEVER change .inner's class during animation — only after.
+*/
+.inner{
+  position:absolute;inset:5%;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(14px,4vw,24px);font-weight:700;
+  will-change:transform,opacity;
+  /* No CSS transition — all motion is JS-driven keyframes */
+}
+.inner::before{
+  content:'';position:absolute;inset:0;border-radius:7px;
+  background:linear-gradient(135deg,rgba(255,255,255,.28) 0%,transparent 55%);
+  pointer-events:none;z-index:1
+}
+/* 7 gem colours */
+.g0{background:linear-gradient(135deg,#ff4466,#cc1144);box-shadow:0 2px 10px rgba(255,50,80,.5)}
+.g1{background:linear-gradient(135deg,#44aaff,#1166cc);box-shadow:0 2px 10px rgba(50,130,255,.5)}
+.g2{background:linear-gradient(135deg,#44ee88,#11aa44);box-shadow:0 2px 10px rgba(50,200,100,.5)}
+.g3{background:linear-gradient(135deg,#ffcc22,#ff8800);box-shadow:0 2px 10px rgba(255,180,30,.5)}
+.g4{background:linear-gradient(135deg,#cc44ff,#8800cc);box-shadow:0 2px 10px rgba(180,50,255,.5)}
+.g5{background:linear-gradient(135deg,#ff8844,#cc4400);box-shadow:0 2px 10px rgba(255,120,50,.5)}
+.g6{background:linear-gradient(135deg,#44ffee,#0088aa);box-shadow:0 2px 10px rgba(50,220,200,.5)}
 
-  .cell {
-    width:clamp(34px,10vw,54px); height:clamp(34px,10vw,54px);
-    display:flex; align-items:center; justify-content:center;
-    border-radius:8px; cursor:pointer; user-select:none;
-  }
-  .gem {
-    width:90%; height:90%; border-radius:7px;
-    display:flex; align-items:center; justify-content:center;
-    font-size:clamp(16px,4.5vw,26px);
-    position:relative; transition:transform .15s, filter .15s;
-  }
-  .gem::before { content:''; position:absolute; inset:0; border-radius:7px;
-    background:linear-gradient(135deg,rgba(255,255,255,.28) 0%,transparent 55%); pointer-events:none; }
+/* selected ring — added/removed as class, no anim reset needed */
+.inner.sel{
+  box-shadow:0 0 0 3px #fff,0 0 20px rgba(255,255,255,.5);
+  animation:selP .8s ease-in-out infinite!important
+}
+@keyframes selP{
+  0%,100%{box-shadow:0 0 0 3px #fff,0 0 18px rgba(255,255,255,.4)}
+  50%{box-shadow:0 0 0 3px var(--gold),0 0 26px rgba(240,192,96,.8)}
+}
+.inner.hint{animation:hintW .45s ease-in-out 2!important}
+@keyframes hintW{0%,100%{transform:scale(1)}50%{transform:scale(1.2) rotate(11deg)}}
 
-  .g0{background:linear-gradient(135deg,#ff4466,#cc1144);box-shadow:0 2px 10px rgba(255,50,80,.5)}
-  .g1{background:linear-gradient(135deg,#44aaff,#1166cc);box-shadow:0 2px 10px rgba(50,130,255,.5)}
-  .g2{background:linear-gradient(135deg,#44ee88,#11aa44);box-shadow:0 2px 10px rgba(50,200,100,.5)}
-  .g3{background:linear-gradient(135deg,#ffcc22,#ff8800);box-shadow:0 2px 10px rgba(255,180,30,.5)}
-  .g4{background:linear-gradient(135deg,#cc44ff,#8800cc);box-shadow:0 2px 10px rgba(180,50,255,.5)}
-  .g5{background:linear-gradient(135deg,#ff8844,#cc4400);box-shadow:0 2px 10px rgba(255,120,50,.5)}
-  .g6{background:linear-gradient(135deg,#44ffee,#0088aa);box-shadow:0 2px 10px rgba(50,220,200,.5)}
+/* keyframes used by JS .style.animation = */
+@keyframes kExplode{
+  0%  {transform:scale(1);  opacity:1}
+  50% {transform:scale(1.55);opacity:.7}
+  100%{transform:scale(0);  opacity:0}
+}
+@keyframes kFall{
+  from{transform:translateY(var(--fy));opacity:0}
+  to  {transform:translateY(0);opacity:1}
+}
+@keyframes kSlide{
+  0%  {transform:translate(0,0)}
+  48% {transform:translate(var(--tx),var(--ty))}
+  100%{transform:translate(0,0)}
+}
 
-  .cell.sel .gem { transform:scale(1.18); animation:selP .8s ease-in-out infinite; }
-  @keyframes selP {
-    0%,100%{box-shadow:0 0 0 3px #fff,0 0 16px rgba(255,255,255,.5)}
-    50%{box-shadow:0 0 0 3px var(--gold),0 0 24px rgba(240,192,96,.8)}
-  }
-  .cell.hint .gem { animation:hintB .45s ease-in-out 2; }
-  @keyframes hintB { 0%,100%{transform:scale(1)} 50%{transform:scale(1.22) rotate(12deg)} }
-
-  .gem.explode { animation:expl .38s ease forwards; }
-  @keyframes expl { 0%{transform:scale(1);opacity:1} 60%{transform:scale(1.5);opacity:.7} 100%{transform:scale(0);opacity:0} }
-  .gem.drop { animation:drp .28s cubic-bezier(.3,0,.7,1); }
-  @keyframes drp { 0%{transform:translateY(-52px);opacity:0} 100%{transform:translateY(0);opacity:1} }
-
-  .gem.sr{animation:swR .24s ease}.gem.sl{animation:swL .24s ease}
-  .gem.su{animation:swU .24s ease}.gem.sd{animation:swD .24s ease}
-  @keyframes swR{50%{transform:translateX(clamp(38px,10vw,58px))}}
-  @keyframes swL{50%{transform:translateX(clamp(-58px,-10vw,-38px))}}
-  @keyframes swU{50%{transform:translateY(clamp(-58px,-10vw,-38px))}}
-  @keyframes swD{50%{transform:translateY(clamp(38px,10vw,58px))}}
-
-  .popup { position:absolute; font-family:'Cinzel',serif; font-weight:700;
-    font-size:clamp(13px,3vw,19px); color:var(--gold);
-    text-shadow:0 0 8px rgba(240,192,96,.8); pointer-events:none;
-    z-index:100; animation:popUp 1s ease forwards; white-space:nowrap; }
-  @keyframes popUp { 0%{transform:translateY(0) scale(.5);opacity:1} 100%{transform:translateY(-52px) scale(1.2);opacity:0} }
-
-  .part { position:absolute; border-radius:50%; pointer-events:none; z-index:50;
-    animation:pF var(--dur,.55s) ease forwards; }
-  @keyframes pF { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0} }
-
-  .combo-overlay { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0);
-    z-index:200; text-align:center; pointer-events:none; }
-  .combo-overlay.show { animation:cB 1.2s ease forwards; }
-  @keyframes cB { 0%{transform:translate(-50%,-50%) scale(0);opacity:0} 20%{transform:translate(-50%,-50%) scale(1.3);opacity:1} 70%{transform:translate(-50%,-50%) scale(1);opacity:1} 100%{transform:translate(-50%,-60%) scale(.8);opacity:0} }
-  .ct { font-family:'Cinzel Decorative',serif; font-size:clamp(20px,5vw,34px); font-weight:700;
-    background:linear-gradient(135deg,#fff,var(--gold),#fff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:3px; }
-  .cs { font-size:13px; color:var(--gold); letter-spacing:4px; margin-top:4px; }
-
-  .btns { display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center; }
-  .btn { font-family:'Cinzel',serif; font-size:10px; letter-spacing:2px; padding:10px 20px;
-    border-radius:8px; border:1px solid var(--border); background:rgba(255,255,255,.05);
-    color:var(--gold); cursor:pointer; transition:all .2s; text-transform:uppercase; }
-  .btn:hover { background:rgba(255,255,255,.1); box-shadow:0 0 18px rgba(240,192,96,.3); transform:translateY(-1px); }
-  .btn:active { transform:translateY(0); }
-
-  .goover { position:fixed; inset:0; background:rgba(5,2,15,.92); display:flex;
-    flex-direction:column; align-items:center; justify-content:center;
-    z-index:1000; backdrop-filter:blur(8px);
-    opacity:0; pointer-events:none; transition:opacity .5s; padding:20px; text-align:center; }
-  .goover.show { opacity:1; pointer-events:all; }
-  .go-t { font-family:'Cinzel Decorative',serif; font-size:clamp(26px,7vw,46px); color:var(--gold);
-    text-shadow:0 0 30px rgba(240,192,96,.8); margin-bottom:8px; }
-  .go-s { font-size:clamp(16px,4vw,26px); margin-bottom:8px; }
-  .go-b { font-size:13px; color:var(--muted); margin-bottom:26px; letter-spacing:2px; }
+/* UI overlays */
+.popup{position:absolute;font-family:'Cinzel',serif;font-weight:700;
+  font-size:clamp(13px,3vw,18px);color:var(--gold);
+  text-shadow:0 0 8px rgba(240,192,96,.8);pointer-events:none;z-index:200;
+  animation:popUp 1s ease forwards;white-space:nowrap}
+@keyframes popUp{0%{transform:translateY(0) scale(.5);opacity:1}100%{transform:translateY(-50px) scale(1.15);opacity:0}}
+.part{position:absolute;border-radius:50%;pointer-events:none;z-index:150;
+  animation:pFly var(--dur,.5s) ease forwards}
+@keyframes pFly{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}}
+.combo-ov{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+  z-index:300;text-align:center;pointer-events:none}
+.combo-ov.show{animation:cBurst 1.2s ease forwards}
+@keyframes cBurst{
+  0%  {transform:translate(-50%,-50%) scale(0);opacity:0}
+  20% {transform:translate(-50%,-50%) scale(1.3);opacity:1}
+  70% {transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-60%) scale(.8);opacity:0}
+}
+.ct{font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5vw,34px);font-weight:700;
+  background:linear-gradient(135deg,#fff,var(--gold),#fff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px}
+.cs{font-size:13px;color:var(--gold);letter-spacing:4px;margin-top:4px}
+.btns{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}
+.btn{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;padding:10px 20px;
+  border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.05);
+  color:var(--gold);cursor:pointer;transition:all .2s;text-transform:uppercase}
+.btn:hover{background:rgba(255,255,255,.1);box-shadow:0 0 18px rgba(240,192,96,.3);transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.goover{position:fixed;inset:0;background:rgba(5,2,15,.92);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:1000;backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;transition:opacity .5s;padding:20px;text-align:center}
+.goover.show{opacity:1;pointer-events:all}
+.go-t{font-family:'Cinzel Decorative',serif;font-size:clamp(26px,7vw,46px);color:var(--gold);
+  text-shadow:0 0 30px rgba(240,192,96,.8);margin-bottom:8px}
+.go-s{font-size:clamp(16px,4vw,26px);margin-bottom:8px}
+.go-b{font-size:13px;color:var(--muted);margin-bottom:26px;letter-spacing:2px}
 </style>
 </head>
 <body>
 <div class="stars" id="stars"></div>
-
 <div class="wrap">
   <div>
     <div class="title">✦ GemStorm ✦</div>
     <div class="sub">MATCH · THREE · MAGIC</div>
   </div>
-
   <div class="stats">
     <div class="sbox"><div class="slabel">SCOR</div><div class="sval" id="sScore">0</div></div>
     <div class="lvl-wrap">
@@ -155,24 +171,22 @@
     </div>
     <div class="sbox"><div class="slabel">MIȘCĂRI</div><div class="sval" id="sMoves">30</div></div>
   </div>
-
   <div class="board-wrap">
-    <div class="board-frame">
-      <div id="board"></div>
-    </div>
-    <div class="combo-overlay" id="comboEl">
+    <div class="board-frame"><div id="board"></div></div>
+    <div class="combo-ov" id="comboEl">
       <div class="ct" id="comboT"></div>
       <div class="cs" id="comboS"></div>
     </div>
   </div>
-
   <div class="btns">
     <button class="btn" onclick="newGame()">✦ JOC NOU</button>
     <button class="btn" onclick="doHint()">INDICIU</button>
-    <div class="sbox" style="min-width:68px"><div class="slabel">RECORD</div><div class="sval" style="font-size:15px" id="sBest">0</div></div>
+    <div class="sbox" style="min-width:68px">
+      <div class="slabel">RECORD</div>
+      <div class="sval" style="font-size:15px" id="sBest">0</div>
+    </div>
   </div>
 </div>
-
 <div class="goover" id="goEl">
   <div class="go-t">GAME OVER</div>
   <div class="go-s">Scor: <span id="goScore">0</span></div>
@@ -181,248 +195,361 @@
 </div>
 
 <script>
-// ── Constants ──────────────────────────────────────────────
-const R = 8, C = 8, GN = 7;
-const ICONS = ['♦','★','●','▲','■','◆','✿'];   // purely visual, drawn via CSS color
-const GCOLS  = ['#ff4466','#44aaff','#44ee88','#ffcc22','#cc44ff','#ff8844','#44ffee'];
+// ─────────────────────────────────────────────────────────────
+//  Constants
+// ─────────────────────────────────────────────────────────────
+const ROWS=8, COLS=8, GN=7;
+const SYM  = ['♦','★','●','▲','■','◆','✿'];
+const GCOL = ['#ff4466','#44aaff','#44ee88','#ffcc22','#cc44ff','#ff8844','#44ffee'];
+const EX_MS = 320;   // explode duration
+const FL_MS = 230;   // fall duration
+const SW_MS = 190;   // swap duration
 
-// ── State ──────────────────────────────────────────────────
-let grid = [];       // R×C numbers 0-6
-let sel  = null;     // [r,c] or null
-let score = 0, moves = 30, level = 1, xp = 0, xpMax = 500;
-let best  = +( localStorage.getItem('gs_best') || 0 );
-let busy  = false, combo = 0;
+// ─────────────────────────────────────────────────────────────
+//  State
+// ─────────────────────────────────────────────────────────────
+let grid = [];        // [r][c] = 0-6
+let inners = [];      // [r][c] = .inner DOM element (STABLE, never replaced)
+let sel = null;
+let score=0, moves=30, level=1, xp=0, xpMax=500;
+let best = +(localStorage.getItem('gs4')||0);
+let busy = false, combo = 0;
 
-// ── Stars ──────────────────────────────────────────────────
-(function(){
-  const c = document.getElementById('stars');
+// ─────────────────────────────────────────────────────────────
+//  Stars (one-time)
+// ─────────────────────────────────────────────────────────────
+(()=>{
+  const c=document.getElementById('stars');
   for(let i=0;i<70;i++){
     const s=document.createElement('div'); s.className='star';
-    const sz=Math.random()*2+.5;
-    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--dl:${Math.random()*4}s`;
+    const z=Math.random()*2+.4;
+    s.style.cssText=`width:${z}px;height:${z}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--dl:${Math.random()*4}s`;
     c.appendChild(s);
   }
 })();
 
-// ── Board init ─────────────────────────────────────────────
-function rnd(){ return Math.floor(Math.random()*GN); }
-
-function initGrid(){
-  grid = [];
-  for(let r=0;r<R;r++){
-    grid.push([]);
-    for(let c=0;c<C;c++){
-      let v;
-      do{ v=rnd(); }while(
-        (c>=2 && grid[r][c-1]===v && grid[r][c-2]===v) ||
-        (r>=2 && grid[r-1][c]===v && grid[r-2][c]===v)
-      );
-      grid[r].push(v);
-    }
-  }
-}
-
-// ── Render ─────────────────────────────────────────────────
-function render(){
-  const el = document.getElementById('board');
-  el.innerHTML = '';
-  for(let r=0;r<R;r++){
-    for(let c=0;c<C;c++){
+// ─────────────────────────────────────────────────────────────
+//  Build board DOM once (never rebuilt)
+// ─────────────────────────────────────────────────────────────
+function buildBoard(){
+  const board = document.getElementById('board');
+  board.innerHTML = '';
+  inners = [];
+  for(let r=0;r<ROWS;r++){
+    inners.push([]);
+    for(let c=0;c<COLS;c++){
       const cell = document.createElement('div');
-      cell.className = 'cell' + (sel&&sel[0]===r&&sel[1]===c?' sel':'');
-      const gem = document.createElement('div');
-      gem.className = `gem g${grid[r][c]}`;
-      gem.textContent = ICONS[grid[r][c]];
-      cell.appendChild(gem);
-      cell.addEventListener('click', ()=>onClick(r,c));
-      el.appendChild(cell);
+      cell.className = 'cell';
+      const inner = document.createElement('div');
+      inner.className = `inner g${grid[r][c]}`;
+      inner.textContent = SYM[grid[r][c]];
+      cell.appendChild(inner);
+      board.appendChild(cell);
+      inners[r].push(inner);
+      ;(function(rr,cc){ cell.addEventListener('click',()=>onClick(rr,cc)); })(r,c);
     }
   }
-  document.getElementById('sScore').textContent  = score;
-  document.getElementById('sMoves').textContent  = moves;
-  document.getElementById('sLevel').textContent  = level;
-  document.getElementById('sXp').textContent     = xp;
-  document.getElementById('sXpMax').textContent  = xpMax;
-  document.getElementById('lvlBar').style.width  = Math.min(100, xp/xpMax*100)+'%';
-  document.getElementById('sBest').textContent   = best;
 }
 
-function cellEl(r,c){ return document.querySelector(`#board .cell:nth-child(${r*C+c+1})`); }
-function gemEl (r,c){ return cellEl(r,c)?.querySelector('.gem'); }
+// Silently update the visual of a gem (no animation triggered).
+// Only safe to call when the element is NOT currently animating.
+function setGemVisual(r, c){
+  const el = inners[r][c];
+  const v  = grid[r][c];
+  // replace only the colour class, keep everything else
+  el.className = `inner g${v}`;
+  el.textContent = SYM[v];
+}
 
-// ── Click handler ──────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  Stats
+// ─────────────────────────────────────────────────────────────
+function updateStats(){
+  document.getElementById('sScore').textContent = score;
+  document.getElementById('sMoves').textContent = moves;
+  document.getElementById('sLevel').textContent = level;
+  document.getElementById('sXp').textContent    = xp;
+  document.getElementById('sXpMax').textContent = xpMax;
+  document.getElementById('lvlBar').style.width = Math.min(100,xp/xpMax*100)+'%';
+  document.getElementById('sBest').textContent  = best;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Selection
+// ─────────────────────────────────────────────────────────────
+function setSel(r,c){
+  if(sel) inners[sel[0]][sel[1]].classList.remove('sel');
+  sel=[r,c];
+  inners[r][c].classList.add('sel');
+}
+function clearSel(){
+  if(sel) inners[sel[0]][sel[1]].classList.remove('sel');
+  sel=null;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Click
+// ─────────────────────────────────────────────────────────────
 async function onClick(r,c){
   if(busy) return;
-  if(!sel){ sel=[r,c]; render(); return; }
-  const [sr,sc]=sel;
-  if(sr===r&&sc===c){ sel=null; render(); return; }
+  if(!sel){ setSel(r,c); return; }
+  const[sr,sc]=sel;
+  if(sr===r&&sc===c){ clearSel(); return; }
   if(Math.abs(sr-r)+Math.abs(sc-c)===1){
-    sel=null;
+    clearSel();
     await trySwap(sr,sc,r,c);
   } else {
-    sel=[r,c]; render();
+    setSel(r,c);
   }
 }
 
-// ── Swap ───────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  Swap
+// ─────────────────────────────────────────────────────────────
 async function trySwap(r1,c1,r2,c2){
-  busy=true;
-  animSwap(r1,c1,r2,c2); await sleep(250);
-  doSwap(r1,c1,r2,c2);
+  busy = true;
+  // animate visually first
+  await animSlide(r1,c1,r2,c2);
+  // swap data
+  const t=grid[r1][c1]; grid[r1][c1]=grid[r2][c2]; grid[r2][c2]=t;
+  // update visuals (elements are at rest after animSlide)
+  setGemVisual(r1,c1); setGemVisual(r2,c2);
+
   const m = findMatches();
   if(!m.length){
-    animSwap(r1,c1,r2,c2); await sleep(250);
-    doSwap(r1,c1,r2,c2);
-    render(); busy=false; return;
+    // slide back
+    await animSlide(r1,c1,r2,c2);
+    const t2=grid[r1][c1]; grid[r1][c1]=grid[r2][c2]; grid[r2][c2]=t2;
+    setGemVisual(r1,c1); setGemVisual(r2,c2);
+    busy=false; return;
   }
-  moves--; combo=0; render();
+  moves--; combo=0; updateStats();
   await cascade(m);
   if(moves<=0){ endGame(); return; }
   busy=false;
 }
 
-function doSwap(r1,c1,r2,c2){
-  const t=grid[r1][c1]; grid[r1][c1]=grid[r2][c2]; grid[r2][c2]=t;
+// Slide two gems toward each other and back (or pass-through illusion).
+// Uses CSS custom properties so NO class changes happen.
+function animSlide(r1,c1,r2,c2){
+  const g1=inners[r1][c1], g2=inners[r2][c2];
+  const b1=g1.getBoundingClientRect(), b2=g2.getBoundingClientRect();
+  const dx=b2.left-b1.left, dy=b2.top-b1.top;
+
+  // stop any lingering animation without a reflow flush on unrelated gems
+  g1.style.animation='none'; g2.style.animation='none';
+  // read offsetHeight ONLY on these two — forced reflow scoped to them
+  g1.getBoundingClientRect(); g2.getBoundingClientRect();
+
+  g1.style.setProperty('--tx', dx+'px'); g1.style.setProperty('--ty', dy+'px');
+  g2.style.setProperty('--tx',-dx+'px'); g2.style.setProperty('--ty',-dy+'px');
+  g1.style.zIndex=5; g2.style.zIndex=5;
+  g1.style.animation=`kSlide ${SW_MS}ms ease`;
+  g2.style.animation=`kSlide ${SW_MS}ms ease`;
+
+  return new Promise(res=>setTimeout(()=>{
+    g1.style.animation=''; g1.style.zIndex='';
+    g2.style.animation=''; g2.style.zIndex='';
+    res();
+  }, SW_MS+10));
 }
 
-function animSwap(r1,c1,r2,c2){
-  const dRow=r2-r1, dCol=c2-c1;
-  const dir1 = dRow===0 ? (dCol>0?'sr':'sl') : (dRow>0?'sd':'su');
-  const dir2 = dRow===0 ? (dCol>0?'sl':'sr') : (dRow>0?'su':'sd');
-  const g1=gemEl(r1,c1), g2=gemEl(r2,c2);
-  if(g1){ g1.classList.add(dir1); setTimeout(()=>g1.classList.remove(dir1),240); }
-  if(g2){ g2.classList.add(dir2); setTimeout(()=>g2.classList.remove(dir2),240); }
-}
-
-// ── Match finding ──────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  Match finding
+// ─────────────────────────────────────────────────────────────
 function findMatches(){
   const hit=new Set();
-  // horizontal
-  for(let r=0;r<R;r++){
-    for(let c=0;c<C-2;){
+  for(let r=0;r<ROWS;r++){
+    for(let c=0;c<COLS-2;){
       const v=grid[r][c]; let l=1;
-      while(c+l<C && grid[r][c+l]===v) l++;
-      if(l>=3) for(let k=0;k<l;k++) hit.add(r*C+c+k);
+      while(c+l<COLS&&grid[r][c+l]===v) l++;
+      if(l>=3) for(let k=0;k<l;k++) hit.add(r*COLS+c+k);
       c+=l;
     }
   }
-  // vertical
-  for(let c=0;c<C;c++){
-    for(let r=0;r<R-2;){
+  for(let c=0;c<COLS;c++){
+    for(let r=0;r<ROWS-2;){
       const v=grid[r][c]; let l=1;
-      while(r+l<R && grid[r+l][c]===v) l++;
-      if(l>=3) for(let k=0;k<l;k++) hit.add((r+k)*C+c);
+      while(r+l<ROWS&&grid[r+l][c]===v) l++;
+      if(l>=3) for(let k=0;k<l;k++) hit.add((r+k)*COLS+c);
       r+=l;
     }
   }
-  return [...hit].map(idx=>[ Math.floor(idx/C), idx%C ]);
+  return [...hit].map(i=>[Math.floor(i/COLS), i%COLS]);
 }
 
-// ── Cascade ────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  Cascade — the key: only touch affected elements
+// ─────────────────────────────────────────────────────────────
 async function cascade(matches){
   if(!matches.length){ combo=0; return; }
   combo++;
-  const pts = matches.length*10*Math.ceil(combo/1);
+  const pts = matches.length*10*combo;
   score+=pts; xp+=pts;
-
   if(xp>=xpMax){
     xp-=xpMax; level++; xpMax=Math.floor(xpMax*1.4); moves+=5;
-    showCombo('LEVEL UP!',`Nivel ${level}`); await sleep(650);
+    showCombo('LEVEL UP!',`Nivel ${level}`);
   } else if(combo>=3){
-    showCombo(`COMBO ×${combo}`,`+${pts} pct`); await sleep(650);
+    showCombo(`COMBO ×${combo}`,`+${pts}`);
   }
-  if(score>best){ best=score; localStorage.setItem('gs_best',best); }
+  if(score>best){ best=score; localStorage.setItem('gs4',best); }
+  updateStats();
 
-  // explode
-  for(const[r,c] of matches){
-    const g=gemEl(r,c);
-    if(g) g.classList.add('explode');
+  // ── Step 1: explode only matched cells ──────────────────────
+  const matchSet = new Set(matches.map(([r,c])=>r*COLS+c));
+  for(const [r,c] of matches){
     spawnParticles(r,c,grid[r][c]);
+    const el=inners[r][c];
+    el.style.animation='none';
+    el.getBoundingClientRect();           // flush only this element
+    el.style.animation=`kExplode ${EX_MS}ms ease forwards`;
   }
   showPopup(matches, pts);
-  await sleep(400);
+  await sleep(EX_MS);
 
-  // remove
-  for(const[r,c] of matches) grid[r][c]=-1;
+  // ── Step 2: compute gravity per column, update grid data ────
+  // For every cell, determine: new value + how many rows it fell
+  // We never touch cells that didn't change.
+  const fallInfo = []; // {r,c,newVal,dropRows,isNew}
 
-  // gravity
-  for(let c=0;c<C;c++){
-    let empty=[];
-    for(let r=R-1;r>=0;r--){
-      if(grid[r][c]===-1) empty.push(r);
-      else if(empty.length){ const t=empty.shift(); grid[t][c]=grid[r][c]; grid[r][c]=-1; empty.push(r); }
+  for(let c=0;c<COLS;c++){
+    // collect survivors bottom→top
+    const survivors=[];
+    for(let r=ROWS-1;r>=0;r--){
+      if(!matchSet.has(r*COLS+c)) survivors.push({val:grid[r][c], origRow:r});
     }
-    for(let r=0;r<R;r++) if(grid[r][c]===-1) grid[r][c]=rnd();
+    const numNew = ROWS - survivors.length;
+
+    // build new column bottom→top
+    // survivors[0] = was at bottom, stays at bottom
+    // new gems fill the top
+    const newCol = []; // newCol[0]=bottom row
+    for(let i=0;i<survivors.length;i++) newCol.push(survivors[i]);
+    for(let i=0;i<numNew;i++) newCol.push({val:rnd(), origRow:-1, isNew:true});
+
+    for(let r=ROWS-1;r>=0;r--){
+      const slotIdx = ROWS-1-r;   // newCol[0] = row ROWS-1
+      const entry   = newCol[slotIdx];
+      const newVal  = entry.val;
+      const oldVal  = grid[r][c];
+
+      grid[r][c] = newVal;
+
+      // How far does this gem fall?
+      // It falls from origRow to r  (positive = downward)
+      const origRow = entry.origRow;
+      let dropRows;
+      if(entry.isNew){
+        // enters from above the board: starts at (r - (ROWS + some offset)) visually
+        dropRows = null; // handled separately
+      } else {
+        dropRows = r - origRow; // >0 means fell down
+      }
+
+      const needsUpdate = entry.isNew || dropRows > 0 || matchSet.has(r*COLS+c);
+      if(needsUpdate){
+        fallInfo.push({r, c, newVal, dropRows, isNew:!!entry.isNew});
+      }
+    }
   }
 
-  render();
-  // drop animation
-  document.querySelectorAll('#board .gem').forEach(g=>{
-    g.classList.add('drop'); setTimeout(()=>g.classList.remove('drop'),300);
-  });
-  await sleep(320);
+  // ── Step 3: apply visual updates in one rAF batch ───────────
+  // Measure cell height once (from a stable, non-animating cell)
+  const sampleCell = inners[0][0].parentElement;
+  const cellH = sampleCell.getBoundingClientRect().height;
+  const gap   = parseFloat(getComputedStyle(document.getElementById('board')).gap)||4;
+  const step  = cellH + gap;
 
-  const nm=findMatches();
+  await new Promise(res=>requestAnimationFrame(()=>{
+    for(const {r,c,newVal,dropRows,isNew} of fallInfo){
+      const el = inners[r][c];
+      // 1. Stop explode / previous anim silently
+      el.style.animation = 'none';
+      // 2. Update visual class/text — element is invisible (opacity:0 from explode forwards, or will be set below)
+      el.className = `inner g${newVal}`;
+      el.textContent = SYM[newVal];
+      // 3. Set fall start offset
+      let fromPx;
+      if(isNew){
+        // gem comes from above the board
+        fromPx = -(r+1)*step - step*0.5;
+      } else {
+        fromPx = -dropRows * step;
+      }
+      el.style.setProperty('--fy', fromPx+'px');
+      // 4. Start fall animation with stagger (bottom gems land first)
+      const delay = (ROWS-1-r)*15;
+      el.style.opacity='0';
+      setTimeout(()=>{
+        el.style.opacity='';
+        el.style.animation=`kFall ${FL_MS}ms cubic-bezier(.22,.6,.36,1) both`;
+        setTimeout(()=>{ el.style.animation=''; }, FL_MS+10);
+      }, delay);
+    }
+    res();
+  }));
+
+  await sleep(FL_MS + ROWS*15 + 20);
+
+  // ── Step 4: chain ─────────────────────────────────────────
+  const nm = findMatches();
   if(nm.length) await cascade(nm);
   else combo=0;
 }
 
-// ── Hint ───────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  Hint
+// ─────────────────────────────────────────────────────────────
 function doHint(){
   if(busy) return;
-  const found = findHintMove();
-  if(!found){ alert('Nicio mutare disponibilă! Joc nou...'); newGame(); return; }
-  const[r1,c1,r2,c2]=found;
-  render();
-  [cellEl(r1,c1), cellEl(r2,c2)].forEach(el=>{
-    if(!el) return;
+  const f=findHint();
+  if(!f){ alert('Nicio mutare! Joc nou...'); newGame(); return; }
+  const[r1,c1,r2,c2]=f;
+  [inners[r1][c1], inners[r2][c2]].forEach(el=>{
+    el.style.animation='none';
+    el.getBoundingClientRect();
     el.classList.add('hint');
-    setTimeout(()=>el.classList.remove('hint'),1100);
+    setTimeout(()=>el.classList.remove('hint'), 950);
   });
 }
-
-function findHintMove(){
-  // try every adjacent pair
-  for(let r=0;r<R;r++){
-    for(let c=0;c<C;c++){
-      const neighbors=[];
-      if(c+1<C) neighbors.push([r,c+1]);
-      if(r+1<R) neighbors.push([r+1,c]);
-      for(const[nr,nc] of neighbors){
-        doSwap(r,c,nr,nc);
-        const ok = findMatches().length > 0;
-        doSwap(r,c,nr,nc);
-        if(ok) return [r,c,nr,nc];
-      }
+function findHint(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    for(const[nr,nc] of [[r,c+1],[r+1,c]]){
+      if(nr>=ROWS||nc>=COLS) continue;
+      const t=grid[r][c]; grid[r][c]=grid[nr][nc]; grid[nr][nc]=t;
+      const ok=findMatches().length>0;
+      grid[nr][nc]=grid[r][c]; grid[r][c]=t;
+      if(ok) return[r,c,nr,nc];
     }
   }
   return null;
 }
 
-// ── Visuals ────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  Visual helpers
+// ─────────────────────────────────────────────────────────────
 function showPopup(matches,pts){
-  if(!matches.length) return;
   const bw=document.querySelector('.board-wrap');
   const[r,c]=matches[Math.floor(matches.length/2)];
-  const cell=cellEl(r,c); if(!cell) return;
+  const cell=inners[r][c].parentElement;
   const cr=cell.getBoundingClientRect(), br=bw.getBoundingClientRect();
   const p=document.createElement('div'); p.className='popup';
   p.textContent=`+${pts}`;
-  p.style.left=(cr.left-br.left+cr.width/2)+'px';
-  p.style.top =(cr.top-br.top)+'px';
+  p.style.left=(cr.left-br.left+cr.width/2-16)+'px';
+  p.style.top=(cr.top-br.top)+'px';
   bw.appendChild(p); setTimeout(()=>p.remove(),1050);
 }
 
 function spawnParticles(r,c,type){
   const bw=document.querySelector('.board-wrap');
-  const cell=cellEl(r,c); if(!cell) return;
+  const cell=inners[r][c].parentElement;
   const cr=cell.getBoundingClientRect(), br=bw.getBoundingClientRect();
   const cx=cr.left-br.left+cr.width/2, cy=cr.top-br.top+cr.height/2;
-  for(let i=0;i<6;i++){
+  for(let i=0;i<7;i++){
     const p=document.createElement('div'); p.className='part';
-    const a=(i/6)*Math.PI*2, d=22+Math.random()*18;
-    p.style.cssText=`left:${cx}px;top:${cy}px;width:5px;height:5px;background:${GCOLS[type]};--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px;--dur:${.35+Math.random()*.25}s`;
-    bw.appendChild(p); setTimeout(()=>p.remove(),650);
+    const a=(i/7)*Math.PI*2, d=18+Math.random()*20;
+    p.style.cssText=`left:${cx}px;top:${cy}px;width:5px;height:5px;background:${GCOL[type]};--dx:${Math.cos(a)*d}px;--dy:${Math.sin(a)*d}px;--dur:${.28+Math.random()*.2}s`;
+    bw.appendChild(p); setTimeout(()=>p.remove(),540);
   }
 }
 
@@ -434,7 +561,9 @@ function showCombo(text,sub){
   setTimeout(()=>el.classList.remove('show'),1200);
 }
 
-// ── Game over ──────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+//  Game over / New game
+// ─────────────────────────────────────────────────────────────
 function endGame(){
   busy=true;
   document.getElementById('goScore').textContent=score;
@@ -442,17 +571,44 @@ function endGame(){
   document.getElementById('goEl').classList.add('show');
 }
 
-// ── New game ───────────────────────────────────────────────
 function newGame(){
   document.getElementById('goEl').classList.remove('show');
   score=0; moves=30; level=1; xp=0; xpMax=500;
   sel=null; busy=false; combo=0;
-  initGrid(); render();
+  initGrid();
+  // If board already built, just update visuals in place
+  if(inners.length){
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) setGemVisual(r,c);
+  } else {
+    buildBoard();
+  }
+  updateStats();
 }
 
+function initGrid(){
+  grid=[];
+  for(let r=0;r<ROWS;r++){
+    grid.push([]);
+    for(let c=0;c<COLS;c++){
+      let v;
+      do{ v=rnd(); }while(
+        (c>=2&&grid[r][c-1]===v&&grid[r][c-2]===v)||
+        (r>=2&&grid[r-1][c]===v&&grid[r-2][c]===v)
+      );
+      grid[r].push(v);
+    }
+  }
+}
+
+function rnd(){ return Math.floor(Math.random()*GN); }
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
-newGame();
+// ─────────────────────────────────────────────────────────────
+//  Init
+// ─────────────────────────────────────────────────────────────
+initGrid();
+buildBoard();
+updateStats();
 </script>
 </body>
 </html>
