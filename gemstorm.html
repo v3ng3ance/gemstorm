@@ -122,49 +122,34 @@ h1{
 /* ── GEM BASE ── */
 .gem{
   position:absolute;
-  inset:7%;
-  border-radius:50%;
+  inset:4%;
+  border-radius:4px;
   will-change:transform,opacity;
-  /* glow ring */
-  outline:2px solid transparent;
-  outline-offset:1px;
-  transition:filter .12s, outline-color .12s;
+  overflow:visible;
 }
-
-/* top-left specular highlight */
-.gem::after{
-  content:'';
-  position:absolute;
-  top:10%;left:18%;
-  width:30%;height:30%;
-  background:radial-gradient(circle,rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 60%,transparent 100%);
-  border-radius:50%;
-  pointer-events:none;
-  z-index:2;
+/* SVG fills the gem div */
+.gem svg{
+  width:100%;height:100%;
+  display:block;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));
+  overflow:visible;
 }
-
-/* bottom rim reflection */
-.gem::before{
-  content:'';
-  position:absolute;
-  bottom:8%;left:20%;right:20%;height:18%;
-  background:radial-gradient(ellipse,rgba(255,255,255,.18),transparent 70%);
-  border-radius:50%;
-  pointer-events:none;
-  z-index:2;
+/* hover brighten via SVG filter */
+.cell:hover .gem svg{
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.4)) brightness(1.25) saturate(1.15);
 }
-
-.cell:hover .gem{filter:brightness(1.3) saturate(1.2);}
 
 /* ── SELECTED ── */
 @keyframes selPulse{
-  0%,100%{box-shadow:var(--gem-shadow), 0 0 0 3px rgba(255,255,255,.9), 0 0 20px rgba(255,255,255,.5)}
-  50%    {box-shadow:var(--gem-shadow), 0 0 0 3px #f0c040,               0 0 30px rgba(240,192,64,.7)}
+  0%,100%{filter:drop-shadow(0 0 6px rgba(255,255,255,.9)) drop-shadow(0 0 12px rgba(255,255,255,.5))}
+  50%    {filter:drop-shadow(0 0 8px #f0c040) drop-shadow(0 0 20px rgba(240,192,64,.7))}
 }
 .cell.sel .gem{
   transform:scale(1.18);
-  animation:selPulse .7s ease-in-out infinite;
   z-index:5;
+}
+.cell.sel .gem svg{
+  animation:selPulse .7s ease-in-out infinite;
 }
 
 /* ── HINT ── */
@@ -177,70 +162,57 @@ h1{
 
 /* ── EXPLODE ── */
 @keyframes gemExplode{
-  0%  {transform:scale(1);   opacity:1;filter:brightness(1)}
-  30% {transform:scale(1.5); opacity:1;filter:brightness(2.5) saturate(2)}
-  60% {transform:scale(1.8); opacity:.5;filter:brightness(3)}
-  100%{transform:scale(.1);  opacity:0;filter:brightness(4)}
+  0%  {transform:scale(1);   opacity:1}
+  30% {transform:scale(1.5); opacity:1}
+  60% {transform:scale(1.9); opacity:.4}
+  100%{transform:scale(.05); opacity:0}
 }
 .gem.exploding{
   animation:gemExplode .38s cubic-bezier(.4,0,1,1) forwards;
   z-index:10;
 }
-
-/* shockwave ring on explode */
-.gem.exploding::after{
-  animation:shockwave .38s ease-out forwards;
-}
-@keyframes shockwave{
-  0%  {transform:scale(1);opacity:.8;width:30%;height:30%;top:10%;left:18%;}
-  100%{transform:scale(4);opacity:0; width:30%;height:30%;top:10%;left:18%;}
+.gem.exploding svg{
+  filter:drop-shadow(0 0 16px var(--gem-glow,#fff)) brightness(3) saturate(2) !important;
 }
 
 /* ── FALL ── */
 @keyframes gemFall{
   0%  {transform:translateY(var(--fall-from)) scaleY(.7) scaleX(1.2);opacity:0}
-  60% {transform:translateY(4px) scaleY(1.05) scaleX(.97);opacity:1}
+  60% {transform:translateY(4px) scaleY(1.06) scaleX(.97);opacity:1}
   80% {transform:translateY(-3px) scaleY(.97) scaleX(1.02)}
   100%{transform:translateY(0) scaleY(1) scaleX(1);opacity:1}
 }
-.gem.falling{
-  animation:gemFall .42s cubic-bezier(.22,.6,.36,1) both;
-}
+.gem.falling{animation:gemFall .42s cubic-bezier(.22,.6,.36,1) both;}
 
 /* ── SWAP ── */
 @keyframes gemSwap{
-  0%  {transform:translate(0,0)           scale(1)}
-  40% {transform:translate(var(--sx),var(--sy)) scale(1.12)}
-  100%{transform:translate(0,0)           scale(1)}
+  0%  {transform:translate(0,0)                  scale(1)}
+  40% {transform:translate(var(--sx),var(--sy))  scale(1.1)}
+  100%{transform:translate(0,0)                  scale(1)}
 }
 .gem.swapping{animation:gemSwap .2s cubic-bezier(.4,0,.2,1) both;}
 
 /* ── BONUS GEMS ── */
-/* Flame gem — orange pulsing ring */
 @keyframes flamePulse{
-  0%,100%{box-shadow:var(--gem-shadow),0 0 12px 4px rgba(255,140,20,.6),0 0 28px 8px rgba(255,80,0,.3)}
-  50%    {box-shadow:var(--gem-shadow),0 0 20px 8px rgba(255,180,40,.8),0 0 45px 12px rgba(255,120,0,.5)}
+  0%,100%{filter:drop-shadow(0 0 8px #ff8800) drop-shadow(0 0 16px rgba(255,80,0,.4))}
+  50%    {filter:drop-shadow(0 0 14px #ffcc00) drop-shadow(0 0 28px rgba(255,160,0,.7))}
 }
-.gem.flame{animation:flamePulse 1s ease-in-out infinite;}
-.gem.flame .bonus-icon{content:'🔥';}
+.gem.flame svg{animation:flamePulse 1s ease-in-out infinite;}
 
-/* Star gem — spinning aura */
 @keyframes starSpin{
-  0%  {box-shadow:var(--gem-shadow),0 0 0 3px rgba(255,230,80,.9),0 0 25px 6px rgba(255,220,0,.5)}
-  50% {box-shadow:var(--gem-shadow),0 0 0 3px rgba(255,255,150,.9),0 0 40px 12px rgba(255,240,80,.7)}
-  100%{box-shadow:var(--gem-shadow),0 0 0 3px rgba(255,230,80,.9),0 0 25px 6px rgba(255,220,0,.5)}
+  0%,100%{filter:drop-shadow(0 0 8px #ffdd00) drop-shadow(0 0 20px rgba(255,220,0,.5))}
+  50%    {filter:drop-shadow(0 0 14px #ffffff) drop-shadow(0 0 35px rgba(255,240,100,.8))}
 }
-.gem.star{animation:starSpin .8s ease-in-out infinite;}
+.gem.star svg{animation:starSpin .8s ease-in-out infinite;}
 
-/* Hyper gem — rainbow shifting */
 @keyframes hyperRainbow{
-  0%  {box-shadow:var(--gem-shadow),0 0 0 3px #ff4466,0 0 30px 8px rgba(255,40,80,.5)}
-  25% {box-shadow:var(--gem-shadow),0 0 0 3px #44aaff,0 0 30px 8px rgba(40,150,255,.5)}
-  50% {box-shadow:var(--gem-shadow),0 0 0 3px #44ffaa,0 0 30px 8px rgba(40,220,120,.5)}
-  75% {box-shadow:var(--gem-shadow),0 0 0 3px #ff44ff,0 0 30px 8px rgba(200,40,255,.5)}
-  100%{box-shadow:var(--gem-shadow),0 0 0 3px #ff4466,0 0 30px 8px rgba(255,40,80,.5)}
+  0%  {filter:drop-shadow(0 0 10px #ff4466) drop-shadow(0 0 22px rgba(255,40,80,.5))}
+  25% {filter:drop-shadow(0 0 10px #44aaff) drop-shadow(0 0 22px rgba(40,150,255,.5))}
+  50% {filter:drop-shadow(0 0 10px #44ffaa) drop-shadow(0 0 22px rgba(40,220,120,.5))}
+  75% {filter:drop-shadow(0 0 10px #ff44ff) drop-shadow(0 0 22px rgba(200,40,255,.5))}
+  100%{filter:drop-shadow(0 0 10px #ff4466) drop-shadow(0 0 22px rgba(255,40,80,.5))}
 }
-.gem.hyper{animation:hyperRainbow 1.2s linear infinite;}
+.gem.hyper svg{animation:hyperRainbow 1.2s linear infinite;}
 
 /* bonus icon badge */
 .bonus-icon{
@@ -356,57 +328,221 @@ h1{
 <script>
 // ── CONFIG ────────────────────────────────────────────────
 const R=8, C=8;
-const GEM_COLORS=[
-  // Ruby
+// ── GEM SVG DEFINITIONS ──────────────────────────────────
+// Each gem type: unique faceted shape drawn in SVG with lighting simulation
+const GEM_DEFS = [
+  // 0 Ruby — octagon/diamond cut
   {
-    bg:'radial-gradient(circle at 32% 28%, #ffaabb 0%, #ff2255 45%, #8a0020 100%)',
-    shadow:'rgba(255,30,70,.75)',glow:'#ff2255',
-    rim:'rgba(255,100,130,.4)'
+    name:'Ruby', glow:'#ff2255', shadow:'rgba(255,30,70,.8)',
+    svg:(id)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="rg${id}" cx="38%" cy="30%" r="60%">
+          <stop offset="0%" stop-color="#ffccd8"/>
+          <stop offset="35%" stop-color="#ff3366"/>
+          <stop offset="75%" stop-color="#cc0033"/>
+          <stop offset="100%" stop-color="#6a0018"/>
+        </radialGradient>
+        <filter id="rf${id}"><feGaussianBlur stdDeviation="1.5" result="b"/><feComposite in="SourceGraphic" in2="b"/></filter>
+      </defs>
+      <!-- main octagon facets -->
+      <polygon points="50,8 78,22 92,50 78,78 50,92 22,78 8,50 22,22" fill="url(#rg${id})"/>
+      <!-- dark facets bottom-right -->
+      <polygon points="50,92 78,78 92,50 50,50" fill="rgba(0,0,0,.25)"/>
+      <polygon points="50,92 22,78 8,50 50,50"  fill="rgba(0,0,0,.12)"/>
+      <!-- light facets top-left -->
+      <polygon points="50,8 78,22 50,50"  fill="rgba(255,255,255,.18)"/>
+      <polygon points="50,8 22,22 8,50 50,50" fill="rgba(255,255,255,.10)"/>
+      <!-- center cross sparkle -->
+      <polygon points="50,32 54,48 50,50 46,48" fill="rgba(255,255,255,.55)"/>
+      <polygon points="68,50 52,54 50,50 52,46" fill="rgba(255,255,255,.35)"/>
+      <!-- top highlight -->
+      <ellipse cx="38" cy="28" rx="12" ry="8" fill="rgba(255,255,255,.5)" transform="rotate(-30,38,28)"/>
+    </svg>`
   },
-  // Sapphire
+  // 1 Sapphire — hexagon
   {
-    bg:'radial-gradient(circle at 32% 28%, #aaccff 0%, #1155ff 45%, #001090 100%)',
-    shadow:'rgba(20,80,255,.75)',glow:'#2266ff',
-    rim:'rgba(80,140,255,.4)'
+    name:'Sapphire', glow:'#2266ff', shadow:'rgba(20,80,255,.8)',
+    svg:(id)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="rg${id}" cx="35%" cy="28%" r="65%">
+          <stop offset="0%" stop-color="#cce0ff"/>
+          <stop offset="30%" stop-color="#3388ff"/>
+          <stop offset="70%" stop-color="#0033cc"/>
+          <stop offset="100%" stop-color="#001066"/>
+        </radialGradient>
+      </defs>
+      <!-- hexagon -->
+      <polygon points="50,6 88,28 88,72 50,94 12,72 12,28" fill="url(#rg${id})"/>
+      <!-- facets -->
+      <polygon points="50,94 88,72 88,28 50,50" fill="rgba(0,0,0,.22)"/>
+      <polygon points="50,94 12,72 12,28 50,50"  fill="rgba(0,0,0,.10)"/>
+      <polygon points="50,6 88,28 50,50"  fill="rgba(255,255,255,.20)"/>
+      <polygon points="50,6 12,28 50,50"  fill="rgba(255,255,255,.12)"/>
+      <!-- inner hex lines -->
+      <polygon points="50,20 74,34 74,66 50,80 26,66 26,34" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+      <!-- sparkle -->
+      <polygon points="50,28 53,46 50,50 47,46" fill="rgba(255,255,255,.6)"/>
+      <ellipse cx="36" cy="26" rx="11" ry="7" fill="rgba(255,255,255,.55)" transform="rotate(-25,36,26)"/>
+    </svg>`
   },
-  // Emerald
+  // 2 Emerald — rectangle cut
   {
-    bg:'radial-gradient(circle at 32% 28%, #aaffcc 0%, #11cc55 45%, #005522 100%)',
-    shadow:'rgba(20,190,70,.75)',glow:'#22cc66',
-    rim:'rgba(80,220,130,.4)'
+    name:'Emerald', glow:'#22cc66', shadow:'rgba(20,190,70,.8)',
+    svg:(id)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="rg${id}" cx="36%" cy="30%" r="62%">
+          <stop offset="0%" stop-color="#ccffdd"/>
+          <stop offset="30%" stop-color="#33dd77"/>
+          <stop offset="68%" stop-color="#009944"/>
+          <stop offset="100%" stop-color="#004422"/>
+        </radialGradient>
+      </defs>
+      <!-- emerald cut octagon (stepped) -->
+      <polygon points="35,8 65,8 90,30 90,70 65,92 35,92 10,70 10,30" fill="url(#rg${id})"/>
+      <!-- step cuts -->
+      <polygon points="40,15 60,15 80,33 80,67 60,85 40,85 20,67 20,33" fill="none" stroke="rgba(0,80,20,.3)" stroke-width="1.5"/>
+      <polygon points="44,22 56,22 72,36 72,64 56,78 44,78 28,64 28,36" fill="none" stroke="rgba(0,80,20,.2)" stroke-width="1"/>
+      <!-- dark facets -->
+      <polygon points="65,92 90,70 90,30 65,8 50,50" fill="rgba(0,0,0,.20)"/>
+      <!-- light facets -->
+      <polygon points="35,8 65,8 50,50" fill="rgba(255,255,255,.22)"/>
+      <polygon points="10,30 35,8 50,50" fill="rgba(255,255,255,.14)"/>
+      <!-- highlight -->
+      <ellipse cx="37" cy="27" rx="13" ry="8" fill="rgba(255,255,255,.52)" transform="rotate(-20,37,27)"/>
+      <polygon points="50,26 54,45 50,50 46,45" fill="rgba(255,255,255,.5)"/>
+    </svg>`
   },
-  // Topaz
+  // 3 Topaz — teardrop / pear cut
   {
-    bg:'radial-gradient(circle at 32% 28%, #fff0aa 0%, #ffcc00 45%, #885500 100%)',
-    shadow:'rgba(240,180,0,.75)',glow:'#ffcc22',
-    rim:'rgba(255,220,80,.4)'
+    name:'Topaz', glow:'#ffcc22', shadow:'rgba(240,180,0,.8)',
+    svg:(id)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="rg${id}" cx="38%" cy="28%" r="60%">
+          <stop offset="0%" stop-color="#fffacc"/>
+          <stop offset="30%" stop-color="#ffdd44"/>
+          <stop offset="68%" stop-color="#cc9900"/>
+          <stop offset="100%" stop-color="#775500"/>
+        </radialGradient>
+      </defs>
+      <!-- pear/teardrop shape -->
+      <path d="M50,8 C72,8 88,26 88,48 C88,70 70,88 50,94 C30,88 12,70 12,48 C12,26 28,8 50,8Z" fill="url(#rg${id})"/>
+      <!-- facets -->
+      <path d="M50,8 C72,8 88,26 88,48 L50,50Z" fill="rgba(255,255,255,.18)"/>
+      <path d="M12,48 C12,26 28,8 50,8 L50,50Z" fill="rgba(255,255,255,.10)"/>
+      <path d="M88,48 C88,70 70,88 50,94 L50,50Z" fill="rgba(0,0,0,.22)"/>
+      <path d="M50,94 C30,88 12,70 12,48 L50,50Z" fill="rgba(0,0,0,.12)"/>
+      <!-- inner oval -->
+      <ellipse cx="50" cy="52" rx="22" ry="26" fill="none" stroke="rgba(255,200,0,.2)" stroke-width="1.5"/>
+      <!-- highlight -->
+      <ellipse cx="37" cy="28" rx="12" ry="8" fill="rgba(255,255,255,.6)" transform="rotate(-25,37,28)"/>
+      <polygon points="50,24 54,44 50,50 46,44" fill="rgba(255,255,255,.5)"/>
+    </svg>`
   },
-  // Amethyst
+  // 4 Amethyst — marquise (oval pointed)
   {
-    bg:'radial-gradient(circle at 32% 28%, #eaaaff 0%, #aa11ff 45%, #550099 100%)',
-    shadow:'rgba(160,20,255,.75)',glow:'#bb44ff',
-    rim:'rgba(200,100,255,.4)'
+    name:'Amethyst', glow:'#bb44ff', shadow:'rgba(160,20,255,.8)',
+    svg:(id)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="rg${id}" cx="36%" cy="30%" r="64%">
+          <stop offset="0%" stop-color="#f0ccff"/>
+          <stop offset="30%" stop-color="#cc44ff"/>
+          <stop offset="68%" stop-color="#8800cc"/>
+          <stop offset="100%" stop-color="#440066"/>
+        </radialGradient>
+      </defs>
+      <!-- marquise diamond shape -->
+      <path d="M50,6 C68,14 90,28 90,50 C90,72 68,86 50,94 C32,86 10,72 10,50 C10,28 32,14 50,6Z" fill="url(#rg${id})"/>
+      <!-- vertical ridge line facets -->
+      <path d="M50,6 L90,50 L50,94 L50,50Z" fill="rgba(0,0,0,.2)"/>
+      <path d="M50,6 L10,50 L50,94 L50,50Z" fill="rgba(0,0,0,.08)"/>
+      <!-- top sheen -->
+      <path d="M50,6 C68,14 90,28 90,50 L50,50Z" fill="rgba(255,255,255,.18)"/>
+      <path d="M50,6 C32,14 10,28 10,50 L50,50Z" fill="rgba(255,255,255,.10)"/>
+      <!-- inner oval cut -->
+      <ellipse cx="50" cy="50" rx="20" ry="28" fill="none" stroke="rgba(220,150,255,.25)" stroke-width="1.5"/>
+      <!-- highlight -->
+      <ellipse cx="37" cy="27" rx="11" ry="7" fill="rgba(255,255,255,.58)" transform="rotate(-30,37,27)"/>
+      <polygon points="50,22 53,44 50,50 47,44" fill="rgba(255,255,255,.55)"/>
+    </svg>`
   },
-  // Amber
+  // 5 Amber — square princess cut
   {
-    bg:'radial-gradient(circle at 32% 28%, #ffcc99 0%, #ff6600 45%, #882200 100%)',
-    shadow:'rgba(255,90,10,.75)',glow:'#ff7722',
-    rim:'rgba(255,150,60,.4)'
+    name:'Amber', glow:'#ff7722', shadow:'rgba(255,90,10,.8)',
+    svg:(id)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="rg${id}" cx="35%" cy="30%" r="60%">
+          <stop offset="0%" stop-color="#ffe0bb"/>
+          <stop offset="30%" stop-color="#ff8833"/>
+          <stop offset="68%" stop-color="#cc4400"/>
+          <stop offset="100%" stop-color="#771100"/>
+        </radialGradient>
+      </defs>
+      <!-- square with chamfered corners (princess cut) -->
+      <polygon points="22,8 78,8 92,22 92,78 78,92 22,92 8,78 8,22" fill="url(#rg${id})"/>
+      <!-- grid facet lines -->
+      <line x1="8" y1="50" x2="92" y2="50" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <line x1="50" y1="8" x2="50" y2="92" stroke="rgba(255,255,255,.10)" stroke-width="1"/>
+      <line x1="22" y1="8"  x2="8"  y2="22" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+      <line x1="78" y1="8"  x2="92" y2="22" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+      <line x1="92" y1="78" x2="78" y2="92" stroke="rgba(0,0,0,.12)" stroke-width="1"/>
+      <line x1="8"  y1="78" x2="22" y2="92" stroke="rgba(0,0,0,.12)" stroke-width="1"/>
+      <!-- dark right/bottom -->
+      <polygon points="50,50 92,22 92,78 78,92 50,92" fill="rgba(0,0,0,.22)"/>
+      <!-- light top/left -->
+      <polygon points="50,50 8,22 22,8 78,8" fill="rgba(255,255,255,.18)"/>
+      <!-- highlight -->
+      <ellipse cx="33" cy="25" rx="14" ry="9" fill="rgba(255,255,255,.55)" transform="rotate(-20,33,25)"/>
+      <polygon points="50,20 55,44 50,50 45,44" fill="rgba(255,255,255,.5)"/>
+    </svg>`
   },
-  // Aquamarine
+  // 6 Aquamarine — trillion (triangle) cut
   {
-    bg:'radial-gradient(circle at 32% 28%, #aaffff 0%, #00ccee 45%, #005566 100%)',
-    shadow:'rgba(0,190,220,.75)',glow:'#33ddff',
-    rim:'rgba(80,230,255,.4)'
+    name:'Aquamarine', glow:'#33ddff', shadow:'rgba(0,190,220,.8)',
+    svg:(id)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="rg${id}" cx="40%" cy="30%" r="62%">
+          <stop offset="0%" stop-color="#ccffff"/>
+          <stop offset="28%" stop-color="#44eeff"/>
+          <stop offset="65%" stop-color="#00aacc"/>
+          <stop offset="100%" stop-color="#004455"/>
+        </radialGradient>
+      </defs>
+      <!-- trillion triangle with rounded tips -->
+      <path d="M50,6 L90,80 C90,88 82,94 74,94 L26,94 C18,94 10,88 10,80 Z" fill="url(#rg${id})"/>
+      <!-- inner triangle facet -->
+      <polygon points="50,22 76,70 24,70" fill="none" stroke="rgba(0,200,230,.25)" stroke-width="1.5"/>
+      <polygon points="50,36 64,62 36,62" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+      <!-- dark right facet -->
+      <polygon points="50,50 90,80 74,94 50,94 50,50" fill="rgba(0,0,0,.2)"/>
+      <!-- light left facet -->
+      <polygon points="50,6 50,50 24,70 10,80" fill="rgba(255,255,255,.15)"/>
+      <!-- top facet -->
+      <polygon points="50,6 90,80 50,50" fill="rgba(255,255,255,.10)"/>
+      <!-- highlight -->
+      <ellipse cx="38" cy="28" rx="12" ry="7" fill="rgba(255,255,255,.58)" transform="rotate(-15,38,28)"/>
+      <polygon points="50,18 54,42 50,50 46,42" fill="rgba(255,255,255,.55)"/>
+    </svg>`
   },
 ];
-const GN=GEM_COLORS.length;
+const GN=GEM_DEFS.length;
 const LVL=[0,500,1200,2200,3500,5200,7500,10500,14000,19000,99999];
 
 // bonus encoding
 const BF=100,BS=200,BH=300;
 function gc(v){return v>=BH?0:v>=BS?v-BS:v>=BF?v-BF:v;}
 function isB(v){return v>=BF;}
+
+// pre-render SVG data URLs once (avoid regenerating every applyGem call)
+let _svgCache={};
+function getSVG(colorIdx, uid){
+  const key=colorIdx+'_'+uid;
+  if(!_svgCache[key]){
+    const def=GEM_DEFS[colorIdx];
+    const svgStr=def.svg(uid).trim();
+    _svgCache[key]='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svgStr);
+  }
+  return _svgCache[key];
+}
 
 // ── STATE ─────────────────────────────────────────────────
 let board=[], sel=null, busy=false, combo=0;
@@ -426,6 +562,7 @@ function calcCS(){
 // ── BUILD DOM BOARD (once) ────────────────────────────────
 function buildDOM(){
   calcCS();
+  initGemUIDs();
   const boardEl=document.getElementById('board');
   boardEl.innerHTML='';
   cells=[]; gems=[];
@@ -447,30 +584,30 @@ function buildDOM(){
 }
 
 // ── APPLY GEM VISUAL ──────────────────────────────────────
+let _gemUID=0;
+const _gemSlotID=[];
+function initGemUIDs(){
+  _gemSlotID.length=0;
+  for(let r=0;r<R;r++){_gemSlotID.push([]);for(let c=0;c<C;c++)_gemSlotID[r].push(++_gemUID);}
+}
+
 function applyGem(r,c){
   const v=board[r][c];
   const el=gems[r][c];
   if(v===-1){
-    el.style.cssText='';
-    el.className='gem';
-    el.innerHTML='';
-    return;
+    el.innerHTML='';el.style.cssText='';el.className='gem';return;
   }
-  const col=GEM_COLORS[gc(v)];
+  const ci=gc(v);
+  const def=GEM_DEFS[ci];
+  const uid=_gemSlotID[r][c];
   const bonusClass=v>=BH?' hyper':v>=BS?' star':v>=BF?' flame':'';
   const icon=v>=BH?'💥':v>=BS?'⭐':v>=BF?'🔥':'';
-
-  // Multi-layer background: base gem + inner depth shadow
-  el.style.background=col.bg;
-  el.style.setProperty('--gem-shadow',
-    `0 4px 16px ${col.shadow}, 0 2px 6px rgba(0,0,0,.5), inset 0 -2px 6px rgba(0,0,0,.3), inset 0 1px 2px ${col.rim}`
-  );
-  el.style.boxShadow=`var(--gem-shadow)`;
-
+  el.innerHTML=def.svg(uid)+(icon?`<span class="bonus-icon">${icon}</span>`:'');
+  el.style.background='none';
+  el.style.setProperty('--gem-glow',def.glow);
+  el.style.setProperty('--gem-shadow',`0 4px 18px ${def.shadow},0 2px 8px rgba(0,0,0,.6)`);
+  el.style.boxShadow='var(--gem-shadow)';
   el.className='gem'+bonusClass;
-
-  // bonus icon
-  el.innerHTML=icon ? `<span class="bonus-icon">${icon}</span>` : '';
 }
 
 // ── GRID INIT ─────────────────────────────────────────────
@@ -778,31 +915,19 @@ function spawnSparks(r,c,colorIdx){
   const wr=wrap.getBoundingClientRect();
   const cx=cr.left-wr.left+cr.width/2;
   const cy=cr.top-wr.top+cr.height/2;
-  const colors=[
-    GEM_COLORS[colorIdx].glow,
-    '#ffffff',
-    GEM_COLORS[colorIdx].glow,
-    '#ffeeaa',
-  ];
+  const glow=GEM_DEFS[colorIdx].glow;
+  const sparkColors=[glow,'#ffffff',glow,'#ffeeaa'];
   const count=10+Math.floor(Math.random()*6);
   for(let i=0;i<count;i++){
     const spark=document.createElement('div');
     spark.className='spark';
     const angle=Math.random()*Math.PI*2;
-    const dist=20+Math.random()*35;
+    const dist=22+Math.random()*38;
     const size=2+Math.random()*4;
     const dur=(.28+Math.random()*.3).toFixed(2);
-    spark.style.cssText=`
-      left:${cx}px;top:${cy}px;
-      width:${size}px;height:${size}px;
-      background:${colors[i%colors.length]};
-      --dx:${(Math.cos(angle)*dist).toFixed(1)}px;
-      --dy:${(Math.sin(angle)*dist).toFixed(1)}px;
-      --dur:${dur}s;
-      box-shadow:0 0 4px ${colors[i%colors.length]};
-    `;
+    spark.style.cssText=`left:${cx}px;top:${cy}px;width:${size}px;height:${size}px;background:${sparkColors[i%4]};--dx:${(Math.cos(angle)*dist).toFixed(1)}px;--dy:${(Math.sin(angle)*dist).toFixed(1)}px;--dur:${dur}s;box-shadow:0 0 4px ${glow};`;
     wrap.appendChild(spark);
-    setTimeout(()=>spark.remove(), +dur*1000+50);
+    setTimeout(()=>spark.remove(),+dur*1000+60);
   }
 }
 
