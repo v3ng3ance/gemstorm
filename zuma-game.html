@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>GemBlast – Zuma Game</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600&display=swap');
+
+  :root {
+    --gold: #f5c842;
+    --gold2: #e8a020;
+    --deep: #0a0615;
+    --purple: #2d0a4e;
+    --teal: #0d4a5e;
+    --glow: #9b59b6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
+
+  body {
+    background: var(--deep);
+    font-family: 'Cinzel', serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #gameWrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  canvas { display: block; }
+
+  /* UI overlays */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(45,10,78,0.97) 0%, rgba(10,6,21,0.99) 100%);
+    z-index: 10;
+  }
+
+  .overlay h1 {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(2rem, 8vw, 4.5rem);
+    font-weight: 900;
+    background: linear-gradient(135deg, #f5c842, #e8a020, #f5c842);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    filter: drop-shadow(0 0 30px rgba(245,200,66,0.6));
+    margin-bottom: 0.3em;
+    letter-spacing: 2px;
+  }
+
+  .overlay .subtitle {
+    font-family: 'Cinzel', serif;
+    color: #c8a0e0;
+    font-size: clamp(0.7rem, 2.5vw, 1rem);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 2.5em;
+  }
+
+  .gem-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 2em;
+  }
+
+  .gem-preview {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    box-shadow: 0 0 15px currentColor;
+    animation: pulse 2s infinite alternate;
+  }
+
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.2); } }
+
+  .btn {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(0.9rem, 3vw, 1.2rem);
+    font-weight: 700;
+    letter-spacing: 3px;
+    padding: 1em 2.5em;
+    border: 2px solid var(--gold);
+    background: linear-gradient(135deg, rgba(245,200,66,0.15), rgba(232,160,32,0.1));
+    color: var(--gold);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    margin: 0.4em;
+    text-transform: uppercase;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(245,200,66,0.3), rgba(232,160,32,0.2));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .btn:hover::before, .btn:active::before { opacity: 1; }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(245,200,66,0.3); }
+
+  #hud {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(180deg, rgba(10,6,21,0.9) 0%, transparent 100%);
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  #hud .hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #hud .hud-label {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(0.45rem, 1.5vw, 0.65rem);
+    color: #9b7fc0;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  #hud .hud-value {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(1rem, 3vw, 1.6rem);
+    color: var(--gold);
+    filter: drop-shadow(0 0 8px rgba(245,200,66,0.5));
+  }
+
+  .level-badge {
+    background: linear-gradient(135deg, rgba(245,200,66,0.2), rgba(155,89,182,0.2));
+    border: 1px solid rgba(245,200,66,0.4);
+    border-radius: 20px;
+    padding: 4px 16px;
+  }
+
+  #livesRow { display: flex; gap: 6px; }
+  .life-gem {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ff6b6b, #c0392b);
+    box-shadow: 0 0 8px rgba(255,107,107,0.6);
+    transition: all 0.3s;
+  }
+  .life-gem.lost { background: #333; box-shadow: none; }
+
+  /* Win/Lose screens */
+  .big-text {
+    font-family: 'Cinzel Decorative', cursive;
+    font-size: clamp(2.5rem, 10vw, 5rem);
+    font-weight: 900;
+    margin-bottom: 0.2em;
+  }
+  .win-text { 
+    background: linear-gradient(135deg, #f5c842, #27ae60, #f5c842);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    filter: drop-shadow(0 0 40px rgba(39,174,96,0.7));
+  }
+  .lose-text {
+    background: linear-gradient(135deg, #e74c3c, #c0392b, #e74c3c);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    filter: drop-shadow(0 0 40px rgba(231,76,60,0.7));
+  }
+
+  .score-display {
+    font-family: 'Cinzel', serif;
+    color: #c8a0e0;
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    margin-bottom: 2em;
+  }
+
+  /* Stars */
+  .stars-row { display: flex; gap: 8px; margin-bottom: 1.5em; font-size: 2.5rem; }
+
+  /* Particle canvas behind */
+  #bgCanvas { position: absolute; inset: 0; z-index: 0; }
+</style>
+</head>
+<body>
+<div id="gameWrapper">
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="hud" style="display:none;">
+    <div class="hud-item">
+      <span class="hud-label">Score</span>
+      <span class="hud-value" id="scoreVal">0</span>
+    </div>
+    <div class="hud-item level-badge">
+      <span class="hud-label">Level</span>
+      <span class="hud-value" id="levelVal">1</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Lives</span>
+      <div id="livesRow"></div>
+    </div>
+  </div>
+
+  <!-- Menu screen -->
+  <div class="overlay" id="menuScreen">
+    <h1>GemBlast</h1>
+    <div class="subtitle">Match · Shoot · Destroy</div>
+    <div class="gem-row" id="menuGems"></div>
+    <button class="btn" onclick="startGame()">▶ Play</button>
+    <button class="btn" onclick="showHowTo()" style="font-size:0.8em; opacity:0.8;">How to Play</button>
+  </div>
+
+  <!-- How to play -->
+  <div class="overlay" id="howtoScreen" style="display:none;">
+    <h1 style="font-size:clamp(1.5rem,5vw,3rem); margin-bottom:0.5em;">How to Play</h1>
+    <div style="max-width:360px; text-align:center; color:#c8a0e0; font-size:clamp(0.8rem,2.5vw,1rem); line-height:1.8; margin-bottom:2em; padding: 0 1em;">
+      🎯 <strong style="color:var(--gold)">Aim & Shoot</strong> gems along the path<br>
+      💎 <strong style="color:var(--gold)">Match 3+</strong> same-color gems to destroy them<br>
+      ⏳ <strong style="color:var(--gold)">Don't let</strong> gems reach the skull!<br>
+      🖱️ <strong style="color:var(--gold)">Click/Tap</strong> to shoot · <strong style="color:var(--gold)">Move mouse/finger</strong> to aim<br>
+      📱 <strong style="color:var(--gold)">Mobile:</strong> touch to aim & shoot
+    </div>
+    <button class="btn" onclick="hideHowTo()">Back</button>
+  </div>
+
+  <!-- Win screen -->
+  <div class="overlay" id="winScreen" style="display:none;">
+    <div class="big-text win-text">Level Clear!</div>
+    <div class="stars-row" id="starsRow">⭐⭐⭐</div>
+    <div class="score-display">Score: <span id="winScore">0</span></div>
+    <button class="btn" onclick="nextLevel()" id="nextLvlBtn">Next Level ▶</button>
+    <button class="btn" onclick="goMenu()" style="opacity:0.7; font-size:0.85em;">Menu</button>
+  </div>
+
+  <!-- Lose screen -->
+  <div class="overlay" id="loseScreen" style="display:none;">
+    <div class="big-text lose-text">Game Over</div>
+    <div class="score-display">Final Score: <span id="loseScore">0</span></div>
+    <button class="btn" onclick="restartLevel()">↺ Retry</button>
+    <button class="btn" onclick="goMenu()" style="opacity:0.7; font-size:0.85em;">Menu</button>
+  </div>
+</div>
+
+<script>
+// ===================== CONFIG =====================
+const GEM_COLORS = [
+  { name:'ruby',    fill:'#e74c3c', hi:'#ff8a80', shadow:'#c0392b', glow:'rgba(231,76,60,0.7)' },
+  { name:'sapphire',fill:'#2980b9', hi:'#82cfff', shadow:'#1a5276', glow:'rgba(41,128,185,0.7)' },
+  { name:'emerald', fill:'#27ae60', hi:'#7dffb3', shadow:'#1e8449', glow:'rgba(39,174,96,0.7)' },
+  { name:'amber',   fill:'#f39c12', hi:'#ffe082', shadow:'#b7770d', glow:'rgba(243,156,18,0.7)' },
+  { name:'amethyst',fill:'#8e44ad', hi:'#ce93d8', shadow:'#6c3483', glow:'rgba(142,68,173,0.7)' },
+  { name:'diamond', fill:'#00bcd4', hi:'#e0f7fa', shadow:'#00838f', glow:'rgba(0,188,212,0.7)' },
+];
+
+const LEVELS = [
+  { // Level 1 - simple S curve
+    name: "Crystal Cave",
+    colors: 3,
+    speed: 0.35,
+    gemCount: 40,
+    bg: { type:'cave', colors:['#0a0615','#1a0530','#0d1a3a'] },
+    path: (W,H) => {
+      const pts = [];
+      for(let t=0;t<=1;t+=0.005){
+        const x = W*0.05 + t*(W*0.9);
+        const y = H*0.5 + Math.sin(t*Math.PI*2)*H*0.25;
+        pts.push({x,y});
+      }
+      return pts;
+    }
+  },
+  { // Level 2 - spiral approach
+    name: "Ancient Temple",
+    colors: 4,
+    speed: 0.45,
+    gemCount: 55,
+    bg: { type:'temple', colors:['#0a1a0a','#1a2e0a','#0d1a0d'] },
+    path: (W,H) => {
+      const pts = [];
+      for(let t=0;t<=1;t+=0.004){
+        const angle = t * Math.PI * 3;
+        const r = (0.05 + t*0.38) * Math.min(W,H);
+        const cx = W*0.5, cy = H*0.5;
+        pts.push({ x: cx + Math.cos(angle)*r, y: cy + Math.sin(angle)*r });
+      }
+      return pts;
+    }
+  },
+  { // Level 3 - figure 8
+    name: "Dragon's Lair",
+    colors: 4,
+    speed: 0.55,
+    gemCount: 65,
+    bg: { type:'lava', colors:['#1a0a00','#2e1000','#1a0800'] },
+    path: (W,H) => {
+      const pts = [];
+      for(let t=0;t<=1;t+=0.004){
+        const a = t * Math.PI * 2;
+        const x = W*0.5 + Math.sin(a)*W*0.38;
+        const y = H*0.5 + Math.sin(a*2)*H*0.28;
+        pts.push({x,y});
+      }
+      return pts;
+    }
+  },
+  { // Level 4 - zigzag
+    name: "Sky Fortress",
+    colors: 5,
+    speed: 0.6,
+    gemCount: 70,
+    bg: { type:'sky', colors:['#000d1a','#001a2e','#000a1a'] },
+    path: (W,H) => {
+      const pts = [];
+      const segs = 6;
+      for(let s=0;s<segs;s++){
+        const t0=s/segs, t1=(s+1)/segs;
+        const x0=W*(0.05+s*(0.9/segs)), x1=W*(0.05+(s+1)*(0.9/segs));
+        const y0= s%2===0 ? H*0.2 : H*0.8;
+        const y1= s%2===0 ? H*0.8 : H*0.2;
+        for(let u=0;u<=1;u+=0.02){
+          pts.push({ x: x0+(x1-x0)*u, y: y0+(y1-y0)*u });
+        }
+      }
+      return pts;
+    }
+  },
+  { // Level 5 - complex wave
+    name: "Gem Nexus",
+    colors: 6,
+    speed: 0.7,
+    gemCount: 80,
+    bg: { type:'cosmos', colors:['#050010','#0a0020','#060015'] },
+    path: (W,H) => {
+      const pts = [];
+      for(let t=0;t<=1;t+=0.003){
+        const x = W*0.05 + t*(W*0.9);
+        const y = H*0.5 + Math.sin(t*Math.PI*4)*H*0.18 + Math.sin(t*Math.PI*7)*H*0.1;
+        pts.push({x,y});
+      }
+      return pts;
+    }
+  }
+];
+
+const GEM_R = 16; // gem radius
+const SHOOT_SPEED = 14;
+const MAX_LIVES = 3;
+
+// ===================== GAME STATE =====================
+let state = 'menu';
+let level = 0;
+let score = 0;
+let lives = MAX_LIVES;
+let gems = []; // path gems [{ci, pathIdx, x, y}]
+let pathPts = [];
+let shooter = { x:0, y:0, angle:0, ci:0, nextCi:0 };
+let bullet = null; // {x,y,vx,vy,ci}
+let particles = [];
+let insertQueue = [];
+let totalGems = 0;
+let gemsDestroyed = 0;
+let spawnTimer = 0;
+let spawnInterval = 1.5; // seconds between gem spawns
+let animFrame;
+let lastTime = 0;
+let gameCanvas, bgCanvas, ctx, bgCtx;
+let W, H;
+let bgStars = [];
+let bgParticles = [];
+let pathHeadIdx = 0; // index along path where new gems are inserted
+let shootReady = true;
+let comboCount = 0;
+let paused = false;
+
+// ===================== INIT =====================
+window.addEventListener('load', () => {
+  gameCanvas = document.getElementById('gameCanvas');
+  bgCanvas = document.getElementById('bgCanvas');
+  ctx = gameCanvas.getContext('2d');
+  bgCtx = bgCanvas.getContext('2d');
+  resize();
+  window.addEventListener('resize', resize);
+  buildMenuGems();
+  initBgParticles();
+  startBgLoop();
+});
+
+function resize() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  gameCanvas.width = W;
+  gameCanvas.height = H;
+  bgCanvas.width = W;
+  bgCanvas.height = H;
+  if(state === 'playing') initLevel(level);
+}
+
+function buildMenuGems() {
+  const row = document.getElementById('menuGems');
+  row.innerHTML = '';
+  GEM_COLORS.forEach(g => {
+    const d = document.createElement('div');
+    d.className = 'gem-preview';
+    d.style.background = `radial-gradient(circle at 35% 35%, ${g.hi}, ${g.fill}, ${g.shadow})`;
+    d.style.color = g.fill;
+    d.style.animationDelay = Math.random()*2+'s';
+    row.appendChild(d);
+  });
+}
+
+// ===================== BACKGROUND =====================
+function initBgParticles() {
+  bgStars = [];
+  for(let i=0;i<200;i++){
+    bgStars.push({
+      x: Math.random()*W, y: Math.random()*H,
+      r: Math.random()*1.5+0.3,
+      a: Math.random(),
+      s: Math.random()*0.5+0.2
+    });
+  }
+  bgParticles = [];
+  for(let i=0;i<30;i++){
+    bgParticles.push(newBgParticle());
+  }
+}
+
+function newBgParticle() {
+  return {
+    x: Math.random()*W, y: Math.random()*H,
+    vx:(Math.random()-0.5)*0.3, vy:(Math.random()-0.5)*0.3,
+    r: Math.random()*3+1,
+    a: Math.random()*0.4+0.1,
+    color: GEM_COLORS[Math.floor(Math.random()*GEM_COLORS.length)].fill,
+    life:0, maxLife: 300+Math.random()*200
+  };
+}
+
+let bgT = 0;
+function startBgLoop() {
+  function loop() {
+    bgT += 0.016;
+    drawBg();
+    requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function drawBg() {
+  bgCtx.fillStyle = '#060010';
+  bgCtx.fillRect(0,0,W,H);
+
+  // Nebula gradient blobs
+  const blobs = [
+    { x:W*0.2, y:H*0.3, r:W*0.4, c:'rgba(45,10,78,0.4)' },
+    { x:W*0.8, y:H*0.7, r:W*0.35, c:'rgba(13,74,94,0.3)' },
+    { x:W*0.5, y:H*0.5, r:W*0.3, c:'rgba(80,10,120,0.2)' },
+  ];
+  blobs.forEach(b => {
+    const grad = bgCtx.createRadialGradient(
+      b.x+Math.sin(bgT*0.2)*30, b.y+Math.cos(bgT*0.15)*20, 0,
+      b.x, b.y, b.r
+    );
+    grad.addColorStop(0, b.c);
+    grad.addColorStop(1, 'transparent');
+    bgCtx.fillStyle = grad;
+    bgCtx.fillRect(0,0,W,H);
+  });
+
+  // Stars
+  bgStars.forEach(s => {
+    s.a = 0.3 + 0.7*Math.abs(Math.sin(bgT*s.s + s.x));
+    bgCtx.beginPath();
+    bgCtx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    bgCtx.fillStyle = `rgba(255,255,255,${s.a})`;
+    bgCtx.fill();
+  });
+
+  // Floating particles
+  bgParticles.forEach((p,i) => {
+    p.x += p.vx; p.y += p.vy; p.life++;
+    if(p.life > p.maxLife) bgParticles[i] = newBgParticle();
+    const t = p.life/p.maxLife;
+    const a = p.a * (t < 0.2 ? t/0.2 : t > 0.8 ? (1-t)/0.2 : 1);
+    bgCtx.beginPath();
+    bgCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    bgCtx.fillStyle = p.color.replace(')', `,${a})`).replace('rgb','rgba').replace('#','rgba(').replace('rgba(','rgba(')
+      || `rgba(150,100,255,${a})`;
+    bgCtx.shadowBlur = 8;
+    bgCtx.shadowColor = p.color;
+    bgCtx.fill();
+    bgCtx.shadowBlur = 0;
+  });
+}
+
+// ===================== GAME SETUP =====================
+function startGame() {
+  level = 0;
+  score = 0;
+  lives = MAX_LIVES;
+  document.getElementById('menuScreen').style.display = 'none';
+  initLevel(0);
+}
+
+function initLevel(lvlIdx) {
+  const lvl = LEVELS[lvlIdx];
+  state = 'playing';
+  gems = [];
+  particles = [];
+  bullet = null;
+  pathHeadIdx = 0;
+  spawnTimer = 0;
+  spawnInterval = 1.2;
+  gemsDestroyed = 0;
+  totalGems = lvl.gemCount;
+  comboCount = 0;
+  paused = false;
+  shootReady = true;
+
+  pathPts = lvl.path(W, H);
+  // Clamp path points inside canvas
+  pathPts = pathPts.map(p => ({
+    x: Math.max(GEM_R+5, Math.min(W-GEM_R-5, p.x)),
+    y: Math.max(GEM_R+5, Math.min(H-GEM_R-5, p.y))
+  }));
+
+  // Shooter at center-ish
+  shooter.x = W/2;
+  shooter.y = H*0.8;
+  shooter.ci = randCI(lvl.colors);
+  shooter.nextCi = randCI(lvl.colors);
+  shooter.angle = -Math.PI/2;
+
+  updateHUD();
+  document.getElementById('hud').style.display = 'flex';
+
+  // Input
+  gameCanvas.onmousemove = onMouseMove;
+  gameCanvas.onclick = onShoot;
+  gameCanvas.ontouchmove = onTouchMove;
+  gameCanvas.ontouchstart = onTouchStart;
+
+  cancelAnimationFrame(animFrame);
+  lastTime = performance.now();
+  gameLoop(lastTime);
+}
+
+function randCI(maxColors) {
+  return Math.floor(Math.random() * maxColors);
+}
+
+// ===================== GAME LOOP =====================
+function gameLoop(ts) {
+  const dt = Math.min((ts - lastTime)/1000, 0.05);
+  lastTime = ts;
+
+  update(dt);
+  render();
+
+  if(state === 'playing') {
+    animFrame = requestAnimationFrame(gameLoop);
+  }
+}
+
+// ===================== UPDATE =====================
+function update(dt) {
+  const lvl = LEVELS[level];
+
+  // Spawn new gems at head of path
+  spawnTimer += dt;
+  if(spawnTimer >= spawnInterval && gems.length < totalGems) {
+    const toSpawn = Math.min(3, totalGems - gems.length);
+    if(toSpawn > 0) {
+      spawnTimer = 0;
+      spawnInterval = Math.max(0.3, spawnInterval * 0.97); // speed up over time
+      // insert gems at path start
+      for(let i=0;i<toSpawn;i++){
+        gems.unshift({ ci: randCI(lvl.colors), pathIdx: i*(GEM_R*2+2)/pathLength()*pathPts.length });
+      }
+    }
+  }
+
+  // Move gems along path
+  const speed = lvl.speed * dt * pathPts.length * 0.012;
+  gems.forEach(g => { g.pathIdx = Math.min(g.pathIdx + speed, pathPts.length-1); });
+
+  // Compute positions
+  gems.forEach(g => {
+    const pt = getPt(g.pathIdx);
+    g.x = pt.x; g.y = pt.y;
+  });
+
+  // Check if last gem reached end of path
+  if(gems.length > 0 && gems[gems.length-1].pathIdx >= pathPts.length-2) {
+    lives--;
+    updateHUD();
+    // remove last 5 gems
+    gems.splice(-5);
+    if(lives <= 0) { endGame(false); return; }
+  }
+
+  // Check win condition
+  if(gemsDestroyed >= totalGems && gems.length === 0) {
+    endGame(true);
+    return;
+  }
+
+  // Move bullet
+  if(bullet) {
+    bullet.x += bullet.vx;
+    bullet.y += bullet.vy;
+
+    // Check bounds
+    if(bullet.x < -50 || bullet.x > W+50 || bullet.y < -50 || bullet.y > H+50) {
+      bullet = null;
+      shootReady = true;
+      return;
+    }
+
+    // Check collision with path gems
+    let hit = -1;
+    let minDist = 9999;
+    for(let i=0;i<gems.length;i++){
+      const dx=gems[i].x-bullet.x, dy=gems[i].y-bullet.y;
+      const d = Math.sqrt(dx*dx+dy*dy);
+      if(d < GEM_R*2 && d < minDist) { minDist=d; hit=i; }
+    }
+
+    if(hit >= 0) {
+      // Insert bullet gem near hit
+      const insertIdx = hit;
+      gems.splice(insertIdx, 0, { ci:bullet.ci, pathIdx:gems[insertIdx].pathIdx - 0.01, x:bullet.x, y:bullet.y });
+      bullet = null;
+      shootReady = true;
+
+      // Check matches
+      checkMatches(insertIdx);
+    }
+  }
+
+  // Update particles
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.15; // gravity
+    p.life -= dt * 60;
+    p.r *= 0.97;
+  });
+}
+
+function getPt(idx) {
+  const i = Math.floor(idx);
+  const f = idx - i;
+  const a = pathPts[Math.min(i, pathPts.length-1)];
+  const b = pathPts[Math.min(i+1, pathPts.length-1)];
+  return { x: a.x+(b.x-a.x)*f, y: a.y+(b.y-a.y)*f };
+}
+
+function pathLength() {
+  let l = 0;
+  for(let i=1;i<pathPts.length;i++){
+    const dx=pathPts[i].x-pathPts[i-1].x, dy=pathPts[i].y-pathPts[i-1].y;
+    l += Math.sqrt(dx*dx+dy*dy);
+  }
+  return l;
+}
+
+// ===================== MATCH CHECK =====================
+function checkMatches(insertIdx) {
+  // Find run of same color around insertIdx
+  let start = insertIdx, end = insertIdx;
+  while(start > 0 && gems[start-1].ci === gems[insertIdx].ci) start--;
+  while(end < gems.length-1 && gems[end+1].ci === gems[insertIdx].ci) end++;
+
+  const run = end - start + 1;
+  if(run >= 3) {
+    comboCount++;
+    const pts = run * 100 * comboCount;
+    score += pts;
+    gemsDestroyed += run;
+    updateHUD();
+
+    // Spawn particles
+    for(let i=start;i<=end;i++){
+      spawnParticles(gems[i].x, gems[i].y, GEM_COLORS[gems[i].ci]);
+    }
+    gems.splice(start, run);
+
+    // Score popup
+    spawnScoreParticle(gems[start] ? gems[start].x : W/2, gems[start] ? gems[start].y : H/2, `+${pts}`);
+
+    // Chain reaction check
+    if(gems.length > 0 && start > 0 && start < gems.length) {
+      checkMatches(Math.min(start, gems.length-1));
+    }
+  } else {
+    comboCount = 0;
+  }
+}
+
+function spawnParticles(x, y, gem) {
+  for(let i=0;i<18;i++){
+    const a = Math.random()*Math.PI*2;
+    const spd = Math.random()*5+2;
+    particles.push({
+      x,y,
+      vx: Math.cos(a)*spd, vy: Math.sin(a)*spd,
+      r: Math.random()*5+2,
+      life: 60,
+      color: gem.fill,
+      hi: gem.hi,
+      glow: gem.glow,
+      type:'gem'
+    });
+  }
+}
+
+let scoreParticles = [];
+function spawnScoreParticle(x, y, text) {
+  scoreParticles.push({ x, y, text, life:80, vy:-1.5 });
+}
+
+// ===================== SHOOTING =====================
+function onMouseMove(e) {
+  const rect = gameCanvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  shooter.angle = Math.atan2(my - shooter.y, mx - shooter.x);
+}
+
+function onTouchMove(e) {
+  e.preventDefault();
+  const rect = gameCanvas.getBoundingClientRect();
+  const t = e.touches[0];
+  const mx = t.clientX - rect.left;
+  const my = t.clientY - rect.top;
+  shooter.angle = Math.atan2(my - shooter.y, mx - shooter.x);
+}
+
+function onTouchStart(e) {
+  e.preventDefault();
+  const rect = gameCanvas.getBoundingClientRect();
+  const t = e.touches[0];
+  const mx = t.clientX - rect.left;
+  const my = t.clientY - rect.top;
+  shooter.angle = Math.atan2(my - shooter.y, mx - shooter.x);
+  doShoot();
+}
+
+function onShoot() { doShoot(); }
+
+function doShoot() {
+  if(!shootReady || bullet || state !== 'playing') return;
+  // Clamp angle so we can't shoot downward
+  let a = shooter.angle;
+  // Allow any direction but nudge horizontal shots
+  bullet = {
+    x: shooter.x,
+    y: shooter.y,
+    vx: Math.cos(a)*SHOOT_SPEED,
+    vy: Math.sin(a)*SHOOT_SPEED,
+    ci: shooter.ci
+  };
+  shooter.ci = shooter.nextCi;
+  shooter.nextCi = randCI(LEVELS[level].colors);
+  shootReady = false;
+  // Quick re-enable (allow fast shooting after 200ms)
+  setTimeout(()=>{ if(!bullet) shootReady=true; }, 200);
+}
+
+// When bullet misses, re-enable
+// (handled in update when bullet goes offscreen)
+
+// ===================== RENDER =====================
+function render() {
+  ctx.clearRect(0,0,W,H);
+
+  drawPath();
+  drawGems();
+  drawShooter();
+  drawBullet();
+  drawParticles();
+  drawScoreParticles();
+  drawSkull();
+}
+
+function drawPath() {
+  if(pathPts.length < 2) return;
+  // Outer glow
+  ctx.save();
+  ctx.strokeStyle = 'rgba(155,89,182,0.15)';
+  ctx.lineWidth = GEM_R*2+12;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = 'rgba(155,89,182,0.3)';
+  ctx.beginPath();
+  ctx.moveTo(pathPts[0].x, pathPts[0].y);
+  for(let i=1;i<pathPts.length;i++) ctx.lineTo(pathPts[i].x, pathPts[i].y);
+  ctx.stroke();
+
+  // Main path
+  ctx.strokeStyle = 'rgba(80,40,120,0.5)';
+  ctx.lineWidth = GEM_R*2+4;
+  ctx.shadowBlur = 0;
+  ctx.beginPath();
+  ctx.moveTo(pathPts[0].x, pathPts[0].y);
+  for(let i=1;i<pathPts.length;i++) ctx.lineTo(pathPts[i].x, pathPts[i].y);
+  ctx.stroke();
+
+  // Inner highlight
+  ctx.strokeStyle = 'rgba(180,100,220,0.2)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(pathPts[0].x, pathPts[0].y);
+  for(let i=1;i<pathPts.length;i++) ctx.lineTo(pathPts[i].x, pathPts[i].y);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawGems() {
+  gems.forEach(g => drawGem(ctx, g.x, g.y, GEM_COLORS[g.ci], GEM_R));
+}
+
+function drawGem(c, x, y, col, r) {
+  // Glow
+  c.save();
+  c.shadowBlur = 18;
+  c.shadowColor = col.glow;
+
+  // Main circle
+  const grad = c.createRadialGradient(x-r*0.3, y-r*0.3, r*0.1, x, y, r);
+  grad.addColorStop(0, col.hi);
+  grad.addColorStop(0.4, col.fill);
+  grad.addColorStop(1, col.shadow);
+  c.beginPath();
+  c.arc(x, y, r, 0, Math.PI*2);
+  c.fillStyle = grad;
+  c.fill();
+
+  // Specular
+  c.beginPath();
+  c.arc(x-r*0.28, y-r*0.28, r*0.3, 0, Math.PI*2);
+  c.fillStyle = 'rgba(255,255,255,0.5)';
+  c.fill();
+
+  // Outline
+  c.beginPath();
+  c.arc(x, y, r, 0, Math.PI*2);
+  c.strokeStyle = 'rgba(255,255,255,0.25)';
+  c.lineWidth = 1.5;
+  c.stroke();
+
+  c.restore();
+}
+
+function drawShooter() {
+  const x = shooter.x, y = shooter.y;
+  const ax = shooter.angle;
+
+  ctx.save();
+  // Base platform
+  const grad = ctx.createRadialGradient(x, y, 5, x, y, 40);
+  grad.addColorStop(0, 'rgba(155,89,182,0.6)');
+  grad.addColorStop(1, 'rgba(155,89,182,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, 40, 0, Math.PI*2);
+  ctx.fill();
+
+  // Ring
+  ctx.beginPath();
+  ctx.arc(x, y, 26, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(245,200,66,0.6)';
+  ctx.lineWidth = 2;
+  ctx.shadowBlur = 12;
+  ctx.shadowColor = 'rgba(245,200,66,0.5)';
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // Aim line (dashed)
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(ax);
+  ctx.setLineDash([6,8]);
+  ctx.strokeStyle = 'rgba(245,200,66,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(22,0);
+  ctx.lineTo(120,0);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // Current gem in shooter
+  drawGem(ctx, x, y, GEM_COLORS[shooter.ci], GEM_R);
+
+  // Next gem preview (small, to the side)
+  ctx.save();
+  ctx.translate(x+38, y+28);
+  ctx.scale(0.6,0.6);
+  drawGem(ctx, 0, 0, GEM_COLORS[shooter.nextCi], GEM_R);
+  ctx.restore();
+  ctx.font = '9px Cinzel';
+  ctx.fillStyle = 'rgba(200,160,220,0.7)';
+  ctx.textAlign = 'center';
+  ctx.fillText('NEXT', x+38, y+46);
+
+  ctx.restore();
+}
+
+function drawBullet() {
+  if(!bullet) return;
+  // Trail
+  ctx.save();
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = GEM_COLORS[bullet.ci].glow;
+  drawGem(ctx, bullet.x, bullet.y, GEM_COLORS[bullet.ci], GEM_R-2);
+  // motion trail
+  for(let i=1;i<=4;i++){
+    const tx = bullet.x - bullet.vx*i*0.4;
+    const ty = bullet.y - bullet.vy*i*0.4;
+    const a = 0.3 / i;
+    ctx.globalAlpha = a;
+    ctx.beginPath();
+    ctx.arc(tx, ty, (GEM_R-2)*(1-i*0.15), 0, Math.PI*2);
+    ctx.fillStyle = GEM_COLORS[bullet.ci].fill;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    ctx.save();
+    const a = (p.life/60) * 0.9;
+    ctx.globalAlpha = Math.max(0,a);
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = p.glow || p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.max(0.1,p.r), 0, Math.PI*2);
+    const g = ctx.createRadialGradient(p.x-p.r*0.3,p.y-p.r*0.3,0.1,p.x,p.y,p.r);
+    g.addColorStop(0, p.hi || '#fff');
+    g.addColorStop(1, p.color);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawScoreParticles() {
+  scoreParticles = scoreParticles.filter(p => p.life > 0);
+  scoreParticles.forEach(p => {
+    p.y += p.vy;
+    p.life -= 1.5;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.life/80);
+    ctx.font = `bold ${clamp(16,2.5,24)}px Cinzel`;
+    ctx.fillStyle = '#f5c842';
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = 'rgba(245,200,66,0.8)';
+    ctx.textAlign = 'center';
+    ctx.fillText(p.text, p.x, p.y);
+    ctx.restore();
+  });
+}
+
+function clamp(min,vw,max) {
+  return Math.min(max, Math.max(min, W*vw/100));
+}
+
+function drawSkull() {
+  // End of path marker
+  const end = pathPts[pathPts.length-1];
+  ctx.save();
+  ctx.font = `${GEM_R*2.2}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowBlur = 20;
+  ctx.shadowColor = 'rgba(231,76,60,0.8)';
+  ctx.fillText('💀', end.x, end.y);
+  ctx.restore();
+
+  // Start marker
+  const start = pathPts[0];
+  ctx.save();
+  ctx.font = `${GEM_R*1.8}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('✨', start.x, start.y);
+  ctx.restore();
+}
+
+// ===================== HUD =====================
+function updateHUD() {
+  document.getElementById('scoreVal').textContent = score.toLocaleString();
+  document.getElementById('levelVal').textContent = level+1;
+  // Lives
+  const row = document.getElementById('livesRow');
+  row.innerHTML = '';
+  for(let i=0;i<MAX_LIVES;i++){
+    const d = document.createElement('div');
+    d.className = 'life-gem' + (i >= lives ? ' lost' : '');
+    row.appendChild(d);
+  }
+}
+
+// ===================== END GAME =====================
+function endGame(win) {
+  state = win ? 'win' : 'lose';
+  cancelAnimationFrame(animFrame);
+  document.getElementById('hud').style.display = 'none';
+
+  if(win) {
+    const stars = lives === 3 ? '⭐⭐⭐' : lives === 2 ? '⭐⭐' : '⭐';
+    document.getElementById('starsRow').textContent = stars;
+    document.getElementById('winScore').textContent = score.toLocaleString();
+    const isLast = level >= LEVELS.length-1;
+    document.getElementById('nextLvlBtn').style.display = isLast ? 'none' : 'inline-block';
+    document.getElementById('winScreen').style.display = 'flex';
+  } else {
+    document.getElementById('loseScore').textContent = score.toLocaleString();
+    document.getElementById('loseScreen').style.display = 'flex';
+  }
+}
+
+function nextLevel() {
+  level++;
+  if(level >= LEVELS.length) { goMenu(); return; }
+  document.getElementById('winScreen').style.display = 'none';
+  initLevel(level);
+}
+
+function restartLevel() {
+  lives = MAX_LIVES;
+  document.getElementById('loseScreen').style.display = 'none';
+  initLevel(level);
+}
+
+function goMenu() {
+  state = 'menu';
+  cancelAnimationFrame(animFrame);
+  document.getElementById('winScreen').style.display = 'none';
+  document.getElementById('loseScreen').style.display = 'none';
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('menuScreen').style.display = 'flex';
+  ctx.clearRect(0,0,W,H);
+}
+
+function showHowTo() {
+  document.getElementById('menuScreen').style.display = 'none';
+  document.getElementById('howtoScreen').style.display = 'flex';
+}
+function hideHowTo() {
+  document.getElementById('howtoScreen').style.display = 'none';
+  document.getElementById('menuScreen').style.display = 'flex';
+}
+
+// Keyboard shortcut R = restart
+document.addEventListener('keydown', e => {
+  if(e.key==='r'||e.key==='R') {
+    if(state==='playing') restartLevel();
+  }
+});
+</script>
+</body>
+</html>
