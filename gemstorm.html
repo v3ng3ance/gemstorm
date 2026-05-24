@@ -15,8 +15,12 @@ body{
   color:#c8c8ff;
   font-family:'Raleway',sans-serif;
   display:flex;flex-direction:column;align-items:center;
-  padding:16px 12px 40px;gap:12px;
+  padding:12px 8px 32px;gap:10px;
   overflow-x:hidden;
+}
+
+@media(max-width:600px){
+  body{padding:8px 4px 24px;gap:8px;}
 }
 
 /* animated starfield */
@@ -103,18 +107,21 @@ h1{
   background:linear-gradient(160deg,#0c0820,#070514);
   border:1px solid #1e1a40;
   border-radius:16px;
-  padding:10px;
+  padding:6px;
   box-shadow:
     0 0 0 1px rgba(100,60,255,.15),
     0 0 60px rgba(50,20,140,.6),
     0 20px 60px rgba(0,0,0,.6),
     inset 0 1px 0 rgba(255,255,255,.06);
 }
+@media(max-width:600px){
+  .board-wrap{padding:3px;border-radius:10px;}
+}
 
 #board{
   display:grid;
   grid-template-columns:repeat(8,1fr);
-  gap:4px;
+  gap:var(--gap,3px);
   position:relative;
 }
 
@@ -572,19 +579,22 @@ let cells=[], gems=[];
 let CS=52;
 function calcCS(){
   const isMobile = window.innerWidth <= 600;
-  const padding = 24; // body padding sides
-  const boardPad = 20; // board-wrap padding
   let avail;
   if(isMobile){
-    // On mobile: panel is above, board takes full width
-    avail = window.innerWidth - padding - boardPad;
+    // body padding: 4px each side = 8px
+    // board-wrap padding: 3px each side = 6px
+    // border: 1px each side = 2px
+    // total subtract: 16px
+    avail = window.innerWidth - 16;
   } else {
-    // On desktop: panel (134px) + gap (16px) sit beside board
-    avail = Math.min(window.innerWidth - 134 - 16 - padding - boardPad, 460);
+    // side panel 134px + gap 16px + body padding 16px + board padding 12px
+    avail = Math.min(window.innerWidth - 134 - 16 - 16 - 12, 480);
   }
-  // 8 cells + 7 gaps of 4px each
-  CS = Math.max(36, Math.floor((avail - 4*7) / 8));
+  // 8 cells + 7 gaps of 3px
+  CS = Math.floor((avail - 3*7) / 8);
+  CS = Math.max(36, Math.min(CS, 62));
   document.documentElement.style.setProperty('--cs', CS+'px');
+  document.documentElement.style.setProperty('--gap', '3px');
 }
 
 // ── BUILD DOM BOARD (once) ────────────────────────────────
