@@ -12,67 +12,54 @@ canvas{position:absolute;top:0;left:0;display:block;}
 .scr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;pointer-events:all;}
 .scr.off{display:none;}
 .scr-bg{background:radial-gradient(ellipse at 50% 35%,rgba(40,8,80,.97),rgba(4,0,14,.99));}
-h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(2.2rem,9vw,5rem);font-weight:900;letter-spacing:3px;
-  background:linear-gradient(160deg,#ffe066 0%,#ffaa00 40%,#ff6600 70%,#ffaa00 100%);
+h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(2.2rem,9vw,5rem);font-weight:900;
+  background:linear-gradient(160deg,#ffe066,#ffaa00 40%,#ff6600 70%,#ffaa00);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  filter:drop-shadow(0 0 40px rgba(255,180,0,.7)) drop-shadow(0 2px 8px rgba(0,0,0,.8));
-  margin-bottom:.25em;animation:titlePulse 3s ease-in-out infinite;}
-@keyframes titlePulse{0%,100%{filter:drop-shadow(0 0 30px rgba(255,180,0,.6)) drop-shadow(0 2px 8px rgba(0,0,0,.8));}
-  50%{filter:drop-shadow(0 0 60px rgba(255,180,0,.9)) drop-shadow(0 2px 8px rgba(0,0,0,.8));}}
+  filter:drop-shadow(0 0 40px rgba(255,180,0,.7));margin-bottom:.25em;
+  animation:tp 3s ease-in-out infinite;}
+@keyframes tp{0%,100%{filter:drop-shadow(0 0 30px rgba(255,180,0,.6));}50%{filter:drop-shadow(0 0 60px rgba(255,180,0,.9));}}
 .sub{color:#b89ad8;font-size:clamp(.65rem,2.2vw,.95rem);letter-spacing:5px;text-transform:uppercase;margin-bottom:2.2em;opacity:.85;}
 .btn{font-family:'Cinzel Decorative',cursive;font-size:clamp(.8rem,2.3vw,1.05rem);font-weight:700;letter-spacing:2px;
   padding:.85em 2.4em;border:none;cursor:pointer;border-radius:6px;transition:all .22s;margin:.35em;
   background:linear-gradient(135deg,rgba(255,180,0,.18),rgba(255,100,0,.12));
   color:#ffcc44;box-shadow:inset 0 0 0 1.5px rgba(255,180,0,.5),0 4px 20px rgba(255,140,0,.15);}
 .btn:hover{background:linear-gradient(135deg,rgba(255,180,0,.35),rgba(255,100,0,.25));
-  box-shadow:inset 0 0 0 1.5px rgba(255,200,0,.8),0 6px 30px rgba(255,140,0,.35);
-  transform:translateY(-2px) scale(1.03);}
+  transform:translateY(-2px) scale(1.03);box-shadow:inset 0 0 0 1.5px rgba(255,200,0,.8),0 6px 30px rgba(255,140,0,.35);}
 .btn:active{transform:translateY(0) scale(.98);}
-.btn.sec{color:#a080c0;box-shadow:inset 0 0 0 1.5px rgba(160,128,192,.4),0 4px 20px rgba(100,50,180,.1);}
-.btn.sec:hover{box-shadow:inset 0 0 0 1.5px rgba(180,140,220,.7),0 6px 30px rgba(120,60,200,.3);}
+.btn.sec{color:#a080c0;box-shadow:inset 0 0 0 1.5px rgba(160,128,192,.4);}
 .gemrow{display:flex;gap:12px;margin-bottom:2em;}
-.gp{width:32px;height:32px;border-radius:50%;animation:gFloat 2.4s ease-in-out infinite alternate;}
-@keyframes gFloat{from{transform:translateY(0) scale(1);}to{transform:translateY(-6px) scale(1.12);}}
-/* HUD */
+.gp{width:32px;height:32px;border-radius:50%;animation:gf 2.4s ease-in-out infinite alternate;}
+@keyframes gf{from{transform:translateY(0) scale(1);}to{transform:translateY(-6px) scale(1.12);}}
 #hud{position:absolute;top:0;left:0;right:0;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;
   background:linear-gradient(180deg,rgba(4,0,14,.88),transparent);z-index:15;pointer-events:none;}
 .hitem{display:flex;flex-direction:column;align-items:center;}
 .hlab{font-size:clamp(.42rem,1.3vw,.58rem);color:#9070b8;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:1px;}
-.hval{font-family:'Cinzel Decorative',cursive;font-size:clamp(.9rem,2.8vw,1.45rem);color:#ffcc44;
-  filter:drop-shadow(0 0 8px rgba(255,200,0,.55));}
+.hval{font-family:'Cinzel Decorative',cursive;font-size:clamp(.9rem,2.8vw,1.45rem);color:#ffcc44;filter:drop-shadow(0 0 8px rgba(255,200,0,.55));}
 .badge{background:rgba(255,180,0,.08);box-shadow:inset 0 0 0 1px rgba(255,180,0,.25);border-radius:22px;padding:4px 16px;}
 .heart{display:inline-block;width:clamp(12px,2vw,16px);height:clamp(12px,2vw,16px);border-radius:50%;margin:0 2px;
-  background:radial-gradient(circle at 35% 30%,#ff9090,#e63030,#a00000);
-  box-shadow:0 0 8px rgba(230,50,50,.7);transition:all .3s;}
+  background:radial-gradient(circle at 35% 30%,#ff9090,#e63030,#a00000);box-shadow:0 0 8px rgba(230,50,50,.7);transition:all .3s;}
 .heart.off{background:radial-gradient(circle at 35% 30%,#444,#222,#111);box-shadow:none;}
-/* progress */
 #pbar-wrap{position:absolute;bottom:0;left:0;right:0;height:5px;background:rgba(80,0,160,.25);z-index:15;}
-#pbar{height:100%;width:0%;background:linear-gradient(90deg,#7b2ff7,#ffaa00,#ff4400);
-  transition:width .4s ease;box-shadow:0 0 10px rgba(255,150,0,.5);}
-/* overlay texts */
+#pbar{height:100%;width:0%;background:linear-gradient(90deg,#7b2ff7,#ffaa00,#ff4400);transition:width .4s;box-shadow:0 0 10px rgba(255,150,0,.5);}
 .big{font-family:'Cinzel Decorative',cursive;font-size:clamp(2rem,10vw,5rem);font-weight:900;margin-bottom:.2em;}
-.win-c{background:linear-gradient(135deg,#ffe066,#44ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  filter:drop-shadow(0 0 40px rgba(60,255,120,.8));}
-.lose-c{background:linear-gradient(135deg,#ff4444,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  filter:drop-shadow(0 0 40px rgba(255,50,50,.8));}
+.win-c{background:linear-gradient(135deg,#ffe066,#44ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 40px rgba(60,255,120,.8));}
+.lose-c{background:linear-gradient(135deg,#ff4444,#ff0000);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 40px rgba(255,50,50,.8));}
 .sinfo{color:#b89ad8;font-size:clamp(.85rem,2.5vw,1.2rem);margin-bottom:1.8em;}
 .stars{font-size:clamp(1.6rem,5vw,2.4rem);margin-bottom:1.2em;letter-spacing:6px;}
 #howtext{max-width:360px;text-align:center;color:#b89ad8;font-size:clamp(.75rem,2.2vw,.95rem);line-height:2.1;margin-bottom:2em;padding:0 1em;}
 #howtext strong{color:#ffcc44;}
-.lvlname{color:#c8a8ff;font-size:clamp(.65rem,2vw,.85rem);letter-spacing:3px;text-transform:uppercase;margin-top:.4em;opacity:.75;}
+.lvlname{color:#c8a8ff;font-size:clamp(.55rem,1.8vw,.78rem);letter-spacing:3px;text-transform:uppercase;margin-top:2px;opacity:.7;}
 </style>
 </head>
 <body>
 <canvas id="cBg"></canvas>
 <canvas id="cGame"></canvas>
-
 <div id="hud" style="display:none">
   <div class="hitem"><span class="hlab">Score</span><span class="hval" id="hScore">0</span></div>
   <div class="hitem badge"><span class="hlab" style="text-align:center">Level</span><span class="hval" id="hLvl">1</span><div class="lvlname" id="hName"></div></div>
   <div class="hitem"><span class="hlab">Lives</span><div id="hHearts"></div></div>
 </div>
 <div id="pbar-wrap" style="display:none"><div id="pbar"></div></div>
-
 <div class="scr scr-bg" id="sMenu">
   <h1>GemBlast</h1>
   <div class="sub">Match · Shoot · Destroy</div>
@@ -80,20 +67,17 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(2.2rem,9vw,5rem);font
   <button class="btn" onclick="startGame()">▶ &nbsp;Play</button>
   <button class="btn sec" onclick="showScr('sHow')" style="font-size:.85em">How to Play</button>
 </div>
-
 <div class="scr scr-bg off" id="sHow">
   <h1 style="font-size:clamp(1.5rem,5vw,2.8rem);margin-bottom:.6em">How to Play</h1>
   <div id="howtext">
-    🎯 <strong>Aim & Shoot</strong> — click/tap to fire gems<br>
+    🎯 <strong>Aim &amp; Shoot</strong> — click/tap to fire gems<br>
     💎 <strong>Match 3+</strong> of the same color to destroy them<br>
-    💀 <strong>Don't let gems</strong> reach the skull at the end<br>
+    💀 <strong>Don't let gems</strong> reach the skull at path end<br>
     🔮 <strong>Combos</strong> give massive bonus points<br>
-    ⚡ <strong>Gap fill</strong> — destroyed gems pull the chain back<br>
-    📱 <strong>Mobile:</strong> touch to aim & shoot
+    📱 <strong>Mobile:</strong> touch to aim &amp; shoot
   </div>
   <button class="btn" onclick="showScr('sMenu')">← Back</button>
 </div>
-
 <div class="scr scr-bg off" id="sWin">
   <div class="big win-c">Level Clear!</div>
   <div class="stars" id="wStars">⭐⭐⭐</div>
@@ -101,7 +85,6 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(2.2rem,9vw,5rem);font
   <button class="btn" id="btnNext" onclick="nextLevel()">Next Level ▶</button>
   <button class="btn sec" onclick="goMenu()">Menu</button>
 </div>
-
 <div class="scr scr-bg off" id="sLose">
   <div class="big lose-c">Game Over</div>
   <div class="sinfo">Score: <strong id="lScore" style="color:#ffcc44">0</strong></div>
@@ -110,427 +93,372 @@ h1{font-family:'Cinzel Decorative',cursive;font-size:clamp(2.2rem,9vw,5rem);font
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-//  CONSTANTS
-// ═══════════════════════════════════════════════════════════
-const GR       = 15;    // gem radius px
-const SPACING  = GR*2 + 1;
-const BSPEED   = 15;
-const MAX_LIVES= 3;
-const PULL_SPD = 80;    // px/s pull-back after match
+/*
+  CHAIN MODEL — simple and unambiguous:
+  -------------------------------------------------------
+  chain[] is ordered so chain[0] is the TAIL (newest, just entered)
+  and chain[chain.length-1] is the HEAD (furthest along the path).
 
-// Gems with richer colour data
-const GEMS=[
-  {name:'Ruby',     fill:'#e8392a',hi:'#ff9d94',sh:'#8b1a10',rim:'#ff6655',glow:'rgba(232,57,42,.9)'},
-  {name:'Sapphire', fill:'#2471c8',hi:'#7ec8ff',sh:'#0e2f6e',rim:'#55aaff',glow:'rgba(36,113,200,.9)'},
-  {name:'Emerald',  fill:'#1ea853',hi:'#6fffaa',sh:'#0a5028',rim:'#44dd88',glow:'rgba(30,168,83,.9)'},
-  {name:'Amber',    fill:'#f5a000',hi:'#ffe080',sh:'#7a4800',rim:'#ffc840',glow:'rgba(245,160,0,.9)'},
-  {name:'Amethyst', fill:'#9b30d0',hi:'#e0a0ff',sh:'#4a1070',rim:'#cc66ff',glow:'rgba(155,48,208,.9)'},
-  {name:'Diamond',  fill:'#00c8e0',hi:'#e8faff',sh:'#006070',rim:'#66eeff',glow:'rgba(0,200,224,.9)'},
+  Each gem has a property  .d  = distance from start (px along path).
+  HEAD has the largest .d value.  TAIL has the smallest .d.
+
+  Every frame:
+    - HEAD advances by speed*dt
+    - Each gem behind HEAD is pushed so it stays at most SPACING behind the gem ahead.
+    - New gems are pushed in at d = tail.d - SPACING  (before the tail, i.e. index 0)
+    - End-of-path is detected when HEAD.d >= pathTotal
+*/
+
+// ── gem data ──────────────────────────────────────────────
+var GEMS = [
+  {fill:'#e83030',hi:'#ffaaaa',sh:'#800000',rim:'#ff6666',glow:'rgba(232,48,48,.85)'},
+  {fill:'#2060cc',hi:'#88ccff',sh:'#0a1a6e',rim:'#44aaff',glow:'rgba(32,96,204,.85)'},
+  {fill:'#18aa50',hi:'#66ffaa',sh:'#065028',rim:'#33dd77',glow:'rgba(24,170,80,.85)'},
+  {fill:'#f0a000',hi:'#ffe090',sh:'#804800',rim:'#ffcc44',glow:'rgba(240,160,0,.85)'},
+  {fill:'#9428cc',hi:'#ddaaff',sh:'#440070',rim:'#cc66ff',glow:'rgba(148,40,204,.85)'},
+  {fill:'#00b8d8',hi:'#ccf8ff',sh:'#005060',rim:'#44ddff',glow:'rgba(0,184,216,.85)'},
 ];
 
-// ═══════════════════════════════════════════════════════════
-//  LEVEL PATHS  (returns {pts, spawnerPt, endPt})
-// ═══════════════════════════════════════════════════════════
-function buildPath(W,H,type){
-  const p=[];
-  const N=600;
-  for(let i=0;i<=N;i++){
-    const t=i/N;
-    let x,y;
-    if(type===0){      // smooth S
-      x=W*.08+t*(W*.84);
-      y=H*.5+Math.sin(t*Math.PI*2.2)*H*.3;
-    } else if(type===1){ // double loop
-      const a=t*Math.PI*3.6;
-      const r=(.05+t*.38)*Math.min(W*.48,H*.46);
-      x=W*.5+Math.cos(a)*r; y=H*.5+Math.sin(a)*r;
-    } else if(type===2){ // figure-8
-      const a=t*Math.PI*2;
-      x=W*.5+Math.sin(a)*W*.40;
-      y=H*.5+Math.sin(a*2)*H*.30;
-    } else if(type===3){ // zigzag
-      const seg=Math.floor(t*6); const u=(t*6)-seg;
-      x=W*(.07+t*.86);
-      y=seg%2===0 ? H*.15+u*(H*.7) : H*.85-u*(H*.7);
-    } else {             // wave cascade
-      x=W*.08+t*(W*.84);
-      y=H*.5+Math.sin(t*Math.PI*3.5)*H*.22+Math.sin(t*Math.PI*8)*H*.09;
-    }
-    p.push({
-      x:Math.max(GR+6,Math.min(W-GR-6,x)),
-      y:Math.max(GR+6,Math.min(H-GR-6,y))
-    });
-  }
-  // cumulative distances
-  const dist=[0];
-  let tot=0;
-  for(let i=1;i<p.length;i++){
-    const dx=p[i].x-p[i-1].x, dy=p[i].y-p[i-1].y;
-    tot+=Math.sqrt(dx*dx+dy*dy);
-    dist.push(tot);
-  }
-  return{pts:p,dist,total:tot};
-}
-
-// ═══════════════════════════════════════════════════════════
-//  LEVELS
-// ═══════════════════════════════════════════════════════════
-const LEVELS=[
-  {name:'Crystal Cave',   colors:3,speed:22,gemCount:38,path:0,
-   bg:{sky:['#04000e','#120028','#040010'],fog:'rgba(80,20,160,.18)',accent:'rgba(100,40,255,.12)'}},
-  {name:'Ancient Temple', colors:4,speed:28,gemCount:48,path:1,
-   bg:{sky:['#04100a','#001a08','#060e04'],fog:'rgba(20,120,60,.15)',accent:'rgba(40,200,100,.1)'}},
-  {name:'Dragon\'s Lair', colors:4,speed:34,gemCount:55,path:2,
-   bg:{sky:['#0e0400','#1a0800','#100200'],fog:'rgba(180,40,0,.18)',accent:'rgba(255,80,0,.12)'}},
-  {name:'Sky Fortress',   colors:5,speed:40,gemCount:64,path:3,
-   bg:{sky:['#000814','#001030','#000a1a'],fog:'rgba(0,80,200,.18)',accent:'rgba(0,160,255,.1)'}},
-  {name:'Gem Nexus',      colors:6,speed:46,gemCount:75,path:4,
-   bg:{sky:['#080010','#100020','#060010'],fog:'rgba(120,0,255,.18)',accent:'rgba(200,0,255,.1)'}},
+var LEVELS = [
+  {name:'Crystal Cave',   colors:3, speed:24, total:38, ptype:0, sky:['#04000e','#120028','#040010'], fog:'rgba(70,10,160,.2)',  acc:'rgba(90,30,255,.1)'},
+  {name:'Ancient Temple', colors:4, speed:30, total:48, ptype:1, sky:['#031008','#001a06','#030e04'], fog:'rgba(10,110,50,.18)', acc:'rgba(30,190,90,.1)'},
+  {name:'Dragon\'s Lair', colors:4, speed:36, total:55, ptype:2, sky:['#0e0300','#1a0600','#0e0200'], fog:'rgba(170,30,0,.2)',   acc:'rgba(255,70,0,.1)'},
+  {name:'Sky Fortress',   colors:5, speed:42, total:64, ptype:3, sky:['#000712','#00102e','#00091a'], fog:'rgba(0,70,190,.18)', acc:'rgba(0,150,255,.1)'},
+  {name:'Gem Nexus',      colors:6, speed:50, total:75, ptype:4, sky:['#07000f','#0e001e','#06000e'], fog:'rgba(110,0,240,.2)', acc:'rgba(190,0,255,.1)'},
 ];
 
-// ═══════════════════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════════════════
-let W,H, cBg,xBg, cGame,xG;
-let state='menu';
-let lvlIdx=0, score=0, lives=MAX_LIVES;
-let path=null;  // {pts,dist,total}
-let chain=[];   // [{ci, d, x, y, scale, flash}]  d=distance along path
-let bullet=null;// {x,y,vx,vy,ci,trail:[]}
-let particles=[]; // visual particles
-let rings=[];   // shockwave rings
-let popups=[];  // score text
-let shooter={x:0,y:0,angle:-Math.PI/2,ci:0,next:0,pulseT:0};
-let totalGems=0, spawned=0, destroyed=0;
-let spawnTimer=0, spawnGap=0.9;
-let rafId=0, lastT=0;
-let bgT=0, bgStars=[], bgNebula=[];
-let levelBg=LEVELS[0].bg;
-let pullback=0; // px/s backward pull after gap fill
-let chainFlash=0; // screen flash timer
+var GR = 15;           // gem radius
+var SPACING = GR*2+2;  // centre-to-centre distance between adjacent gems
+var BSPEED  = 16;
+var MAX_LIVES = 3;
 
-// ═══════════════════════════════════════════════════════════
-//  BOOT
-// ═══════════════════════════════════════════════════════════
-window.addEventListener('load',()=>{
-  cBg=document.getElementById('cBg');
-  cGame=document.getElementById('cGame');
-  xBg=cBg.getContext('2d');
-  xG=cGame.getContext('2d');
-  resize();
-  window.addEventListener('resize',()=>{resize();if(state==='playing')setupLevel(lvlIdx);});
-  buildMenuGems();
-  initBgStars();
-  bgLoop();
+// ── state ─────────────────────────────────────────────────
+var W, H, cBg, xBg, cGame, xG;
+var gameState = 'menu';
+var lvlIdx = 0, score = 0, lives = MAX_LIVES;
+
+// PATH  (computed each level)
+var pathPts = [], pathDist = [], pathTotal = 0;
+
+/*
+  chain[] – index 0 = tail (latest gem, smallest .d)
+             index N-1 = head (oldest gem, largest .d, closest to skull)
+  Each element: { ci, d, x, y, sc, flash }
+    ci    – colour index
+    d     – distance along path (px)
+    x, y  – screen position (derived from d)
+    sc    – scale 0→1 for pop-in animation
+    flash – flash brightness 0→1
+*/
+var chain = [];
+
+var bullet = null;   // { x,y, vx,vy, ci, trail:[] }
+var particles = [];
+var rings     = [];
+var popups    = [];
+
+var sX=0, sY=0, sAngle=-Math.PI/2, sCI=0, sNext=0, sPulse=0;
+
+var totalGems=0, spawned=0, destroyed=0;
+var spawnTimer=0, spawnGap=0.9;
+var combo=0, chainFlash=0;
+var bgT=0, bgStars=[], bgNebula=[];
+var bgSky=['#04000e','#120028','#040010'], bgFog='rgba(70,10,160,.2)', bgAcc='rgba(90,30,255,.1)';
+var rafId=0, lastT=0;
+
+// ── boot ─────────────────────────────────────────────────
+window.addEventListener('load', function() {
+  cBg=document.getElementById('cBg'); xBg=cBg.getContext('2d');
+  cGame=document.getElementById('cGame'); xG=cGame.getContext('2d');
+  doResize();
+  window.addEventListener('resize', function(){ doResize(); if(gameState==='playing') setupLevel(lvlIdx); });
+  buildMenuGems(); initBgStars();
+  (function bgLoop(){ bgT+=0.016; drawBg(); requestAnimationFrame(bgLoop); })();
 });
 
-function resize(){
+function doResize(){
   W=window.innerWidth; H=window.innerHeight;
-  cBg.width=cGame.width=W;
-  cBg.height=cGame.height=H;
-  if(bgStars.length) initBgStars();
+  cBg.width=cGame.width=W; cBg.height=cGame.height=H;
 }
-
 function showScr(id){
-  ['sMenu','sHow','sWin','sLose'].forEach(s=>{
-    document.getElementById(s).classList.toggle('off',s!==id);
+  ['sMenu','sHow','sWin','sLose'].forEach(function(s){
+    document.getElementById(s).classList.toggle('off', s!==id);
   });
 }
-
 function buildMenuGems(){
-  const row=document.getElementById('menuGems');
-  GEMS.forEach((g,i)=>{
-    const d=document.createElement('div');
-    d.className='gp';
-    d.style.cssText=`background:radial-gradient(circle at 33% 30%,${g.hi},${g.fill} 55%,${g.sh});
-      box-shadow:0 0 14px ${g.fill},0 0 30px ${g.fill}44;animation-delay:${i*.38}s`;
+  var row=document.getElementById('menuGems');
+  GEMS.forEach(function(g,i){
+    var d=document.createElement('div'); d.className='gp';
+    d.style.background='radial-gradient(circle at 33% 30%,'+g.hi+','+g.fill+' 55%,'+g.sh+')';
+    d.style.boxShadow='0 0 14px '+g.fill+',0 0 28px '+g.fill+'44';
+    d.style.animationDelay=(i*0.38)+'s';
     row.appendChild(d);
   });
 }
 
-// ═══════════════════════════════════════════════════════════
-//  BACKGROUND RENDERER
-// ═══════════════════════════════════════════════════════════
+// ── background ────────────────────────────────────────────
 function initBgStars(){
   bgStars=[];
-  for(let i=0;i<280;i++) bgStars.push({
-    x:Math.random()*W,y:Math.random()*H,
-    r:Math.random()*1.6+.15,
-    ph:Math.random()*Math.PI*2,
-    sp:Math.random()*.35+.1,
-    color:Math.random()>.85?`hsl(${200+Math.random()*160},80%,85%)`:'#ffffff'
-  });
-  bgNebula=[
-    {ox:.18,oy:.28,rx:.42,ry:.55},
-    {ox:.82,oy:.72,rx:.38,ry:.5},
-    {ox:.5, oy:.48,rx:.32,ry:.42},
-  ];
+  for(var i=0;i<260;i++) bgStars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+0.2,ph:Math.random()*6.28,sp:Math.random()*0.35+0.1,bright:Math.random()>.85});
+  bgNebula=[{ox:.18,oy:.28,rx:.44,ry:.55},{ox:.82,oy:.72,rx:.38,ry:.50},{ox:.50,oy:.48,rx:.32,ry:.42}];
 }
-
-function bgLoop(){
-  bgT+=.016;
-  drawBackground();
-  requestAnimationFrame(bgLoop);
-}
-
-function drawBackground(){
-  const bg=levelBg;
-  // deep space gradient
-  const grd=xBg.createLinearGradient(0,0,W*.3,H);
-  grd.addColorStop(0,bg.sky[0]);
-  grd.addColorStop(.5,bg.sky[1]);
-  grd.addColorStop(1,bg.sky[2]);
-  xBg.fillStyle=grd; xBg.fillRect(0,0,W,H);
-
-  // nebula blobs
-  bgNebula.forEach((n,ni)=>{
-    const bx=n.ox*W+Math.sin(bgT*.12+ni)*35, by=n.oy*H+Math.cos(bgT*.09+ni)*28;
-    const rr=n.rx*Math.max(W,H);
-    const g=xBg.createRadialGradient(bx,by,0,bx,by,rr);
-    g.addColorStop(0,bg.fog);
-    g.addColorStop(.5,bg.accent);
-    g.addColorStop(1,'transparent');
-    xBg.fillStyle=g; xBg.fillRect(0,0,W,H);
+function drawBg(){
+  var g=xBg.createLinearGradient(0,0,W*.3,H);
+  g.addColorStop(0,bgSky[0]); g.addColorStop(.5,bgSky[1]); g.addColorStop(1,bgSky[2]);
+  xBg.fillStyle=g; xBg.fillRect(0,0,W,H);
+  bgNebula.forEach(function(n,ni){
+    var bx=n.ox*W+Math.sin(bgT*.12+ni)*35, by=n.oy*H+Math.cos(bgT*.09+ni)*28;
+    var g2=xBg.createRadialGradient(bx,by,0,bx,by,n.rx*Math.max(W,H));
+    g2.addColorStop(0,bgFog); g2.addColorStop(.5,bgAcc); g2.addColorStop(1,'transparent');
+    xBg.fillStyle=g2; xBg.fillRect(0,0,W,H);
   });
-
-  // stars
-  bgStars.forEach(s=>{
-    const a=.2+.8*Math.abs(Math.sin(bgT*s.sp+s.ph));
-    xBg.save();
-    xBg.shadowBlur=s.r>1?8:0; xBg.shadowColor=s.color;
-    xBg.globalAlpha=a;
-    xBg.fillStyle=s.color;
-    xBg.beginPath(); xBg.arc(s.x,s.y,s.r,0,Math.PI*2); xBg.fill();
-    xBg.restore();
+  bgStars.forEach(function(s){
+    var a=.2+.8*Math.abs(Math.sin(bgT*s.sp+s.ph));
+    xBg.save(); if(s.bright){xBg.shadowBlur=8;xBg.shadowColor='#fff';}
+    xBg.globalAlpha=a; xBg.fillStyle='#fff';
+    xBg.beginPath(); xBg.arc(s.x,s.y,s.r,0,Math.PI*2); xBg.fill(); xBg.restore();
   });
-
-  // shooting stars (rare)
-  if(Math.random()<.003){
-    bgStars.push({
-      x:Math.random()*W, y:Math.random()*H*.4,
-      r:.8, ph:0, sp:0, color:'#ffffff',
-      sx:Math.random()*3+1, sy:Math.random()*1.5+.5,
-      life:40
-    });
-  }
-  bgStars=bgStars.filter(s=>{
-    if(!s.life)return true;
+  if(Math.random()<.003) bgStars.push({x:Math.random()*W,y:Math.random()*H*.4,r:0,ph:0,sp:0,bright:false,sx:Math.random()*3+1,sy:Math.random()*1.2+.4,life:40});
+  var alive=[];
+  bgStars.forEach(function(s){
+    if(!s.life){alive.push(s);return;}
     s.x+=s.sx; s.y+=s.sy; s.life--;
-    xBg.save();
-    xBg.globalAlpha=s.life/40;
-    xBg.strokeStyle='rgba(255,255,255,.8)';
-    xBg.lineWidth=1.2;
-    xBg.beginPath(); xBg.moveTo(s.x,s.y); xBg.lineTo(s.x-s.sx*12,s.y-s.sy*12); xBg.stroke();
-    xBg.restore();
-    return s.life>0;
+    xBg.save(); xBg.globalAlpha=s.life/40*.8; xBg.strokeStyle='rgba(255,255,255,.8)'; xBg.lineWidth=1.2;
+    xBg.beginPath(); xBg.moveTo(s.x,s.y); xBg.lineTo(s.x-s.sx*14,s.y-s.sy*14); xBg.stroke(); xBg.restore();
+    if(s.life>0) alive.push(s);
   });
+  bgStars=alive;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  GAME SETUP
-// ═══════════════════════════════════════════════════════════
-function startGame(){
-  lvlIdx=0; score=0; lives=MAX_LIVES;
-  showScr('');
-  setupLevel(0);
+// ── path ─────────────────────────────────────────────────
+function buildPath(type){
+  var pts=[], N=600;
+  for(var i=0;i<=N;i++){
+    var t=i/N, x, y, a, r, seg, u;
+    if(type===0){
+      x=W*.08+t*(W*.84); y=H*.5+Math.sin(t*Math.PI*2.2)*H*.30;
+    } else if(type===1){
+      a=t*Math.PI*3.6; r=(.05+t*.38)*Math.min(W*.48,H*.46);
+      x=W*.5+Math.cos(a)*r; y=H*.5+Math.sin(a)*r;
+    } else if(type===2){
+      a=t*Math.PI*2; x=W*.5+Math.sin(a)*W*.40; y=H*.5+Math.sin(a*2)*H*.30;
+    } else if(type===3){
+      seg=Math.floor(t*6); u=t*6-seg;
+      x=W*(.07+t*.86); y=seg%2===0?H*.15+u*(H*.70):H*.85-u*(H*.70);
+    } else {
+      x=W*.08+t*(W*.84); y=H*.5+Math.sin(t*Math.PI*3.5)*H*.22+Math.sin(t*Math.PI*8)*H*.09;
+    }
+    pts.push({x:Math.max(GR+6,Math.min(W-GR-6,x)), y:Math.max(GR+6,Math.min(H-GR-6,y))});
+  }
+  var dist=[0], tot=0;
+  for(var j=1;j<pts.length;j++){
+    var dx=pts[j].x-pts[j-1].x, dy=pts[j].y-pts[j-1].y;
+    tot+=Math.sqrt(dx*dx+dy*dy); dist.push(tot);
+  }
+  pathPts=pts; pathDist=dist; pathTotal=tot;
 }
+
+// get {x,y} for distance d along path
+function ptAt(d){
+  d=Math.max(0,Math.min(d,pathTotal));
+  var lo=0, hi=pathDist.length-1;
+  while(lo<hi-1){var m=(lo+hi)>>1; if(pathDist[m]<=d)lo=m; else hi=m;}
+  var seg=pathDist[hi]-pathDist[lo], t=seg>0?(d-pathDist[lo])/seg:0;
+  return {x:pathPts[lo].x+(pathPts[hi].x-pathPts[lo].x)*t, y:pathPts[lo].y+(pathPts[hi].y-pathPts[lo].y)*t};
+}
+
+function tangentAt(d){
+  var a=ptAt(Math.max(0,d-2)), b=ptAt(Math.min(pathTotal,d+2));
+  return Math.atan2(b.y-a.y,b.x-a.x);
+}
+
+// ── setup ─────────────────────────────────────────────────
+function startGame(){ lvlIdx=0; score=0; lives=MAX_LIVES; showScr(''); setupLevel(0); }
 
 function setupLevel(idx){
-  const lvl=LEVELS[idx];
-  levelBg=lvl.bg;
-  state='playing';
+  var lvl=LEVELS[idx];
+  bgSky=lvl.sky; bgFog=lvl.fog; bgAcc=lvl.acc;
+  gameState='playing';
   chain=[]; particles=[]; rings=[]; popups=[]; bullet=null;
-  spawned=0; destroyed=0; totalGems=lvl.gemCount;
-  spawnTimer=0; spawnGap=.85; pullback=0; chainFlash=0;
-  path=buildPath(W,H,lvl.path);
-
-  // shooter position — find a clear spot away from path end
-  shooter.x=W/2; shooter.y=H*.83;
-  shooter.angle=-Math.PI/2;
-  shooter.ci=rci(lvl.colors); shooter.next=rci(lvl.colors);
-  shooter.pulseT=0;
-
+  spawned=0; destroyed=0; totalGems=lvl.total;
+  spawnTimer=0; spawnGap=0.9; combo=0; chainFlash=0;
+  buildPath(lvl.ptype);
+  sX=W/2; sY=H*.83; sAngle=-Math.PI/2;
+  sCI=rci(lvl.colors); sNext=rci(lvl.colors); sPulse=0;
   updateHUD();
   document.getElementById('hud').style.display='flex';
   document.getElementById('pbar-wrap').style.display='block';
   document.getElementById('pbar').style.width='0%';
-
-  // input
-  cGame.onmousemove=aimMouse;
-  cGame.onclick=fireClick;
-  cGame.ontouchmove=aimTouch;
-  cGame.ontouchstart=fireTouchStart;
-  cGame.ontouchend=null;
-
+  cGame.onmousemove=aimMouse; cGame.onclick=fireClick;
+  cGame.ontouchmove=aimTouch; cGame.ontouchstart=fireTouchStart;
   cancelAnimationFrame(rafId);
   lastT=performance.now();
-  rafId=requestAnimationFrame(loop);
+  rafId=requestAnimationFrame(gameLoop);
+}
+function rci(n){ return Math.floor(Math.random()*n); }
+
+// ── game loop ─────────────────────────────────────────────
+function gameLoop(ts){
+  var dt=Math.min((ts-lastT)/1000,.05); lastT=ts;
+  update(dt); render();
+  if(gameState==='playing') rafId=requestAnimationFrame(gameLoop);
 }
 
-function rci(n){return Math.floor(Math.random()*n);}
-
-// ═══════════════════════════════════════════════════════════
-//  PATH UTILS
-// ═══════════════════════════════════════════════════════════
-function ptAt(d){
-  d=Math.max(0,Math.min(d,path.total));
-  let lo=0,hi=path.dist.length-1;
-  while(lo<hi-1){const m=(lo+hi)>>1;path.dist[m]<=d?lo=m:hi=m;}
-  const seg=path.dist[hi]-path.dist[lo];
-  const t=seg>0?(d-path.dist[lo])/seg:0;
-  return{
-    x:path.pts[lo].x+(path.pts[hi].x-path.pts[lo].x)*t,
-    y:path.pts[lo].y+(path.pts[hi].y-path.pts[lo].y)*t
-  };
-}
-
-// angle of path tangent at distance d
-function tangentAt(d){
-  const eps=2;
-  const a=ptAt(Math.max(0,d-eps));
-  const b=ptAt(Math.min(path.total,d+eps));
-  return Math.atan2(b.y-a.y,b.x-a.x);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  GAME LOOP
-// ═══════════════════════════════════════════════════════════
-function loop(ts){
-  const dt=Math.min((ts-lastT)/1000,.05); lastT=ts;
-  update(dt);
-  render();
-  if(state==='playing') rafId=requestAnimationFrame(loop);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  UPDATE
-// ═══════════════════════════════════════════════════════════
+// ── update ────────────────────────────────────────────────
 function update(dt){
-  const lvl=LEVELS[lvlIdx];
-  shooter.pulseT+=dt;
+  var lvl=LEVELS[lvlIdx];
+  sPulse+=dt;
 
-  // ── SPAWN ──────────────────────────────────────────
+  /*
+    CHAIN LAYOUT (reminder):
+      index 0   = TAIL = newest gem = smallest .d  (just spawned end)
+      index N-1 = HEAD = oldest gem = largest .d   (near skull)
+
+    Movement:
+      HEAD (last element) advances forward each frame.
+      Each gem BEHIND the head is pulled along if too far back,
+      OR stays in place if the gap to the gem ahead is still >= SPACING.
+
+    Spawning:
+      A new gem is appended at index 0 with d = tail.d - SPACING.
+      (i.e. just behind the current tail)
+  */
+
+  // ── advance head ──────────────────────────────────────
+  if(chain.length>0){
+    var head=chain[chain.length-1];
+    head.d += lvl.speed * dt;
+
+    // propagate: each gem pushes the one behind it
+    // gem[i] is behind gem[i+1] (lower d)
+    // constraint: chain[i].d <= chain[i+1].d - SPACING
+    for(var i=chain.length-2; i>=0; i--){
+      var maxD = chain[i+1].d - SPACING;
+      if(chain[i].d > maxD) chain[i].d = maxD;
+    }
+
+    // update positions + animations
+    for(var i=0;i<chain.length;i++){
+      var pt=ptAt(chain[i].d);
+      chain[i].x=pt.x; chain[i].y=pt.y;
+      if(chain[i].sc<1) chain[i].sc=Math.min(1,chain[i].sc+dt*6);
+      if(chain[i].flash>0) chain[i].flash=Math.max(0,chain[i].flash-dt*4);
+    }
+
+    // check if HEAD reached the end
+    if(head.d >= pathTotal - GR){
+      lives--;
+      chainFlash=0.6;
+      // remove all gems that have crossed the end
+      while(chain.length && chain[chain.length-1].d >= pathTotal-GR) chain.pop();
+      updateHUD();
+      if(lives<=0){endGame(false); return;}
+    }
+  }
+
+  // ── spawn new gem ──────────────────────────────────────
   spawnTimer+=dt;
   if(spawnTimer>=spawnGap && spawned<totalGems){
     spawnTimer=0;
     spawnGap=Math.max(.28,spawnGap*.965);
-    // Push new gem at beginning (d=0), shove existing gems forward
-    const newGem={ci:rci(lvl.colors),d:0,x:path.pts[0].x,y:path.pts[0].y,scale:0,flash:0};
-    chain.unshift(newGem);
+    // place new gem behind the current tail
+    var tailD = chain.length>0 ? chain[0].d - SPACING : SPACING*0.5;
+    // clamp so it's not negative (i.e. not before start)
+    tailD = Math.max(0, tailD);
+    var np=ptAt(tailD);
+    chain.unshift({ci:rci(lvl.colors), d:tailD, x:np.x, y:np.y, sc:0.01, flash:0});
     spawned++;
-    // ensure spacing — push head gem forward if overlap
-    for(let i=0;i<chain.length-1;i++){
-      const ahead=chain[i].d;
-      const behind=chain[i+1].d;
-      if(ahead-behind<SPACING) chain[i+1].d=ahead-SPACING;
-    }
   }
 
-  // ── ADVANCE CHAIN ──────────────────────────────────
-  const spd=lvl.speed * dt;
-  if(chain.length>0){
-    // head moves forward
-    chain[0].d+=spd;
-    // each following gem is pushed by the one ahead
-    for(let i=1;i<chain.length;i++){
-      const maxD=chain[i-1].d-SPACING;
-      if(chain[i].d>maxD) chain[i].d=maxD;
-    }
-    // recompute positions + scale-in
-    chain.forEach(g=>{
-      const pt=ptAt(g.d); g.x=pt.x; g.y=pt.y;
-      if(g.scale<1) g.scale=Math.min(1,g.scale+dt*4);
-      if(g.flash>0) g.flash-=dt*3;
-    });
-    // check end
-    if(chain[0].d>=path.total-GR){
-      lives--;
-      updateHUD();
-      // screen shake + remove gems past end
-      chainFlash=.4;
-      while(chain.length&&chain[0].d>=path.total-GR) chain.shift();
-      if(lives<=0){endGame(false);return;}
-    }
-  }
-
-  // ── BULLET ─────────────────────────────────────────
+  // ── bullet ────────────────────────────────────────────
   if(bullet){
-    // store trail
     bullet.trail.push({x:bullet.x,y:bullet.y});
     if(bullet.trail.length>12) bullet.trail.shift();
     bullet.x+=bullet.vx; bullet.y+=bullet.vy;
-
     if(bullet.x<-80||bullet.x>W+80||bullet.y<-80||bullet.y>H+80){
       bullet=null;
     } else {
-      // collision: find closest chain gem
-      let hitIdx=-1,hitDist=9999;
-      for(let i=0;i<chain.length;i++){
-        const dx=chain[i].x-bullet.x,dy=chain[i].y-bullet.y;
-        const d2=dx*dx+dy*dy;
-        if(d2<(GR*2+2)*(GR*2+2)&&d2<hitDist*hitDist){hitDist=Math.sqrt(d2);hitIdx=i;}
+      var hitIdx=-1, bestD2=9999999;
+      var thresh=(GR*2+2)*(GR*2+2);
+      for(var i=0;i<chain.length;i++){
+        var dx=chain[i].x-bullet.x, dy=chain[i].y-bullet.y, d2=dx*dx+dy*dy;
+        if(d2<thresh && d2<bestD2){bestD2=d2; hitIdx=i;}
       }
-      if(hitIdx>=0){
-        insertBullet(hitIdx);
-      }
+      if(hitIdx>=0) insertBullet(hitIdx);
     }
   }
 
-  // ── PARTICLES ──────────────────────────────────────
-  particles=particles.filter(p=>p.life>0);
-  particles.forEach(p=>{
-    p.x+=p.vx; p.y+=p.vy; p.vy+=.1; p.vx*=.98;
-    p.life-=dt*50; p.r*=.975;
-  });
+  // ── particles / rings / popups ────────────────────────
+  var a2=[];
+  for(var i=0;i<particles.length;i++){
+    var p=particles[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.1; p.vx*=.98; p.life-=dt*55; p.r*=.975;
+    if(p.life>0) a2.push(p);
+  }
+  particles=a2;
 
-  rings=rings.filter(r=>r.life>0);
-  rings.forEach(r=>{r.radius+=r.expand*dt; r.life-=dt*2.5;});
+  var a3=[];
+  for(var i=0;i<rings.length;i++){
+    var r=rings[i]; r.radius+=170*dt; r.life-=dt*2.8;
+    if(r.life>0) a3.push(r);
+  }
+  rings=a3;
 
-  popups=popups.filter(p=>p.life>0);
-  popups.forEach(p=>{p.y+=p.vy; p.life-=dt*60;});
+  var a4=[];
+  for(var i=0;i<popups.length;i++){
+    var p=popups[i]; p.y+=p.vy; p.life-=dt*65;
+    if(p.life>0) a4.push(p);
+  }
+  popups=a4;
 
-  if(chainFlash>0) chainFlash-=dt*2;
+  if(chainFlash>0) chainFlash-=dt*2.5;
 
-  // ── WIN ────────────────────────────────────────────
-  if(destroyed>=totalGems && chain.length===0) endGame(true);
-
-  // progress
   document.getElementById('pbar').style.width=(destroyed/totalGems*100)+'%';
+  if(destroyed>=totalGems && chain.length===0) endGame(true);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  INSERT + MATCH
-// ═══════════════════════════════════════════════════════════
+// ── insert bullet & check matches ─────────────────────────
 function insertBullet(hitIdx){
-  // Determine insertion side: before or after hitIdx based on bullet direction
-  const hit=chain[hitIdx];
-  const tang=tangentAt(hit.d);
-  const bAngle=Math.atan2(bullet.vy,bullet.vx);
-  // dot product of bullet dir with tangent
-  const dot=Math.cos(tang)*Math.cos(bAngle)+Math.sin(tang)*Math.sin(bAngle);
-  // insert AFTER hit if bullet coming from behind, BEFORE if from ahead
-  let ins = dot>0 ? hitIdx : hitIdx+1;
+  /*
+    Determine whether to insert BEFORE or AFTER hitIdx.
+    "Before" = lower index (closer to tail, lower d)
+    "After"  = higher index (closer to head, higher d)
+
+    We compare bullet travel direction to path tangent at hit point.
+    If bullet is moving in same direction as path → insert before hit (index hitIdx)
+    If bullet is moving against path direction   → insert after  hit (index hitIdx+1)
+  */
+  var hit=chain[hitIdx];
+  var tang=tangentAt(hit.d);
+  var bAngle=Math.atan2(bullet.vy,bullet.vx);
+  var dot=Math.cos(tang-bAngle); // >0: same dir, <0: opposite
+
+  var ins = dot >= 0 ? hitIdx : hitIdx+1;
   ins=Math.max(0,Math.min(chain.length,ins));
 
-  // compute d position
-  let newD;
-  if(ins===0) newD=(chain[0]?chain[0].d+SPACING:SPACING);
-  else if(ins>=chain.length) newD=(chain[chain.length-1]?chain[chain.length-1].d-SPACING:0);
-  else newD=(chain[ins-1].d+chain[ins].d)/2;
-  newD=Math.max(0,Math.min(path.total,newD));
-
-  const pt=ptAt(newD);
-  chain.splice(ins,0,{ci:bullet.ci,d:newD,x:pt.x,y:pt.y,scale:1,flash:0});
-
-  // re-push neighbours to maintain spacing
-  for(let i=ins+1;i<chain.length;i++){
-    const want=chain[i-1].d-SPACING;
-    if(chain[i].d>want) chain[i].d=want;
+  // compute d for the new gem
+  var newD;
+  if(ins===0){
+    newD = chain[0].d - SPACING;
+  } else if(ins>=chain.length){
+    newD = chain[chain.length-1].d + SPACING;
+  } else {
+    // midpoint between neighbours
+    newD = (chain[ins-1].d + chain[ins].d) / 2;
   }
-  for(let i=ins-1;i>=0;i--){
-    const want=chain[i+1].d+SPACING;
-    if(chain[i].d<want) chain[i].d=want;
+  newD=Math.max(0, Math.min(pathTotal, newD));
+
+  var np=ptAt(newD);
+  chain.splice(ins,0,{ci:bullet.ci, d:newD, x:np.x, y:np.y, sc:1, flash:1});
+
+  // re-enforce spacing in both directions
+  for(var i=ins+1;i<chain.length;i++){
+    var maxD=chain[i-1].d - SPACING;
+    if(chain[i].d > maxD) chain[i].d=maxD;
+  }
+  for(var i=ins-1;i>=0;i--){
+    var minD=chain[i+1].d + SPACING;
+    if(chain[i].d < minD) chain[i].d=minD;
   }
 
   bullet=null;
@@ -538,362 +466,206 @@ function insertBullet(hitIdx){
 }
 
 function checkMatch(idx){
-  if(!chain.length)return;
+  if(!chain.length) return;
   idx=Math.max(0,Math.min(idx,chain.length-1));
-  const ci=chain[idx].ci;
-  let s=idx,e=idx;
-  while(s>0&&chain[s-1].ci===ci)s--;
-  while(e<chain.length-1&&chain[e+1].ci===ci)e++;
-  const run=e-s+1;
+  var ci=chain[idx].ci, s=idx, e=idx;
+  while(s>0 && chain[s-1].ci===ci) s--;
+  while(e<chain.length-1 && chain[e+1].ci===ci) e++;
+  var run=e-s+1;
   if(run>=3){
-    combo=(typeof combo==='number'?combo:0)+1;
-    const pts=run*100*combo+(combo>1?(combo-1)*200:0);
-    score+=pts;
-    destroyed+=run;
-    const cx=chain.slice(s,e+1).reduce((a,g)=>a+g.x,0)/run;
-    const cy=chain.slice(s,e+1).reduce((a,g)=>a+g.y,0)/run;
-    // burst particles
-    chain.slice(s,e+1).forEach(g=>burst(g.x,g.y,GEMS[g.ci]));
-    // shockwave
-    rings.push({x:cx,y:cy,radius:0,expand:180,life:1,ci});
-    popups.push({x:cx,y:cy-10,text:`+${pts}${combo>1?' ×'+combo:''}`,life:80,vy:-1.4,big:combo>1});
+    combo++;
+    var pts=run*100*combo+(combo>1?(combo-1)*150:0);
+    score+=pts; destroyed+=run;
+    var cx=0,cy=0;
+    for(var i=s;i<=e;i++){cx+=chain[i].x;cy+=chain[i].y;}
+    cx/=run; cy/=run;
+    for(var i=s;i<=e;i++) burst(chain[i].x,chain[i].y,GEMS[chain[i].ci]);
+    rings.push({x:cx,y:cy,radius:0,life:1,ci:ci});
+    popups.push({x:cx,y:cy-10,text:'+'+pts+(combo>1?' ×'+combo:''),life:80,vy:-1.4,big:combo>1});
     chain.splice(s,run);
     updateHUD();
-    // re-check at same position (chain reaction)
-    if(chain.length>0&&s<chain.length) checkMatch(Math.min(s,chain.length-1));
+    // chain reaction at same position
+    if(chain.length>0) checkMatch(Math.min(s,chain.length-1));
   } else {
     combo=0;
   }
 }
 
-let combo=0;
-
 function burst(x,y,gem){
-  const N=22;
-  for(let i=0;i<N;i++){
-    const a=Math.random()*Math.PI*2, spd=Math.random()*6+1.5;
-    const isSparkle=Math.random()>.55;
-    particles.push({
-      x,y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
-      r:isSparkle?Math.random()*2+1:Math.random()*5+2,
-      life:isSparkle?40:60, fill:gem.fill, hi:gem.hi, glow:gem.glow,
-      sparkle:isSparkle
-    });
+  for(var i=0;i<20;i++){
+    var a=Math.random()*Math.PI*2, spd=Math.random()*6+2, sp=Math.random()>.5;
+    particles.push({x:x,y:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
+      r:sp?Math.random()*2+1:Math.random()*5+2, life:sp?40:60,
+      fill:gem.fill,hi:gem.hi,glow:gem.glow,sparkle:sp});
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  INPUT
-// ═══════════════════════════════════════════════════════════
-function aimMouse(e){
-  const r=cGame.getBoundingClientRect();
-  shooter.angle=Math.atan2(e.clientY-r.top-shooter.y,e.clientX-r.left-shooter.x);
-}
-function aimTouch(e){
-  e.preventDefault();
-  const r=cGame.getBoundingClientRect(),t=e.touches[0];
-  shooter.angle=Math.atan2(t.clientY-r.top-shooter.y,t.clientX-r.left-shooter.x);
-}
+// ── input ─────────────────────────────────────────────────
+function aimMouse(e){var r=cGame.getBoundingClientRect(); sAngle=Math.atan2(e.clientY-r.top-sY,e.clientX-r.left-sX);}
+function aimTouch(e){e.preventDefault();var r=cGame.getBoundingClientRect(),t=e.touches[0]; sAngle=Math.atan2(t.clientY-r.top-sY,t.clientX-r.left-sX);}
 function fireClick(){doShoot();}
-function fireTouchStart(e){
-  e.preventDefault();
-  const r=cGame.getBoundingClientRect(),t=e.touches[0];
-  shooter.angle=Math.atan2(t.clientY-r.top-shooter.y,t.clientX-r.left-shooter.x);
-  doShoot();
-}
+function fireTouchStart(e){e.preventDefault();var r=cGame.getBoundingClientRect(),t=e.touches[0]; sAngle=Math.atan2(t.clientY-r.top-sY,t.clientX-r.left-sX); doShoot();}
 function doShoot(){
-  if(bullet||state!=='playing')return;
-  bullet={x:shooter.x,y:shooter.y,
-    vx:Math.cos(shooter.angle)*BSPEED,
-    vy:Math.sin(shooter.angle)*BSPEED,
-    ci:shooter.ci, trail:[]};
-  shooter.ci=shooter.next;
-  shooter.next=rci(LEVELS[lvlIdx].colors);
+  if(bullet||gameState!=='playing') return;
+  bullet={x:sX,y:sY,vx:Math.cos(sAngle)*BSPEED,vy:Math.sin(sAngle)*BSPEED,ci:sCI,trail:[]};
+  sCI=sNext; sNext=rci(LEVELS[lvlIdx].colors);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  RENDER
-// ═══════════════════════════════════════════════════════════
+// ── render ────────────────────────────────────────────────
 function render(){
   xG.clearRect(0,0,W,H);
-
-  // screen flash on life loss
   if(chainFlash>0){
-    xG.save();
-    xG.globalAlpha=chainFlash*.55;
-    xG.fillStyle='#ff2200';
-    xG.fillRect(0,0,W,H);
-    xG.restore();
+    xG.save(); xG.globalAlpha=chainFlash*.45; xG.fillStyle='#ff2000'; xG.fillRect(0,0,W,H); xG.restore();
   }
-
-  drawPath();
-  drawRings();
-  drawChain();
-  drawParticles();
-  drawBullet();
-  drawShooter();
-  drawPopups();
+  drawPath(); drawRings(); drawChain(); drawParticles(); drawBullet(); drawShooter(); drawPopups();
 }
 
 function drawPath(){
-  if(!path||path.pts.length<2)return;
-  const pts=path.pts;
-  xG.save();
-  xG.lineCap='round'; xG.lineJoin='round';
-
-  // ── outer glow ──
-  xG.beginPath(); xG.moveTo(pts[0].x,pts[0].y);
-  for(let i=1;i<pts.length;i++) xG.lineTo(pts[i].x,pts[i].y);
-  xG.strokeStyle='rgba(120,50,220,.10)';
-  xG.lineWidth=GR*2+22; xG.stroke();
-
-  // ── tunnel shadow ──
-  xG.beginPath(); xG.moveTo(pts[0].x,pts[0].y);
-  for(let i=1;i<pts.length;i++) xG.lineTo(pts[i].x,pts[i].y);
-  xG.strokeStyle='rgba(30,0,80,.75)';
-  xG.lineWidth=GR*2+8; xG.stroke();
-
-  // ── stone texture (two tones) ──
-  xG.beginPath(); xG.moveTo(pts[0].x,pts[0].y);
-  for(let i=1;i<pts.length;i++) xG.lineTo(pts[i].x,pts[i].y);
-  xG.strokeStyle='rgba(55,20,110,.85)';
-  xG.lineWidth=GR*2+2; xG.stroke();
-
-  // ── centre groove ──
-  xG.beginPath(); xG.moveTo(pts[0].x,pts[0].y);
-  for(let i=1;i<pts.length;i++) xG.lineTo(pts[i].x,pts[i].y);
-  xG.strokeStyle='rgba(100,40,200,.25)';
-  xG.lineWidth=4; xG.stroke();
-
-  // ── shimmer highlight ──
-  xG.beginPath(); xG.moveTo(pts[0].x,pts[0].y);
-  for(let i=1;i<pts.length;i++) xG.lineTo(pts[i].x,pts[i].y);
-  xG.strokeStyle='rgba(200,160,255,.12)';
-  xG.lineWidth=2; xG.stroke();
-
+  if(!pathPts.length) return;
+  var pts=pathPts;
+  function stroke(col,lw,blur,bc){
+    xG.beginPath(); xG.moveTo(pts[0].x,pts[0].y);
+    for(var i=1;i<pts.length;i++) xG.lineTo(pts[i].x,pts[i].y);
+    xG.strokeStyle=col; xG.lineWidth=lw;
+    xG.shadowBlur=blur||0; xG.shadowColor=bc||col; xG.stroke(); xG.shadowBlur=0;
+  }
+  xG.save(); xG.lineCap='round'; xG.lineJoin='round';
+  stroke('rgba(90,30,200,.09)',  GR*2+26, 22,'rgba(110,40,220,.3)');
+  stroke('rgba(28,0,75,.85)',    GR*2+10);
+  stroke('rgba(52,12,108,.92)',  GR*2+2);
+  stroke('rgba(95,35,195,.2)',   5);
+  stroke('rgba(190,130,255,.12)',2);
   xG.restore();
 
-  // end marker – skull
-  const ep=pts[pts.length-1];
+  var ep=pts[pts.length-1], sp=pts[0];
   xG.save();
-  xG.font=`${GR*2.2}px serif`;
   xG.textAlign='center'; xG.textBaseline='middle';
-  xG.shadowBlur=22; xG.shadowColor='rgba(255,40,40,.9)';
-  xG.globalAlpha=.95+.05*Math.sin(bgT*4);
-  xG.fillText('💀',ep.x,ep.y);
-  // danger pulse ring
-  xG.beginPath(); xG.arc(ep.x,ep.y,GR*1.8+Math.sin(bgT*5)*4,0,Math.PI*2);
-  xG.strokeStyle=`rgba(255,50,50,${.3+.3*Math.sin(bgT*5)})`;
+  // skull
+  xG.font=(GR*2.2)+'px serif';
+  xG.shadowBlur=24; xG.shadowColor='rgba(255,30,30,.9)';
+  xG.globalAlpha=.9+.1*Math.sin(bgT*4);
+  xG.fillText('\u{1F480}',ep.x,ep.y);
+  xG.beginPath(); xG.arc(ep.x,ep.y,GR*1.9+Math.sin(bgT*5)*3,0,Math.PI*2);
+  xG.strokeStyle='rgba(255,40,40,'+(0.2+0.2*Math.sin(bgT*5))+')';
   xG.lineWidth=2; xG.stroke();
-  xG.restore();
-
-  // start marker
-  const sp=pts[0];
-  xG.save();
-  xG.font=`${GR*1.8}px serif`;
-  xG.textAlign='center'; xG.textBaseline='middle';
-  xG.shadowBlur=18; xG.shadowColor='rgba(100,220,255,.9)';
-  xG.fillText('🌀',sp.x,sp.y);
+  // start
+  xG.font=(GR*1.9)+'px serif';
+  xG.shadowBlur=18; xG.shadowColor='rgba(80,210,255,.9)'; xG.globalAlpha=1;
+  xG.fillText('\u{1F300}',sp.x,sp.y);
   xG.restore();
 }
 
 function drawRings(){
-  rings.forEach(r=>{
-    xG.save();
-    xG.globalAlpha=r.life*.6;
-    xG.strokeStyle=GEMS[r.ci].glow.replace('.9','1');
-    xG.lineWidth=3;
-    xG.shadowBlur=20; xG.shadowColor=GEMS[r.ci].glow;
+  for(var i=0;i<rings.length;i++){
+    var r=rings[i];
+    xG.save(); xG.globalAlpha=r.life*.55; xG.lineWidth=3;
+    xG.shadowBlur=16; xG.shadowColor=GEMS[r.ci].glow;
+    xG.strokeStyle=GEMS[r.ci].glow;
     xG.beginPath(); xG.arc(r.x,r.y,r.radius,0,Math.PI*2); xG.stroke();
-    // inner ring
-    xG.globalAlpha=r.life*.3;
-    xG.beginPath(); xG.arc(r.x,r.y,r.radius*.6,0,Math.PI*2); xG.stroke();
+    xG.globalAlpha=r.life*.25;
+    xG.beginPath(); xG.arc(r.x,r.y,r.radius*.55,0,Math.PI*2); xG.stroke();
     xG.restore();
-  });
+  }
+}
+
+function drawGem(cx,cy,gem,r,flash){
+  if(r<.5) return;
+  xG.save(); xG.translate(cx,cy);
+  xG.shadowBlur=18+(flash||0)*12; xG.shadowColor=gem.glow;
+  var gr=xG.createRadialGradient(-r*.28,-r*.28,r*.05,0,0,r);
+  gr.addColorStop(0,gem.hi); gr.addColorStop(.38,gem.fill); gr.addColorStop(.8,gem.sh); gr.addColorStop(1,gem.sh);
+  xG.beginPath(); xG.arc(0,0,r,0,Math.PI*2); xG.fillStyle=gr; xG.fill();
+  if(flash&&flash>0){xG.globalAlpha=flash*.5; xG.fillStyle='#fff'; xG.beginPath(); xG.arc(0,0,r,0,Math.PI*2); xG.fill(); xG.globalAlpha=1;}
+  xG.shadowBlur=0;
+  xG.beginPath(); xG.arc(0,0,r,0,Math.PI*2); xG.strokeStyle=gem.rim+'99'; xG.lineWidth=1.8; xG.stroke();
+  xG.beginPath(); xG.arc(-r*.27,-r*.27,r*.3,0,Math.PI*2); xG.fillStyle='rgba(255,255,255,.5)'; xG.fill();
+  xG.beginPath(); xG.arc(-r*.08,-r*.38,r*.1,0,Math.PI*2); xG.fillStyle='rgba(255,255,255,.9)'; xG.fill();
+  xG.restore();
 }
 
 function drawChain(){
-  // Draw back to front
-  for(let i=chain.length-1;i>=0;i--){
-    const g=chain[i];
-    drawGem(xG,g.x,g.y,GEMS[g.ci],GR*g.scale,g.flash,tangentAt(g.d));
-  }
-}
-
-function drawGem(c,x,y,gem,r,flash=0,angle=0){
-  if(r<.5)return;
-  c.save();
-  c.translate(x,y);
-
-  // glow halo
-  c.shadowBlur=20+flash*15; c.shadowColor=gem.glow;
-
-  // body gradient
-  const gr=c.createRadialGradient(-r*.28,-r*.28,r*.05,0,0,r);
-  gr.addColorStop(0,gem.hi);
-  gr.addColorStop(.35,gem.fill);
-  gr.addColorStop(.75,gem.sh);
-  gr.addColorStop(1,gem.sh);
-  c.beginPath(); c.arc(0,0,r,0,Math.PI*2);
-  c.fillStyle=gr; c.fill();
-
-  // flash overlay
-  if(flash>0){
-    c.globalAlpha=flash*.6;
-    c.fillStyle='#ffffff';
-    c.beginPath(); c.arc(0,0,r,0,Math.PI*2); c.fill();
-    c.globalAlpha=1;
-  }
-
-  // rim light
-  c.beginPath(); c.arc(0,0,r,0,Math.PI*2);
-  c.strokeStyle=gem.rim+'88'; c.lineWidth=1.8; c.stroke();
-
-  // specular highlight – main
-  c.beginPath(); c.arc(-r*.27,-r*.27,r*.3,0,Math.PI*2);
-  c.fillStyle='rgba(255,255,255,.55)'; c.fill();
-  // specular – small sharp
-  c.beginPath(); c.arc(-r*.1,-r*.38,r*.1,0,Math.PI*2);
-  c.fillStyle='rgba(255,255,255,.85)'; c.fill();
-
-  c.restore();
+  // draw tail→head (index 0 first, then overlapping forward)
+  for(var i=0;i<chain.length;i++) drawGem(chain[i].x,chain[i].y,GEMS[chain[i].ci],GR*chain[i].sc,chain[i].flash);
 }
 
 function drawParticles(){
-  particles.forEach(p=>{
-    c=xG;
-    c.save();
-    const a=Math.max(0,p.life/60)*.9;
-    c.globalAlpha=a;
+  for(var i=0;i<particles.length;i++){
+    var p=particles[i];
+    xG.save(); xG.globalAlpha=Math.max(0,p.life/60)*.9;
     if(p.sparkle){
-      // cross sparkle
-      c.strokeStyle=p.hi||p.fill;
-      c.lineWidth=p.r*.9;
-      c.shadowBlur=8; c.shadowColor=p.glow||p.fill;
-      c.beginPath(); c.moveTo(p.x-p.r*2,p.y); c.lineTo(p.x+p.r*2,p.y); c.stroke();
-      c.beginPath(); c.moveTo(p.x,p.y-p.r*2); c.lineTo(p.x,p.y+p.r*2); c.stroke();
+      xG.strokeStyle=p.hi||p.fill; xG.lineWidth=p.r*.9;
+      xG.shadowBlur=8; xG.shadowColor=p.glow||p.fill;
+      xG.beginPath(); xG.moveTo(p.x-p.r*2,p.y); xG.lineTo(p.x+p.r*2,p.y); xG.stroke();
+      xG.beginPath(); xG.moveTo(p.x,p.y-p.r*2); xG.lineTo(p.x,p.y+p.r*2); xG.stroke();
     } else {
-      const g=c.createRadialGradient(p.x-p.r*.3,p.y-p.r*.3,.1,p.x,p.y,p.r);
-      g.addColorStop(0,p.hi||'#fff'); g.addColorStop(1,p.fill);
-      c.shadowBlur=12; c.shadowColor=p.glow||p.fill;
-      c.beginPath(); c.arc(p.x,p.y,Math.max(.1,p.r),0,Math.PI*2);
-      c.fillStyle=g; c.fill();
+      var gr=xG.createRadialGradient(p.x-p.r*.3,p.y-p.r*.3,.1,p.x,p.y,p.r);
+      gr.addColorStop(0,p.hi||'#fff'); gr.addColorStop(1,p.fill);
+      xG.shadowBlur=12; xG.shadowColor=p.glow||p.fill;
+      xG.beginPath(); xG.arc(p.x,p.y,Math.max(.1,p.r),0,Math.PI*2); xG.fillStyle=gr; xG.fill();
     }
-    c.restore();
-  });
+    xG.restore();
+  }
 }
 
 function drawBullet(){
-  if(!bullet)return;
-  // trail
-  bullet.trail.forEach((pt,i)=>{
-    const a=(i/bullet.trail.length)*.4;
-    const r=GR*(i/bullet.trail.length)*.7;
-    if(r<.3)return;
-    xG.save();
-    xG.globalAlpha=a;
-    xG.shadowBlur=12; xG.shadowColor=GEMS[bullet.ci].glow;
-    xG.beginPath(); xG.arc(pt.x,pt.y,r,0,Math.PI*2);
-    xG.fillStyle=GEMS[bullet.ci].fill; xG.fill();
-    xG.restore();
-  });
-  drawGem(xG,bullet.x,bullet.y,GEMS[bullet.ci],GR);
+  if(!bullet) return;
+  for(var i=0;i<bullet.trail.length;i++){
+    var pt=bullet.trail[i], a=(i/bullet.trail.length)*.4, r=GR*(i/bullet.trail.length)*.7;
+    if(r<.3) continue;
+    xG.save(); xG.globalAlpha=a; xG.shadowBlur=10; xG.shadowColor=GEMS[bullet.ci].glow;
+    xG.beginPath(); xG.arc(pt.x,pt.y,r,0,Math.PI*2); xG.fillStyle=GEMS[bullet.ci].fill; xG.fill(); xG.restore();
+  }
+  drawGem(bullet.x,bullet.y,GEMS[bullet.ci],GR);
 }
 
 function drawShooter(){
-  const {x,y,angle,ci,next,pulseT}=shooter;
-  xG.save();
-  xG.translate(x,y);
-
-  // outer glow halo
-  const pulse=.5+.5*Math.sin(pulseT*2.5);
-  const halo=xG.createRadialGradient(0,0,10,0,0,55);
-  halo.addColorStop(0,`rgba(140,60,255,${.35+pulse*.15})`);
-  halo.addColorStop(1,'rgba(140,60,255,0)');
+  var pv=.5+.5*Math.sin(sPulse*2.5);
+  xG.save(); xG.translate(sX,sY);
+  // halo
+  var halo=xG.createRadialGradient(0,0,10,0,0,55);
+  halo.addColorStop(0,'rgba(140,60,255,'+(0.28+pv*.15)+')'); halo.addColorStop(1,'rgba(140,60,255,0)');
   xG.fillStyle=halo; xG.beginPath(); xG.arc(0,0,55,0,Math.PI*2); xG.fill();
-
-  // rotating outer ring
-  xG.save(); xG.rotate(pulseT*.8);
-  for(let i=0;i<8;i++){
-    const a=i/8*Math.PI*2;
-    const d=30+pulse*2;
-    xG.beginPath(); xG.arc(Math.cos(a)*d,Math.sin(a)*d,2,0,Math.PI*2);
-    xG.fillStyle=`rgba(255,200,0,${.4+pulse*.3})`; xG.fill();
-  }
+  // orbit dots
+  xG.save(); xG.rotate(sPulse*.8);
+  for(var i=0;i<8;i++){var a=i/8*Math.PI*2,dd=29+pv*2; xG.beginPath(); xG.arc(Math.cos(a)*dd,Math.sin(a)*dd,2,0,Math.PI*2); xG.fillStyle='rgba(255,200,0,'+(0.3+pv*.3)+')'; xG.fill();}
   xG.restore();
-
-  // platform ring
-  xG.beginPath(); xG.arc(0,0,26,0,Math.PI*2);
-  xG.strokeStyle=`rgba(255,190,0,${.6+pulse*.3})`; xG.lineWidth=2.5;
-  xG.shadowBlur=18; xG.shadowColor='rgba(255,160,0,.7)'; xG.stroke(); xG.shadowBlur=0;
-
-  // inner ring
-  xG.beginPath(); xG.arc(0,0,20,0,Math.PI*2);
-  xG.strokeStyle='rgba(255,220,100,.25)'; xG.lineWidth=1; xG.stroke();
-
-  // aim line with dots
-  xG.save(); xG.rotate(angle);
-  xG.setLineDash([4,8]);
-  xG.strokeStyle=`rgba(255,210,80,${.2+pulse*.12})`;
-  xG.lineWidth=1.5;
-  xG.beginPath(); xG.moveTo(22,0); xG.lineTo(130,0); xG.stroke();
-  xG.setLineDash([]);
-  // arrowhead
-  xG.fillStyle=`rgba(255,210,80,${.35+pulse*.15})`;
-  xG.beginPath(); xG.moveTo(135,0); xG.lineTo(125,-4); xG.lineTo(125,4); xG.closePath(); xG.fill();
-  xG.restore();
-
-  // current gem
-  xG.restore();
-  drawGem(xG,x,y,GEMS[ci],GR);
-
+  // ring
+  xG.beginPath(); xG.arc(0,0,26,0,Math.PI*2); xG.strokeStyle='rgba(255,190,0,'+(0.5+pv*.3)+')'; xG.lineWidth=2.5; xG.shadowBlur=16; xG.shadowColor='rgba(255,160,0,.7)'; xG.stroke(); xG.shadowBlur=0;
+  xG.beginPath(); xG.arc(0,0,19,0,Math.PI*2); xG.strokeStyle='rgba(255,220,100,.18)'; xG.lineWidth=1; xG.stroke();
+  // aim line
+  xG.save(); xG.rotate(sAngle); xG.setLineDash([4,8]); xG.strokeStyle='rgba(255,210,80,'+(0.18+pv*.1)+')'; xG.lineWidth=1.5;
+  xG.beginPath(); xG.moveTo(22,0); xG.lineTo(130,0); xG.stroke(); xG.setLineDash([]);
+  xG.fillStyle='rgba(255,210,80,'+(0.28+pv*.15)+')'; xG.beginPath(); xG.moveTo(135,0); xG.lineTo(125,-4); xG.lineTo(125,4); xG.closePath(); xG.fill();
+  xG.restore(); xG.restore();
+  // gem on shooter
+  drawGem(sX,sY,GEMS[sCI],GR);
   // next gem preview
-  const nx=x+45, ny=y+38;
-  xG.save();
-  xG.globalAlpha=.85;
-  drawGem(xG,nx,ny,GEMS[next],GR*.62);
-  xG.restore();
-  xG.save();
-  xG.globalAlpha=.6;
-  xG.font=`${Math.max(8,W*.018)}px Cinzel`;
-  xG.fillStyle='rgba(200,160,240,.8)';
-  xG.textAlign='center';
-  xG.fillText('NEXT',nx,ny+GR*.62+10);
-  xG.restore();
+  xG.save(); xG.globalAlpha=.8; drawGem(sX+44,sY+36,GEMS[sNext],GR*.62); xG.restore();
+  xG.save(); xG.globalAlpha=.55; xG.font=Math.max(8,W*.018)+'px Cinzel'; xG.fillStyle='rgba(200,160,240,.85)'; xG.textAlign='center'; xG.fillText('NEXT',sX+44,sY+47); xG.restore();
 }
 
 function drawPopups(){
-  popups.forEach(p=>{
-    xG.save();
-    const a=Math.max(0,p.life/80);
-    xG.globalAlpha=a;
-    xG.font=`bold ${p.big?22:17}px Cinzel`;
-    xG.fillStyle=p.big?'#ffaa00':'#ffcc44';
-    xG.shadowBlur=p.big?18:10;
-    xG.shadowColor=p.big?'rgba(255,140,0,.9)':'rgba(255,200,0,.8)';
-    xG.textAlign='center';
-    xG.fillText(p.text,p.x,p.y);
-    xG.restore();
-  });
+  for(var i=0;i<popups.length;i++){
+    var p=popups[i];
+    xG.save(); xG.globalAlpha=Math.max(0,p.life/80);
+    xG.font='bold '+(p.big?22:17)+'px Cinzel'; xG.fillStyle=p.big?'#ffaa00':'#ffcc44';
+    xG.shadowBlur=p.big?18:10; xG.shadowColor=p.big?'rgba(255,140,0,.9)':'rgba(255,200,0,.8)';
+    xG.textAlign='center'; xG.fillText(p.text,p.x,p.y); xG.restore();
+  }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  HUD
-// ═══════════════════════════════════════════════════════════
+// ── HUD ───────────────────────────────────────────────────
 function updateHUD(){
   document.getElementById('hScore').textContent=score.toLocaleString();
   document.getElementById('hLvl').textContent=lvlIdx+1;
   document.getElementById('hName').textContent=LEVELS[lvlIdx].name;
-  let h='';
-  for(let i=0;i<MAX_LIVES;i++) h+=`<span class="heart${i>=lives?' off':''}"></span>`;
+  var h=''; for(var i=0;i<MAX_LIVES;i++) h+='<span class="heart'+(i>=lives?' off':'')+'"></span>';
   document.getElementById('hHearts').innerHTML=h;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  END / NAV
-// ═══════════════════════════════════════════════════════════
+// ── end ───────────────────────────────────────────────────
 function endGame(win){
-  state=win?'win':'lose';
+  gameState=win?'win':'lose';
   cancelAnimationFrame(rafId);
   document.getElementById('hud').style.display='none';
   document.getElementById('pbar-wrap').style.display='none';
@@ -907,20 +679,17 @@ function endGame(win){
     showScr('sLose');
   }
 }
-
 function nextLevel(){ lvlIdx++; if(lvlIdx>=LEVELS.length){goMenu();return;} showScr(''); setupLevel(lvlIdx); }
 function retryLevel(){ lives=MAX_LIVES; showScr(''); setupLevel(lvlIdx); }
 function goMenu(){
-  state='menu'; cancelAnimationFrame(rafId);
+  gameState='menu'; cancelAnimationFrame(rafId);
   document.getElementById('hud').style.display='none';
   document.getElementById('pbar-wrap').style.display='none';
-  xG.clearRect(0,0,W,H); showScr('sMenu');
-  levelBg=LEVELS[0].bg;
+  xG.clearRect(0,0,W,H);
+  bgSky=LEVELS[0].sky; bgFog=LEVELS[0].fog; bgAcc=LEVELS[0].acc;
+  showScr('sMenu');
 }
-
-document.addEventListener('keydown',e=>{
-  if((e.key==='r'||e.key==='R')&&state==='playing') retryLevel();
-});
+document.addEventListener('keydown',function(e){ if((e.key==='r'||e.key==='R')&&gameState==='playing') retryLevel(); });
 </script>
 </body>
 </html>
