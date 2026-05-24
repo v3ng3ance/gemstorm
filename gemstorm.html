@@ -379,48 +379,76 @@ function findMatches(){
 }
 
 // ═══ CASCADE ══════════════════════════════════════════════════
+
+// Expand a triggered bonus gem into extra cells to destroy
 function expandBonus(r,c,v,dst){
-  if(v>=BH){for(let cc=0;cc<COLS;cc++)dst.add(r*COLS+cc);for(let rr=0;rr<ROWS;rr++)dst.add(rr*COLS+c);}
-  else if(v>=BS){const col=v-BS;for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===col)dst.add(rr*COLS+cc);}
-  else if(v>=BF){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}}
+  if(v>=BH){
+    // Hypercube: destroy full row + full column
+    for(let cc=0;cc<COLS;cc++)dst.add(r*COLS+cc);
+    for(let rr=0;rr<ROWS;rr++)dst.add(rr*COLS+c);
+  } else if(v>=BS){
+    // Star: destroy all gems of same color
+    const col=v-BS;
+    for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)
+      if(gColor(board[rr][cc])===col)dst.add(rr*COLS+cc);
+  } else if(v>=BF){
+    // Flame: destroy 3×3 area
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);
+    }
+  }
 }
 
 function resolveMatches(groups){
   combo++;
-  // score
+
+  // Score: longer matches = bigger bonus multiplier
   let pts=0;
   for(const g of groups){
-    const lb=g.cells.length>=5?4:g.cells.length===4?2:1;
-    pts+=g.cells.length*10*lb;
+    const lenBonus=g.cells.length>=5?4:g.cells.length===4?2:1;
+    pts+=g.cells.length*10*lenBonus;
   }
   pts=Math.round(pts*combo);
-  score+=pts;if(score>best){best=score;localStorage.setItem('gb2',best);}
+  score+=pts;
+  if(score>best){best=score;localStorage.setItem('gb2',best);}
   updateUI();
 
-  // floater
-  const allC=[...new Set(groups.flatMap(g=>g.cells.map(([r,c])=>r*COLS+c)))].map(i=>[Math.floor(i/COLS),i%COLS]);
+  // Floating score label
+  const allC=[...new Set(groups.flatMap(g=>g.cells.map(([r,c])=>r*COLS+c)))]
+    .map(i=>[Math.floor(i/COLS),i%COLS]);
   const mr=allC.reduce((s,[r])=>s+r,0)/allC.length;
   const mc=allC.reduce((s,[,c])=>s+c,0)/allC.length;
   const{x,y}=cxy(Math.round(mr),Math.round(mc));
-  const pre=groups.some(g=>g.type==='hyper')?'💥':groups.some(g=>g.type==='star')?'⭐':groups.some(g=>g.type==='flame')?'🔥':'';
-  floats.push({x:x+CELL/2,y:y+CELL/2,txt:pre+(combo>1?`×${combo} `:'')+'+'+pts,a:1});
+  const pre=groups.some(g=>g.type==='hyper')?'💥'
+           :groups.some(g=>g.type==='star')?'⭐'
+           :groups.some(g=>g.type==='flame')?'🔥':'';
+  floats.push({x:x+CELL/2,y:y+CELL/2,
+    txt:pre+(combo>1?`×${combo} `:'')+'+'+pts,a:1});
 
+  // Badge for combos / bonus gems
   if(combo>1||groups.some(g=>g.type!=='normal'))badge(combo,groups);
 
-  // build destroy set
+  // Build the full destroy set, chaining bonus gems that get hit
   const dst=new Set();
   const newBonuses=[];
   for(const g of groups){
     for(const[r,c]of g.cells){
       dst.add(r*COLS+c);
+      // if hitting a bonus gem, trigger its area effect too
       if(isBonus(board[r][c]))expandBonus(r,c,board[r][c],dst);
     }
+    // record what new bonus to place at the pivot after explosion
     if(g.type==='flame'||g.type==='star'||g.type==='hyper')
       newBonuses.push({r:g.pivot[0],c:g.pivot[1],btype:g.type,color:g.color});
   }
 
+  // Count real (non-empty) cells to explode
   let pending=0;
-  for(const idx of dst){const r=Math.floor(idx/COLS),c=idx%COLS;if(board[r][c]!==-1)pending++;}
+  for(const idx of dst){
+    const r=Math.floor(idx/COLS),c=idx%COLS;
+    if(board[r][c]!==-1)pending++;
+  }
   if(pending===0){doGravity(dst);return;}
 
   let done2=0;
@@ -431,10 +459,13 @@ function resolveMatches(groups){
     anims[r][c]={type:'ex',t:0,dur:.28,onDone:()=>{
       board[r][c]=-1;
       if(++done2===pending){
+        // Place newly-created bonus gems before filling gravity
         for(const{r:br,c:bc,btype,color}of newBonuses){
           if(board[br][bc]===-1){
-            board[br][bc]=btype==='star'?BS+color:btype==='hyper'?BH:BF+color;
-            dst.delete(br*COLS+bc);
+            board[br][bc]=btype==='star'?BS+color
+                         :btype==='hyper'?BH
+                         :BF+color;
+            dst.delete(br*COLS+bc); // don't refill this slot
           }
         }
         doGravity(dst);
