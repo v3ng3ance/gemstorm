@@ -8,55 +8,103 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Raleway:wght@400;600&display=swap');
 
 *{margin:0;padding:0;box-sizing:border-box}
+
 body{
   min-height:100vh;
-  background:#0d0820;
+  background:#07051a;
   color:#c8c8ff;
   font-family:'Raleway',sans-serif;
   display:flex;flex-direction:column;align-items:center;
   padding:16px 12px 40px;gap:12px;
+  overflow-x:hidden;
 }
-h1{
-  font-family:'Cinzel Decorative',serif;
-  font-size:clamp(1.2rem,4vw,1.8rem);
-  color:#f0c040;
-  text-shadow:0 0 20px rgba(240,192,64,.6);
-  letter-spacing:.1em;
-}
-.sub{font-size:.6rem;letter-spacing:.3em;color:#5050a0;text-transform:uppercase;}
 
-.layout{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%;max-width:700px;}
+/* animated starfield */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%,rgba(255,255,255,.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 34% 72%,rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 56% 40%,rgba(200,180,255,.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 78% 85%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 90% 25%,rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 23% 55%,rgba(180,160,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 67% 10%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(1px 1px at 45% 92%,rgba(255,255,255,.3) 0%,transparent 100%),
+    radial-gradient(2px 2px at 8%  60%,rgba(160,140,255,.4) 0%,transparent 100%),
+    radial-gradient(2px 2px at 82% 48%,rgba(200,180,255,.3) 0%,transparent 100%),
+    radial-gradient(500px 500px at 50% 40%,rgba(30,10,80,.7) 0%,transparent 100%);
+}
+
+h1{
+  position:relative;z-index:1;
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(1.3rem,4vw,2rem);
+  background:linear-gradient(135deg,#ffd060,#f0a020,#ffd060);
+  background-size:200% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:titleShimmer 3s linear infinite;
+  letter-spacing:.12em;filter:drop-shadow(0 0 12px rgba(240,180,40,.5));
+}
+@keyframes titleShimmer{to{background-position:200% center}}
+
+.sub{position:relative;z-index:1;font-size:.6rem;letter-spacing:.3em;color:#4040a0;text-transform:uppercase;}
+
+.layout{
+  position:relative;z-index:1;
+  display:flex;gap:16px;align-items:flex-start;
+  flex-wrap:wrap;justify-content:center;width:100%;max-width:720px;
+}
 
 /* ── SIDE PANEL ── */
-.panel{display:flex;flex-direction:column;gap:10px;width:130px;}
-.sbox{background:#12122a;border:1px solid #2a2a5a;border-radius:10px;padding:10px 14px;text-align:center;}
-.slabel{font-size:.55rem;letter-spacing:.25em;text-transform:uppercase;color:#5050a0;margin-bottom:3px;}
-.sval{font-family:'Cinzel Decorative',serif;font-size:1.3rem;color:#f0c040;}
-.lvlbg{height:6px;background:#1a1a3a;border-radius:3px;margin-top:6px;overflow:hidden;}
-.lvlbar{height:100%;background:linear-gradient(90deg,#7040ff,#f0c040);border-radius:3px;transition:width .4s;}
-.btn{
-  background:#1a0a40;border:1px solid #3a2a6a;color:#c8c8ff;
-  font-family:'Raleway',sans-serif;font-size:.65rem;letter-spacing:.15em;
-  text-transform:uppercase;padding:9px;border-radius:8px;cursor:pointer;
-  transition:all .15s;width:100%;
+.panel{display:flex;flex-direction:column;gap:10px;width:134px;}
+.sbox{
+  background:linear-gradient(160deg,#141428,#0e0e22);
+  border:1px solid #252550;border-radius:12px;padding:11px 14px;text-align:center;
+  box-shadow:0 4px 20px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05);
 }
-.btn:hover{background:#2a1a60;border-color:#f0c040;color:#f0c040;}
-.btn.gold{border-color:#f0c040;color:#f0c040;background:#2a1800;}
-.btn.gold:hover{background:#3a2800;}
+.slabel{font-size:.54rem;letter-spacing:.28em;text-transform:uppercase;color:#4a4a90;margin-bottom:3px;}
+.sval{
+  font-family:'Cinzel Decorative',serif;font-size:1.35rem;
+  background:linear-gradient(135deg,#ffd060,#f0a020);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.lvlbg{height:6px;background:#10103a;border-radius:3px;margin-top:7px;overflow:hidden;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.5);}
+.lvlbar{height:100%;background:linear-gradient(90deg,#6030ff,#f0c040);border-radius:3px;
+  transition:width .5s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 0 8px rgba(100,60,255,.8);}
+.btn{
+  background:linear-gradient(160deg,#1c0c4a,#140a30);
+  border:1px solid #302870;color:#a0a0e0;
+  font-family:'Raleway',sans-serif;font-size:.64rem;letter-spacing:.14em;
+  text-transform:uppercase;padding:10px;border-radius:9px;cursor:pointer;
+  transition:all .18s;width:100%;
+  box-shadow:0 3px 12px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06);
+}
+.btn:hover{background:linear-gradient(160deg,#2c1c6a,#1c1240);border-color:#a080ff;color:#fff;transform:translateY(-1px);box-shadow:0 6px 20px rgba(80,40,200,.4);}
+.btn:active{transform:translateY(0);}
+.btn.gold{border-color:#c09020;color:#f0c040;background:linear-gradient(160deg,#2a1800,#1a1000);}
+.btn.gold:hover{border-color:#f0c040;box-shadow:0 6px 20px rgba(200,150,20,.3);}
 
-/* ── BOARD ── */
+/* ── BOARD WRAPPER ── */
 .board-wrap{
   position:relative;
-  background:#080618;
-  border:2px solid #2a2a5a;
-  border-radius:14px;
-  padding:8px;
-  box-shadow:0 0 40px rgba(60,20,160,.5);
+  background:linear-gradient(160deg,#0c0820,#070514);
+  border:1px solid #1e1a40;
+  border-radius:16px;
+  padding:10px;
+  box-shadow:
+    0 0 0 1px rgba(100,60,255,.15),
+    0 0 60px rgba(50,20,140,.6),
+    0 20px 60px rgba(0,0,0,.6),
+    inset 0 1px 0 rgba(255,255,255,.06);
 }
+
 #board{
   display:grid;
   grid-template-columns:repeat(8,1fr);
-  gap:3px;
+  gap:4px;
   position:relative;
 }
 
@@ -64,114 +112,207 @@ h1{
 .cell{
   width:var(--cs);height:var(--cs);
   position:relative;
-  border-radius:6px;
-  background:rgba(255,255,255,.03);
+  border-radius:8px;
+  background:rgba(255,255,255,.02);
   cursor:pointer;
+  transition:background .1s;
 }
-.cell:hover .gem{filter:brightness(1.25);}
+.cell:hover{background:rgba(255,255,255,.05);}
 
-/* ── GEM ── */
+/* ── GEM BASE ── */
 .gem{
   position:absolute;
-  inset:6%;
+  inset:7%;
   border-radius:50%;
-  transition:transform .15s;
-  /* each gem color set via inline style */
+  will-change:transform,opacity;
+  /* glow ring */
+  outline:2px solid transparent;
+  outline-offset:1px;
+  transition:filter .12s, outline-color .12s;
 }
-/* shine overlay */
+
+/* top-left specular highlight */
 .gem::after{
   content:'';
   position:absolute;
-  top:8%;left:15%;
-  width:35%;height:35%;
-  background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);
+  top:10%;left:18%;
+  width:30%;height:30%;
+  background:radial-gradient(circle,rgba(255,255,255,.7) 0%,rgba(255,255,255,.1) 60%,transparent 100%);
   border-radius:50%;
   pointer-events:none;
+  z-index:2;
 }
 
-/* selected */
+/* bottom rim reflection */
+.gem::before{
+  content:'';
+  position:absolute;
+  bottom:8%;left:20%;right:20%;height:18%;
+  background:radial-gradient(ellipse,rgba(255,255,255,.18),transparent 70%);
+  border-radius:50%;
+  pointer-events:none;
+  z-index:2;
+}
+
+.cell:hover .gem{filter:brightness(1.3) saturate(1.2);}
+
+/* ── SELECTED ── */
+@keyframes selPulse{
+  0%,100%{box-shadow:var(--gem-shadow), 0 0 0 3px rgba(255,255,255,.9), 0 0 20px rgba(255,255,255,.5)}
+  50%    {box-shadow:var(--gem-shadow), 0 0 0 3px #f0c040,               0 0 30px rgba(240,192,64,.7)}
+}
 .cell.sel .gem{
-  transform:scale(1.2);
-  box-shadow:0 0 0 3px #fff, 0 0 16px rgba(255,255,255,.6) !important;
+  transform:scale(1.18);
+  animation:selPulse .7s ease-in-out infinite;
+  z-index:5;
 }
 
-/* hint */
-@keyframes hintPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
-.cell.hint .gem{animation:hintPulse .4s ease-in-out 3;}
+/* ── HINT ── */
+@keyframes hintBounce{
+  0%,100%{transform:scale(1) rotate(0deg)}
+  25%    {transform:scale(1.2) rotate(-8deg)}
+  75%    {transform:scale(1.2) rotate(8deg)}
+}
+.cell.hint .gem{animation:hintBounce .45s ease-in-out 3;}
 
-/* explode */
-@keyframes explode{
-  0%{transform:scale(1);opacity:1}
-  50%{transform:scale(1.6);opacity:.6}
-  100%{transform:scale(0);opacity:0}
+/* ── EXPLODE ── */
+@keyframes gemExplode{
+  0%  {transform:scale(1);   opacity:1;filter:brightness(1)}
+  30% {transform:scale(1.5); opacity:1;filter:brightness(2.5) saturate(2)}
+  60% {transform:scale(1.8); opacity:.5;filter:brightness(3)}
+  100%{transform:scale(.1);  opacity:0;filter:brightness(4)}
 }
-.gem.exploding{animation:explode .3s ease forwards;}
+.gem.exploding{
+  animation:gemExplode .38s cubic-bezier(.4,0,1,1) forwards;
+  z-index:10;
+}
 
-/* fall */
-@keyframes fallIn{
-  from{transform:translateY(var(--fall-from)) scale(.8);opacity:0}
-  to{transform:translateY(0) scale(1);opacity:1}
+/* shockwave ring on explode */
+.gem.exploding::after{
+  animation:shockwave .38s ease-out forwards;
 }
-.gem.falling{animation:fallIn .35s cubic-bezier(.22,.6,.36,1) both;}
+@keyframes shockwave{
+  0%  {transform:scale(1);opacity:.8;width:30%;height:30%;top:10%;left:18%;}
+  100%{transform:scale(4);opacity:0; width:30%;height:30%;top:10%;left:18%;}
+}
 
-/* swap */
-@keyframes swapA{
-  0%{transform:translate(0,0)}
-  50%{transform:translate(var(--sx),var(--sy))}
-  100%{transform:translate(0,0)}
+/* ── FALL ── */
+@keyframes gemFall{
+  0%  {transform:translateY(var(--fall-from)) scaleY(.7) scaleX(1.2);opacity:0}
+  60% {transform:translateY(4px) scaleY(1.05) scaleX(.97);opacity:1}
+  80% {transform:translateY(-3px) scaleY(.97) scaleX(1.02)}
+  100%{transform:translateY(0) scaleY(1) scaleX(1);opacity:1}
 }
-.gem.swapping{animation:swapA .18s ease both;}
+.gem.falling{
+  animation:gemFall .42s cubic-bezier(.22,.6,.36,1) both;
+}
 
-/* bonus indicators */
-.gem.flame::before{
-  content:'🔥';position:absolute;bottom:-2px;right:-2px;
-  font-size:.6em;line-height:1;pointer-events:none;z-index:2;
+/* ── SWAP ── */
+@keyframes gemSwap{
+  0%  {transform:translate(0,0)           scale(1)}
+  40% {transform:translate(var(--sx),var(--sy)) scale(1.12)}
+  100%{transform:translate(0,0)           scale(1)}
 }
-.gem.star::before{
-  content:'⭐';position:absolute;bottom:-2px;right:-2px;
-  font-size:.6em;line-height:1;pointer-events:none;z-index:2;
-}
-.gem.hyper::before{
-  content:'💥';position:absolute;bottom:-2px;right:-2px;
-  font-size:.6em;line-height:1;pointer-events:none;z-index:2;
-}
-.gem.flame,.gem.star{box-shadow:0 0 12px 3px rgba(255,220,50,.7) !important;}
-.gem.hyper{box-shadow:0 0 16px 4px rgba(200,100,255,.9) !important;}
+.gem.swapping{animation:gemSwap .2s cubic-bezier(.4,0,.2,1) both;}
 
-/* score pop */
-@keyframes scoreUp{
-  0%{transform:translateY(0);opacity:1}
-  100%{transform:translateY(-50px);opacity:0}
+/* ── BONUS GEMS ── */
+/* Flame gem — orange pulsing ring */
+@keyframes flamePulse{
+  0%,100%{box-shadow:var(--gem-shadow),0 0 12px 4px rgba(255,140,20,.6),0 0 28px 8px rgba(255,80,0,.3)}
+  50%    {box-shadow:var(--gem-shadow),0 0 20px 8px rgba(255,180,40,.8),0 0 45px 12px rgba(255,120,0,.5)}
+}
+.gem.flame{animation:flamePulse 1s ease-in-out infinite;}
+.gem.flame .bonus-icon{content:'🔥';}
+
+/* Star gem — spinning aura */
+@keyframes starSpin{
+  0%  {box-shadow:var(--gem-shadow),0 0 0 3px rgba(255,230,80,.9),0 0 25px 6px rgba(255,220,0,.5)}
+  50% {box-shadow:var(--gem-shadow),0 0 0 3px rgba(255,255,150,.9),0 0 40px 12px rgba(255,240,80,.7)}
+  100%{box-shadow:var(--gem-shadow),0 0 0 3px rgba(255,230,80,.9),0 0 25px 6px rgba(255,220,0,.5)}
+}
+.gem.star{animation:starSpin .8s ease-in-out infinite;}
+
+/* Hyper gem — rainbow shifting */
+@keyframes hyperRainbow{
+  0%  {box-shadow:var(--gem-shadow),0 0 0 3px #ff4466,0 0 30px 8px rgba(255,40,80,.5)}
+  25% {box-shadow:var(--gem-shadow),0 0 0 3px #44aaff,0 0 30px 8px rgba(40,150,255,.5)}
+  50% {box-shadow:var(--gem-shadow),0 0 0 3px #44ffaa,0 0 30px 8px rgba(40,220,120,.5)}
+  75% {box-shadow:var(--gem-shadow),0 0 0 3px #ff44ff,0 0 30px 8px rgba(200,40,255,.5)}
+  100%{box-shadow:var(--gem-shadow),0 0 0 3px #ff4466,0 0 30px 8px rgba(255,40,80,.5)}
+}
+.gem.hyper{animation:hyperRainbow 1.2s linear infinite;}
+
+/* bonus icon badge */
+.bonus-icon{
+  position:absolute;
+  bottom:-1px;right:-1px;
+  font-size:.55em;line-height:1;
+  pointer-events:none;z-index:3;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.8));
+}
+
+/* ── PARTICLES ── */
+.spark{
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:15;
+  animation:sparkFly var(--dur,.5s) ease-out forwards;
+}
+@keyframes sparkFly{
+  0%  {transform:translate(0,0) scale(1);opacity:1}
+  100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0}
+}
+
+/* ── SCORE POP ── */
+@keyframes scoreFloat{
+  0%  {transform:translateY(0)    scale(.6);opacity:1}
+  20% {transform:translateY(-8px) scale(1.1);opacity:1}
+  100%{transform:translateY(-55px) scale(.9);opacity:0}
 }
 .score-pop{
   position:absolute;pointer-events:none;
   font-family:'Cinzel Decorative',serif;
-  font-size:.9rem;font-weight:700;
-  color:#f0c040;text-shadow:0 0 8px #f0c040;
+  font-size:clamp(.75rem,.8rem,1rem);font-weight:700;
+  background:linear-gradient(135deg,#fff8c0,#f0c040);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 6px rgba(240,192,64,.8));
   z-index:20;white-space:nowrap;
-  animation:scoreUp .8s ease forwards;
+  animation:scoreFloat .85s cubic-bezier(.2,.8,.4,1) forwards;
 }
 
-/* combo badge */
+/* ── COMBO BADGE ── */
+@keyframes badgePop{
+  0%  {transform:scale(0) rotate(-20deg);opacity:0}
+  60% {transform:scale(1.2) rotate(3deg);opacity:1}
+  100%{transform:scale(1)   rotate(0deg);opacity:1}
+}
 .combo-badge{
-  position:absolute;top:-8px;right:-8px;
-  background:linear-gradient(135deg,#f0c040,#ff6020);
+  position:absolute;top:-10px;right:-10px;
+  background:linear-gradient(135deg,#ffd060,#ff6010);
   color:#000;font-family:'Cinzel Decorative',serif;
-  font-size:.48rem;font-weight:900;padding:3px 8px;
-  border-radius:16px;z-index:30;white-space:nowrap;
-  animation:badgePop .35s cubic-bezier(.34,1.56,.64,1);
+  font-size:.46rem;font-weight:900;padding:4px 10px;
+  border-radius:20px;z-index:30;white-space:nowrap;
+  animation:badgePop .4s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 3px 12px rgba(240,140,0,.5);
 }
-@keyframes badgePop{from{transform:scale(0)}to{transform:scale(1)}}
 
-/* overlay */
+/* ── OVERLAY ── */
 #overlay{
-  display:none;position:absolute;inset:0;background:rgba(0,0,8,.9);
-  border-radius:12px;flex-direction:column;align-items:center;
-  justify-content:center;gap:12px;z-index:40;
+  display:none;position:absolute;inset:0;
+  background:rgba(0,0,12,.92);
+  border-radius:14px;flex-direction:column;align-items:center;
+  justify-content:center;gap:14px;z-index:40;
+  backdrop-filter:blur(4px);
 }
 #overlay.show{display:flex;}
-#overlay h2{font-family:'Cinzel Decorative',serif;color:#f0c040;font-size:1.3rem;text-align:center;}
-#overlay p{color:#6060a0;font-size:.8rem;text-align:center;}
+#overlay h2{
+  font-family:'Cinzel Decorative',serif;
+  background:linear-gradient(135deg,#ffd060,#f0a020);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  font-size:1.4rem;text-align:center;
+}
+#overlay p{color:#5050a0;font-size:.82rem;text-align:center;}
 
 @media(max-width:500px){
   .panel{flex-direction:row;width:100%;flex-wrap:wrap;}
@@ -216,13 +357,48 @@ h1{
 // ── CONFIG ────────────────────────────────────────────────
 const R=8, C=8;
 const GEM_COLORS=[
-  {bg:'radial-gradient(circle at 35% 35%, #ff8899, #ff2244, #880011)',shadow:'rgba(255,40,80,.7)'},
-  {bg:'radial-gradient(circle at 35% 35%, #88bbff, #2266ff, #001188)',shadow:'rgba(40,100,255,.7)'},
-  {bg:'radial-gradient(circle at 35% 35%, #88ffaa, #22cc55, #006622)',shadow:'rgba(40,200,80,.7)'},
-  {bg:'radial-gradient(circle at 35% 35%, #ffee88, #ffcc00, #886600)',shadow:'rgba(255,200,0,.7)'},
-  {bg:'radial-gradient(circle at 35% 35%, #dd88ff, #aa22ff, #550088)',shadow:'rgba(170,40,255,.7)'},
-  {bg:'radial-gradient(circle at 35% 35%, #ffbb77, #ff6600, #882200)',shadow:'rgba(255,100,20,.7)'},
-  {bg:'radial-gradient(circle at 35% 35%, #88eeff, #00ccee, #005566)',shadow:'rgba(0,200,220,.7)'},
+  // Ruby
+  {
+    bg:'radial-gradient(circle at 32% 28%, #ffaabb 0%, #ff2255 45%, #8a0020 100%)',
+    shadow:'rgba(255,30,70,.75)',glow:'#ff2255',
+    rim:'rgba(255,100,130,.4)'
+  },
+  // Sapphire
+  {
+    bg:'radial-gradient(circle at 32% 28%, #aaccff 0%, #1155ff 45%, #001090 100%)',
+    shadow:'rgba(20,80,255,.75)',glow:'#2266ff',
+    rim:'rgba(80,140,255,.4)'
+  },
+  // Emerald
+  {
+    bg:'radial-gradient(circle at 32% 28%, #aaffcc 0%, #11cc55 45%, #005522 100%)',
+    shadow:'rgba(20,190,70,.75)',glow:'#22cc66',
+    rim:'rgba(80,220,130,.4)'
+  },
+  // Topaz
+  {
+    bg:'radial-gradient(circle at 32% 28%, #fff0aa 0%, #ffcc00 45%, #885500 100%)',
+    shadow:'rgba(240,180,0,.75)',glow:'#ffcc22',
+    rim:'rgba(255,220,80,.4)'
+  },
+  // Amethyst
+  {
+    bg:'radial-gradient(circle at 32% 28%, #eaaaff 0%, #aa11ff 45%, #550099 100%)',
+    shadow:'rgba(160,20,255,.75)',glow:'#bb44ff',
+    rim:'rgba(200,100,255,.4)'
+  },
+  // Amber
+  {
+    bg:'radial-gradient(circle at 32% 28%, #ffcc99 0%, #ff6600 45%, #882200 100%)',
+    shadow:'rgba(255,90,10,.75)',glow:'#ff7722',
+    rim:'rgba(255,150,60,.4)'
+  },
+  // Aquamarine
+  {
+    bg:'radial-gradient(circle at 32% 28%, #aaffff 0%, #00ccee 45%, #005566 100%)',
+    shadow:'rgba(0,190,220,.75)',glow:'#33ddff',
+    rim:'rgba(80,230,255,.4)'
+  },
 ];
 const GN=GEM_COLORS.length;
 const LVL=[0,500,1200,2200,3500,5200,7500,10500,14000,19000,99999];
@@ -274,12 +450,27 @@ function buildDOM(){
 function applyGem(r,c){
   const v=board[r][c];
   const el=gems[r][c];
-  if(v===-1){el.style.background='none';el.style.boxShadow='none';el.className='gem';return;}
+  if(v===-1){
+    el.style.cssText='';
+    el.className='gem';
+    el.innerHTML='';
+    return;
+  }
   const col=GEM_COLORS[gc(v)];
+  const bonusClass=v>=BH?' hyper':v>=BS?' star':v>=BF?' flame':'';
+  const icon=v>=BH?'💥':v>=BS?'⭐':v>=BF?'🔥':'';
+
+  // Multi-layer background: base gem + inner depth shadow
   el.style.background=col.bg;
-  el.style.boxShadow=`0 3px 12px ${col.shadow}, inset 0 1px 0 rgba(255,255,255,.3)`;
-  // bonus class
-  el.className='gem'+(v>=BH?' hyper':v>=BS?' star':v>=BF?' flame':'');
+  el.style.setProperty('--gem-shadow',
+    `0 4px 16px ${col.shadow}, 0 2px 6px rgba(0,0,0,.5), inset 0 -2px 6px rgba(0,0,0,.3), inset 0 1px 2px ${col.rim}`
+  );
+  el.style.boxShadow=`var(--gem-shadow)`;
+
+  el.className='gem'+bonusClass;
+
+  // bonus icon
+  el.innerHTML=icon ? `<span class="bonus-icon">${icon}</span>` : '';
 }
 
 // ── GRID INIT ─────────────────────────────────────────────
@@ -476,6 +667,8 @@ function resolve(groups){
     const r=Math.floor(idx/C),c=idx%C;
     if(board[r][c]===-1)continue;
     const g=gems[r][c];
+    // spawn sparks before exploding
+    spawnSparks(r,c,gc(board[r][c]));
     g.classList.remove('exploding');
     void g.offsetWidth;
     g.classList.add('exploding');
@@ -492,7 +685,7 @@ function resolve(groups){
         }
         gravity(dst,[]);
       }
-    },320);
+    },380);
   }
 }
 
@@ -574,6 +767,42 @@ function showScore(groups,pts,combo){
     badge.textContent=isHy?'💥 Hypercube!':isSt?'⭐ Star Gem!':isFl?'🔥 Flame Gem!':`${combo}× Combo!`;
     wrap.appendChild(badge);
     setTimeout(()=>badge.remove(),1400);
+  }
+}
+
+// ── SPARKS ────────────────────────────────────────────────
+function spawnSparks(r,c,colorIdx){
+  const wrap=document.getElementById('boardWrap');
+  const cell=cells[r][c];
+  const cr=cell.getBoundingClientRect();
+  const wr=wrap.getBoundingClientRect();
+  const cx=cr.left-wr.left+cr.width/2;
+  const cy=cr.top-wr.top+cr.height/2;
+  const colors=[
+    GEM_COLORS[colorIdx].glow,
+    '#ffffff',
+    GEM_COLORS[colorIdx].glow,
+    '#ffeeaa',
+  ];
+  const count=10+Math.floor(Math.random()*6);
+  for(let i=0;i<count;i++){
+    const spark=document.createElement('div');
+    spark.className='spark';
+    const angle=Math.random()*Math.PI*2;
+    const dist=20+Math.random()*35;
+    const size=2+Math.random()*4;
+    const dur=(.28+Math.random()*.3).toFixed(2);
+    spark.style.cssText=`
+      left:${cx}px;top:${cy}px;
+      width:${size}px;height:${size}px;
+      background:${colors[i%colors.length]};
+      --dx:${(Math.cos(angle)*dist).toFixed(1)}px;
+      --dy:${(Math.sin(angle)*dist).toFixed(1)}px;
+      --dur:${dur}s;
+      box-shadow:0 0 4px ${colors[i%colors.length]};
+    `;
+    wrap.appendChild(spark);
+    setTimeout(()=>spark.remove(), +dur*1000+50);
   }
 }
 
