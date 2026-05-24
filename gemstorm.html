@@ -87,7 +87,17 @@ h1{
 .btn.gold{border-color:#c09020;color:#f0c040;background:linear-gradient(160deg,#2a1800,#1a1000);}
 .btn.gold:hover{border-color:#f0c040;box-shadow:0 6px 20px rgba(200,150,20,.3);}
 
-/* ── BOARD WRAPPER ── */
+/* ── MOBILE: panel goes ABOVE board, board fills full width ── */
+@media(max-width:600px){
+  .layout{flex-direction:column;align-items:center;gap:10px;}
+  .panel{
+    flex-direction:row;width:100%;max-width:480px;
+    flex-wrap:wrap;gap:8px;order:-1;
+  }
+  .sbox{flex:1;min-width:70px;padding:8px 10px;}
+  .sval{font-size:1.1rem;}
+  .btn{flex:1;min-width:100px;padding:8px;}
+}
 .board-wrap{
   position:relative;
   background:linear-gradient(160deg,#0c0820,#070514);
@@ -286,11 +296,6 @@ h1{
 }
 #overlay p{color:#5050a0;font-size:.82rem;text-align:center;}
 
-@media(max-width:500px){
-  .panel{flex-direction:row;width:100%;flex-wrap:wrap;}
-  .sbox{flex:1;min-width:80px;}
-  .btn{flex:1;min-width:80px;}
-}
 </style>
 </head>
 <body>
@@ -566,9 +571,19 @@ let cells=[], gems=[];
 // ── CELL SIZE ─────────────────────────────────────────────
 let CS=52;
 function calcCS(){
-  const wrap=document.getElementById('boardWrap');
-  const avail=Math.min(wrap.parentElement.clientWidth-160, 460);
-  CS=Math.max(32, Math.floor((Math.max(avail,270)-3*7)/8));
+  const isMobile = window.innerWidth <= 600;
+  const padding = 24; // body padding sides
+  const boardPad = 20; // board-wrap padding
+  let avail;
+  if(isMobile){
+    // On mobile: panel is above, board takes full width
+    avail = window.innerWidth - padding - boardPad;
+  } else {
+    // On desktop: panel (134px) + gap (16px) sit beside board
+    avail = Math.min(window.innerWidth - 134 - 16 - padding - boardPad, 460);
+  }
+  // 8 cells + 7 gaps of 4px each
+  CS = Math.max(36, Math.floor((avail - 4*7) / 8));
   document.documentElement.style.setProperty('--cs', CS+'px');
 }
 
@@ -1012,8 +1027,14 @@ function newGame(){
 buildDOM();
 newGame();
 window.addEventListener('resize',()=>{
-  calcCS();
-  // re-apply cell sizes (CSS var updates automatically)
+  clearTimeout(window._rt);
+  window._rt=setTimeout(()=>{
+    calcCS();
+    // update swap animation distances since CS changed
+  },120);
+});
+window.addEventListener('orientationchange',()=>{
+  setTimeout(()=>{ calcCS(); },300);
 });
 </script>
 </body>
