@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vegas Royal Slots</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Orbitron', sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(255,215,0,0.15), transparent 35%),
+        linear-gradient(180deg, #240046 0%, #10002b 45%, #000000 100%);
+      color: white;
+    }
+
+    .casino-lights {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .light {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      animation: pulse 1.2s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from {
+        transform: scale(0.8);
+        opacity: 0.3;
+      }
+      to {
+        transform: scale(1.5);
+        opacity: 1;
+      }
+    }
+
+    .machine {
+      background: linear-gradient(180deg, #5a189a 0%, #3c096c 50%, #240046 100%);
+      border: 6px solid gold;
+      box-shadow:
+        0 0 40px rgba(255,215,0,0.4),
+        inset 0 0 30px rgba(255,255,255,0.08);
+    }
+
+    .reel-window {
+      background: linear-gradient(180deg, #111 0%, #222 100%);
+      border: 4px solid #ffd60a;
+      overflow: hidden;
+      position: relative;
+      box-shadow:
+        inset 0 0 25px rgba(0,0,0,0.9),
+        0 0 25px rgba(255,215,0,0.2);
+    }
+
+    .reel {
+      position: absolute;
+      width: 100%;
+      transition: transform 0.2s linear;
+    }
+
+    .symbol {
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      text-shadow: 0 0 15px rgba(255,255,255,0.5);
+    }
+
+    .spin-btn {
+      background: linear-gradient(180deg, #ffba08, #ff7b00);
+      box-shadow:
+        0 8px 0 #c1121f,
+        0 0 25px rgba(255,140,0,0.6);
+      transition: all 0.15s ease;
+    }
+
+    .spin-btn:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow:
+        0 11px 0 #c1121f,
+        0 0 35px rgba(255,180,0,0.8);
+    }
+
+    .spin-btn:active {
+      transform: translateY(5px);
+      box-shadow:
+        0 2px 0 #c1121f,
+        0 0 15px rgba(255,140,0,0.4);
+    }
+
+    .lever {
+      width: 30px;
+      height: 220px;
+      background: linear-gradient(180deg, #777, #ccc);
+      border-radius: 20px;
+      position: relative;
+      margin-left: 20px;
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+    }
+
+    .lever-ball {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ff595e, #d00000);
+      position: absolute;
+      left: -20px;
+      top: -10px;
+      box-shadow: 0 0 25px rgba(255,0,0,0.6);
+      transition: top 0.25s ease;
+    }
+
+    .lever.active .lever-ball {
+      top: 140px;
+    }
+
+    .win-flash {
+      animation: winFlash 0.8s infinite alternate;
+    }
+
+    @keyframes winFlash {
+      from {
+        box-shadow:
+          0 0 25px rgba(255,215,0,0.2),
+          inset 0 0 10px rgba(255,255,255,0.1);
+      }
+      to {
+        box-shadow:
+          0 0 65px rgba(255,215,0,1),
+          inset 0 0 40px rgba(255,255,255,0.2);
+      }
+    }
+
+    .jackpot {
+      animation: jackpot 0.3s infinite alternate;
+    }
+
+    @keyframes jackpot {
+      from {
+        transform: scale(1);
+        filter: hue-rotate(0deg);
+      }
+      to {
+        transform: scale(1.03);
+        filter: hue-rotate(30deg);
+      }
+    }
+
+    .coin {
+      position: fixed;
+      font-size: 34px;
+      animation: fall 2s linear forwards;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateY(-100px) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(120vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    .neon {
+      text-shadow:
+        0 0 5px #fff,
+        0 0 10px #fff,
+        0 0 20px #ff00ff,
+        0 0 40px #ff00ff;
+    }
+
+    .panel {
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .payline {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, gold, transparent);
+      transform: translateY(-50%);
+      box-shadow: 0 0 12px gold;
+      opacity: 0.9;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="casino-lights" id="lights"></div>
+
+  <div class="min-h-screen flex items-center justify-center p-6">
+    <div class="flex items-center gap-8">
+
+      <div class="machine rounded-[40px] p-8 relative w-[980px]">
+
+        <div class="text-center mb-6">
+          <h1 class="text-6xl font-black neon tracking-[8px] text-yellow-300">
+            VEGAS ROYAL
+          </h1>
+          <p class="text-yellow-200 mt-2 tracking-[4px]">
+            ULTRA SLOT EXPERIENCE
+          </p>
+        </div>
+
+        <div class="panel rounded-3xl p-5 mb-6 flex items-center justify-between">
+          <div>
+            <div class="text-sm text-yellow-200">CREDITS</div>
+            <div id="credits" class="text-4xl font-black text-green-400">5000</div>
+          </div>
+
+          <div>
+            <div class="text-sm text-yellow-200">BET</div>
+            <div id="bet" class="text-4xl font-black text-cyan-300">100</div>
+          </div>
+
+          <div>
+            <div class="text-sm text-yellow-200">LAST WIN</div>
+            <div id="lastWin" class="text-4xl font-black text-yellow-300">0</div>
+          </div>
+
+          <div>
+            <div class="text-sm text-yellow-200">JACKPOT</div>
+            <div id="jackpotValue" class="text-4xl font-black text-pink-400">25000</div>
+          </div>
+        </div>
+
+        <div class="relative bg-black/30 rounded-[35px] p-6 border-4 border-yellow-500 overflow-hidden">
+          <div class="payline"></div>
+
+          <div class="grid grid-cols-5 gap-4">
+            <div class="reel-window rounded-2xl h-[360px]" id="window0">
+              <div class="reel" id="reel0"></div>
+            </div>
+
+            <div class="reel-window rounded-2xl h-[360px]" id="window1">
+              <div class="reel" id="reel1"></div>
+            </div>
+
+            <div class="reel-window rounded-2xl h-[360px]" id="window2">
+              <div class="reel" id="reel2"></div>
+            </div>
+
+            <div class="reel-window rounded-2xl h-[360px]" id="window3">
+              <div class="reel" id="reel3"></div>
+            </div>
+
+            <div class="reel-window rounded-2xl h-[360px]" id="window4">
+              <div class="reel" id="reel4"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center mt-7 gap-5">
+          <div class="flex gap-3">
+            <button onclick="changeBet(-50)" class="px-5 py-3 rounded-2xl bg-red-600 hover:bg-red-500 font-bold text-xl">
+              - BET
+            </button>
+
+            <button onclick="changeBet(50)" class="px-5 py-3 rounded-2xl bg-green-600 hover:bg-green-500 font-bold text-xl">
+              + BET
+            </button>
+          </div>
+
+          <div class="text-center flex-1">
+            <div id="message" class="text-2xl text-yellow-200 h-10 tracking-[2px]">
+              READY TO WIN
+            </div>
+          </div>
+
+          <button id="spinButton" onclick="spin()" class="spin-btn text-black font-black text-3xl px-12 py-5 rounded-3xl tracking-[4px]">
+            SPIN
+          </button>
+        </div>
+      </div>
+
+      <div id="lever" class="lever cursor-pointer" onclick="spin()">
+        <div class="lever-ball"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <audio id="spinSound">
+    <source src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" type="audio/mpeg">
+  </audio>
+
+  <audio id="winSound">
+    <source src="https://assets.mixkit.co/active_storage/sfx/2018/2018-preview.mp3" type="audio/mpeg">
+  </audio>
+
+  <audio id="jackpotSound">
+    <source src="https://assets.mixkit.co/active_storage/sfx/2760/2760-preview.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const symbols = [
+      '🍒', '💎', '7️⃣', '🔔', '🍀', '👑', '💰', '⭐'
+    ];
+
+    const reels = [];
+    const visibleRows = 3;
+    const reelLength = 30;
+
+    let credits = 5000;
+    let bet = 100;
+    let jackpot = 25000;
+    let spinning = false;
+
+    const creditsEl = document.getElementById('credits');
+    const betEl = document.getElementById('bet');
+    const lastWinEl = document.getElementById('lastWin');
+    const jackpotEl = document.getElementById('jackpotValue');
+    const messageEl = document.getElementById('message');
+    const machineEl = document.querySelector('.machine');
+    const leverEl = document.getElementById('lever');
+
+    function createLights() {
+      const container = document.getElementById('lights');
+
+      for (let i = 0; i < 90; i++) {
+        const light = document.createElement('div');
+        light.className = 'light';
+        light.style.left = Math.random() * 100 + '%';
+        light.style.top = Math.random() * 100 + '%';
+        light.style.background = `hsl(${Math.random() * 360},100%,60%)`;
+        light.style.animationDelay = Math.random() * 2 + 's';
+        container.appendChild(light);
+      }
+    }
+
+    function buildReels() {
+      for (let i = 0; i < 5; i++) {
+        const reel = document.getElementById(`reel${i}`);
+        reels.push(reel);
+
+        for (let j = 0; j < reelLength; j++) {
+          const symbol = document.createElement('div');
+          symbol.className = 'symbol';
+          symbol.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+          reel.appendChild(symbol);
+        }
+      }
+    }
+
+    function updateUI() {
+      creditsEl.textContent = credits;
+      betEl.textContent = bet;
+      jackpotEl.textContent = jackpot;
+    }
+
+    function changeBet(amount) {
+      if (spinning) return;
+
+      bet += amount;
+
+      if (bet < 50) bet = 50;
+      if (bet > 1000) bet = 1000;
+
+      updateUI();
+    }
+
+    function randomSymbol() {
+      return symbols[Math.floor(Math.random() * symbols.length)];
+    }
+
+    function generateResult() {
+      const row = [];
+
+      for (let i = 0; i < 5; i++) {
+        row.push(randomSymbol());
+      }
+
+      const chance = Math.random();
+
+      if (chance < 0.04) {
+        const jackpotSymbol = '7️⃣';
+        return Array(5).fill(jackpotSymbol);
+      }
+
+      if (chance < 0.15) {
+        const winSymbol = randomSymbol();
+        return [winSymbol, winSymbol, winSymbol, randomSymbol(), randomSymbol()];
+      }
+
+      return row;
+    }
+
+    async function spin() {
+      if (spinning) return;
+      if (credits < bet) {
+        messageEl.textContent = 'NOT ENOUGH CREDITS';
+        return;
+      }
+
+      spinning = true;
+      credits -= bet;
+      jackpot += Math.floor(bet * 0.25);
+
+      updateUI();
+
+      leverEl.classList.add('active');
+      machineEl.classList.remove('win-flash', 'jackpot');
+
+      const spinSound = document.getElementById('spinSound');
+      spinSound.currentTime = 0;
+      spinSound.play().catch(() => {});
+
+      messageEl.textContent = 'SPINNING...';
+
+      const result = generateResult();
+
+      for (let i = 0; i < reels.length; i++) {
+        animateReel(reels[i], i, result[i]);
+      }
+
+      setTimeout(() => {
+        checkWin(result);
+        spinning = false;
+        leverEl.classList.remove('active');
+      }, 4200);
+    }
+
+    function animateReel(reel, index, finalSymbol) {
+      let spins = 0;
+
+      const interval = setInterval(() => {
+        reel.innerHTML = '';
+
+        for (let j = 0; j < reelLength; j++) {
+          const symbol = document.createElement('div');
+          symbol.className = 'symbol';
+
+          if (j === reelLength - 2) {
+            symbol.textContent = finalSymbol;
+          } else {
+            symbol.textContent = randomSymbol();
+          }
+
+          reel.appendChild(symbol);
+        }
+
+        reel.style.transform = `translateY(-${Math.random() * 180}px)`;
+
+        spins++;
+
+        if (spins > 18 + index * 5) {
+          clearInterval(interval);
+
+          reel.style.transition = 'transform 0.5s cubic-bezier(.17,.67,.32,1.34)';
+          reel.style.transform = 'translateY(-120px)';
+
+          setTimeout(() => {
+            reel.style.transition = 'transform 0.1s linear';
+          }, 500);
+        }
+      }, 90);
+    }
+
+    function checkWin(result) {
+      const counts = {};
+
+      result.forEach(symbol => {
+        counts[symbol] = (counts[symbol] || 0) + 1;
+      });
+
+      let highest = 0;
+      let winnerSymbol = '';
+
+      for (const symbol in counts) {
+        if (counts[symbol] > highest) {
+          highest = counts[symbol];
+          winnerSymbol = symbol;
+        }
+      }
+
+      let win = 0;
+
+      if (highest === 5 && winnerSymbol === '7️⃣') {
+        win = jackpot;
+        jackpot = 25000;
+
+        machineEl.classList.add('jackpot', 'win-flash');
+        messageEl.textContent = '🔥 MEGA JACKPOT 🔥';
+
+        const jackpotSound = document.getElementById('jackpotSound');
+        jackpotSound.currentTime = 0;
+        jackpotSound.play().catch(() => {});
+
+        rainCoins(120);
+      }
+      else if (highest === 5) {
+        win = bet * 30;
+        messageEl.textContent = 'ULTRA WIN!';
+        machineEl.classList.add('win-flash');
+        rainCoins(50);
+      }
+      else if (highest === 4) {
+        win = bet * 12;
+        messageEl.textContent = 'BIG WIN!';
+        machineEl.classList.add('win-flash');
+        rainCoins(25);
+      }
+      else if (highest === 3) {
+        win = bet * 5;
+        messageEl.textContent = 'NICE WIN!';
+        machineEl.classList.add('win-flash');
+        rainCoins(12);
+      }
+      else {
+        messageEl.textContent = 'TRY AGAIN';
+      }
+
+      if (win > 0) {
+        credits += win;
+        lastWinEl.textContent = win;
+
+        const winSound = document.getElementById('winSound');
+        winSound.currentTime = 0;
+        winSound.play().catch(() => {});
+      }
+      else {
+        lastWinEl.textContent = '0';
+      }
+
+      updateUI();
+    }
+
+    function rainCoins(amount) {
+      for (let i = 0; i < amount; i++) {
+        setTimeout(() => {
+          const coin = document.createElement('div');
+          coin.className = 'coin';
+          coin.textContent = '🪙';
+          coin.style.left = Math.random() * 100 + 'vw';
+          coin.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+
+          document.body.appendChild(coin);
+
+          setTimeout(() => {
+            coin.remove();
+          }, 3000);
+        }, i * 40);
+      }
+    }
+
+    createLights();
+    buildReels();
+    updateUI();
+  </script>
+</body>
+</html>
