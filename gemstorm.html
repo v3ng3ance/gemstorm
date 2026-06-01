@@ -98,6 +98,11 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,4vw,1.8rem);lett
   .btn{font-size:.6rem;padding:7px 10px;}
 }
 </style>
+
+<style id="bejeweled-upgrade">
+canvas{image-rendering:auto}
+</style>
+
 </head>
 <body>
 <h1>✦ GemBlast ✦</h1>
@@ -849,54 +854,6 @@ const G={
 
 // ═══ INIT ═════════════════════════════════════════════════════
 requestAnimationFrame(loop);
-
-// ===== ULTRA 3D VISUAL UPGRADE =====
-function drawGem3D(ctx,cx,cy,gr,color){
-  ctx.save();
-  ctx.shadowColor=color;
-  ctx.shadowBlur=18;
-
-  const g=ctx.createRadialGradient(cx-gr*0.35,cy-gr*0.4,0,cx,cy,gr);
-  g.addColorStop(0,'#ffffff');
-  g.addColorStop(0.12,color);
-  g.addColorStop(1,'#111111');
-  ctx.fillStyle=g;
-
-  ctx.beginPath();
-  for(let i=0;i<8;i++){
-    const a=Math.PI/4*i-Math.PI/8;
-    const r=(i%2?gr*0.78:gr);
-    const x=cx+Math.cos(a)*r;
-    const y=cy+Math.sin(a)*r;
-    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  }
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.shadowBlur=0;
-  ctx.strokeStyle='rgba(255,255,255,.55)';
-  ctx.lineWidth=1.4;
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(cx,cy-gr*0.9);
-  ctx.lineTo(cx-gr*0.45,cy);
-  ctx.lineTo(cx,cy+gr*0.9);
-  ctx.lineTo(cx+gr*0.45,cy);
-  ctx.closePath();
-  ctx.strokeStyle='rgba(255,255,255,.28)';
-  ctx.stroke();
-
-  const shine=ctx.createLinearGradient(cx-gr,cy-gr,cx+gr,cy+gr);
-  shine.addColorStop(0,'rgba(255,255,255,.65)');
-  shine.addColorStop(.4,'rgba(255,255,255,0)');
-  ctx.fillStyle=shine;
-  ctx.beginPath();
-  ctx.arc(cx,cy,gr*0.82,0,Math.PI*2);
-  ctx.fill();
-  ctx.restore();
-}
-
 </script>
 </body>
 </html>
