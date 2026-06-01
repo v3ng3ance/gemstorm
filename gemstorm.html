@@ -717,7 +717,7 @@ function gc(v){
   return v;
 }
 function isB(v){ return v>=BF; }
-function btype(v){
+function gemBtype(v){
   if(v>=BLT) return 'lthyper';
   if(v>=BB)  return 'bomb';
   if(v===BHC) return 'hyper';
@@ -996,7 +996,7 @@ function applyGem(r,c){
   const uid=++_gemUID;
 
   if(isB(v)){
-    const bt=btype(v);
+    const bt=gemBtype(v);
     el.innerHTML=bonusSVG(bt,ci,uid);
     el.style.background='none';
     el.style.removeProperty('--gem-shadow');
@@ -1044,7 +1044,7 @@ function setSel(r,c){
   // if bonus gem selected — show tip + highlight affected area
   const v=board[r][c];
   if(isB(v)){
-    const bt=btype(v);
+    const bt=gemBtype(v);
     showAreaHL(r,c,bt);
     showBonusTip(r,c,bt);
   }
@@ -1242,7 +1242,7 @@ function doSwap(r1,c1,r2,c2){
   animSwap(r2,c2,-dx,-dy);
   setTimeout(()=>{
     const v1=board[r1][c1], v2=board[r2][c2];
-    const b1=btype(v1), b2=btype(v2);
+    const b1=gemBtype(v1), b2=gemBtype(v2);
 
     // ── Special swap: any bonus gem swapped with any gem activates immediately ──
     // Hypercube (colorless) + normal → destroy all of that color
@@ -1444,7 +1444,7 @@ function findMatches(){
 
 // ── CASCADE ───────────────────────────────────────────────
 function expandBonus(r,c,v,dst){
-  const bt=btype(v);
+  const bt=gemBtype(v);
   if(bt==='bomb'){
     // 5×5
     for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){
