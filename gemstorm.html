@@ -222,7 +222,11 @@ h1{
 }
 .gem.star svg{animation:starSpin .8s ease-in-out infinite;}
 
-@keyframes hyperRainbow{
+@keyframes bombPulse{
+  0%,100%{filter:drop-shadow(0 0 8px #ff4400) drop-shadow(0 0 20px rgba(255,60,0,.5))}
+  50%    {filter:drop-shadow(0 0 16px #ffaa00) drop-shadow(0 0 36px rgba(255,160,0,.8))}
+}
+.gem.bomb svg{animation:bombPulse .6s ease-in-out infinite;}
   0%  {filter:drop-shadow(0 0 10px #ff4466) drop-shadow(0 0 22px rgba(255,40,80,.5))}
   25% {filter:drop-shadow(0 0 10px #44aaff) drop-shadow(0 0 22px rgba(40,150,255,.5))}
   50% {filter:drop-shadow(0 0 10px #44ffaa) drop-shadow(0 0 22px rgba(40,220,120,.5))}
@@ -284,6 +288,33 @@ h1{
   border-radius:20px;z-index:30;white-space:nowrap;
   animation:badgePop .4s cubic-bezier(.34,1.56,.64,1);
   box-shadow:0 3px 12px rgba(240,140,0,.5);
+}
+
+/* ── LEVEL UP BANNER ── */
+@keyframes luAnim{
+  0%  {transform:translate(-50%,-50%) scale(.4);opacity:0}
+  15% {transform:translate(-50%,-50%) scale(1.15);opacity:1}
+  70% {transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-60%) scale(.9);opacity:0}
+}
+.levelup-banner{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  z-index:50;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  animation:luAnim 2s cubic-bezier(.22,.6,.36,1) forwards;
+}
+.lu-title{
+  font-family:'Cinzel Decorative',serif;font-size:clamp(1.4rem,5vw,2rem);
+  background:linear-gradient(135deg,#fff8c0,#f0c040,#ff8800);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 12px rgba(240,180,40,.9));
+  white-space:nowrap;
+}
+.lu-sub{
+  font-size:clamp(.65rem,2vw,.85rem);color:#f0c040;
+  letter-spacing:.15em;text-transform:uppercase;
+  text-shadow:0 0 8px rgba(240,192,64,.8);
 }
 
 /* ── OVERLAY ── */
@@ -552,9 +583,9 @@ svg:(id)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 const GN=GEM_DEFS.length;
 const LVL=[0,500,1200,2200,3500,5200,7500,10500,14000,19000,99999];
 
-// bonus encoding
-const BF=100,BS=200,BH=300;
-function gc(v){return v>=BH?0:v>=BS?v-BS:v>=BF?v-BF:v;}
+// bonus encoding: normal=0..6, flame=100+col, star=200+col, hyper=300, bomb=400+col
+const BF=100,BS=200,BH=300,BB=400;
+function gc(v){return v>=BB?v-BB:v>=BH?0:v>=BS?v-BS:v>=BF?v-BF:v;}
 function isB(v){return v>=BF;}
 
 // pre-render SVG data URLs once (avoid regenerating every applyGem call)
@@ -615,10 +646,9 @@ function buildDOM(){
       boardEl.appendChild(cell);
       cells[r].push(cell);
       gems[r].push(gem);
-      // click handler
-      ;(function(rr,cc){cell.addEventListener('click',()=>onClick(rr,cc));})(r,c);
     }
   }
+  attachInput();
 }
 
 // ── APPLY GEM VISUAL ──────────────────────────────────────
@@ -638,8 +668,8 @@ function applyGem(r,c){
   const ci=gc(v);
   const def=GEM_DEFS[ci];
   const uid=_gemSlotID[r][c];
-  const bonusClass=v>=BH?' hyper':v>=BS?' star':v>=BF?' flame':'';
-  const icon=v>=BH?'💥':v>=BS?'⭐':v>=BF?'🔥':'';
+  const bonusClass=v>=BB?' bomb':v>=BH?' hyper':v>=BS?' star':v>=BF?' flame':'';
+  const icon=v>=BB?'💣':v>=BH?'💥':v>=BS?'⭐':v>=BF?'🔥':'';
   el.innerHTML=def.svg(uid)+(icon?`<span class="bonus-icon">${icon}</span>`:'');
   el.style.background='none';
   el.style.setProperty('--gem-glow',def.glow);
@@ -678,18 +708,119 @@ function clearSel(){
   sel=null;
 }
 
-// ── CLICK ─────────────────────────────────────────────────
-function onClick(r,c){
-  if(busy||board[r][c]===-1)return;
-  if(!sel){setSel(r,c);return;}
-  const[sr,sc]=sel;
-  if(sr===r&&sc===c){clearSel();return;}
-  if(Math.abs(sr-r)+Math.abs(sc-c)===1){
+// ── INPUT: tap to select + swipe to swap ─────────────────
+let _dragStart=null;   // {r,c,x,y} — set on pointerdown
+let _didSwipe=false;   // true if finger moved enough to count as swipe
+const SWIPE_MIN=18;    // px needed to trigger swipe
+
+function getRCFromXY(clientX, clientY){
+  const boardEl=document.getElementById('board');
+  const rect=boardEl.getBoundingClientRect();
+  const x=clientX-rect.left, y=clientY-rect.top;
+  const step=CS+3;
+  const c=Math.floor(x/step), r=Math.floor(y/step);
+  if(r<0||r>=R||c<0||c>=C)return null;
+  return [r,c];
+}
+
+function handleStart(clientX, clientY){
+  if(busy)return;
+  const rc=getRCFromXY(clientX,clientY);
+  if(!rc)return;
+  const[r,c]=rc;
+  if(board[r][c]===-1)return;
+  _dragStart={r,c,x:clientX,y:clientY};
+  _didSwipe=false;
+  // DON'T select yet — wait to see if it's a tap or swipe
+}
+
+function handleMove(clientX, clientY){
+  if(!_dragStart||busy)return;
+  const{r:r1,c:c1,x:sx,y:sy}=_dragStart;
+  const dx=clientX-sx, dy=clientY-sy;
+  const adx=Math.abs(dx), ady=Math.abs(dy);
+  if(!_didSwipe&&(adx>SWIPE_MIN||ady>SWIPE_MIN)){
+    _didSwipe=true;
+    let r2=r1,c2=c1;
+    if(adx>ady){ c2=c1+(dx>0?1:-1); }
+    else        { r2=r1+(dy>0?1:-1); }
+    _dragStart=null;
     clearSel();
-    doSwap(sr,sc,r,c);
-  } else {
-    setSel(r,c);
+    if(r2>=0&&r2<R&&c2>=0&&c2<C&&board[r2][c2]!==-1){
+      doSwap(r1,c1,r2,c2);
+    }
   }
+}
+
+function handleEnd(clientX, clientY){
+  if(!_dragStart)return;
+  const{r:r1,c:c1}=_dragStart;
+  _dragStart=null;
+  if(_didSwipe)return;
+  if(busy)return;
+
+  // confirmed tap — now do select/swap logic
+  if(!sel){
+    // nothing selected — select this gem
+    setSel(r1,c1);
+    return;
+  }
+  const[sr,sc]=sel;
+  if(sr===r1&&sc===c1){
+    // tapped same gem — deselect
+    clearSel();
+    return;
+  }
+  if(Math.abs(sr-r1)+Math.abs(sc-c1)===1){
+    // adjacent — swap
+    clearSel();
+    doSwap(sr,sc,r1,c1);
+  } else {
+    // not adjacent — move selection
+    setSel(r1,c1);
+  }
+}
+
+function attachInput(){
+  const boardEl=document.getElementById('board');
+
+  // ── Mouse ──
+  boardEl.addEventListener('mousedown',e=>{
+    e.preventDefault();
+    handleStart(e.clientX,e.clientY);
+  });
+  boardEl.addEventListener('mousemove',e=>{
+    if(_dragStart) handleMove(e.clientX,e.clientY);
+  });
+  boardEl.addEventListener('mouseup',e=>{
+    handleEnd(e.clientX,e.clientY);
+  });
+  boardEl.addEventListener('mouseleave',()=>{
+    if(_dragStart&&!_didSwipe){_dragStart=null;clearSel();}
+    _dragStart=null;
+  });
+
+  // ── Touch ──
+  boardEl.addEventListener('touchstart',e=>{
+    e.preventDefault();
+    const t=e.touches[0];
+    handleStart(t.clientX,t.clientY);
+  },{passive:false});
+  boardEl.addEventListener('touchmove',e=>{
+    e.preventDefault();
+    if(_dragStart){
+      const t=e.touches[0];
+      handleMove(t.clientX,t.clientY);
+    }
+  },{passive:false});
+  boardEl.addEventListener('touchend',e=>{
+    e.preventDefault();
+    const t=e.changedTouches[0];
+    handleEnd(t.clientX,t.clientY);
+  },{passive:false});
+  boardEl.addEventListener('touchcancel',()=>{
+    _dragStart=null;clearSel();
+  });
 }
 
 // ── SWAP ──────────────────────────────────────────────────
@@ -773,7 +904,7 @@ function findMatches(){
     const rem=g.cells.filter(([r,c])=>!done.has(r*C+c));
     if(rem.length<3)continue;
     const piv=rem[Math.floor(rem.length/2)];
-    const type=g.len>=5?'star':g.len===4?'flame':'normal';
+    const type=g.len>=6?'bomb':g.len>=5?'star':g.len===4?'flame':'normal';
     result.push({type,cells:rem,pivot:piv,color:g.color});
     for(const[r,c]of rem)done.add(r*C+c);
   }
@@ -781,7 +912,7 @@ function findMatches(){
     const rem=g.cells.filter(([r,c])=>!done.has(r*C+c));
     if(rem.length<3)continue;
     const piv=rem[Math.floor(rem.length/2)];
-    const type=g.len>=5?'star':g.len===4?'flame':'normal';
+    const type=g.len>=6?'bomb':g.len>=5?'star':g.len===4?'flame':'normal';
     result.push({type,cells:rem,pivot:piv,color:g.color});
     for(const[r,c]of rem)done.add(r*C+c);
   }
@@ -790,14 +921,23 @@ function findMatches(){
 
 // ── CASCADE ───────────────────────────────────────────────
 function expandBonus(r,c,v,dst){
-  if(v>=BH){
+  if(v>=BB){
+    // bomb: 5×5 area
+    for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<R&&nc>=0&&nc<C)dst.add(nr*C+nc);
+    }
+  } else if(v>=BH){
+    // hyper: full row + column
     for(let cc=0;cc<C;cc++)dst.add(r*C+cc);
     for(let rr=0;rr<R;rr++)dst.add(rr*C+c);
   } else if(v>=BS){
+    // star: all gems of same color
     const col=v-BS;
     for(let rr=0;rr<R;rr++)for(let cc=0;cc<C;cc++)
       if(gc(board[rr][cc])===col)dst.add(rr*C+cc);
   } else if(v>=BF){
+    // flame: 3×3
     for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
       const nr=r+dr,nc=c+dc;
       if(nr>=0&&nr<R&&nc>=0&&nc<C)dst.add(nr*C+nc);
@@ -809,13 +949,18 @@ function resolve(groups){
   combo++;
   let pts=0;
   for(const g of groups){
-    const lb=g.cells.length>=5?4:g.cells.length===4?2:1;
+    const lb=g.cells.length>=6?8:g.cells.length>=5?4:g.cells.length===4?2:1;
     pts+=g.cells.length*10*lb;
   }
-  pts=Math.round(pts*combo);
+  // level multiplier: cada nivel extra dă +10% scor
+  const lvlMult=1+(level-1)*0.1;
+  pts=Math.round(pts*combo*lvlMult);
+  const prevLevel=level;
   score+=pts;
   if(score>best){best=score;localStorage.setItem('gb3',best);}
   updateUI();
+  // detect level-up
+  if(level>prevLevel) showLevelUp(level);
   showScore(groups,pts,combo);
 
   // build destroy set
@@ -854,7 +999,7 @@ function resolve(groups){
         // place bonus gems
         for(const{r:br,c:bc,btype,color}of newB){
           if(board[br][bc]===-1){
-            board[br][bc]=btype==='star'?BS+color:btype==='hyper'?BH:BF+color;
+            board[br][bc]=btype==='bomb'?BB+color:btype==='star'?BS+color:btype==='hyper'?BH:BF+color;
             dst.delete(br*C+bc);
           }
         }
@@ -910,10 +1055,20 @@ function chain(){
   else{combo=0;busy=false;if(!hasMoves())noMoves();}
 }
 
+// ── LEVEL UP BANNER ───────────────────────────────────────
+function showLevelUp(lv){
+  const wrap=document.getElementById('boardWrap');
+  const old=wrap.querySelector('.levelup-banner');if(old)old.remove();
+  const el=document.createElement('div');
+  el.className='levelup-banner';
+  el.innerHTML=`<span class="lu-title">NIVEL ${lv}</span><span class="lu-sub">+Scor ×${Math.min(lv,5)} bonus!</span>`;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(),2000);
+}
+
 // ── PARTICLES / SCORE POPUP ───────────────────────────────
 function showScore(groups,pts,combo){
   const wrap=document.getElementById('boardWrap');
-  // remove old badge
   const old=wrap.querySelector('.combo-badge');if(old)old.remove();
 
   // score pop
@@ -925,23 +1080,24 @@ function showScore(groups,pts,combo){
   const wr=wrap.getBoundingClientRect();
   const pop=document.createElement('div');
   pop.className='score-pop';
-  const pre=groups.some(g=>g.type==='hyper')?'💥 ':groups.some(g=>g.type==='star')?'⭐ ':groups.some(g=>g.type==='flame')?'🔥 ':'';
+  const isHy=groups.some(g=>g.type==='hyper');
+  const isSt=groups.some(g=>g.type==='star');
+  const isFl=groups.some(g=>g.type==='flame');
+  const isBm=groups.some(g=>g.type==='bomb');
+  const pre=isBm?'💣 ':isHy?'💥 ':isSt?'⭐ ':isFl?'🔥 ':'';
   pop.textContent=pre+(combo>1?`×${combo} `:'')+'+'+pts;
   pop.style.left=(cr.left-wr.left+cr.width/2-20)+'px';
   pop.style.top=(cr.top-wr.top)+'px';
   wrap.appendChild(pop);
-  setTimeout(()=>pop.remove(),850);
+  setTimeout(()=>pop.remove(),900);
 
-  // combo badge
-  if(combo>1||groups.some(g=>g.type!=='normal')){
+  // badge
+  if(combo>1||isHy||isSt||isFl){
     const badge=document.createElement('div');
     badge.className='combo-badge';
-    const isHy=groups.some(g=>g.type==='hyper');
-    const isSt=groups.some(g=>g.type==='star');
-    const isFl=groups.some(g=>g.type==='flame');
-    badge.textContent=isHy?'💥 Hypercube!':isSt?'⭐ Star Gem!':isFl?'🔥 Flame Gem!':`${combo}× Combo!`;
+    badge.textContent=isBm?'💣 Bomb!':isHy?'💥 Hypercube!':isSt?'⭐ Star Gem!':isFl?'🔥 Flame Gem!':`${combo}× Combo!`;
     wrap.appendChild(badge);
-    setTimeout(()=>badge.remove(),1400);
+    setTimeout(()=>badge.remove(),1500);
   }
 }
 
@@ -1011,12 +1167,18 @@ function hasMoves(){
 function updateUI(){
   document.getElementById('elScore').textContent=score.toLocaleString();
   document.getElementById('elBest').textContent=best.toLocaleString();
-  const lv=LVL.findIndex(v=>score<v);
-  const cl=Math.max(1,(lv<0?LVL.length-1:lv)-1);
-  level=Math.max(level,cl);
+  // level = how many thresholds we've passed
+  // LVL = [0, 500, 1200, 2200, ...]
+  // score=0 → level 1, score=500 → level 2, etc.
+  let lv=1;
+  for(let i=1;i<LVL.length;i++){ if(score>=LVL[i]) lv=i+1; else break; }
+  lv=Math.min(lv,LVL.length-1);
+  level=lv;
   document.getElementById('elLevel').textContent=level;
-  const lo=LVL[level-1]||0,hi=LVL[level]||99999;
-  document.getElementById('elBar').style.width=Math.min(100,Math.round((score-lo)/(hi-lo)*100))+'%';
+  const lo=LVL[level-1]||0;
+  const hi=LVL[level]||LVL[LVL.length-1];
+  const pct=hi>lo ? Math.min(100,Math.round((score-lo)/(hi-lo)*100)) : 100;
+  document.getElementById('elBar').style.width=pct+'%';
 }
 function noMoves(){
   document.getElementById('ovTitle').textContent='Nicio mutare!';
