@@ -334,36 +334,119 @@ h1{
 }
 #overlay p{color:#5050a0;font-size:.82rem;text-align:center;}
 
+/* ── MODE SELECT SCREEN ── */
+.mode-screen{
+  position:relative;z-index:1;
+  width:100%;max-width:520px;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+}
+.mode-intro{
+  font-size:.7rem;letter-spacing:.3em;text-transform:uppercase;
+  color:#5050a0;
+}
+.mode-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;
+}
+.mode-card{
+  background:linear-gradient(160deg,#141428,#0e0e22);
+  border:1px solid #252550;border-radius:14px;
+  padding:18px 14px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  transition:all .2s;text-align:center;
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
+}
+.mode-card:hover{
+  border-color:#6040ff;
+  box-shadow:0 0 24px rgba(80,40,200,.5),0 4px 20px rgba(0,0,0,.4);
+  transform:translateY(-2px);
+}
+.mode-card:active{transform:translateY(0);}
+.mode-icon{font-size:2rem;line-height:1;}
+.mode-title{
+  font-family:'Cinzel Decorative',serif;
+  font-size:.75rem;letter-spacing:.08em;
+  background:linear-gradient(135deg,#ffd060,#f0a020);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.mode-desc{
+  font-size:.62rem;color:#5050a0;line-height:1.5;
+}
+@media(max-width:400px){
+  .mode-grid{grid-template-columns:1fr;}
+}
+
 </style>
 </head>
 <body>
 <h1>✦ GemBlast ✦</h1>
-<p class="sub">Match 3 · Bonus Gems</p>
+<p class="sub" id="modeName">Match 3 · Bonus Gems</p>
 
-<div class="layout">
+<!-- ── MODE SELECT ── -->
+<div id="modeScreen" class="mode-screen">
+  <p class="mode-intro">Alege modul de joc</p>
+  <div class="mode-grid">
+    <button class="mode-card" onclick="startMode('classic')">
+      <span class="mode-icon">♾️</span>
+      <span class="mode-title">Clasic</span>
+      <span class="mode-desc">Joc infinit, fără limite. Fă match-uri cât de bine poți.</span>
+    </button>
+    <button class="mode-card" onclick="startMode('moves')">
+      <span class="mode-icon">🎯</span>
+      <span class="mode-title">Mutări Limitate</span>
+      <span class="mode-desc">30 de mutări. Maximizează scorul înainte să rămâi fără mutări.</span>
+    </button>
+    <button class="mode-card" onclick="startMode('timer')">
+      <span class="mode-icon">⏱️</span>
+      <span class="mode-title">Contra Timp</span>
+      <span class="mode-desc">60 secunde. Fiecare match adaugă timp bonus!</span>
+    </button>
+    <button class="mode-card" onclick="startMode('objective')">
+      <span class="mode-icon">🏆</span>
+      <span class="mode-title">Obiective</span>
+      <span class="mode-desc">Colectează gem-uri specifice înainte să rămâi fără mutări.</span>
+    </button>
+  </div>
+</div>
+
+<!-- ── GAME ── -->
+<div class="layout" id="gameLayout" style="display:none">
   <div class="panel">
     <div class="sbox">
       <div class="slabel">Scor</div>
       <div class="sval" id="elScore">0</div>
     </div>
-    <div class="sbox">
+    <div class="sbox" id="boxLevel">
       <div class="slabel">Nivel <span id="elLevel">1</span></div>
       <div class="lvlbg"><div class="lvlbar" id="elBar" style="width:0%"></div></div>
+    </div>
+    <div class="sbox" id="boxMoves" style="display:none">
+      <div class="slabel">Mutări</div>
+      <div class="sval" id="elMoves">30</div>
+    </div>
+    <div class="sbox" id="boxTimer" style="display:none">
+      <div class="slabel">Timp</div>
+      <div class="sval" id="elTimer" style="color:#ff6644">60</div>
+    </div>
+    <div class="sbox" id="boxObj" style="display:none">
+      <div class="slabel" id="objLabel">Obiectiv</div>
+      <div class="sval" id="elObj">0/20</div>
     </div>
     <div class="sbox">
       <div class="slabel">Record</div>
       <div class="sval" id="elBest">0</div>
     </div>
     <button class="btn gold" onclick="hint()">💡 Indiciu</button>
-    <button class="btn" onclick="newGame()">↺ Joc Nou</button>
+    <button class="btn" onclick="newGame()">↺ Restart</button>
+    <button class="btn" onclick="backToMenu()">☰ Meniu</button>
   </div>
 
   <div class="board-wrap" id="boardWrap">
     <div id="board"></div>
     <div id="overlay">
-      <h2 id="ovTitle">Nicio mutare!</h2>
+      <h2 id="ovTitle">Game Over</h2>
       <p id="ovSub"></p>
       <button class="btn gold" style="width:auto;padding:10px 24px" onclick="newGame()">Joacă din nou</button>
+      <button class="btn" style="width:auto;padding:10px 24px;margin-top:6px" onclick="backToMenu()">☰ Meniu</button>
     </div>
   </div>
 </div>
@@ -602,30 +685,52 @@ function getSVG(colorIdx, uid){
 
 // ── STATE ─────────────────────────────────────────────────
 let board=[], sel=null, busy=false, combo=0;
-let score=0, best=+(localStorage.getItem('gb3')||0), level=1;
-// DOM refs: cells[r][c] and gems[r][c]
+let score=0, level=1;
+let gameMode='classic'; // 'classic' | 'moves' | 'timer' | 'objective'
+
+// per-mode state
+let movesLeft=30;
+let timerSec=60, timerInterval=null;
+let objTarget=0, objCount=0, objGemType=0;
+
+// records per mode
+const BEST_KEY={classic:'gb_classic',moves:'gb_moves',timer:'gb_timer',objective:'gb_objective'};
+function getBest(){ return +(localStorage.getItem(BEST_KEY[gameMode])||0); }
+function setBest(v){ localStorage.setItem(BEST_KEY[gameMode],v); }
+
+// DOM refs
 let cells=[], gems=[];
 
 // ── CELL SIZE ─────────────────────────────────────────────
 let CS=52;
 function calcCS(){
-  const isMobile = window.innerWidth <= 600;
+  const isMobile=window.innerWidth<=600;
   let avail;
-  if(isMobile){
-    // body padding: 4px each side = 8px
-    // board-wrap padding: 3px each side = 6px
-    // border: 1px each side = 2px
-    // total subtract: 16px
-    avail = window.innerWidth - 16;
-  } else {
-    // side panel 134px + gap 16px + body padding 16px + board padding 12px
-    avail = Math.min(window.innerWidth - 134 - 16 - 16 - 12, 480);
-  }
-  // 8 cells + 7 gaps of 3px
-  CS = Math.floor((avail - 3*7) / 8);
-  CS = Math.max(36, Math.min(CS, 62));
-  document.documentElement.style.setProperty('--cs', CS+'px');
-  document.documentElement.style.setProperty('--gap', '3px');
+  if(isMobile){ avail=window.innerWidth-16; }
+  else{ avail=Math.min(window.innerWidth-134-16-16-12,480); }
+  CS=Math.floor((avail-3*7)/8);
+  CS=Math.max(36,Math.min(CS,62));
+  document.documentElement.style.setProperty('--cs',CS+'px');
+  document.documentElement.style.setProperty('--gap','3px');
+}
+
+// ── MODE NAVIGATION ───────────────────────────────────────
+function backToMenu(){
+  clearInterval(timerInterval); timerInterval=null;
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('gameLayout').style.display='none';
+  document.getElementById('modeScreen').style.display='flex';
+  document.getElementById('modeName').textContent='Match 3 · Bonus Gems';
+}
+
+function startMode(mode){
+  gameMode=mode;
+  document.getElementById('modeScreen').style.display='none';
+  document.getElementById('gameLayout').style.display='flex';
+  // show correct subtitle
+  const names={classic:'Clasic · Infinit',moves:'Mutări Limitate · 30',timer:'Contra Timp · 60s',objective:'Obiective'};
+  document.getElementById('modeName').textContent=names[mode];
+  newGame();
 }
 
 // ── BUILD DOM BOARD (once) ────────────────────────────────
@@ -1124,11 +1229,36 @@ function resolve(groups){
   pts=Math.round(pts*combo*lvlMult);
   const prevLevel=level;
   score+=pts;
-  if(score>best){best=score;localStorage.setItem('gb3',best);}
+  if(score>getBest()) setBest(score);
   updateUI();
-  // detect level-up
   if(level>prevLevel) showLevelUp(level);
   showScore(groups,pts,combo);
+
+  // ── Mode-specific effects ──
+  if(gameMode==='moves'){
+    movesLeft--;
+    updateUI();
+    if(movesLeft<=0){
+      // let current cascade finish, then end
+      setTimeout(()=>endGame('Mutări Epuizate!',`Scor: ${score.toLocaleString()}`),800);
+    }
+  }
+  if(gameMode==='timer'){
+    // add time for each gem matched
+    const total=groups.reduce((s,g)=>s+g.cells.length,0);
+    addTimerBonus(total);
+  }
+  if(gameMode==='objective'){
+    let cnt=0;
+    for(const g of groups){
+      if(g.color===objGemType) cnt+=g.cells.length;
+    }
+    objCount=Math.min(objCount+cnt, objTarget);
+    updateUI();
+    if(objCount>=objTarget){
+      setTimeout(()=>endGame('Obiectiv Completat! 🏆',`Scor: ${score.toLocaleString()}`),800);
+    }
+  }
 
   // build destroy set
   const dst=new Set();
@@ -1332,45 +1462,114 @@ function hasMoves(){
 
 // ── UI ────────────────────────────────────────────────────
 function updateUI(){
+  const best=getBest();
   document.getElementById('elScore').textContent=score.toLocaleString();
   document.getElementById('elBest').textContent=best.toLocaleString();
-  // level = how many thresholds we've passed
-  // LVL = [0, 500, 1200, 2200, ...]
-  // score=0 → level 1, score=500 → level 2, etc.
+
+  // level (all modes)
   let lv=1;
   for(let i=1;i<LVL.length;i++){ if(score>=LVL[i]) lv=i+1; else break; }
   lv=Math.min(lv,LVL.length-1);
   level=lv;
   document.getElementById('elLevel').textContent=level;
-  const lo=LVL[level-1]||0;
-  const hi=LVL[level]||LVL[LVL.length-1];
-  const pct=hi>lo ? Math.min(100,Math.round((score-lo)/(hi-lo)*100)) : 100;
+  const lo=LVL[level-1]||0, hi=LVL[level]||LVL[LVL.length-1];
+  const pct=hi>lo?Math.min(100,Math.round((score-lo)/(hi-lo)*100)):100;
   document.getElementById('elBar').style.width=pct+'%';
+
+  // mode-specific
+  if(gameMode==='moves') document.getElementById('elMoves').textContent=movesLeft;
+  if(gameMode==='timer'){
+    const el=document.getElementById('elTimer');
+    el.textContent=timerSec;
+    el.style.color=timerSec<=10?'#ff2244':timerSec<=20?'#ff8800':'#f0c040';
+  }
+  if(gameMode==='objective'){
+    document.getElementById('elObj').textContent=objCount+'/'+objTarget;
+  }
 }
-function noMoves(){
-  document.getElementById('ovTitle').textContent='Nicio mutare!';
-  document.getElementById('ovSub').textContent='Scor: '+score;
+
+function endGame(title, sub){
+  clearInterval(timerInterval); timerInterval=null;
+  busy=true;
+  const best=getBest();
+  if(score>best) setBest(score);
+  document.getElementById('ovTitle').textContent=title;
+  document.getElementById('ovSub').textContent=sub+(score>best?' 🏆 NOU RECORD!':'');
   document.getElementById('overlay').classList.add('show');
-  setTimeout(()=>{document.getElementById('overlay').classList.remove('show');newGame();},2500);
+}
+
+function noMoves(){
+  if(gameMode==='classic'){
+    endGame('Nicio mutare!',`Scor: ${score.toLocaleString()}`);
+    setTimeout(()=>{document.getElementById('overlay').classList.remove('show');newGame();},2500);
+  } else {
+    endGame('Nicio mutare!',`Scor: ${score.toLocaleString()}`);
+  }
+}
+
+// ── TIMER MODE ────────────────────────────────────────────
+function startTimer(){
+  clearInterval(timerInterval);
+  timerSec=60;
+  updateUI();
+  timerInterval=setInterval(()=>{
+    timerSec--;
+    updateUI();
+    if(timerSec<=0){
+      clearInterval(timerInterval);timerInterval=null;
+      endGame("Timp expirat!",`Scor: ${score.toLocaleString()}`);
+    }
+  },1000);
+}
+function addTimerBonus(matchSize){
+  // each gem in match adds 0.5s, bonus gems add more
+  timerSec=Math.min(timerSec+Math.ceil(matchSize*0.5),99);
+  updateUI();
 }
 
 // ── NEW GAME ─────────────────────────────────────────────
 function newGame(){
+  clearInterval(timerInterval); timerInterval=null;
   document.getElementById('overlay').classList.remove('show');
-  score=0;level=1;combo=0;sel=null;busy=false;
+  score=0; level=1; combo=0; sel=null; busy=false;
+
+  // show/hide mode-specific boxes
+  document.getElementById('boxLevel').style.display=
+    (gameMode==='classic'||gameMode==='objective')?'':'none';
+  document.getElementById('boxMoves').style.display=
+    gameMode==='moves'?'':'none';
+  document.getElementById('boxTimer').style.display=
+    gameMode==='timer'?'':'none';
+  document.getElementById('boxObj').style.display=
+    gameMode==='objective'?'':'none';
+
+  // init per-mode state
+  if(gameMode==='moves'){
+    movesLeft=30;
+  } else if(gameMode==='timer'){
+    // timer starts after board is drawn
+  } else if(gameMode==='objective'){
+    objGemType=Math.floor(Math.random()*GN);
+    objTarget=15+Math.floor(Math.random()*10); // 15–24 gems
+    objCount=0;
+    document.getElementById('objLabel').textContent=
+      'Colectează '+GEM_DEFS[objGemType].name;
+  }
+
   makeBoard();
   updateUI();
+
+  if(gameMode==='timer') startTimer();
 }
 
 // ── INIT ─────────────────────────────────────────────────
 buildDOM();
-newGame();
+// show mode screen at start, not game
+document.getElementById('modeScreen').style.display='flex';
+document.getElementById('gameLayout').style.display='none';
 window.addEventListener('resize',()=>{
   clearTimeout(window._rt);
-  window._rt=setTimeout(()=>{
-    calcCS();
-    // update swap animation distances since CS changed
-  },120);
+  window._rt=setTimeout(()=>{ calcCS(); },120);
 });
 window.addEventListener('orientationchange',()=>{
   setTimeout(()=>{ calcCS(); },300);
