@@ -821,23 +821,21 @@ function applyGem(r,c){
   }
   const ci=gc(v);
   const def=GEM_DEFS[ci];
-  const uid=_gemSlotID[r][c];
+  // always use a fresh UID so SVG gradient IDs never collide
+  const uid = ++_gemUID;
 
   if(isB(v)){
-    // bonus gem — use dedicated SVG, ignore base gem shape
     const btype = v>=BB?'bomb':v>=BH?'hyper':v>=BS?'star':'flame';
-    const bonusClass=' '+btype;
     el.innerHTML=bonusSVG(btype,ci,uid);
     el.style.background='none';
-    el.style.setProperty('--gem-glow', def.glow);
-    const glowColor = btype==='bomb'?'rgba(255,40,0,.9)':
-                      btype==='hyper'?'rgba(180,60,255,.9)':
-                      btype==='star'?'rgba(255,200,0,.9)':
-                      'rgba(255,120,0,.9)';
+    el.style.removeProperty('--gem-shadow');
+    const glowColor = btype==='bomb'  ?'rgba(255,40,0,.9)':
+                      btype==='hyper' ?'rgba(180,60,255,.9)':
+                      btype==='star'  ?'rgba(255,200,0,.9)':
+                                       'rgba(255,120,0,.9)';
     el.style.boxShadow=`0 0 18px ${glowColor}, 0 3px 8px rgba(0,0,0,.6)`;
-    el.className='gem'+bonusClass;
+    el.className='gem '+btype;
   } else {
-    // normal gem — use base SVG
     el.innerHTML=def.svg(uid);
     el.style.background='none';
     el.style.setProperty('--gem-glow',def.glow);
