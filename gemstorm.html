@@ -659,6 +659,160 @@ function initGemUIDs(){
   for(let r=0;r<R;r++){_gemSlotID.push([]);for(let c=0;c<C;c++)_gemSlotID[r].push(++_gemUID);}
 }
 
+// ── BONUS GEM SVGs ────────────────────────────────────────
+// Each bonus type gets its OWN distinct SVG, independent of the base gem color
+
+function bonusSVG(type, colorIdx, uid){
+  const col = GEM_DEFS[colorIdx].glow;
+  const c2  = GEM_DEFS[colorIdx].shadow.replace(/[^,]+\)$/,'').replace('rgba(','').replace('rgb(','');
+  // derive a lighter tint from the glow color
+  const light = col;
+
+  if(type==='flame'){
+    // 🔥 Flame: orange glowing circle with fire rays
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="bg${uid}" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#ffe060"/>
+    <stop offset="45%" stop-color="#ff8800"/>
+    <stop offset="100%" stop-color="#cc2200"/>
+  </radialGradient>
+  <radialGradient id="inner${uid}" cx="50%" cy="50%" r="40%">
+    <stop offset="0%" stop-color="rgba(255,255,200,.9)"/>
+    <stop offset="100%" stop-color="rgba(255,200,0,0)"/>
+  </radialGradient>
+</defs>
+<!-- outer glow ring -->
+<circle cx="50" cy="50" r="46" fill="rgba(255,120,0,.18)"/>
+<!-- main body -->
+<circle cx="50" cy="50" r="38" fill="url(#bg${uid})"/>
+<!-- inner bright core -->
+<circle cx="50" cy="50" r="22" fill="url(#inner${uid})"/>
+<!-- 6 flame rays -->
+<g stroke="rgba(255,220,80,.85)" stroke-width="3" stroke-linecap="round">
+  <line x1="50" y1="10" x2="50" y2="26"/>
+  <line x1="50" y1="74" x2="50" y2="90"/>
+  <line x1="10" y1="50" x2="26" y2="50"/>
+  <line x1="74" y1="50" x2="90" y2="50"/>
+  <line x1="22" y1="22" x2="33" y2="33"/>
+  <line x1="67" y1="67" x2="78" y2="78"/>
+  <line x1="78" y1="22" x2="67" y2="33"/>
+  <line x1="22" y1="78" x2="33" y2="67"/>
+</g>
+<!-- highlight -->
+<ellipse cx="38" cy="36" rx="9" ry="6" fill="rgba(255,255,200,.6)" transform="rotate(-30,38,36)"/>
+<!-- center symbol -->
+<text x="50" y="57" text-anchor="middle" font-size="22" fill="white" font-family="serif" opacity=".95">✦</text>
+</svg>`;
+  }
+
+  if(type==='star'){
+    // ⭐ Star: golden 6-point star with white core
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="bg${uid}" cx="50%" cy="50%" r="52%">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="30%" stop-color="#ffe840"/>
+    <stop offset="70%" stop-color="#ffaa00"/>
+    <stop offset="100%" stop-color="#cc6600"/>
+  </radialGradient>
+</defs>
+<!-- outer pulse ring -->
+<circle cx="50" cy="50" r="47" fill="rgba(255,200,0,.15)"/>
+<!-- 6-pointed star body -->
+<polygon points="50,8 58,38 90,38 66,56 74,88 50,70 26,88 34,56 10,38 42,38"
+  fill="url(#bg${uid})"/>
+<!-- inner bright star -->
+<polygon points="50,20 54,38 68,38 57,47 61,62 50,53 39,62 43,47 32,38 46,38"
+  fill="rgba(255,255,200,.55)"/>
+<!-- highlight -->
+<ellipse cx="38" cy="28" rx="8" ry="5" fill="rgba(255,255,255,.7)" transform="rotate(-25,38,28)"/>
+<!-- rotating dashed ring -->
+<circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,220,80,.5)" stroke-width="2" stroke-dasharray="6 4"/>
+</svg>`;
+  }
+
+  if(type==='hyper'){
+    // 💥 Hyper: rainbow cross / plus gem
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="bg${uid}" cx="50%" cy="50%" r="55%">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="25%" stop-color="#cc88ff"/>
+    <stop offset="60%" stop-color="#6600cc"/>
+    <stop offset="100%" stop-color="#220044"/>
+  </radialGradient>
+  <linearGradient id="hbar${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#ff4466"/>
+    <stop offset="33%" stop-color="#44aaff"/>
+    <stop offset="66%" stop-color="#44ffaa"/>
+    <stop offset="100%" stop-color="#ff44ff"/>
+  </linearGradient>
+  <linearGradient id="vbar${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#ff4466"/>
+    <stop offset="33%" stop-color="#ffcc00"/>
+    <stop offset="66%" stop-color="#44ffaa"/>
+    <stop offset="100%" stop-color="#44aaff"/>
+  </linearGradient>
+</defs>
+<!-- main circle -->
+<circle cx="50" cy="50" r="44" fill="url(#bg${uid})"/>
+<!-- rainbow cross bars -->
+<rect x="8" y="40" width="84" height="20" rx="10" fill="url(#hbar${uid})" opacity=".9"/>
+<rect x="40" y="8" width="20" height="84" rx="10" fill="url(#vbar${uid})" opacity=".9"/>
+<!-- center bright gem -->
+<circle cx="50" cy="50" r="14" fill="rgba(255,255,255,.9)"/>
+<circle cx="50" cy="50" r="8"  fill="rgba(200,100,255,.8)"/>
+<!-- highlight -->
+<ellipse cx="38" cy="30" rx="9" ry="6" fill="rgba(255,255,255,.65)" transform="rotate(-30,38,30)"/>
+<!-- outer ring -->
+<circle cx="50" cy="50" r="43" fill="none" stroke="rgba(200,150,255,.4)" stroke-width="2"/>
+</svg>`;
+  }
+
+  if(type==='bomb'){
+    // 💣 Bomb: dark red/black with explosion lines
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="bg${uid}" cx="38%" cy="32%" r="60%">
+    <stop offset="0%" stop-color="#ff6644"/>
+    <stop offset="40%" stop-color="#cc1100"/>
+    <stop offset="80%" stop-color="#660000"/>
+    <stop offset="100%" stop-color="#220000"/>
+  </radialGradient>
+  <radialGradient id="core${uid}" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(255,180,80,.9)"/>
+    <stop offset="60%" stop-color="rgba(255,80,0,.4)"/>
+    <stop offset="100%" stop-color="rgba(255,0,0,0)"/>
+  </radialGradient>
+</defs>
+<!-- outer glow -->
+<circle cx="50" cy="50" r="47" fill="rgba(255,40,0,.15)"/>
+<!-- main body -->
+<circle cx="50" cy="50" r="40" fill="url(#bg${uid})"/>
+<!-- 8 explosion spikes -->
+<g fill="rgba(255,160,40,.9)">
+  <polygon points="50,6  53,24 47,24"/>
+  <polygon points="50,94 53,76 47,76"/>
+  <polygon points="6,50  24,53 24,47"/>
+  <polygon points="94,50 76,53 76,47"/>
+  <polygon points="18,18 32,30 26,36"/>
+  <polygon points="82,18 74,32 68,26"/>
+  <polygon points="18,82 30,68 36,74"/>
+  <polygon points="82,82 68,70 74,64"/>
+</g>
+<!-- hot inner core -->
+<circle cx="50" cy="50" r="24" fill="url(#core${uid})"/>
+<!-- highlight -->
+<ellipse cx="36" cy="34" rx="10" ry="7" fill="rgba(255,220,180,.55)" transform="rotate(-30,36,34)"/>
+<!-- center skull/X mark -->
+<text x="50" y="58" text-anchor="middle" font-size="26" fill="rgba(255,255,255,.85)" font-family="serif">✕</text>
+</svg>`;
+  }
+
+  return ''; // fallback
+}
+
 function applyGem(r,c){
   const v=board[r][c];
   const el=gems[r][c];
@@ -668,14 +822,29 @@ function applyGem(r,c){
   const ci=gc(v);
   const def=GEM_DEFS[ci];
   const uid=_gemSlotID[r][c];
-  const bonusClass=v>=BB?' bomb':v>=BH?' hyper':v>=BS?' star':v>=BF?' flame':'';
-  const icon=v>=BB?'💣':v>=BH?'💥':v>=BS?'⭐':v>=BF?'🔥':'';
-  el.innerHTML=def.svg(uid)+(icon?`<span class="bonus-icon">${icon}</span>`:'');
-  el.style.background='none';
-  el.style.setProperty('--gem-glow',def.glow);
-  el.style.setProperty('--gem-shadow',`0 4px 18px ${def.shadow},0 2px 8px rgba(0,0,0,.6)`);
-  el.style.boxShadow='var(--gem-shadow)';
-  el.className='gem'+bonusClass;
+
+  if(isB(v)){
+    // bonus gem — use dedicated SVG, ignore base gem shape
+    const btype = v>=BB?'bomb':v>=BH?'hyper':v>=BS?'star':'flame';
+    const bonusClass=' '+btype;
+    el.innerHTML=bonusSVG(btype,ci,uid);
+    el.style.background='none';
+    el.style.setProperty('--gem-glow', def.glow);
+    const glowColor = btype==='bomb'?'rgba(255,40,0,.9)':
+                      btype==='hyper'?'rgba(180,60,255,.9)':
+                      btype==='star'?'rgba(255,200,0,.9)':
+                      'rgba(255,120,0,.9)';
+    el.style.boxShadow=`0 0 18px ${glowColor}, 0 3px 8px rgba(0,0,0,.6)`;
+    el.className='gem'+bonusClass;
+  } else {
+    // normal gem — use base SVG
+    el.innerHTML=def.svg(uid);
+    el.style.background='none';
+    el.style.setProperty('--gem-glow',def.glow);
+    el.style.setProperty('--gem-shadow',`0 4px 18px ${def.shadow},0 2px 8px rgba(0,0,0,.6)`);
+    el.style.boxShadow='var(--gem-shadow)';
+    el.className='gem';
+  }
 }
 
 // ── GRID INIT ─────────────────────────────────────────────
