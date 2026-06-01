@@ -317,19 +317,19 @@ function draw(){
         ctx.beginPath();ctx.moveTo(cx+Math.cos(ang)*gr*.38,cy+Math.sin(ang)*gr*.38);
         ctx.lineTo(cx+Math.cos(ang)*gr*.85,cy+Math.sin(ang)*gr*.85);ctx.stroke();}
       ctx.fillStyle='rgba(255,255,255,.9)';ctx.font=`bold ${gr*.55}px Arial`;
-      ctx.textAlign='center';ctx.textBaseline='middle';drawBonusIcon('flame',cx,cy,gr);
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('3×3',cx,cy);
     } else if(isSt){
       const t2=Date.now()/400;ctx.strokeStyle='rgba(255,255,80,.9)';ctx.lineWidth=2;
       ctx.setLineDash([4,4]);ctx.lineDashOffset=-t2*8;
       ctx.beginPath();ctx.arc(cx,cy,gr*.7,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
       ctx.fillStyle='rgba(255,255,255,.9)';ctx.font=`bold ${gr*.38}px Arial`;
-      ctx.textAlign='center';ctx.textBaseline='middle';drawBonusIcon('star',cx,cy,gr);
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('★ALL',cx,cy);
     } else if(isHy){
       const t2=Date.now()/300;ctx.strokeStyle=`rgba(255,255,255,${.5+.5*Math.sin(t2)})`;ctx.lineWidth=2.5;
       ctx.beginPath();ctx.moveTo(cx-gr*.82,cy);ctx.lineTo(cx+gr*.82,cy);ctx.stroke();
       ctx.beginPath();ctx.moveTo(cx,cy-gr*.82);ctx.lineTo(cx,cy+gr*.82);ctx.stroke();
       ctx.fillStyle='rgba(255,255,255,.9)';ctx.font=`bold ${gr*.35}px Arial`;
-      ctx.textAlign='center';ctx.textBaseline='middle';drawBonusIcon('hyper',cx,cy,gr);
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('R+C',cx,cy);
     } else if(isBm){
       const t2=Date.now()/200;
       for(let i=0;i<8;i++){const ang=t2+i*Math.PI/4;
@@ -339,7 +339,7 @@ function draw(){
         ctx.lineTo(cx+Math.cos(ang-.2)*gr*.95,cy+Math.sin(ang-.2)*gr*.95);
         ctx.closePath();ctx.fill();}
       ctx.fillStyle='rgba(255,255,255,.9)';ctx.font=`bold ${gr*.55}px Arial`;
-      ctx.textAlign='center';ctx.textBaseline='middle';drawBonusIcon('bomb',cx,cy,gr);
+      ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('5×5',cx,cy);
     }
     ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=1;
     ctx.beginPath();ctx.arc(cx,cy,gr-.5,0,Math.PI*2);ctx.stroke();
@@ -366,27 +366,6 @@ function rr(ctx,x,y,w,h,r){
   ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
   ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
 }
-
-const bonusIcons={};
-(function(){
- const defs={flame:'🔥',star:'⭐',hyper:'💎',bomb:'💣'};
- for(const k in defs){
-   const c=document.createElement('canvas');
-   c.width=128;c.height=128;
-   const x=c.getContext('2d');
-   x.font='96px Arial';
-   x.textAlign='center';x.textBaseline='middle';
-   x.fillText(defs[k],64,70);
-   const img=new Image(); img.src=c.toDataURL('image/png');
-   bonusIcons[k]=img;
- }
-})();
-function drawBonusIcon(type,cx,cy,gr){
- const img=bonusIcons[type];
- if(img&&img.complete) ctx.drawImage(img,cx-gr*0.7,cy-gr*0.7,gr*1.4,gr*1.4);
-}
-
-
 
 // ═══ GRID — identical to original ════════════════════════════
 function rndGem(){return Math.floor(Math.random()*GN);}
@@ -870,6 +849,54 @@ const G={
 
 // ═══ INIT ═════════════════════════════════════════════════════
 requestAnimationFrame(loop);
+
+// ===== ULTRA 3D VISUAL UPGRADE =====
+function drawGem3D(ctx,cx,cy,gr,color){
+  ctx.save();
+  ctx.shadowColor=color;
+  ctx.shadowBlur=18;
+
+  const g=ctx.createRadialGradient(cx-gr*0.35,cy-gr*0.4,0,cx,cy,gr);
+  g.addColorStop(0,'#ffffff');
+  g.addColorStop(0.12,color);
+  g.addColorStop(1,'#111111');
+  ctx.fillStyle=g;
+
+  ctx.beginPath();
+  for(let i=0;i<8;i++){
+    const a=Math.PI/4*i-Math.PI/8;
+    const r=(i%2?gr*0.78:gr);
+    const x=cx+Math.cos(a)*r;
+    const y=cy+Math.sin(a)*r;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(255,255,255,.55)';
+  ctx.lineWidth=1.4;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(cx,cy-gr*0.9);
+  ctx.lineTo(cx-gr*0.45,cy);
+  ctx.lineTo(cx,cy+gr*0.9);
+  ctx.lineTo(cx+gr*0.45,cy);
+  ctx.closePath();
+  ctx.strokeStyle='rgba(255,255,255,.28)';
+  ctx.stroke();
+
+  const shine=ctx.createLinearGradient(cx-gr,cy-gr,cx+gr,cy+gr);
+  shine.addColorStop(0,'rgba(255,255,255,.65)');
+  shine.addColorStop(.4,'rgba(255,255,255,0)');
+  ctx.fillStyle=shine;
+  ctx.beginPath();
+  ctx.arc(cx,cy,gr*0.82,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
 </script>
 </body>
 </html>
