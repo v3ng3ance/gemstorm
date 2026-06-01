@@ -367,15 +367,9 @@ function rr(ctx,x,y,w,h,r){
   ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
 }
 
-
 const bonusIcons={};
 (function(){
- const defs={
- flame:'🔥',
- star:'⭐',
- hyper:'💎',
- bomb:'💣'
- };
+ const defs={flame:'🔥',star:'⭐',hyper:'💎',bomb:'💣'};
  for(const k in defs){
    const c=document.createElement('canvas');
    c.width=128;c.height=128;
@@ -391,6 +385,8 @@ function drawBonusIcon(type,cx,cy,gr){
  const img=bonusIcons[type];
  if(img&&img.complete) ctx.drawImage(img,cx-gr*0.7,cy-gr*0.7,gr*1.4,gr*1.4);
 }
+
+
 
 // ═══ GRID — identical to original ════════════════════════════
 function rndGem(){return Math.floor(Math.random()*GN);}
@@ -473,13 +469,76 @@ function clearSel(){
   sel=null; clearAreaHL(); clearBonusTip();
 }
 
-// ═══ SWAP — identical to original ════════════════════════════
+// ═══ SWAP — identical to original + bonus activation ════════
 const SW=0.2;
+
+// Activates a bonus gem effect centered at (r,c) and destroys dst cells
+function activateBonusSwap(r,c,v, r2,c2){
+  // build destroy set based on bonus type
+  const dst=new Set();
+  if(v>=BB){
+    // bomb: 5×5
+    for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}
+  } else if(v>=BH){
+    // hyper: full row + col
+    for(let cc=0;cc<COLS;cc++)dst.add(r*COLS+cc);
+    for(let rr=0;rr<ROWS;rr++)dst.add(rr*COLS+c);
+  } else if(v>=BS){
+    // star: all gems of same color — color = color of the OTHER gem
+    const targetCol=gColor(board[r2][c2]);
+    for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)
+      if(gColor(board[rr][cc])===targetCol)dst.add(rr*COLS+cc);
+  } else if(v>=BF){
+    // flame: 3×3
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}
+  }
+  // also destroy both swap positions
+  dst.add(r*COLS+c); dst.add(r2*COLS+c2);
+
+  const pts=dst.size*40;
+  const lvlMult=1+(level-1)*0.1;
+  const finalPts=Math.round(pts*lvlMult);
+  score+=finalPts;
+  const best=getBest(); if(score>best)saveBest(score);
+  updateUI();
+  const{x,y}=cxy(r,c);
+  floats.push({x:x+CELL/2,y:y+CELL/2,txt:'✨+'+finalPts,a:1});
+
+  let pending=0;
+  for(const idx of dst){const rr2=Math.floor(idx/COLS),cc2=idx%COLS;if(board[rr2][cc2]!==-1)pending++;}
+  if(!pending){combo=0;busy=false;if(!hasMoves())noMoves();return;}
+
+  let done=0;
+  for(const idx of dst){
+    const rr2=Math.floor(idx/COLS),cc2=idx%COLS;
+    if(board[rr2][cc2]===-1)continue;
+    spawnParts(rr2,cc2,gColor(board[rr2][cc2]));
+    anims[rr2][cc2]={type:'ex',t:0,dur:.28,onDone:()=>{
+      board[rr2][cc2]=-1;
+      if(++done===pending)doGravity(dst);
+    }};
+  }
+}
+
 function trySwap(r1,c1,r2,c2){
   busy=true;
+  clearAreaHL(); clearBonusTip();
   const dx=(c2-c1)*(CELL+GAP),dy=(r2-r1)*(CELL+GAP);
   let d1=false,d2=false;
   function afterBoth(){
+    const v1=board[r1][c1], v2=board[r2][c2];
+    const b1=isBonus(v1), b2=isBonus(v2);
+
+    // If either gem is a bonus, activate it immediately (no match needed)
+    if(b1||b2){
+      const br=b1?r1:r2, bc=b1?c1:c2, bv=b1?v1:v2;
+      const nr=b1?r2:r1, nc=b1?c2:c1;
+      combo=0;
+      activateBonusSwap(br,bc,bv,nr,nc);
+      return;
+    }
+
+    // Normal swap — check for matches
     const t=board[r1][c1];board[r1][c1]=board[r2][c2];board[r2][c2]=t;
     const m=findMatches();
     if(!m){
