@@ -1393,11 +1393,20 @@ function resolve(groups){
     setTimeout(()=>{
       applyGem(r,c);
       if(++done===pending){
-        // place bonus gems
+        // place bonus gems and draw them immediately
         for(const{r:br,c:bc,btype,color}of newB){
           if(board[br][bc]===-1){
             board[br][bc]=btype==='bomb'?BB+color:btype==='star'?BS+color:btype==='hyper'?BH:BF+color;
-            dst.delete(br*C+bc);
+            dst.delete(br*C+bc); // don't refill this slot during gravity
+            applyGem(br,bc);     // render the bonus gem immediately
+            // little pop-in animation
+            const g=gems[br][bc];
+            g.style.transform='scale(0)';
+            requestAnimationFrame(()=>{
+              g.style.transition='transform .25s cubic-bezier(.34,1.56,.64,1)';
+              g.style.transform='scale(1)';
+              setTimeout(()=>{ g.style.transition=''; g.style.transform=''; },280);
+            });
           }
         }
         gravity(dst,[]);
