@@ -317,6 +317,41 @@ h1{
   text-shadow:0 0 8px rgba(240,192,64,.8);
 }
 
+/* ── BONUS TOOLTIP ── */
+.bonus-tip{
+  position:absolute;
+  background:rgba(10,6,30,.95);
+  border:1px solid rgba(200,150,255,.4);
+  border-radius:10px;
+  padding:8px 12px;
+  font-size:.7rem;
+  color:#e0d0ff;
+  line-height:1.5;
+  z-index:60;
+  pointer-events:none;
+  max-width:160px;
+  text-align:center;
+  box-shadow:0 4px 20px rgba(0,0,0,.6);
+  animation:tipIn .18s ease;
+  white-space:nowrap;
+}
+@keyframes tipIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.bonus-tip strong{
+  display:block;margin-bottom:2px;
+  background:linear-gradient(135deg,#ffd060,#f0a020);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  font-family:'Cinzel Decorative',serif;font-size:.65rem;
+}
+
+/* ── AREA HIGHLIGHT ── */
+.cell.area-hl{
+  background:rgba(255,200,80,.18) !important;
+  box-shadow:inset 0 0 0 2px rgba(255,200,80,.4);
+  border-radius:6px;
+}
+.cell.area-hl-cross-h{ background:rgba(80,180,255,.18) !important; box-shadow:inset 0 0 0 2px rgba(80,180,255,.4); }
+.cell.area-hl-cross-v{ background:rgba(200,80,255,.18) !important; box-shadow:inset 0 0 0 2px rgba(200,80,255,.4); }
+
 /* ── OVERLAY ── */
 #overlay{
   display:none;position:absolute;inset:0;
@@ -770,154 +805,145 @@ function initGemUIDs(){
 // Each bonus type gets its OWN distinct SVG, independent of the base gem color
 
 function bonusSVG(type, colorIdx, uid){
-  const col = GEM_DEFS[colorIdx].glow;
-  const c2  = GEM_DEFS[colorIdx].shadow.replace(/[^,]+\)$/,'').replace('rgba(','').replace('rgb(','');
-  // derive a lighter tint from the glow color
-  const light = col;
-
   if(type==='flame'){
-    // 🔥 Flame: orange glowing circle with fire rays
+    // 🔥 FLAME — portocaliu, raze, text "3×3"
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 <defs>
-  <radialGradient id="bg${uid}" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#ffe060"/>
-    <stop offset="45%" stop-color="#ff8800"/>
-    <stop offset="100%" stop-color="#cc2200"/>
-  </radialGradient>
-  <radialGradient id="inner${uid}" cx="50%" cy="50%" r="40%">
-    <stop offset="0%" stop-color="rgba(255,255,200,.9)"/>
-    <stop offset="100%" stop-color="rgba(255,200,0,0)"/>
+  <radialGradient id="fg${uid}" cx="50%" cy="45%" r="55%">
+    <stop offset="0%" stop-color="#ffee88"/>
+    <stop offset="40%" stop-color="#ff8800"/>
+    <stop offset="100%" stop-color="#aa2200"/>
   </radialGradient>
 </defs>
-<!-- outer glow ring -->
-<circle cx="50" cy="50" r="46" fill="rgba(255,120,0,.18)"/>
-<!-- main body -->
-<circle cx="50" cy="50" r="38" fill="url(#bg${uid})"/>
-<!-- inner bright core -->
-<circle cx="50" cy="50" r="22" fill="url(#inner${uid})"/>
-<!-- 6 flame rays -->
-<g stroke="rgba(255,220,80,.85)" stroke-width="3" stroke-linecap="round">
-  <line x1="50" y1="10" x2="50" y2="26"/>
-  <line x1="50" y1="74" x2="50" y2="90"/>
-  <line x1="10" y1="50" x2="26" y2="50"/>
-  <line x1="74" y1="50" x2="90" y2="50"/>
-  <line x1="22" y1="22" x2="33" y2="33"/>
-  <line x1="67" y1="67" x2="78" y2="78"/>
-  <line x1="78" y1="22" x2="67" y2="33"/>
-  <line x1="22" y1="78" x2="33" y2="67"/>
-</g>
+<!-- glow halo -->
+<circle cx="50" cy="50" r="48" fill="rgba(255,100,0,.2)"/>
+<!-- body -->
+<circle cx="50" cy="50" r="40" fill="url(#fg${uid})"/>
+<!-- 4 thick flame rays NSEW -->
+<rect x="44" y="4"  width="12" height="26" rx="6" fill="#ffcc44" opacity=".95"/>
+<rect x="44" y="70" width="12" height="26" rx="6" fill="#ffcc44" opacity=".95"/>
+<rect x="4"  y="44" width="26" height="12" rx="6" fill="#ffcc44" opacity=".95"/>
+<rect x="70" y="44" width="26" height="12" rx="6" fill="#ffcc44" opacity=".95"/>
+<!-- 4 diagonal rays -->
+<rect x="20" y="14" width="10" height="20" rx="5" fill="#ffaa22" opacity=".8" transform="rotate(45,25,24)"/>
+<rect x="70" y="14" width="10" height="20" rx="5" fill="#ffaa22" opacity=".8" transform="rotate(-45,75,24)"/>
+<rect x="20" y="66" width="10" height="20" rx="5" fill="#ffaa22" opacity=".8" transform="rotate(-45,25,76)"/>
+<rect x="70" y="66" width="10" height="20" rx="5" fill="#ffaa22" opacity=".8" transform="rotate(45,75,76)"/>
+<!-- bright core -->
+<circle cx="50" cy="50" r="18" fill="rgba(255,240,100,.85)"/>
+<!-- label -->
+<text x="50" y="45" text-anchor="middle" font-size="13" font-weight="bold" fill="#7a2000" font-family="Arial,sans-serif">3×3</text>
+<text x="50" y="59" text-anchor="middle" font-size="9" fill="#7a2000" font-family="Arial,sans-serif">EXPLOZIE</text>
 <!-- highlight -->
-<ellipse cx="38" cy="36" rx="9" ry="6" fill="rgba(255,255,200,.6)" transform="rotate(-30,38,36)"/>
-<!-- center symbol -->
-<text x="50" y="57" text-anchor="middle" font-size="22" fill="white" font-family="serif" opacity=".95">✦</text>
+<ellipse cx="36" cy="32" rx="10" ry="6" fill="rgba(255,255,200,.55)" transform="rotate(-30,36,32)"/>
 </svg>`;
   }
 
   if(type==='star'){
-    // ⭐ Star: golden 6-point star with white core
+    // ⭐ STAR — auriu, distruge toată culoarea
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 <defs>
-  <radialGradient id="bg${uid}" cx="50%" cy="50%" r="52%">
+  <radialGradient id="sg${uid}" cx="50%" cy="40%" r="58%">
     <stop offset="0%" stop-color="#ffffff"/>
     <stop offset="30%" stop-color="#ffe840"/>
-    <stop offset="70%" stop-color="#ffaa00"/>
-    <stop offset="100%" stop-color="#cc6600"/>
+    <stop offset="75%" stop-color="#ff9900"/>
+    <stop offset="100%" stop-color="#cc5500"/>
   </radialGradient>
 </defs>
-<!-- outer pulse ring -->
-<circle cx="50" cy="50" r="47" fill="rgba(255,200,0,.15)"/>
-<!-- 6-pointed star body -->
-<polygon points="50,8 58,38 90,38 66,56 74,88 50,70 26,88 34,56 10,38 42,38"
-  fill="url(#bg${uid})"/>
-<!-- inner bright star -->
-<polygon points="50,20 54,38 68,38 57,47 61,62 50,53 39,62 43,47 32,38 46,38"
-  fill="rgba(255,255,200,.55)"/>
+<!-- glow halo -->
+<circle cx="50" cy="50" r="48" fill="rgba(255,200,0,.2)"/>
+<!-- 5-pointed star -->
+<polygon points="50,6 61,36 94,36 69,56 79,88 50,68 21,88 31,56 6,36 39,36" fill="url(#sg${uid})"/>
+<!-- inner star sheen -->
+<polygon points="50,18 57,38 72,38 60,47 65,64 50,55 35,64 40,47 28,38 43,38" fill="rgba(255,255,180,.4)"/>
+<!-- center label -->
+<circle cx="50" cy="50" r="16" fill="rgba(255,255,255,.85)"/>
+<text x="50" y="46" text-anchor="middle" font-size="10" font-weight="bold" fill="#7a4000" font-family="Arial,sans-serif">TOT</text>
+<text x="50" y="58" text-anchor="middle" font-size="8" fill="#7a4000" font-family="Arial,sans-serif">CULOAREA</text>
 <!-- highlight -->
-<ellipse cx="38" cy="28" rx="8" ry="5" fill="rgba(255,255,255,.7)" transform="rotate(-25,38,28)"/>
-<!-- rotating dashed ring -->
-<circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,220,80,.5)" stroke-width="2" stroke-dasharray="6 4"/>
+<ellipse cx="38" cy="26" rx="9" ry="5" fill="rgba(255,255,255,.65)" transform="rotate(-25,38,26)"/>
 </svg>`;
   }
 
   if(type==='hyper'){
-    // 💥 Hyper: rainbow cross / plus gem
+    // 💥 HYPER — violet, cruce, linie+coloana
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 <defs>
-  <radialGradient id="bg${uid}" cx="50%" cy="50%" r="55%">
+  <radialGradient id="hg${uid}" cx="50%" cy="50%" r="50%">
     <stop offset="0%" stop-color="#ffffff"/>
-    <stop offset="25%" stop-color="#cc88ff"/>
-    <stop offset="60%" stop-color="#6600cc"/>
-    <stop offset="100%" stop-color="#220044"/>
+    <stop offset="30%" stop-color="#dd88ff"/>
+    <stop offset="70%" stop-color="#7700cc"/>
+    <stop offset="100%" stop-color="#330055"/>
   </radialGradient>
-  <linearGradient id="hbar${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
+  <linearGradient id="hh${uid}" x1="0%" y1="0%" x2="100%" y2="0%">
     <stop offset="0%" stop-color="#ff4466"/>
-    <stop offset="33%" stop-color="#44aaff"/>
-    <stop offset="66%" stop-color="#44ffaa"/>
-    <stop offset="100%" stop-color="#ff44ff"/>
+    <stop offset="50%" stop-color="#44aaff"/>
+    <stop offset="100%" stop-color="#44ffcc"/>
   </linearGradient>
-  <linearGradient id="vbar${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
-    <stop offset="0%" stop-color="#ff4466"/>
-    <stop offset="33%" stop-color="#ffcc00"/>
-    <stop offset="66%" stop-color="#44ffaa"/>
-    <stop offset="100%" stop-color="#44aaff"/>
+  <linearGradient id="hv${uid}" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#ffcc00"/>
+    <stop offset="50%" stop-color="#ff44ff"/>
+    <stop offset="100%" stop-color="#44ffcc"/>
   </linearGradient>
 </defs>
-<!-- main circle -->
-<circle cx="50" cy="50" r="44" fill="url(#bg${uid})"/>
-<!-- rainbow cross bars -->
-<rect x="8" y="40" width="84" height="20" rx="10" fill="url(#hbar${uid})" opacity=".9"/>
-<rect x="40" y="8" width="20" height="84" rx="10" fill="url(#vbar${uid})" opacity=".9"/>
-<!-- center bright gem -->
-<circle cx="50" cy="50" r="14" fill="rgba(255,255,255,.9)"/>
-<circle cx="50" cy="50" r="8"  fill="rgba(200,100,255,.8)"/>
+<!-- glow halo -->
+<circle cx="50" cy="50" r="48" fill="rgba(150,50,255,.2)"/>
+<!-- main body -->
+<circle cx="50" cy="50" r="42" fill="url(#hg${uid})"/>
+<!-- rainbow cross bars (visible, thick) -->
+<rect x="6"  y="40" width="88" height="20" rx="10" fill="url(#hh${uid})" opacity=".95"/>
+<rect x="40" y="6"  width="20" height="88" rx="10" fill="url(#hv${uid})" opacity=".95"/>
+<!-- center white core -->
+<circle cx="50" cy="50" r="14" fill="rgba(255,255,255,.95)"/>
+<!-- label -->
+<text x="50" y="46" text-anchor="middle" font-size="9" font-weight="bold" fill="#440088" font-family="Arial,sans-serif">RÂND</text>
+<text x="50" y="58" text-anchor="middle" font-size="9" font-weight="bold" fill="#440088" font-family="Arial,sans-serif">+COL</text>
 <!-- highlight -->
-<ellipse cx="38" cy="30" rx="9" ry="6" fill="rgba(255,255,255,.65)" transform="rotate(-30,38,30)"/>
-<!-- outer ring -->
-<circle cx="50" cy="50" r="43" fill="none" stroke="rgba(200,150,255,.4)" stroke-width="2"/>
+<ellipse cx="36" cy="28" rx="9" ry="6" fill="rgba(255,255,255,.5)" transform="rotate(-30,36,28)"/>
 </svg>`;
   }
 
   if(type==='bomb'){
-    // 💣 Bomb: dark red/black with explosion lines
+    // 💣 BOMB — roșu închis, spikes, 5×5
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
 <defs>
-  <radialGradient id="bg${uid}" cx="38%" cy="32%" r="60%">
-    <stop offset="0%" stop-color="#ff6644"/>
+  <radialGradient id="bmg${uid}" cx="42%" cy="36%" r="58%">
+    <stop offset="0%" stop-color="#ff8866"/>
     <stop offset="40%" stop-color="#cc1100"/>
-    <stop offset="80%" stop-color="#660000"/>
-    <stop offset="100%" stop-color="#220000"/>
+    <stop offset="80%" stop-color="#550000"/>
+    <stop offset="100%" stop-color="#1a0000"/>
   </radialGradient>
-  <radialGradient id="core${uid}" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="rgba(255,180,80,.9)"/>
-    <stop offset="60%" stop-color="rgba(255,80,0,.4)"/>
-    <stop offset="100%" stop-color="rgba(255,0,0,0)"/>
+  <radialGradient id="bmc${uid}" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="rgba(255,200,80,.9)"/>
+    <stop offset="100%" stop-color="rgba(255,80,0,0)"/>
   </radialGradient>
 </defs>
-<!-- outer glow -->
-<circle cx="50" cy="50" r="47" fill="rgba(255,40,0,.15)"/>
-<!-- main body -->
-<circle cx="50" cy="50" r="40" fill="url(#bg${uid})"/>
-<!-- 8 explosion spikes -->
-<g fill="rgba(255,160,40,.9)">
-  <polygon points="50,6  53,24 47,24"/>
-  <polygon points="50,94 53,76 47,76"/>
-  <polygon points="6,50  24,53 24,47"/>
-  <polygon points="94,50 76,53 76,47"/>
-  <polygon points="18,18 32,30 26,36"/>
-  <polygon points="82,18 74,32 68,26"/>
-  <polygon points="18,82 30,68 36,74"/>
-  <polygon points="82,82 68,70 74,64"/>
+<!-- glow halo -->
+<circle cx="50" cy="50" r="48" fill="rgba(255,30,0,.2)"/>
+<!-- spikes (8 directions) -->
+<g fill="#ff6622">
+  <polygon points="50,2  56,20 44,20"/>
+  <polygon points="50,98 56,80 44,80"/>
+  <polygon points="2,50  20,56 20,44"/>
+  <polygon points="98,50 80,56 80,44"/>
+  <polygon points="16,16 30,28 22,36"/>
+  <polygon points="84,16 78,28 70,22"/>
+  <polygon points="16,84 22,70 30,72"/>
+  <polygon points="84,84 72,70 78,62"/>
 </g>
-<!-- hot inner core -->
-<circle cx="50" cy="50" r="24" fill="url(#core${uid})"/>
+<!-- main body -->
+<circle cx="50" cy="50" r="36" fill="url(#bmg${uid})"/>
+<!-- hot core -->
+<circle cx="50" cy="50" r="20" fill="url(#bmc${uid})"/>
+<!-- label -->
+<circle cx="50" cy="50" r="14" fill="rgba(255,255,255,.88)"/>
+<text x="50" y="46" text-anchor="middle" font-size="10" font-weight="bold" fill="#6a0000" font-family="Arial,sans-serif">5×5</text>
+<text x="50" y="58" text-anchor="middle" font-size="8" fill="#6a0000" font-family="Arial,sans-serif">BOMBĂ</text>
 <!-- highlight -->
-<ellipse cx="36" cy="34" rx="10" ry="7" fill="rgba(255,220,180,.55)" transform="rotate(-30,36,34)"/>
-<!-- center skull/X mark -->
-<text x="50" y="58" text-anchor="middle" font-size="26" fill="rgba(255,255,255,.85)" font-family="serif">✕</text>
+<ellipse cx="36" cy="32" rx="9" ry="6" fill="rgba(255,200,150,.5)" transform="rotate(-30,36,32)"/>
 </svg>`;
   }
-
-  return ''; // fallback
+  return '';
 }
 
 function applyGem(r,c){
@@ -976,10 +1002,80 @@ function setSel(r,c){
   clearSel();
   sel=[r,c];
   cells[r][c].classList.add('sel');
+  // if bonus gem selected — show tip + highlight affected area
+  const v=board[r][c];
+  if(isB(v)){
+    const btype=v>=BB?'bomb':v>=BH?'hyper':v>=BS?'star':'flame';
+    showAreaHL(r,c,btype);
+    showBonusTip(r,c,btype);
+  }
 }
 function clearSel(){
   if(sel) cells[sel[0]][sel[1]].classList.remove('sel');
   sel=null;
+  clearAreaHL();
+  clearBonusTip();
+}
+
+function clearAreaHL(){
+  document.querySelectorAll('.area-hl,.area-hl-cross-h,.area-hl-cross-v')
+    .forEach(el=>el.classList.remove('area-hl','area-hl-cross-h','area-hl-cross-v'));
+}
+function showAreaHL(r,c,btype){
+  clearAreaHL();
+  if(btype==='flame'){
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<R&&nc>=0&&nc<C) cells[nr][nc].classList.add('area-hl');
+    }
+  } else if(btype==='bomb'){
+    for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
+      const nr=r+dr,nc=c+dc;
+      if(nr>=0&&nr<R&&nc>=0&&nc<C) cells[nr][nc].classList.add('area-hl');
+    }
+  } else if(btype==='hyper'){
+    for(let cc=0;cc<C;cc++) cells[r][cc].classList.add('area-hl-cross-h');
+    for(let rr=0;rr<R;rr++) cells[rr][c].classList.add('area-hl-cross-v');
+  } else if(btype==='star'){
+    // highlight all gems of same color
+    const col=gc(board[r][c]);
+    for(let rr=0;rr<R;rr++) for(let cc=0;cc<C;cc++)
+      if(gc(board[rr][cc])===col) cells[rr][cc].classList.add('area-hl');
+  }
+}
+
+let _tipEl=null;
+function clearBonusTip(){
+  if(_tipEl){_tipEl.remove();_tipEl=null;}
+}
+function showBonusTip(r,c,btype){
+  clearBonusTip();
+  const TIPS={
+    flame:{name:'🔥 Gem Flacără',desc:'Distruge toate gem-urile\nîntr-o zonă de 3×3.\nSwipe-l spre orice vecin!'},
+    star: {name:'⭐ Gem Stea',   desc:'Distruge TOATE gem-urile\nde aceeași culoare!\nSwipe spre orice gem.'},
+    hyper:{name:'💥 Hypercub',   desc:'Distruge tot rândul\nȘI toată coloana!\nSwipe spre orice vecin.'},
+    bomb: {name:'💣 Bombă',      desc:'Explozie masivă 5×5!\nSwipe-l spre orice vecin\npentru devastare maximă.'},
+  };
+  const tip=TIPS[btype];
+  const el=document.createElement('div');
+  el.className='bonus-tip';
+  el.innerHTML=`<strong>${tip.name}</strong>${tip.desc.replace(/\n/g,'<br>')}`;
+  const wrap=document.getElementById('boardWrap');
+  const cell=cells[r][c];
+  const cr=cell.getBoundingClientRect();
+  const wr=wrap.getBoundingClientRect();
+  // position below the cell, centered
+  let left=cr.left-wr.left+cr.width/2-80;
+  let top=cr.bottom-wr.top+6;
+  // keep inside wrap
+  left=Math.max(4,Math.min(left, wr.width-168));
+  if(top+80>wr.height) top=cr.top-wr.top-90;
+  el.style.left=left+'px';
+  el.style.top=top+'px';
+  wrap.appendChild(el);
+  _tipEl=el;
+  // auto-dismiss after 3s
+  setTimeout(()=>{ if(_tipEl===el) clearBonusTip(); },3000);
 }
 
 // ── INPUT: tap to select + swipe to swap ─────────────────
@@ -1099,6 +1195,8 @@ function attachInput(){
 
 // ── SWAP ──────────────────────────────────────────────────
 function doSwap(r1,c1,r2,c2){
+  clearAreaHL();
+  clearBonusTip();
   busy=true;
   const dx=(c2-c1)*(CS+3), dy=(r2-r1)*(CS+3);
   // animate both gems
