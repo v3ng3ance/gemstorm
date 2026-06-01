@@ -783,9 +783,10 @@ function startMode(mode){
   gameMode=mode;
   document.getElementById('modeScreen').style.display='none';
   document.getElementById('gameLayout').style.display='flex';
-  // show correct subtitle
   const names={classic:'Clasic · Infinit',moves:'Mutări Limitate · 30',timer:'Contra Timp · 60s',objective:'Obiective'};
   document.getElementById('modeName').textContent=names[mode];
+  // Build board DOM now that layout is visible (so calcCS works correctly)
+  buildDOM();
   newGame();
 }
 
@@ -1825,8 +1826,7 @@ function newGame(){
 }
 
 // ── INIT ─────────────────────────────────────────────────
-buildDOM();
-// show mode screen at start, not game
+// Show mode screen — buildDOM is called when a mode is selected
 document.getElementById('modeScreen').style.display='flex';
 document.getElementById('gameLayout').style.display='none';
 window.addEventListener('resize',()=>{
