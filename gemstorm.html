@@ -1244,19 +1244,50 @@ function doSwap(r1,c1,r2,c2){
     const v1=board[r1][c1], v2=board[r2][c2];
     const b1=btype(v1), b2=btype(v2);
 
-    // ── Special combo: hypercube + normal → destroy all of normal's color ──
-    if(b1==='hyper'&&b2==='normal'){
+    // ── Special swap: any bonus gem swapped with any gem activates immediately ──
+    // Hypercube (colorless) + normal → destroy all of that color
+    if(b1==='hyper'&&b2!=='hyper'){
       board[r1][c1]=-1; board[r2][c2]=-1;
       applyGem(r1,c1); applyGem(r2,c2);
       combo=0;
       activateHyper(gc(v2), r1,c1, r2,c2);
       return;
     }
-    if(b2==='hyper'&&b1==='normal'){
+    if(b2==='hyper'&&b1!=='hyper'){
       board[r1][c1]=-1; board[r2][c2]=-1;
       applyGem(r1,c1); applyGem(r2,c2);
       combo=0;
       activateHyper(gc(v1), r2,c2, r1,c1);
+      return;
+    }
+
+    // Flame swapped with anything → 3×3 explosion centered on flame position
+    if(b1==='flame'||b2==='flame'){
+      const fr=b1==='flame'?r1:r2, fc=b1==='flame'?c1:c2;
+      board[r1][c1]=-1; board[r2][c2]=-1;
+      applyGem(r1,c1); applyGem(r2,c2);
+      combo=0;
+      activateArea(fr,fc,1,'🔥 FLACĂRĂ');
+      return;
+    }
+
+    // Bomb swapped with anything → 5×5 explosion centered on bomb position
+    if(b1==='bomb'||b2==='bomb'){
+      const br2=b1==='bomb'?r1:r2, bc2=b1==='bomb'?c1:c2;
+      board[r1][c1]=-1; board[r2][c2]=-1;
+      applyGem(r1,c1); applyGem(r2,c2);
+      combo=0;
+      activateArea(br2,bc2,2,'💣 BOMBĂ');
+      return;
+    }
+
+    // LT-Hyper swapped with anything → row + column
+    if(b1==='lthyper'||b2==='lthyper'){
+      const lr=b1==='lthyper'?r1:r2, lc2=b1==='lthyper'?c1:c2;
+      board[r1][c1]=-1; board[r2][c2]=-1;
+      applyGem(r1,c1); applyGem(r2,c2);
+      combo=0;
+      activateCross(lr,lc2);
       return;
     }
 
@@ -1280,37 +1311,50 @@ function doSwap(r1,c1,r2,c2){
   },200);
 }
 
-// Hypercube activation: destroy all gems of targetColor
-function activateHyper(targetColor, hr,hc, nr,nc){
+// Generic area explosion (radius 1 = 3×3, radius 2 = 5×5)
+function activateArea(cr,cc,radius,label){
   const dst=new Set();
-  for(let rr=0;rr<R;rr++) for(let cc=0;cc<C;cc++){
-    if(gc(board[rr][cc])===targetColor) dst.add(rr*C+cc);
+  for(let dr=-radius;dr<=radius;dr++) for(let dc=-radius;dc<=radius;dc++){
+    const nr=cr+dr,nc=cc+dc;
+    if(nr>=0&&nr<R&&nc>=0&&nc<C) dst.add(nr*C+nc);
   }
-  // also destroy both swap positions if not already
-  dst.add(hr*C+hc); dst.add(nr*C+nc);
+  activateDst(dst, label, cr, cc);
+}
 
-  const pts=dst.size*50; // big bonus for hyper activation
-  score+=pts; if(score>getBest()) setBest(score);
+// Row + column explosion
+function activateCross(cr,cc){
+  const dst=new Set();
+  for(let cc2=0;cc2<C;cc2++) dst.add(cr*C+cc2);
+  for(let rr=0;rr<R;rr++) dst.add(rr*C+cc);
+  activateDst(dst,'💥 RÂND+COL', cr, cc);
+}
+
+// Shared explosion executor
+function activateDst(dst, label, pr, pc){
+  const pts=dst.size*30;
   const lvlMult=1+(level-1)*0.1;
   const finalPts=Math.round(pts*lvlMult);
-  score+=finalPts-pts; // adjust
+  score+=finalPts; if(score>getBest()) setBest(score);
   updateUI();
 
-  // show score popup at center
-  const midR=Math.floor(R/2), midC=Math.floor(C/2);
   const wrap=document.getElementById('boardWrap');
-  const cr=cells[midR][midC].getBoundingClientRect();
+  const cr2=cells[pr][pc].getBoundingClientRect();
   const wr=wrap.getBoundingClientRect();
   const pop=document.createElement('div'); pop.className='score-pop';
-  pop.textContent=`⚡ HYPERCUBE +${finalPts}`;
-  pop.style.left=(cr.left-wr.left)+'px'; pop.style.top=(cr.top-wr.top-20)+'px';
+  pop.textContent=`${label} +${finalPts}`;
+  pop.style.left=(cr2.left-wr.left)+'px';
+  pop.style.top=(cr2.top-wr.top-10)+'px';
   wrap.appendChild(pop); setTimeout(()=>pop.remove(),1000);
 
-  let pending=dst.size, done=0;
+  let pending=0;
+  for(const idx of dst){ const r=Math.floor(idx/C),c=idx%C; if(board[r][c]!==-1) pending++; }
+  if(!pending){ busy=false; chain(); return; }
+
+  let done=0;
   for(const idx of dst){
     const r=Math.floor(idx/C),c=idx%C;
-    if(board[r][c]===-1){pending--;continue;}
-    spawnSparks(r,c,targetColor);
+    if(board[r][c]===-1) continue;
+    spawnSparks(r,c,gc(board[r][c]));
     const g=gems[r][c];
     g.classList.remove('exploding'); void g.offsetWidth;
     g.classList.add('exploding');
@@ -1320,7 +1364,14 @@ function activateHyper(targetColor, hr,hc, nr,nc){
       if(++done===pending) gravity(dst);
     },380);
   }
-  if(!pending) gravity(dst);
+}
+function activateHyper(targetColor, hr,hc, nr,nc){
+  const dst=new Set();
+  for(let rr=0;rr<R;rr++) for(let cc=0;cc<C;cc++){
+    if(gc(board[rr][cc])===targetColor) dst.add(rr*C+cc);
+  }
+  dst.add(hr*C+hc); dst.add(nr*C+nc);
+  activateDst(dst,'⚡ HYPERCUBE', Math.floor(R/2), Math.floor(C/2));
 }
 
 function animSwap(r,c,dx,dy){
