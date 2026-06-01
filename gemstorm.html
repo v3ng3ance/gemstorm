@@ -436,8 +436,8 @@ h1{
       <div class="sval" id="elBest">0</div>
     </div>
     <button class="btn gold" onclick="hint()">💡 Indiciu</button>
-    <button class="btn" onclick="newGame()">↺ Restart</button>
     <button class="btn" onclick="backToMenu()">☰ Meniu</button>
+    <button class="btn" onclick="newGame()">↺ Restart</button>
   </div>
 
   <div class="board-wrap" id="boardWrap">
@@ -717,6 +717,8 @@ function calcCS(){
 // ── MODE NAVIGATION ───────────────────────────────────────
 function backToMenu(){
   clearInterval(timerInterval); timerInterval=null;
+  busy=false; sel=null; combo=0;
+  clearSel();
   document.getElementById('overlay').classList.remove('show');
   document.getElementById('gameLayout').style.display='none';
   document.getElementById('modeScreen').style.display='flex';
