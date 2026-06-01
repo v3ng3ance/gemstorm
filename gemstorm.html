@@ -309,7 +309,7 @@ function draw(){
     if(isBm){g2.addColorStop(0,'#ff8866');g2.addColorStop(.4,'#cc1100');g2.addColorStop(1,'#220000');}
     else if(isHy){g2.addColorStop(0,'#fff');g2.addColorStop(.4,'#c8f');g2.addColorStop(1,'#408');}
     else{g2.addColorStop(0,lc(GEMS[vc].color,65));g2.addColorStop(.5,GEMS[vc].color);g2.addColorStop(1,dc(GEMS[vc].color,45));}
-    ctx.fillStyle=g2;ctx.beginPath();ctx.arc(cx,cy,gr,0,Math.PI*2);ctx.fill();
+    drawBejeweledGem(ctx,cx,cy,gr,GEMS[vc].color);
     ctx.shadowBlur=0;
     // specular
     const sg=ctx.createRadialGradient(cx-gr*.3,cy-gr*.35,0,cx-gr*.3,cy-gr*.35,gr*.42);
@@ -363,6 +363,55 @@ function draw(){
     ctx.fillText(f.txt,f.x,f.y);ctx.restore();
   }
 }
+
+function drawBejeweledGem(ctx,cx,cy,r,color){
+  ctx.save();
+  ctx.shadowColor=color;
+  ctx.shadowBlur=20;
+
+  function poly(rad, alpha){
+    ctx.beginPath();
+    for(let i=0;i<8;i++){
+      const a=(-Math.PI/2)+(i*Math.PI/4);
+      const rr=i%2===0?rad:rad*0.72;
+      const x=cx+Math.cos(a)*rr;
+      const y=cy+Math.sin(a)*rr;
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.globalAlpha=alpha;
+  }
+
+  const g=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+  g.addColorStop(0,"#ffffff");
+  g.addColorStop(.15,color);
+  g.addColorStop(1,"#111");
+  poly(r,1);
+  ctx.fillStyle=g;
+  ctx.fill();
+
+  ctx.globalAlpha=.35;
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=1.2;
+  ctx.beginPath();
+  ctx.moveTo(cx,cy-r*.9);
+  ctx.lineTo(cx-r*.45,cy);
+  ctx.lineTo(cx,cy+r*.9);
+  ctx.lineTo(cx+r*.45,cy);
+  ctx.closePath();
+  ctx.stroke();
+
+  const shine=ctx.createRadialGradient(cx-r*.3,cy-r*.4,0,cx-r*.3,cy-r*.4,r*.7);
+  shine.addColorStop(0,"rgba(255,255,255,.95)");
+  shine.addColorStop(1,"rgba(255,255,255,0)");
+  ctx.globalAlpha=1;
+  ctx.fillStyle=shine;
+  poly(r*.75,.9);
+  ctx.fill();
+
+  ctx.restore();
+}
+
 function lc(h,a){const s=h.replace('#','');return'#'+s.replace(/[0-9a-f]{2}/gi,m=>Math.min(255,parseInt(m,16)+a).toString(16).padStart(2,'0'));}
 function dc(h,a){const s=h.replace('#','');return'#'+s.replace(/[0-9a-f]{2}/gi,m=>Math.max(0,parseInt(m,16)-a).toString(16).padStart(2,'0'));}
 function rr(ctx,x,y,w,h,r){
