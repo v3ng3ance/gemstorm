@@ -316,249 +316,149 @@ function draw(){
 
 
 // ═══ GEM RENDERING ════════════════════════════════════════════
-// Realistic cut-gem look: multiple facets, depth shading, reflections
-
 function drawGem(ctx, cx, cy, gr, vc, isSel, isFl, isSt, isHy, isBm){
   const t = Date.now();
 
-  // Per-gem color palettes [base, mid, dark, light, glow]
-  const PAL = [
-    ['#e8002a','#ff3355','#8a0018','#ffaabb','rgba(255,30,60,.9)'],    // 0 ruby
-    ['#0044dd','#2277ff','#001166','#88bbff','rgba(40,110,255,.9)'],   // 1 sapphire
-    ['#009940','#22cc66','#004d20','#88ffbb','rgba(20,200,80,.9)'],    // 2 emerald
-    ['#cc9900','#ffcc22','#7a5a00','#fff0aa','rgba(240,190,0,.9)'],    // 3 topaz
-    ['#8800cc','#bb44ff','#44006a','#eeb0ff','rgba(170,40,255,.9)'],   // 4 amethyst
-    ['#cc4400','#ff7722','#7a2200','#ffcc99','rgba(255,100,20,.9)'],   // 5 amber
-    ['#0099bb','#33ddff','#004a5a','#aaf4ff','rgba(0,200,230,.9)'],    // 6 aqua
+  // Colors per gem type
+  const C=[
+    {a:'#ffa0b0',b:'#ff2244',c:'#880011',g:'rgba(255,30,60,.85)'},  // 0 ruby
+    {a:'#90c0ff',b:'#1155ff',c:'#001299',g:'rgba(30,100,255,.85)'}, // 1 sapphire
+    {a:'#90ffbb',b:'#11cc55',c:'#005522',g:'rgba(20,190,80,.85)'},  // 2 emerald
+    {a:'#ffee88',b:'#ffbb00',c:'#886000',g:'rgba(240,180,0,.85)'},  // 3 topaz
+    {a:'#ddaaff',b:'#aa22ff',c:'#550099',g:'rgba(160,30,255,.85)'}, // 4 amethyst
+    {a:'#ffcc99',b:'#ff6600',c:'#882200',g:'rgba(255,90,10,.85)'},  // 5 amber
+    {a:'#aaf8ff',b:'#00ccee',c:'#005566',g:'rgba(0,200,220,.85)'},  // 6 aqua
   ];
-  const [base,mid,dark,lgt,glow] = isHy
-    ? ['#6600cc','#cc88ff','#220055','#ffffff','rgba(180,80,255,.9)']
-    : isBm
-    ? ['#aa0000','#ff4422','#330000','#ffaa88','rgba(255,40,0,.9)']
-    : PAL[vc];
+  const col = isHy ? {a:'#eeccff',b:'#9922ff',c:'#330066',g:'rgba(170,50,255,.9)'}
+            : isBm ? {a:'#ffaa88',b:'#dd1100',c:'#440000',g:'rgba(255,40,0,.9)'}
+            : C[vc];
 
-  // ── Shadow / glow ──
-  ctx.shadowColor = isBm?'rgba(255,60,0,.9)':isHy?'rgba(180,60,255,.9)':
-                    isFl?'rgba(255,140,0,.9)':isSt?'rgba(255,220,0,.9)':glow;
-  ctx.shadowBlur  = isBm?28:isHy?26:isFl?20:isSt?20:isSel?22:10;
+  // Glow
+  ctx.shadowColor = isFl?'rgba(255,140,0,.9)':isSt?'rgba(255,220,0,.9)':
+                    isHy?'rgba(170,50,255,.9)':isBm?'rgba(255,40,0,.9)':col.g;
+  ctx.shadowBlur  = isSel?20:isFl||isSt||isHy||isBm?16:8;
 
-  // ── Helper: define the 7 gem outlines ──
-  // Each returns a path; we'll use clipping + fill to simulate facets
-  const S = gr; // size shorthand
-
-  function pathFor(id){
+  // ── Shape path (called multiple times, must be fast) ──
+  function shape(){
     ctx.beginPath();
-    switch(id){
-      case 0: // Ruby — classic round brilliant (circle)
-        ctx.arc(cx,cy,S,0,Math.PI*2);
-        break;
-      case 1: // Sapphire — oval
-        ctx.ellipse(cx,cy,S*.85,S,0,0,Math.PI*2);
-        break;
-      case 2: // Emerald — octagon (emerald cut)
-        { const cut=S*.3;
-          ctx.moveTo(cx-S+cut, cy-S);
-          ctx.lineTo(cx+S-cut, cy-S);
-          ctx.lineTo(cx+S,     cy-S+cut);
-          ctx.lineTo(cx+S,     cy+S-cut);
-          ctx.lineTo(cx+S-cut, cy+S);
-          ctx.lineTo(cx-S+cut, cy+S);
-          ctx.lineTo(cx-S,     cy+S-cut);
-          ctx.lineTo(cx-S,     cy-S+cut);
-          ctx.closePath();
-        } break;
-      case 3: // Topaz — cushion (rounded square)
-        { const r2=S*.35;
-          ctx.roundRect(cx-S,cy-S,S*2,S*2,r2);
-        } break;
-      case 4: // Amethyst — marquise (pointed oval)
-        ctx.moveTo(cx, cy-S);
-        ctx.bezierCurveTo(cx+S*1.1,cy-S*.4, cx+S*1.1,cy+S*.4, cx,cy+S);
-        ctx.bezierCurveTo(cx-S*1.1,cy+S*.4, cx-S*1.1,cy-S*.4, cx,cy-S);
-        ctx.closePath();
-        break;
-      case 5: // Amber — pear / teardrop
-        ctx.moveTo(cx, cy+S);
-        ctx.bezierCurveTo(cx+S,cy+S*.3, cx+S,cy-S*.4, cx,cy-S);
-        ctx.bezierCurveTo(cx-S,cy-S*.4, cx-S,cy+S*.3, cx,cy+S);
-        ctx.closePath();
-        break;
-      case 6: // Aqua — princess cut (square)
-        ctx.rect(cx-S*.88,cy-S*.88,S*1.76,S*1.76);
-        break;
+    switch(vc){
+      case 0: ctx.arc(cx,cy,gr,0,Math.PI*2); break; // circle - ruby
+      case 1: ctx.ellipse(cx,cy,gr*.82,gr,0,0,Math.PI*2); break; // oval - sapphire
+      case 2: // octagon - emerald
+        {const k=gr*.38;
+        ctx.moveTo(cx-gr+k,cy-gr);ctx.lineTo(cx+gr-k,cy-gr);
+        ctx.lineTo(cx+gr,cy-gr+k);ctx.lineTo(cx+gr,cy+gr-k);
+        ctx.lineTo(cx+gr-k,cy+gr);ctx.lineTo(cx-gr+k,cy+gr);
+        ctx.lineTo(cx-gr,cy+gr-k);ctx.lineTo(cx-gr,cy-gr+k);
+        ctx.closePath();} break;
+      case 3: // square cushion - topaz
+        {const r2=gr*.4;
+        ctx.moveTo(cx-gr+r2,cy-gr);ctx.lineTo(cx+gr-r2,cy-gr);
+        ctx.arcTo(cx+gr,cy-gr,cx+gr,cy-gr+r2,r2);
+        ctx.lineTo(cx+gr,cy+gr-r2);ctx.arcTo(cx+gr,cy+gr,cx+gr-r2,cy+gr,r2);
+        ctx.lineTo(cx-gr+r2,cy+gr);ctx.arcTo(cx-gr,cy+gr,cx-gr,cy+gr-r2,r2);
+        ctx.lineTo(cx-gr,cy-gr+r2);ctx.arcTo(cx-gr,cy-gr,cx-gr+r2,cy-gr,r2);
+        ctx.closePath();} break;
+      case 4: // marquise - amethyst
+        ctx.moveTo(cx,cy-gr);
+        ctx.bezierCurveTo(cx+gr*1.05,cy-gr*.35,cx+gr*1.05,cy+gr*.35,cx,cy+gr);
+        ctx.bezierCurveTo(cx-gr*1.05,cy+gr*.35,cx-gr*1.05,cy-gr*.35,cx,cy-gr);
+        ctx.closePath(); break;
+      case 5: // teardrop - amber
+        ctx.moveTo(cx,cy+gr);
+        ctx.bezierCurveTo(cx+gr*.95,cy+gr*.3,cx+gr*.95,cy-gr*.35,cx,cy-gr);
+        ctx.bezierCurveTo(cx-gr*.95,cy-gr*.35,cx-gr*.95,cy+gr*.3,cx,cy+gr);
+        ctx.closePath(); break;
+      case 6: // diamond/rhombus - aqua
+        ctx.moveTo(cx,cy-gr);ctx.lineTo(cx+gr*.9,cy);
+        ctx.lineTo(cx,cy+gr);ctx.lineTo(cx-gr*.9,cy);
+        ctx.closePath(); break;
     }
   }
 
-  // ── 1. OUTER GLOW RING ──
-  const grd0 = ctx.createRadialGradient(cx,cy,S*.5,cx,cy,S*1.5);
-  grd0.addColorStop(0, isSel?'rgba(255,255,255,.15)':'rgba(255,255,255,.0)');
-  grd0.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=grd0;
-  ctx.beginPath(); ctx.arc(cx,cy,S*1.5,0,Math.PI*2); ctx.fill();
+  // ── 1. Fill with radial gradient (main body) ──
+  const g1=ctx.createRadialGradient(cx-gr*.3,cy-gr*.38,gr*.02, cx+gr*.1,cy+gr*.15,gr*1.3);
+  g1.addColorStop(0,   col.a);
+  g1.addColorStop(0.45,col.b);
+  g1.addColorStop(1,   col.c);
+  ctx.fillStyle=g1;
+  shape(); ctx.fill();
+  ctx.shadowBlur=0;
 
-  // ── 2. BASE BODY (deep gradient, light from top-left) ──
-  const gBase = ctx.createRadialGradient(cx-S*.35,cy-S*.4,0, cx+S*.2,cy+S*.3,S*1.6);
-  gBase.addColorStop(0,   lgt);
-  gBase.addColorStop(0.25, mid);
-  gBase.addColorStop(0.6,  base);
-  gBase.addColorStop(1,    dark);
-  ctx.fillStyle = gBase;
-  ctx.shadowColor = isBm?'rgba(255,60,0,.9)':isHy?'rgba(180,60,255,.9)':
-                    isFl?'rgba(255,140,0,.9)':isSt?'rgba(255,220,0,.9)':glow;
-  ctx.shadowBlur  = isBm?28:isHy?26:isFl?20:isSt?20:isSel?22:10;
-  pathFor(vc); ctx.fill();
-  ctx.shadowBlur = 0;
+  // ── 2. Dark lower-right shading (depth, no clip needed) ──
+  const g2=ctx.createRadialGradient(cx+gr*.4,cy+gr*.5,0, cx+gr*.4,cy+gr*.5,gr*1.1);
+  g2.addColorStop(0,'rgba(0,0,0,.38)');
+  g2.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g2; shape(); ctx.fill();
 
-  // ── 3. DARK BOTTOM-RIGHT FACET (depth) ──
-  ctx.save();
-  pathFor(vc); ctx.clip();
-  const gFacetDark = ctx.createLinearGradient(cx-S,cy-S, cx+S,cy+S);
-  gFacetDark.addColorStop(0,'rgba(0,0,0,0)');
-  gFacetDark.addColorStop(0.55,'rgba(0,0,0,0)');
-  gFacetDark.addColorStop(1,'rgba(0,0,0,.45)');
-  ctx.fillStyle = gFacetDark;
-  ctx.fillRect(cx-S*1.2,cy-S*1.2,S*2.4,S*2.4);
-  ctx.restore();
+  // ── 3. Top-left light wash ──
+  const g3=ctx.createRadialGradient(cx-gr*.5,cy-gr*.5,0, cx-gr*.3,cy-gr*.3,gr*1.0);
+  g3.addColorStop(0,'rgba(255,255,255,.22)');
+  g3.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=g3; shape(); ctx.fill();
 
-  // ── 4. INTERNAL FACET LINES (cut gem effect) ──
-  ctx.save();
-  pathFor(vc); ctx.clip();
-  ctx.strokeStyle='rgba(255,255,255,.18)';
-  ctx.lineWidth=0.8;
-  // central table polygon (reflects the top face of the cut)
-  ctx.beginPath();
-  ctx.moveTo(cx,       cy-S*.52);
-  ctx.lineTo(cx+S*.5,  cy-S*.18);
-  ctx.lineTo(cx+S*.38, cy+S*.38);
-  ctx.lineTo(cx-S*.38, cy+S*.38);
-  ctx.lineTo(cx-S*.5,  cy-S*.18);
-  ctx.closePath();
-  ctx.stroke();
-  // radial facet lines from center to edge
-  const fAngles = [0, Math.PI*.4, Math.PI*.75, Math.PI, Math.PI*1.3, Math.PI*1.7];
-  for(const fa of fAngles){
-    ctx.beginPath();
-    ctx.moveTo(cx+Math.cos(fa)*S*.1, cy+Math.sin(fa)*S*.1);
-    ctx.lineTo(cx+Math.cos(fa)*S,    cy+Math.sin(fa)*S);
-    ctx.stroke();
-  }
-  ctx.restore();
+  // ── 4. Specular highlight (single radial, no clip) ──
+  const g4=ctx.createRadialGradient(cx-gr*.35,cy-gr*.42,0, cx-gr*.35,cy-gr*.42,gr*.55);
+  g4.addColorStop(0,'rgba(255,255,255,.88)');
+  g4.addColorStop(0.45,'rgba(255,255,255,.25)');
+  g4.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=g4; shape(); ctx.fill();
 
-  // ── 5. TOP-LEFT LIGHT FACET ──
-  ctx.save();
-  pathFor(vc); ctx.clip();
-  const gLight = ctx.createLinearGradient(cx-S*.8,cy-S*.8, cx+S*.2,cy+S*.2);
-  gLight.addColorStop(0,'rgba(255,255,255,.32)');
-  gLight.addColorStop(0.5,'rgba(255,255,255,.08)');
-  gLight.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle = gLight;
-  ctx.fillRect(cx-S*1.2,cy-S*1.2,S*2.4,S*2.4);
-  ctx.restore();
+  // ── 5. Small bright specular dot ──
+  const g5=ctx.createRadialGradient(cx-gr*.44,cy-gr*.5,0, cx-gr*.44,cy-gr*.5,gr*.2);
+  g5.addColorStop(0,'rgba(255,255,255,.95)');
+  g5.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=g5; shape(); ctx.fill();
 
-  // ── 6. PRIMARY SPECULAR HIGHLIGHT (large soft blob) ──
-  const gSpec1 = ctx.createRadialGradient(cx-S*.3,cy-S*.38,0, cx-S*.25,cy-S*.32,S*.6);
-  gSpec1.addColorStop(0,'rgba(255,255,255,.85)');
-  gSpec1.addColorStop(0.4,'rgba(255,255,255,.25)');
-  gSpec1.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.save();
-  pathFor(vc); ctx.clip();
-  ctx.fillStyle = gSpec1;
-  ctx.fillRect(cx-S*1.2,cy-S*1.2,S*2.4,S*2.4);
-  ctx.restore();
+  // ── 6. Outline ──
+  ctx.strokeStyle=isSel?`rgba(255,255,${150+Math.floor(100*(.5+.5*Math.sin(t/180)))},${.7+.3*(.5+.5*Math.sin(t/180))})`:'rgba(255,255,255,.18)';
+  ctx.lineWidth=isSel?2.2:0.9;
+  if(isSel){ctx.shadowColor='rgba(255,255,255,.7)';ctx.shadowBlur=10;}
+  shape(); ctx.stroke();
+  ctx.shadowBlur=0;
 
-  // ── 7. SECONDARY SPECULAR (tiny sharp white dot) ──
-  ctx.save();
-  pathFor(vc); ctx.clip();
-  const gSpec2 = ctx.createRadialGradient(cx-S*.42,cy-S*.48,0, cx-S*.42,cy-S*.48,S*.22);
-  gSpec2.addColorStop(0,'rgba(255,255,255,.95)');
-  gSpec2.addColorStop(0.5,'rgba(255,255,255,.4)');
-  gSpec2.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle = gSpec2;
-  ctx.fillRect(cx-S*1.2,cy-S*1.2,S*2.4,S*2.4);
-  ctx.restore();
-
-  // ── 8. BOTTOM REFLECTION (counter-light) ──
-  ctx.save();
-  pathFor(vc); ctx.clip();
-  const gBot = ctx.createRadialGradient(cx+S*.3,cy+S*.5,0, cx+S*.3,cy+S*.5,S*.55);
-  gBot.addColorStop(0,'rgba(255,255,255,.18)');
-  gBot.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle = gBot;
-  ctx.fillRect(cx-S*1.2,cy-S*1.2,S*2.4,S*2.4);
-  ctx.restore();
-
-  // ── 9. SELECTION RING ──
-  if(isSel){
+  // ── 7. Bonus overlays ──
+  if(isFl||isSt||isHy||isBm){
     ctx.save();
-    const pulse = 0.5 + 0.5*Math.sin(t/200);
-    ctx.strokeStyle=`rgba(255,255,${Math.floor(180+75*pulse)},${0.7+0.3*pulse})`;
-    ctx.lineWidth=2.5;
-    ctx.shadowColor='rgba(255,255,255,.8)';
-    ctx.shadowBlur=12;
-    pathFor(vc);
-    ctx.stroke();
-    ctx.restore();
-  } else {
-    // subtle rim
-    ctx.save();
-    ctx.strokeStyle='rgba(255,255,255,.15)';
-    ctx.lineWidth=0.8;
-    pathFor(vc); ctx.stroke();
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    if(isFl){
+      const a=t/600;
+      ctx.strokeStyle='rgba(255,210,60,.85)';ctx.lineWidth=1.8;
+      for(let i=0;i<8;i++){const ang=a+i*Math.PI/4;
+        ctx.beginPath();
+        ctx.moveTo(cx+Math.cos(ang)*gr*.44,cy+Math.sin(ang)*gr*.44);
+        ctx.lineTo(cx+Math.cos(ang)*gr*.88,cy+Math.sin(ang)*gr*.88);
+        ctx.stroke();}
+      ctx.fillStyle='#fff';ctx.shadowColor='rgba(255,80,0,.9)';ctx.shadowBlur=6;
+      ctx.font=`bold ${Math.max(9,gr*.5)}px Arial`;ctx.fillText('3×3',cx,cy);
+    } else if(isSt){
+      const a=t/400;
+      ctx.strokeStyle='rgba(255,255,60,.9)';ctx.lineWidth=2;
+      ctx.setLineDash([5,4]);ctx.lineDashOffset=-a*10;
+      ctx.beginPath();ctx.arc(cx,cy,gr*.72,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle='#fff';ctx.shadowColor='rgba(255,200,0,.9)';ctx.shadowBlur=6;
+      ctx.font=`bold ${Math.max(8,gr*.36)}px Arial`;ctx.fillText('★ALL',cx,cy);
+    } else if(isHy){
+      const alpha=.5+.5*Math.sin(t/250);
+      ctx.strokeStyle=`rgba(255,255,255,${alpha})`;ctx.lineWidth=2.5;
+      ctx.shadowColor='rgba(200,100,255,.9)';ctx.shadowBlur=8;
+      ctx.beginPath();ctx.moveTo(cx-gr*.86,cy);ctx.lineTo(cx+gr*.86,cy);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx,cy-gr*.86);ctx.lineTo(cx,cy+gr*.86);ctx.stroke();
+      ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(8,gr*.32)}px Arial`;ctx.fillText('R+C',cx,cy);
+    } else if(isBm){
+      const a=t/170;
+      for(let i=0;i<8;i++){const ang=a+i*Math.PI/4;
+        ctx.fillStyle='rgba(255,170,40,.9)';
+        ctx.beginPath();
+        ctx.moveTo(cx+Math.cos(ang)*gr*.56,cy+Math.sin(ang)*gr*.56);
+        ctx.lineTo(cx+Math.cos(ang+.22)*gr*.96,cy+Math.sin(ang+.22)*gr*.96);
+        ctx.lineTo(cx+Math.cos(ang-.22)*gr*.96,cy+Math.sin(ang-.22)*gr*.96);
+        ctx.closePath();ctx.fill();}
+      ctx.fillStyle='#fff';ctx.shadowColor='rgba(255,50,0,.9)';ctx.shadowBlur=8;
+      ctx.font=`bold ${Math.max(9,gr*.5)}px Arial`;ctx.fillText('5×5',cx,cy);
+    }
     ctx.restore();
   }
-
-  // ── 10. BONUS OVERLAYS ──
-  ctx.save();
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  if(isFl){
-    const t2=t/550;
-    ctx.strokeStyle='rgba(255,210,60,.85)';ctx.lineWidth=1.8;
-    for(let i=0;i<8;i++){
-      const ang=t2+i*Math.PI/4;
-      ctx.beginPath();
-      ctx.moveTo(cx+Math.cos(ang)*S*.42,cy+Math.sin(ang)*S*.42);
-      ctx.lineTo(cx+Math.cos(ang)*S*.9, cy+Math.sin(ang)*S*.9);
-      ctx.stroke();
-    }
-    ctx.fillStyle='#fff'; ctx.shadowColor='rgba(255,80,0,.9)'; ctx.shadowBlur=7;
-    ctx.font=`bold ${Math.max(9,S*.5)}px Arial`;
-    ctx.fillText('3×3',cx,cy);
-  } else if(isSt){
-    const t2=t/380;
-    ctx.strokeStyle='rgba(255,255,60,.9)';ctx.lineWidth=2;
-    ctx.setLineDash([5,4]);ctx.lineDashOffset=-t2*10;
-    ctx.beginPath();ctx.arc(cx,cy,S*.72,0,Math.PI*2);ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle='#fff';ctx.shadowColor='rgba(255,200,0,.9)';ctx.shadowBlur=7;
-    ctx.font=`bold ${Math.max(8,S*.37)}px Arial`;
-    ctx.fillText('★ALL',cx,cy);
-  } else if(isHy){
-    const alpha=.5+.5*Math.sin(t/240);
-    ctx.strokeStyle=`rgba(255,255,255,${alpha})`;ctx.lineWidth=2.5;
-    ctx.shadowColor='rgba(200,100,255,.9)';ctx.shadowBlur=8;
-    ctx.beginPath();ctx.moveTo(cx-S*.85,cy);ctx.lineTo(cx+S*.85,cy);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(cx,cy-S*.85);ctx.lineTo(cx,cy+S*.85);ctx.stroke();
-    ctx.fillStyle='#fff';
-    ctx.font=`bold ${Math.max(8,S*.33)}px Arial`;
-    ctx.fillText('R+C',cx,cy);
-  } else if(isBm){
-    const t2=t/160;
-    for(let i=0;i<8;i++){
-      const ang=t2+i*Math.PI/4;
-      ctx.fillStyle='rgba(255,170,40,.9)';
-      ctx.shadowColor='rgba(255,80,0,.8)'; ctx.shadowBlur=4;
-      ctx.beginPath();
-      ctx.moveTo(cx+Math.cos(ang)*S*.55,cy+Math.sin(ang)*S*.55);
-      ctx.lineTo(cx+Math.cos(ang+.22)*S*.95,cy+Math.sin(ang+.22)*S*.95);
-      ctx.lineTo(cx+Math.cos(ang-.22)*S*.95,cy+Math.sin(ang-.22)*S*.95);
-      ctx.closePath();ctx.fill();
-    }
-    ctx.shadowBlur=8;
-    ctx.fillStyle='#fff';ctx.shadowColor='rgba(255,50,0,.9)';
-    ctx.font=`bold ${Math.max(9,S*.5)}px Arial`;
-    ctx.fillText('5×5',cx,cy);
-  }
-  ctx.restore();
 }
 
 
