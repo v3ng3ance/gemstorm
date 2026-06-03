@@ -3,89 +3,268 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GemBlast ✦ Match-3</title>
+<title>GemBlast ✦</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Raleway:wght@300;400;600&display=swap');
-:root{--bg:#0a0a1a;--panel:#12122a;--border:#2a2a5a;--gold:#f0c040;--text:#c8c8ff;--dim:#6060a0;}
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Raleway',sans-serif;
-  min-height:100vh;display:flex;flex-direction:column;align-items:center;
-  justify-content:flex-start;padding:16px 8px 40px;gap:10px;overflow-x:hidden;position:relative;}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;
-  background-image:
-    radial-gradient(1px 1px at 20% 30%,rgba(255,255,255,.4) 0%,transparent 100%),
-    radial-gradient(1px 1px at 70% 60%,rgba(255,255,255,.3) 0%,transparent 100%),
-    radial-gradient(1px 1px at 45% 80%,rgba(255,255,255,.25) 0%,transparent 100%),
-    radial-gradient(1px 1px at 85% 20%,rgba(255,255,255,.3) 0%,transparent 100%),
-    radial-gradient(600px 600px at 50% 50%,rgba(40,20,80,.6) 0%,transparent 100%);}
-h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,4vw,1.8rem);letter-spacing:.12em;
-  color:var(--gold);text-shadow:0 0 20px rgba(240,192,64,.7);text-align:center;position:relative;z-index:1;}
-.subtitle{font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:var(--dim);text-align:center;position:relative;z-index:1;}
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Raleway:wght@400;600&display=swap');
 
-/* ── MODE SELECT ── */
-.mode-screen{position:relative;z-index:1;width:100%;max-width:500px;display:flex;flex-direction:column;align-items:center;gap:14px;}
+*{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --gold:#f0c040;
+  --panel:#12122a;
+  --border:#2a2a5a;
+  --text:#c8c8ff;
+  --dim:#5050a0;
+  --cs:52px;
+}
+
+body{
+  min-height:100vh;
+  background:radial-gradient(ellipse 120% 80% at 50% 0%,#1a0a3a 0%,#0a0818 60%,#050510 100%);
+  color:var(--text);
+  font-family:'Raleway',sans-serif;
+  display:flex;flex-direction:column;align-items:center;
+  padding:14px 8px 40px;gap:10px;
+  overflow-x:hidden;
+}
+
+/* stars bg */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    radial-gradient(1px 1px at 10% 15%,rgba(255,255,255,.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 25% 65%,rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 40% 35%,rgba(200,180,255,.5) 0%,transparent 100%),
+    radial-gradient(1px 1px at 60% 80%,rgba(255,255,255,.35) 0%,transparent 100%),
+    radial-gradient(1px 1px at 75% 20%,rgba(255,255,255,.45) 0%,transparent 100%),
+    radial-gradient(1px 1px at 88% 55%,rgba(200,180,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 50% 50%,rgba(255,255,255,.3) 0%,transparent 100%);
+}
+
+h1{
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(1.2rem,4vw,1.8rem);
+  letter-spacing:.12em;color:var(--gold);
+  text-shadow:0 0 24px rgba(240,192,64,.7),0 0 60px rgba(240,192,64,.3);
+  text-align:center;position:relative;z-index:1;
+}
+.subtitle{font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:var(--dim);
+  text-align:center;position:relative;z-index:1;}
+
+/* ── MODE SELECT ────────────────────────────────────────────── */
+.mode-screen{position:relative;z-index:1;width:100%;max-width:500px;
+  display:flex;flex-direction:column;align-items:center;gap:14px;}
 .mode-intro{font-size:.62rem;letter-spacing:.28em;text-transform:uppercase;color:var(--dim);}
 .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;}
 .mode-card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
   padding:16px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;
   transition:all .2s;text-align:center;}
 .mode-card:hover{border-color:#6040ff;box-shadow:0 0 20px rgba(80,40,200,.4);transform:translateY(-2px);}
-.mode-icon{font-size:1.8rem;line-height:1;}
+.mode-icon{font-size:1.8rem;}
 .mode-title{font-family:'Cinzel Decorative',serif;font-size:.68rem;color:var(--gold);}
 .mode-desc{font-size:.58rem;color:var(--dim);line-height:1.45;}
 
-/* ── GAME LAYOUT ── */
+/* ── GAME LAYOUT ──────────────────────────────────────────────*/
 .game-wrap{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;justify-content:center;
   position:relative;z-index:1;width:100%;max-width:760px;}
 .side-panel{display:flex;flex-direction:column;gap:10px;min-width:120px;max-width:140px;flex:1;}
 .stat-box{background:var(--panel);border:1px solid var(--border);border-radius:12px;
-  padding:10px 12px;text-align:center;box-shadow:0 0 20px rgba(80,60,160,.2);}
+  padding:10px 12px;text-align:center;}
 .stat-label{font-size:.54rem;letter-spacing:.28em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;}
 .stat-val{font-family:'Cinzel Decorative',serif;font-size:1.3rem;color:var(--gold);}
 .stat-val.timer-low{color:#ff4444!important;animation:timerPulse .5s ease-in-out infinite;}
 @keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.5}}
 .level-bar-wrap{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
 .level-bar-bg{height:6px;background:#1e1e40;border-radius:3px;margin-top:6px;overflow:hidden;}
-.level-bar-fill{height:100%;background:linear-gradient(90deg,#8060ff,#f0c040);border-radius:3px;transition:width .4s;}
+.level-bar-fill{height:100%;background:linear-gradient(90deg,#8060ff,#f0c040);
+  border-radius:3px;transition:width .5s ease;}
 .btn{background:linear-gradient(135deg,#2a1a60,#1a0a40);border:1px solid var(--border);
   color:var(--text);font-family:'Raleway',sans-serif;font-size:.68rem;letter-spacing:.16em;
   text-transform:uppercase;padding:8px 12px;border-radius:8px;cursor:pointer;transition:all .2s;width:100%;}
 .btn:hover{background:linear-gradient(135deg,#3a2a80,#2a1a60);color:#fff;}
 .btn.gold{background:linear-gradient(135deg,#6a4a00,#4a3000);border-color:var(--gold);color:var(--gold);}
-.board-container{position:relative;border:2px solid var(--border);border-radius:16px;padding:6px;
-  background:rgba(10,10,30,.8);box-shadow:0 0 40px rgba(80,60,160,.4),inset 0 0 40px rgba(0,0,0,.5);}
-#gameCanvas{display:block;border-radius:10px;cursor:pointer;touch-action:none;}
-.combo-badge{position:absolute;top:-6px;right:-6px;
-  background:linear-gradient(135deg,#f0c040,#ff8020);color:#000;
-  font-family:'Cinzel Decorative',serif;font-size:.5rem;font-weight:900;
-  padding:3px 8px;border-radius:20px;z-index:25;white-space:nowrap;
-  animation:badge-pop .4s cubic-bezier(.34,1.56,.64,1);}
-@keyframes badge-pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* level-up banner */
-@keyframes luAnim{0%{transform:translate(-50%,-50%) scale(0);opacity:0}20%{transform:translate(-50%,-50%) scale(1.2);opacity:1}80%{transform:translate(-50%,-50%) scale(1);opacity:1}100%{transform:translate(-50%,-60%) scale(.9);opacity:0}}
+/* ── BOARD ────────────────────────────────────────────────────*/
+.board-wrap{
+  position:relative;
+  border:2px solid #3a3a7a;
+  border-radius:16px;
+  padding:8px;
+  background:radial-gradient(ellipse at 50% 30%,#1a1040 0%,#080618 100%);
+  box-shadow:
+    0 0 0 1px rgba(100,80,200,.3),
+    0 0 60px rgba(60,20,160,.5),
+    inset 0 0 60px rgba(0,0,0,.6);
+}
+#board{
+  display:grid;
+  grid-template-columns:repeat(8,var(--cs));
+  grid-template-rows:repeat(8,var(--cs));
+  gap:3px;
+  position:relative;
+}
+
+/* ── CELL ─────────────────────────────────────────────────────*/
+.cell{
+  width:var(--cs);height:var(--cs);
+  position:relative;
+  cursor:pointer;
+  border-radius:6px;
+}
+.cell::before{
+  content:'';position:absolute;inset:0;border-radius:6px;
+  background:rgba(255,255,255,.02);
+}
+.cell:hover .gem{filter:brightness(1.2) saturate(1.1);}
+
+/* ── GEM ──────────────────────────────────────────────────────*/
+.gem{
+  position:absolute;
+  inset:4%;
+  border-radius:12%;
+  will-change:transform,filter,opacity;
+  transition:filter .1s;
+  /* The SVG background is set via JS */
+}
+
+/* gem glow via drop-shadow — hardware accelerated */
+.gem{filter:drop-shadow(0 3px 6px var(--glow,rgba(0,0,0,.5)));}
+
+/* ── SELECTED ─────────────────────────────────────────────────*/
+@keyframes selPulse{
+  0%,100%{transform:scale(1.0);filter:drop-shadow(0 0 6px #fff) drop-shadow(0 0 12px var(--glow,#fff)) brightness(1.15);}
+  50%    {transform:scale(1.12);filter:drop-shadow(0 0 10px #fff) drop-shadow(0 0 22px var(--glow,#fff)) brightness(1.3);}
+}
+.cell.sel .gem{animation:selPulse .65s ease-in-out infinite;}
+
+/* ── HINT ─────────────────────────────────────────────────────*/
+@keyframes hintBounce{
+  0%,100%{transform:scale(1) rotate(0deg);}
+  25%    {transform:scale(1.18) rotate(-8deg);}
+  75%    {transform:scale(1.18) rotate(8deg);}
+}
+.cell.hint .gem{animation:hintBounce .5s ease-in-out 3;}
+
+/* ── SWAP ─────────────────────────────────────────────────────*/
+@keyframes swapH{
+  0%    {transform:translate(0,0) scale(1);}
+  40%   {transform:translate(var(--sdx),var(--sdy)) scale(1.12);}
+  100%  {transform:translate(0,0) scale(1);}
+}
+.gem.swapping{animation:swapH .28s cubic-bezier(.4,0,.2,1) both;}
+
+/* ── FALL ─────────────────────────────────────────────────────*/
+@keyframes gemFall{
+  0%  {transform:translateY(var(--fall-from)) scaleX(1.08) scaleY(.86);opacity:0;}
+  55% {transform:translateY(4px) scaleX(.97) scaleY(1.04);opacity:1;}
+  75% {transform:translateY(-3px) scaleX(1.02) scaleY(.98);}
+  100%{transform:translateY(0) scaleX(1) scaleY(1);opacity:1;}
+}
+.gem.falling{animation:gemFall .42s cubic-bezier(.22,.6,.36,1) both;}
+
+/* ── EXPLODE ──────────────────────────────────────────────────*/
+@keyframes gemExplode{
+  0%  {transform:scale(1);   opacity:1;}
+  35% {transform:scale(1.55);opacity:.9;filter:drop-shadow(0 0 16px #fff) brightness(2.5);}
+  65% {transform:scale(1.9); opacity:.4;}
+  100%{transform:scale(.05); opacity:0;}
+}
+.gem.exploding{animation:gemExplode .44s cubic-bezier(.4,0,1,1) forwards!important;z-index:10;}
+
+/* ── IDLE SHIMMER (bonus gems only) ──────────────────────────*/
+@keyframes shimmer{
+  0%,100%{filter:drop-shadow(0 0 8px var(--glow,#fff)) brightness(1);}
+  50%    {filter:drop-shadow(0 0 18px var(--glow,#fff)) brightness(1.35) saturate(1.3);}
+}
+.gem.bonus-flame{animation:shimmer 1.1s ease-in-out infinite;}
+.gem.bonus-star {animation:shimmer  .85s ease-in-out infinite;}
+.gem.bonus-hyper{animation:shimmer 1.3s ease-in-out infinite;}
+.gem.bonus-bomb {animation:shimmer  .7s ease-in-out infinite;}
+
+/* ── PARTICLES ────────────────────────────────────────────────*/
+.spark{
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:20;
+  animation:sparkFly var(--dur,.55s) ease-out forwards;
+}
+@keyframes sparkFly{
+  0%  {transform:translate(0,0) scale(1);opacity:1;}
+  100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0;}
+}
+.spark.glow-ring{
+  border-radius:50%;
+  background:transparent;
+  border:3px solid var(--col,#fff);
+  animation:glowRing .55s ease-out forwards;
+}
+@keyframes glowRing{
+  0%  {transform:translate(-50%,-50%) scale(.1);opacity:.9;}
+  100%{transform:translate(-50%,-50%) scale(3.5);opacity:0;}
+}
+
+/* ── SCORE POPUP ─────────────────────────────────────────────*/
+@keyframes scoreFloat{
+  0%  {transform:translateY(0) scale(.5);opacity:1;}
+  20% {transform:translateY(-10px) scale(1.15);opacity:1;}
+  100%{transform:translateY(-55px) scale(.9);opacity:0;}
+}
+.score-pop{
+  position:absolute;pointer-events:none;z-index:30;white-space:nowrap;
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(.7rem,.85rem,1.1rem);font-weight:700;
+  color:#f0c040;
+  text-shadow:0 0 8px rgba(240,192,64,.9);
+  animation:scoreFloat .9s cubic-bezier(.2,.8,.4,1) forwards;
+}
+
+/* ── COMBO BADGE ─────────────────────────────────────────────*/
+@keyframes badgePop{
+  0%  {transform:scale(0) rotate(-15deg);opacity:0;}
+  60% {transform:scale(1.2) rotate(3deg);opacity:1;}
+  100%{transform:scale(1)   rotate(0deg);opacity:1;}
+}
+.combo-badge{
+  position:absolute;top:-8px;right:-8px;
+  background:linear-gradient(135deg,#f0c040,#ff7010);
+  color:#000;font-family:'Cinzel Decorative',serif;
+  font-size:.5rem;font-weight:900;
+  padding:4px 10px;border-radius:20px;z-index:25;white-space:nowrap;
+  animation:badgePop .42s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 3px 12px rgba(240,140,0,.5);
+}
+
+/* ── LEVEL UP BANNER ─────────────────────────────────────────*/
+@keyframes luAnim{
+  0%  {transform:translate(-50%,-50%) scale(0);opacity:0;}
+  18% {transform:translate(-50%,-50%) scale(1.25);opacity:1;}
+  75% {transform:translate(-50%,-50%) scale(1);opacity:1;}
+  100%{transform:translate(-50%,-62%) scale(.85);opacity:0;}
+}
 .lu-banner{position:absolute;top:50%;left:50%;pointer-events:none;z-index:50;text-align:center;
   animation:luAnim 2s ease forwards;}
 .lu-title{display:block;font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,4vw,1.8rem);
   color:var(--gold);text-shadow:0 0 20px rgba(240,192,64,.8);white-space:nowrap;}
 .lu-sub{display:block;font-size:.7rem;color:var(--gold);letter-spacing:.15em;margin-top:4px;}
 
-/* bonus tooltip */
+/* ── TOOLTIP ─────────────────────────────────────────────────*/
 .bonus-tip{position:absolute;background:rgba(10,6,30,.95);border:1px solid rgba(200,150,255,.4);
   border-radius:10px;padding:8px 12px;font-size:.68rem;color:#e0d0ff;line-height:1.5;
   z-index:60;pointer-events:none;max-width:160px;text-align:center;
   box-shadow:0 4px 20px rgba(0,0,0,.6);animation:tipIn .18s ease;white-space:nowrap;}
 @keyframes tipIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-.bonus-tip strong{display:block;margin-bottom:2px;font-family:'Cinzel Decorative',serif;font-size:.6rem;color:var(--gold);}
-
-/* area highlight overlay cells */
+.bonus-tip strong{display:block;margin-bottom:2px;font-family:'Cinzel Decorative',serif;
+  font-size:.6rem;color:var(--gold);}
 .area-hl{position:absolute;border-radius:4px;pointer-events:none;z-index:5;
   background:rgba(255,180,40,.18);box-shadow:inset 0 0 0 2px rgba(255,180,40,.5);}
 .area-hl.cross-h{background:rgba(80,180,255,.18);box-shadow:inset 0 0 0 2px rgba(80,180,255,.5);}
 .area-hl.cross-v{background:rgba(200,80,255,.18);box-shadow:inset 0 0 0 2px rgba(200,80,255,.5);}
 
-#message{display:none;position:absolute;inset:0;background:rgba(0,0,10,.88);
-  border-radius:14px;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:30;}
+/* ── OVERLAY ─────────────────────────────────────────────────*/
+#message{display:none;position:absolute;inset:0;background:rgba(0,0,12,.9);
+  border-radius:14px;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:40;
+  backdrop-filter:blur(4px);}
 #message.visible{display:flex;}
 #message h2{font-family:'Cinzel Decorative',serif;color:var(--gold);font-size:1.3rem;text-align:center;}
 #message p{color:var(--dim);font-size:.8rem;text-align:center;padding:0 16px;}
@@ -146,11 +325,11 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,4vw,1.8rem);lett
     <button class="btn" onclick="G.newGame()">↺ Restart</button>
     <button class="btn" onclick="backToMenu()">☰ Meniu</button>
   </div>
-  <div class="board-container" id="boardWrap">
-    <canvas id="gameCanvas"></canvas>
+  <div class="board-wrap" id="boardWrap">
+    <div id="board"></div>
     <div id="message">
-      <h2 id="msg-title">Nicio mutare!</h2>
-      <p id="msg-sub">Tabla se resetează...</p>
+      <h2 id="msg-title">Game Over</h2>
+      <p id="msg-sub"></p>
       <button class="btn gold" onclick="G.newGame()">Joacă din nou</button>
       <button class="btn" onclick="backToMenu()" style="margin-top:4px">☰ Meniu</button>
     </div>
@@ -158,629 +337,468 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,4vw,1.8rem);lett
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-//  CONFIG — identical to original working version
-// ═══════════════════════════════════════════════════════════
-const ROWS=8, COLS=8;
-const GEMS=[
-  {color:'#ff3355'},{color:'#3388ff'},{color:'#33cc66'},
-  {color:'#ffcc22'},{color:'#aa44ff'},{color:'#ff7722'},{color:'#44ddff'}
+// ═══════════════════════════════════════════════════════════════
+//  GEM DEFINITIONS — 7 SVG shapes matching Bejeweled 2 style
+//  Each gem is a rich inline SVG with multi-layer gradients,
+//  facet lines, specular highlights and depth shading.
+// ═══════════════════════════════════════════════════════════════
+const GEMS_SVG = [
+
+// 0 — RED rounded square ──────────────────────────────────────
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="r0" cx="36%" cy="30%" r="65%">
+    <stop offset="0%" stop-color="#ffb0c0"/>
+    <stop offset="28%" stop-color="#ff2244"/>
+    <stop offset="70%" stop-color="#bb0022"/>
+    <stop offset="100%" stop-color="#4a0010"/>
+  </radialGradient>
+  <radialGradient id="r0s" cx="30%" cy="25%" r="48%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.95)"/>
+    <stop offset="45%" stop-color="rgba(255,255,255,.3)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="r0d" cx="72%" cy="75%" r="52%">
+    <stop offset="0%" stop-color="rgba(0,0,0,.55)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+</defs>
+<rect x="8" y="8" width="84" height="84" rx="20" fill="url(#r0)"/>
+<rect x="8" y="8" width="84" height="84" rx="20" fill="url(#r0d)"/>
+<g stroke="rgba(255,255,255,.22)" stroke-width="1" fill="none">
+  <rect x="22" y="22" width="56" height="56" rx="12"/>
+  <line x1="22" y1="50" x2="78" y2="50"/>
+  <line x1="50" y1="22" x2="50" y2="78"/>
+</g>
+<rect x="8" y="8" width="84" height="84" rx="20" fill="url(#r0s)"/>
+<ellipse cx="26" cy="21" rx="8" ry="5" fill="rgba(255,255,255,.95)" transform="rotate(-28,26,21)"/>
+</svg>`,
+
+// 1 — BLUE diamond ────────────────────────────────────────────
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <linearGradient id="r1a" x1="25%" y1="5%" x2="75%" y2="95%">
+    <stop offset="0%" stop-color="#b0d0ff"/>
+    <stop offset="35%" stop-color="#2266ee"/>
+    <stop offset="70%" stop-color="#0033bb"/>
+    <stop offset="100%" stop-color="#001066"/>
+  </linearGradient>
+  <radialGradient id="r1s" cx="33%" cy="25%" r="45%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.95)"/>
+    <stop offset="50%" stop-color="rgba(255,255,255,.3)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+</defs>
+<!-- crown top -->
+<polygon points="50,6 84,36 50,48 16,36" fill="url(#r1a)"/>
+<!-- pavilion -->
+<polygon points="16,36 84,36 67,72 50,94 33,72" fill="url(#r1a)"/>
+<!-- dark right pavilion -->
+<polygon points="50,48 84,36 67,72 50,94" fill="rgba(0,0,60,.35)"/>
+<!-- crown facet lines -->
+<g stroke="rgba(255,255,255,.28)" stroke-width="1.1" fill="none">
+  <line x1="50" y1="6"  x2="50" y2="48"/>
+  <line x1="16" y1="36" x2="84" y2="36"/>
+  <line x1="32" y1="21" x2="50" y2="48"/>
+  <line x1="68" y1="21" x2="50" y2="48"/>
+</g>
+<g stroke="rgba(0,0,80,.25)" stroke-width="1" fill="none">
+  <line x1="33" y1="72" x2="50" y2="48"/>
+  <line x1="67" y1="72" x2="50" y2="48"/>
+</g>
+<!-- specular -->
+<polygon points="50,6 84,36 50,48 16,36" fill="url(#r1s)" opacity=".9"/>
+<ellipse cx="27" cy="20" rx="9" ry="5.5" fill="rgba(255,255,255,.95)" transform="rotate(-22,27,20)"/>
+</svg>`,
+
+// 2 — GREEN circle ────────────────────────────────────────────
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="r2" cx="36%" cy="30%" r="64%">
+    <stop offset="0%" stop-color="#aaffcc"/>
+    <stop offset="28%" stop-color="#00dd55"/>
+    <stop offset="68%" stop-color="#009933"/>
+    <stop offset="100%" stop-color="#003d15"/>
+  </radialGradient>
+  <radialGradient id="r2s" cx="32%" cy="27%" r="50%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.92)"/>
+    <stop offset="44%" stop-color="rgba(255,255,255,.25)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="r2d" cx="68%" cy="70%" r="50%">
+    <stop offset="0%" stop-color="rgba(0,0,0,.48)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+</defs>
+<circle cx="50" cy="50" r="42" fill="url(#r2)"/>
+<circle cx="50" cy="50" r="42" fill="url(#r2d)"/>
+<g stroke="rgba(255,255,255,.18)" stroke-width="1" fill="none">
+  <circle cx="50" cy="50" r="27"/>
+  <circle cx="50" cy="50" r="15"/>
+  <line x1="50" y1="8"  x2="50" y2="92"/>
+  <line x1="8"  y1="50" x2="92" y2="50"/>
+  <line x1="21" y1="21" x2="79" y2="79"/>
+  <line x1="79" y1="21" x2="21" y2="79"/>
+</g>
+<circle cx="50" cy="50" r="42" fill="url(#r2s)"/>
+<ellipse cx="27" cy="22" rx="9" ry="5.5" fill="rgba(255,255,255,.95)" transform="rotate(-28,27,22)"/>
+</svg>`,
+
+// 3 — YELLOW rhombus ──────────────────────────────────────────
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="r3" cx="35%" cy="28%" r="65%">
+    <stop offset="0%" stop-color="#fff5aa"/>
+    <stop offset="28%" stop-color="#ffcc00"/>
+    <stop offset="70%" stop-color="#cc9900"/>
+    <stop offset="100%" stop-color="#5a4000"/>
+  </radialGradient>
+  <radialGradient id="r3s" cx="30%" cy="23%" r="48%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.92)"/>
+    <stop offset="45%" stop-color="rgba(255,255,255,.28)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="r3d" cx="70%" cy="72%" r="52%">
+    <stop offset="0%" stop-color="rgba(0,0,0,.5)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+</defs>
+<polygon points="50,6 94,50 50,94 6,50" fill="url(#r3)"/>
+<polygon points="50,6 94,50 50,94 6,50" fill="url(#r3d)"/>
+<g stroke="rgba(255,255,255,.22)" stroke-width="1" fill="none">
+  <polygon points="50,28 72,50 50,72 28,50"/>
+  <polygon points="50,18 82,50 50,82 18,50"/>
+  <line x1="50" y1="6"  x2="50" y2="94"/>
+  <line x1="6"  y1="50" x2="94" y2="50"/>
+</g>
+<polygon points="50,6 94,50 50,94 6,50" fill="url(#r3s)"/>
+<ellipse cx="26" cy="21" rx="9" ry="5.5" fill="rgba(255,255,255,.95)" transform="rotate(-30,26,21)"/>
+</svg>`,
+
+// 4 — PURPLE triangle ─────────────────────────────────────────
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="r4" cx="38%" cy="32%" r="65%">
+    <stop offset="0%" stop-color="#f0aaff"/>
+    <stop offset="28%" stop-color="#cc22ff"/>
+    <stop offset="70%" stop-color="#8800cc"/>
+    <stop offset="100%" stop-color="#300055"/>
+  </radialGradient>
+  <radialGradient id="r4s" cx="35%" cy="26%" r="50%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.92)"/>
+    <stop offset="44%" stop-color="rgba(255,255,255,.28)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="r4d" cx="62%" cy="70%" r="55%">
+    <stop offset="0%" stop-color="rgba(0,0,0,.5)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+</defs>
+<polygon points="50,6 94,86 6,86" fill="url(#r4)"/>
+<polygon points="50,6 94,86 6,86" fill="url(#r4d)"/>
+<g stroke="rgba(255,255,255,.22)" stroke-width="1" fill="none">
+  <polygon points="50,28 72,72 28,72"/>
+  <polygon points="50,18 82,80 18,80"/>
+  <line x1="50" y1="6"  x2="50" y2="86"/>
+  <line x1="28" y1="54" x2="72" y2="54"/>
+</g>
+<polygon points="50,6 94,86 6,86" fill="url(#r4s)"/>
+<ellipse cx="30" cy="24" rx="9" ry="5.5" fill="rgba(255,255,255,.95)" transform="rotate(-18,30,24)"/>
+</svg>`,
+
+// 5 — ORANGE hexagon ──────────────────────────────────────────
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="r5" cx="36%" cy="30%" r="64%">
+    <stop offset="0%" stop-color="#ffcc88"/>
+    <stop offset="28%" stop-color="#ff7700"/>
+    <stop offset="70%" stop-color="#cc4400"/>
+    <stop offset="100%" stop-color="#551800"/>
+  </radialGradient>
+  <radialGradient id="r5s" cx="32%" cy="25%" r="50%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.92)"/>
+    <stop offset="44%" stop-color="rgba(255,255,255,.28)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="r5d" cx="68%" cy="70%" r="52%">
+    <stop offset="0%" stop-color="rgba(0,0,0,.5)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+</defs>
+<polygon points="50,8 84,27 84,73 50,92 16,73 16,27" fill="url(#r5)"/>
+<polygon points="50,8 84,27 84,73 50,92 16,73 16,27" fill="url(#r5d)"/>
+<g stroke="rgba(255,255,255,.2)" stroke-width="1" fill="none">
+  <polygon points="50,27 67,37 67,63 50,73 33,63 33,37"/>
+  <line x1="50" y1="8"  x2="50" y2="92"/>
+  <line x1="16" y1="27" x2="84" y2="73"/>
+  <line x1="84" y1="27" x2="16" y2="73"/>
+</g>
+<polygon points="50,8 84,27 84,73 50,92 16,73 16,27" fill="url(#r5s)"/>
+<ellipse cx="27" cy="21" rx="9" ry="5.5" fill="rgba(255,255,255,.95)" transform="rotate(-25,27,21)"/>
+</svg>`,
+
+// 6 — WHITE circle (multi-facet) ──────────────────────────────
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="r6" cx="36%" cy="30%" r="64%">
+    <stop offset="0%" stop-color="#ffffff"/>
+    <stop offset="32%" stop-color="#cccccc"/>
+    <stop offset="70%" stop-color="#888888"/>
+    <stop offset="100%" stop-color="#2a2a2a"/>
+  </radialGradient>
+  <radialGradient id="r6s" cx="32%" cy="26%" r="50%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.98)"/>
+    <stop offset="40%" stop-color="rgba(255,255,255,.38)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="r6d" cx="68%" cy="70%" r="50%">
+    <stop offset="0%" stop-color="rgba(0,0,0,.4)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+</defs>
+<circle cx="50" cy="50" r="42" fill="url(#r6)"/>
+<circle cx="50" cy="50" r="42" fill="url(#r6d)"/>
+<g stroke="rgba(255,255,255,.3)" stroke-width="1" fill="none">
+  <circle cx="50" cy="50" r="26"/>
+  <circle cx="50" cy="50" r="14"/>
+  <line x1="50" y1="8"  x2="50" y2="92"/>
+  <line x1="8"  y1="50" x2="92" y2="50"/>
+  <line x1="21" y1="21" x2="79" y2="79"/>
+  <line x1="79" y1="21" x2="21" y2="79"/>
+</g>
+<circle cx="50" cy="50" r="42" fill="url(#r6s)"/>
+<ellipse cx="27" cy="22" rx="9" ry="5.5" fill="rgba(255,255,255,1)" transform="rotate(-28,27,22)"/>
+</svg>`,
 ];
-const GN=GEMS.length;
-const LEVEL_THRESHOLDS=[0,500,1200,2200,3500,5200,7500,10500,14000,19000,99999];
 
-// Bonus gem encoding (same as original + bomb for 6+)
-const BF=100, BS=200, BH=300, BB=400;
-function gColor(v){ return v>=BB?v-BB:v>=BH?0:v>=BS?v-BS:v>=BF?v-BF:v; }
-function isBonus(v){ return v>=BF; }
+// bonus gem SVGs
+const BONUS_SVGS = {
+  flame: (col) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="bf" cx="36%" cy="30%" r="65%">
+    <stop offset="0%" stop-color="${col[0]}"/>
+    <stop offset="35%" stop-color="${col[1]}"/>
+    <stop offset="75%" stop-color="${col[2]}"/>
+    <stop offset="100%" stop-color="${col[3]}"/>
+  </radialGradient>
+  <radialGradient id="bfs" cx="30%" cy="25%" r="48%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.92)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+</defs>
+<rect x="8" y="8" width="84" height="84" rx="20" fill="url(#bf)"/>
+<rect x="8" y="8" width="84" height="84" rx="20" fill="rgba(0,0,0,.3)" opacity=".4"/>
+<g stroke="rgba(255,220,60,.7)" stroke-width="2" fill="none">
+  <line x1="50" y1="4"  x2="50" y2="96"/>
+  <line x1="4"  y1="50" x2="96" y2="50"/>
+  <line x1="18" y1="18" x2="82" y2="82"/>
+  <line x1="82" y1="18" x2="18" y2="82"/>
+  <rect x="20" y="20" width="60" height="60" rx="12"/>
+</g>
+<text x="50" y="55" text-anchor="middle" font-size="14" font-weight="bold" fill="rgba(255,255,255,.95)" font-family="Arial">3×3</text>
+<rect x="8" y="8" width="84" height="84" rx="20" fill="url(#bfs)"/>
+<ellipse cx="26" cy="21" rx="8" ry="5" fill="rgba(255,255,255,.95)" transform="rotate(-28,26,21)"/>
+</svg>`,
 
-// ═══ CANVAS ══════════════════════════════════════════════════
-const canvas=document.getElementById('gameCanvas');
-const ctx=canvas.getContext('2d');
-let CELL=56, GAP=3, BP;
+  star: (col) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="bs" cx="36%" cy="30%" r="65%">
+    <stop offset="0%" stop-color="${col[0]}"/>
+    <stop offset="35%" stop-color="${col[1]}"/>
+    <stop offset="75%" stop-color="${col[2]}"/>
+    <stop offset="100%" stop-color="${col[3]}"/>
+  </radialGradient>
+  <radialGradient id="bss" cx="30%" cy="25%" r="48%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.92)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+</defs>
+<circle cx="50" cy="50" r="42" fill="url(#bs)"/>
+<circle cx="50" cy="50" r="42" fill="rgba(0,0,0,.3)" opacity=".35"/>
+<g stroke="rgba(255,255,60,.7)" stroke-width="2" fill="none">
+  <circle cx="50" cy="50" r="30"/>
+  <circle cx="50" cy="50" r="18"/>
+  <line x1="50" y1="8"  x2="50" y2="92"/>
+  <line x1="8"  y1="50" x2="92" y2="50"/>
+  <line x1="21" y1="21" x2="79" y2="79"/>
+  <line x1="79" y1="21" x2="21" y2="79"/>
+</g>
+<text x="50" y="48" text-anchor="middle" font-size="11" font-weight="bold" fill="rgba(255,255,255,.95)" font-family="Arial">★ALL</text>
+<circle cx="50" cy="50" r="42" fill="url(#bss)"/>
+<ellipse cx="27" cy="22" rx="8" ry="5" fill="rgba(255,255,255,.95)" transform="rotate(-28,27,22)"/>
+</svg>`,
 
-function resize(){
-  const isMobile=window.innerWidth<=560;
-  let maxW;
-  if(isMobile){ maxW=window.innerWidth-14; }
-  else{ maxW=Math.min(window.innerWidth-160,480); }
-  CELL=Math.max(34,Math.floor((maxW-GAP*(COLS-1))/COLS));
-  BP=CELL*COLS+GAP*(COLS-1);
-  canvas.width=BP; canvas.height=BP;
+  hyper: () => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="bh" cx="36%" cy="30%" r="65%">
+    <stop offset="0%" stop-color="#f0ccff"/>
+    <stop offset="32%" stop-color="#aa33ff"/>
+    <stop offset="70%" stop-color="#6600bb"/>
+    <stop offset="100%" stop-color="#200044"/>
+  </radialGradient>
+  <radialGradient id="bhs" cx="30%" cy="25%" r="48%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.92)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+</defs>
+<polygon points="50,6 94,50 50,94 6,50" fill="url(#bh)"/>
+<polygon points="50,6 94,50 50,94 6,50" fill="rgba(0,0,0,.3)" opacity=".35"/>
+<g stroke="rgba(255,255,255,.55)" stroke-width="2.5" fill="none">
+  <line x1="50" y1="6"  x2="50" y2="94"/>
+  <line x1="6"  y1="50" x2="94" y2="50"/>
+  <polygon points="50,28 72,50 50,72 28,50"/>
+</g>
+<text x="50" y="55" text-anchor="middle" font-size="12" font-weight="bold" fill="rgba(255,255,255,.95)" font-family="Arial">R+C</text>
+<polygon points="50,6 94,50 50,94 6,50" fill="url(#bhs)"/>
+<ellipse cx="26" cy="21" rx="8" ry="5" fill="rgba(255,255,255,.95)" transform="rotate(-30,26,21)"/>
+</svg>`,
+
+  bomb: (col) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<defs>
+  <radialGradient id="bb" cx="36%" cy="30%" r="65%">
+    <stop offset="0%" stop-color="${col[0]}"/>
+    <stop offset="35%" stop-color="${col[1]}"/>
+    <stop offset="75%" stop-color="${col[2]}"/>
+    <stop offset="100%" stop-color="${col[3]}"/>
+  </radialGradient>
+  <radialGradient id="bbs" cx="30%" cy="25%" r="48%">
+    <stop offset="0%" stop-color="rgba(255,255,255,.92)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+</defs>
+<circle cx="50" cy="50" r="42" fill="url(#bb)"/>
+<circle cx="50" cy="50" r="42" fill="rgba(0,0,0,.35)" opacity=".4"/>
+<g stroke="rgba(255,200,50,.7)" stroke-width="2" fill="none">
+  <circle cx="50" cy="50" r="28"/>
+  <line x1="50" y1="8"  x2="50" y2="92"/>
+  <line x1="8"  y1="50" x2="92" y2="50"/>
+  <line x1="21" y1="21" x2="79" y2="79"/>
+  <line x1="79" y1="21" x2="21" y2="79"/>
+</g>
+<text x="50" y="55" text-anchor="middle" font-size="14" font-weight="bold" fill="rgba(255,255,255,.95)" font-family="Arial">5×5</text>
+<circle cx="50" cy="50" r="42" fill="url(#bbs)"/>
+<ellipse cx="27" cy="22" rx="8" ry="5" fill="rgba(255,255,255,.95)" transform="rotate(-28,27,22)"/>
+</svg>`,
+};
+
+// glow color per gem type
+const GEM_GLOW=['rgba(255,20,50,.8)','rgba(30,90,255,.8)','rgba(0,200,70,.8)',
+                'rgba(230,185,0,.8)','rgba(170,30,255,.8)','rgba(255,90,0,.8)','rgba(200,200,200,.7)'];
+const GEM_COLORS=[
+  ['#ffb0c0','#ff2244','#bb0022','#4a0010'],
+  ['#b0d0ff','#2266ee','#0033bb','#001066'],
+  ['#aaffcc','#00dd55','#009933','#003d15'],
+  ['#fff5aa','#ffcc00','#cc9900','#5a4000'],
+  ['#f0aaff','#cc22ff','#8800cc','#300055'],
+  ['#ffcc88','#ff7700','#cc4400','#551800'],
+  ['#ffffff','#cccccc','#888888','#2a2a2a'],
+];
+
+// convert SVG string to data URL for use as background-image
+function svgToDataURL(svg){
+  return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
 }
-let _rt;
-window.addEventListener('resize',()=>{
-  clearTimeout(_rt);_rt=setTimeout(()=>{
-    Object.keys(GEM_CACHE).forEach(k=>delete GEM_CACHE[k]);
-    _preRenderDone=false;
-    resize();
-  },80);
-});
-window.addEventListener('orientationchange',()=>setTimeout(resize,300));
+// pre-build gem image URLs
+const GEM_URLS = GEMS_SVG.map(s=>svgToDataURL(s));
+
+// ═══════════════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════════════
+const ROWS=8,COLS=8,GN=GEMS_SVG.length;
+const LEVEL_THRESHOLDS=[0,500,1200,2200,3500,5200,7500,10500,14000,19000,99999];
+const BF=100,BS=200,BH=300,BB=400;
+function gColor(v){return v>=BB?v-BB:v>=BH?0:v>=BS?v-BS:v>=BF?v-BF:v;}
+function isBonus(v){return v>=BF;}
 
 // ═══ GAME MODE STATE ════════════════════════════════════════
 let gameMode='classic';
-let movesLeft=30, timerSec=60, timerInterval=null;
-let objType=0, objTarget=20, objCount=0;
-const BEST_KEY={classic:'gb_classic',moves:'gb_moves',timer:'gb_timer',objective:'gb_obj'};
-function getBest(){ return +(localStorage.getItem(BEST_KEY[gameMode])||0); }
-function saveBest(v){ localStorage.setItem(BEST_KEY[gameMode],v); }
+let movesLeft=30,timerSec=60,timerInterval=null;
+let objType=0,objTarget=20,objCount=0;
+const BEST_KEY={classic:'gb_c',moves:'gb_m',timer:'gb_t',objective:'gb_o'};
+function getBest(){return+(localStorage.getItem(BEST_KEY[gameMode])||0);}
+function saveBest(v){localStorage.setItem(BEST_KEY[gameMode],v);}
 
+// ═══ CELL SIZE ══════════════════════════════════════════════
+let CS=52,GAP=3;
+function calcCS(){
+  const isMobile=window.innerWidth<=560;
+  let avail=isMobile?window.innerWidth-24:Math.min(window.innerWidth-160,480);
+  CS=Math.max(36,Math.min(Math.floor((avail-GAP*7)/8),64));
+  document.documentElement.style.setProperty('--cs',CS+'px');
+}
+window.addEventListener('resize',()=>{clearTimeout(window._rt);window._rt=setTimeout(()=>{calcCS();},80);});
+window.addEventListener('orientationchange',()=>setTimeout(calcCS,300));
+
+// ═══ MODE NAV ═══════════════════════════════════════════════
 function startMode(mode){
   gameMode=mode;
   document.getElementById('modeScreen').style.display='none';
   document.getElementById('gameWrap').style.display='flex';
-  const names={classic:'Clasic',moves:'Mutări Limitate',timer:'Contra Timp',objective:'Obiective'};
-  document.getElementById('subtitle').textContent=names[mode];
-  // Show correct stat boxes
+  document.getElementById('subtitle').textContent=
+    {classic:'Clasic',moves:'Mutări Limitate',timer:'Contra Timp',objective:'Obiective'}[mode];
   document.getElementById('box-moves').style.display=mode==='moves'?'':'none';
   document.getElementById('box-timer').style.display=mode==='timer'?'':'none';
   document.getElementById('box-obj').style.display=mode==='objective'?'':'none';
-  resize();
+  calcCS();
   G.newGame();
 }
 function backToMenu(){
-  clearInterval(timerInterval); timerInterval=null;
-  busy=false; sel=null; combo=0;
+  clearInterval(timerInterval);timerInterval=null;
+  busy=false;sel=null;
   document.getElementById('message').classList.remove('visible');
   document.getElementById('gameWrap').style.display='none';
   document.getElementById('modeScreen').style.display='flex';
-  document.getElementById('subtitle').textContent='Match 3 · Bonus Gems';
 }
 
-// ═══ STATE ═══════════════════════════════════════════════════
-let board=[], sel=null;
-let score=0, level=1;
-let busy=false, combo=0;
-let anims=[];
-let parts=[];
-let floats=[];
+// ═══ STATE ══════════════════════════════════════════════════
+let board=[],sel=null,busy=false,combo=0,score=0,level=1;
+let cells=[],gems=[];   // stable DOM refs
 
-function initAnims(){
-  anims=[];
-  for(let r=0;r<ROWS;r++){anims.push([]);for(let c=0;c<COLS;c++)anims[r].push(null);}
-}
-
-// ═══ RAF LOOP — identical to original ════════════════════════
-let lastT=0;
-function loop(ts){
-  requestAnimationFrame(loop);
-  ensurePreRender();
-  const dt=Math.min((ts-lastT)/1000,0.05); lastT=ts;
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    const a=anims[r][c]; if(!a)continue;
-    a.t+=dt/a.dur;
-    if(a.t>=1){a.t=1;const cb=a.onDone;anims[r][c]=null;if(cb)cb();}
-  }
-  for(const p of parts){
-    p.x+=p.vx*dt*60; p.y+=p.vy*dt*60;
-    if(p.type==='glow'){
-      p.r = Math.min(p.r + dt*60*1.8, p.maxR||p.r);
-      p.a -= dt*2.8;
-    } else if(p.type==='shard'){
-      p.vy+=0.22*dt*60; p.a-=dt*1.8; p.r*=0.97;
-    } else {
-      p.vy+=0.35*dt*60; p.a-=dt*3.5; p.r*=0.95;
+// ═══ BUILD BOARD (once per mode start) ══════════════════════
+function buildBoard(){
+  const el=document.getElementById('board');
+  el.innerHTML='';
+  cells=[];gems=[];
+  for(let r=0;r<ROWS;r++){
+    cells.push([]);gems.push([]);
+    for(let c=0;c<COLS;c++){
+      const cell=document.createElement('div');
+      cell.className='cell';
+      const gem=document.createElement('div');
+      gem.className='gem';
+      cell.appendChild(gem);
+      el.appendChild(cell);
+      cells[r].push(cell);
+      gems[r].push(gem);
+      ;(function(rr,cc){cell.addEventListener('click',()=>onCellClick(rr,cc));})(r,c);
     }
   }
-  parts=parts.filter(p=>p.a>0&&p.r>0.15);
-  for(const f of floats){f.y-=dt*48;f.a-=dt*1.5;}
-  floats=floats.filter(f=>f.a>0);
-  draw();
 }
 
-// ═══ EASING — identical to original ═════════════════════════
-function eOut(t){return 1-Math.pow(1-t,3);}
-function eIO(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;}
-function eBounce(t){
-  const n=7.5625,d=2.75;
-  if(t<1/d)return n*t*t;
-  if(t<2/d)return n*(t-=1.5/d)*t+.75;
-  if(t<2.5/d)return n*(t-=2.25/d)*t+.9375;
-  return n*(t-=2.625/d)*t+.984375;
-}
-
-// ═══ DRAW — identical to original + bonus visuals ════════════
-function cxy(r,c){return{x:c*(CELL+GAP),y:r*(CELL+GAP)};}
-
-function draw(){
-  ctx.clearRect(0,0,BP,BP);
-  ctx.fillStyle='rgba(8,6,22,.7)';
-  rr(ctx,0,0,BP,BP,10);ctx.fill();
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    const{x,y}=cxy(r,c);
-    ctx.fillStyle='rgba(255,255,255,.03)';rr(ctx,x,y,CELL,CELL,6);ctx.fill();
-    const v=board[r][c];
-    if(v===-1)continue;
-    const a=anims[r][c];
-    let ox=0,oy=0,sc=1,al=1;
-    if(a){
-      if(a.type==='ex'){sc=1+eOut(a.t)*.5;al=1-a.t;}
-      else if(a.type==='fall'){oy=(1-eBounce(a.t))*a.fy;al=Math.min(1,a.t*5);}
-      else if(a.type==='sw'){const e=a.t<.5?eIO(a.t*2):eIO((1-a.t)*2);ox=a.dx*e;oy=a.dy*e;}
-      else if(a.type==='sel'){sc=1+Math.sin(a.t*Math.PI*8)*.04;}
-      else if(a.type==='hint'){sc=1+Math.sin(a.t*Math.PI*6)*.1;al=.5+.5*Math.sin(a.t*Math.PI*6);}
-    }
-    const isSel=sel&&sel[0]===r&&sel[1]===c;
-    const cx=x+CELL/2+ox, cy=y+CELL/2+oy;
-    const gr=(CELL*.38)*sc;
-    const vc=gColor(v);
-    const isFl=v>=BF&&v<BS, isSt=v>=BS&&v<BH, isHy=v>=BH&&v<BB, isBm=v>=BB;
-    ctx.save();
-    ctx.globalAlpha=al;
-    if(isSel){
-      ctx.fillStyle='rgba(255,255,255,.09)';rr(ctx,x+ox,y+oy,CELL,CELL,6);ctx.fill();
-      ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2;
-      rr(ctx,x+ox+1,y+oy+1,CELL-2,CELL-2,6);ctx.stroke();
-    }
-    // ── Draw gem with unique shape per color ──────────────────
-    drawGem(ctx, cx, cy, gr, vc, isSel, isFl, isSt, isHy, isBm);
-    ctx.restore();
+// Apply visual to a gem DOM element
+function applyGem(r,c){
+  const v=board[r][c];
+  const el=gems[r][c];
+  if(v===-1){
+    el.style.backgroundImage='none';el.style.background='none';
+    el.className='gem';el.style.removeProperty('--glow');return;
   }
-  // particles
-  for(const p of parts){
-    ctx.save(); ctx.globalAlpha=p.a;
-    if(p.type==='glow'){
-      const pg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
-      pg.addColorStop(0,p.col.replace(')',',0.6)').replace('rgb','rgba'));
-      pg.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-    } else {
-      ctx.shadowColor=p.col; ctx.shadowBlur=p.type==='shard'?6:3;
-      ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
-  }
-  // score floaters
-  for(const f of floats){
-    ctx.save();ctx.globalAlpha=f.a;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.font=`bold ${CELL*.28}px 'Cinzel Decorative',serif`;
-    ctx.fillStyle='#f0c040';ctx.shadowColor='#f0c040';ctx.shadowBlur=8;
-    ctx.fillText(f.txt,f.x,f.y);ctx.restore();
-  }
-}
+  const ci=gColor(v);
+  const bt=v>=BB?'bomb':v>=BH?'hyper':v>=BS?'star':v>=BF?'flame':null;
 
-
-// ═══ GEM RENDERING — Professional SVG-to-Canvas ══════════════
-// Each gem shape is defined as an SVG string, converted to an
-// Image object once, then blitted every frame. This gives full
-// SVG quality (sub-pixel gradients, filters) at canvas speed.
-
-const GEM_IMGS  = {};   // vc+bonus → HTMLImageElement (ready)
-const GEM_PEND  = {};   // vc+bonus → Promise
-let _gemsReady  = false;
-
-// Gem definitions: 7 shapes matching Bejeweled 2
-// Each has a unique silhouette + multi-layer gradient lighting
-const GEM_SVGS = {
-  // ── 0 RED — rounded square ─────────────────────────────────
-  0: (id) => `
-<defs>
-  <radialGradient id="a${id}" cx="35%" cy="30%" r="65%">
-    <stop offset="0%"   stop-color="#ffb0c0"/>
-    <stop offset="30%"  stop-color="#ff2244"/>
-    <stop offset="75%"  stop-color="#bb0022"/>
-    <stop offset="100%" stop-color="#550008"/>
-  </radialGradient>
-  <radialGradient id="b${id}" cx="30%" cy="28%" r="55%">
-    <stop offset="0%"   stop-color="rgba(255,255,255,.9)"/>
-    <stop offset="40%"  stop-color="rgba(255,255,255,.3)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </radialGradient>
-  <radialGradient id="c${id}" cx="70%" cy="72%" r="55%">
-    <stop offset="0%"   stop-color="rgba(0,0,0,.5)"/>
-    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-  </radialGradient>
-  <filter id="f${id}"><feGaussianBlur in="SourceGraphic" stdDeviation="1.5"/></filter>
-</defs>
-<!-- glow -->
-<ellipse cx="50" cy="53" rx="44" ry="44" fill="rgba(255,0,40,.35)" filter="url(#f${id})"/>
-<!-- body -->
-<rect x="10" y="10" width="80" height="80" rx="22" ry="22" fill="url(#a${id})"/>
-<!-- dark shading -->
-<rect x="10" y="10" width="80" height="80" rx="22" ry="22" fill="url(#c${id})"/>
-<!-- facet lines -->
-<g stroke="rgba(255,255,255,.2)" stroke-width="1" fill="none">
-  <line x1="28" y1="10" x2="28" y2="90"/>
-  <line x1="72" y1="10" x2="72" y2="90"/>
-  <line x1="10" y1="28" x2="90" y2="28"/>
-  <line x1="10" y1="72" x2="90" y2="72"/>
-</g>
-<!-- specular -->
-<ellipse cx="34" cy="30" rx="18" ry="12" fill="url(#b${id})" transform="rotate(-30,34,30)"/>
-<ellipse cx="27" cy="24" rx="7" ry="4.5" fill="rgba(255,255,255,.95)" transform="rotate(-30,27,24)"/>
-`,
-  // ── 1 BLUE — classic diamond ────────────────────────────────
-  1: (id) => `
-<defs>
-  <radialGradient id="a${id}" cx="35%" cy="28%" r="65%">
-    <stop offset="0%"   stop-color="#b0d0ff"/>
-    <stop offset="28%"  stop-color="#2266ff"/>
-    <stop offset="70%"  stop-color="#0033cc"/>
-    <stop offset="100%" stop-color="#001066"/>
-  </radialGradient>
-  <radialGradient id="b${id}" cx="32%" cy="26%" r="50%">
-    <stop offset="0%"   stop-color="rgba(255,255,255,.92)"/>
-    <stop offset="45%"  stop-color="rgba(255,255,255,.28)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </radialGradient>
-  <radialGradient id="c${id}" cx="65%" cy="72%" r="55%">
-    <stop offset="0%"   stop-color="rgba(0,0,0,.55)"/>
-    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-  </radialGradient>
-  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
-</defs>
-<ellipse cx="50" cy="54" rx="42" ry="40" fill="rgba(30,80,255,.4)" filter="url(#f${id})"/>
-<!-- crown top -->
-<polygon points="50,8 82,36 50,48 18,36" fill="url(#a${id})"/>
-<!-- pavilion bottom -->
-<polygon points="18,36 82,36 65,72 50,92 35,72" fill="url(#a${id})"/>
-<!-- dark pavilion shading -->
-<polygon points="50,48 82,36 65,72 50,92 35,72 18,36" fill="url(#c${id})"/>
-<!-- crown facet lines -->
-<g stroke="rgba(255,255,255,.25)" stroke-width="1" fill="none">
-  <line x1="50" y1="8"  x2="50" y2="48"/>
-  <line x1="18" y1="36" x2="82" y2="36"/>
-  <line x1="34" y1="22" x2="50" y2="48"/>
-  <line x1="66" y1="22" x2="50" y2="48"/>
-</g>
-<g stroke="rgba(0,0,0,.18)" stroke-width="1" fill="none">
-  <line x1="35" y1="72" x2="50" y2="48"/>
-  <line x1="65" y1="72" x2="50" y2="48"/>
-</g>
-<!-- specular -->
-<ellipse cx="34" cy="26" rx="16" ry="10" fill="url(#b${id})" transform="rotate(-25,34,26)"/>
-<ellipse cx="26" cy="20" rx="6" ry="4" fill="rgba(255,255,255,.95)" transform="rotate(-25,26,20)"/>
-`,
-  // ── 2 GREEN — circle ────────────────────────────────────────
-  2: (id) => `
-<defs>
-  <radialGradient id="a${id}" cx="36%" cy="30%" r="64%">
-    <stop offset="0%"   stop-color="#aaffcc"/>
-    <stop offset="28%"  stop-color="#00dd55"/>
-    <stop offset="70%"  stop-color="#009933"/>
-    <stop offset="100%" stop-color="#003d14"/>
-  </radialGradient>
-  <radialGradient id="b${id}" cx="32%" cy="26%" r="52%">
-    <stop offset="0%"   stop-color="rgba(255,255,255,.9)"/>
-    <stop offset="42%"  stop-color="rgba(255,255,255,.28)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </radialGradient>
-  <radialGradient id="c${id}" cx="68%" cy="70%" r="52%">
-    <stop offset="0%"   stop-color="rgba(0,0,0,.48)"/>
-    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-  </radialGradient>
-  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
-</defs>
-<circle cx="50" cy="52" r="44" fill="rgba(0,200,60,.38)" filter="url(#f${id})"/>
-<circle cx="50" cy="50" r="40" fill="url(#a${id})"/>
-<circle cx="50" cy="50" r="40" fill="url(#c${id})"/>
-<!-- facet ring lines -->
-<g stroke="rgba(255,255,255,.18)" stroke-width="1" fill="none">
-  <circle cx="50" cy="50" r="26"/>
-  <line x1="50" y1="10" x2="50" y2="90"/>
-  <line x1="10" y1="50" x2="90" y2="50"/>
-  <line x1="21" y1="21" x2="79" y2="79"/>
-  <line x1="79" y1="21" x2="21" y2="79"/>
-</g>
-<ellipse cx="35" cy="29" rx="17" ry="11" fill="url(#b${id})" transform="rotate(-28,35,29)"/>
-<ellipse cx="27" cy="22" rx="6.5" ry="4" fill="rgba(255,255,255,.95)" transform="rotate(-28,27,22)"/>
-`,
-  // ── 3 YELLOW — rhombus ─────────────────────────────────────
-  3: (id) => `
-<defs>
-  <radialGradient id="a${id}" cx="35%" cy="28%" r="65%">
-    <stop offset="0%"   stop-color="#fff5aa"/>
-    <stop offset="30%"  stop-color="#ffcc00"/>
-    <stop offset="72%"  stop-color="#cc9900"/>
-    <stop offset="100%" stop-color="#664c00"/>
-  </radialGradient>
-  <radialGradient id="b${id}" cx="30%" cy="24%" r="50%">
-    <stop offset="0%"   stop-color="rgba(255,255,255,.92)"/>
-    <stop offset="44%"  stop-color="rgba(255,255,255,.28)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </radialGradient>
-  <radialGradient id="c${id}" cx="68%" cy="72%" r="52%">
-    <stop offset="0%"   stop-color="rgba(0,0,0,.5)"/>
-    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-  </radialGradient>
-  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
-</defs>
-<ellipse cx="50" cy="54" rx="44" ry="42" fill="rgba(230,180,0,.38)" filter="url(#f${id})"/>
-<polygon points="50,8 92,50 50,92 8,50" fill="url(#a${id})"/>
-<polygon points="50,8 92,50 50,92 8,50" fill="url(#c${id})"/>
-<g stroke="rgba(255,255,255,.22)" stroke-width="1" fill="none">
-  <line x1="50" y1="8"  x2="50" y2="92"/>
-  <line x1="8"  y1="50" x2="92" y2="50"/>
-  <line x1="29" y1="29" x2="71" y2="71"/>
-  <line x1="71" y1="29" x2="29" y2="71"/>
-  <polygon points="50,29 71,50 50,71 29,50"/>
-</g>
-<ellipse cx="33" cy="26" rx="16" ry="10" fill="url(#b${id})" transform="rotate(-30,33,26)"/>
-<ellipse cx="25" cy="20" rx="6" ry="3.8" fill="rgba(255,255,255,.95)" transform="rotate(-30,25,20)"/>
-`,
-  // ── 4 PURPLE — triangle ─────────────────────────────────────
-  4: (id) => `
-<defs>
-  <radialGradient id="a${id}" cx="38%" cy="32%" r="65%">
-    <stop offset="0%"   stop-color="#f0aaff"/>
-    <stop offset="30%"  stop-color="#cc22ff"/>
-    <stop offset="72%"  stop-color="#8800cc"/>
-    <stop offset="100%" stop-color="#380055"/>
-  </radialGradient>
-  <radialGradient id="b${id}" cx="34%" cy="28%" r="50%">
-    <stop offset="0%"   stop-color="rgba(255,255,255,.9)"/>
-    <stop offset="44%"  stop-color="rgba(255,255,255,.28)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </radialGradient>
-  <radialGradient id="c${id}" cx="60%" cy="70%" r="55%">
-    <stop offset="0%"   stop-color="rgba(0,0,0,.5)"/>
-    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-  </radialGradient>
-  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
-</defs>
-<ellipse cx="50" cy="60" rx="42" ry="36" fill="rgba(180,0,255,.38)" filter="url(#f${id})"/>
-<polygon points="50,7 93,83 7,83" fill="url(#a${id})"/>
-<polygon points="50,7 93,83 7,83" fill="url(#c${id})"/>
-<g stroke="rgba(255,255,255,.22)" stroke-width="1" fill="none">
-  <line x1="50" y1="7"  x2="50" y2="83"/>
-  <line x1="29" y1="52" x2="71" y2="52"/>
-  <line x1="50" y1="7"  x2="29" y2="52"/>
-  <line x1="50" y1="7"  x2="71" y2="52"/>
-  <polygon points="50,30 68,70 32,70"/>
-</g>
-<ellipse cx="38" cy="30" rx="15" ry="9" fill="url(#b${id})" transform="rotate(-20,38,30)"/>
-<ellipse cx="31" cy="24" rx="5.5" ry="3.5" fill="rgba(255,255,255,.95)" transform="rotate(-20,31,24)"/>
-`,
-  // ── 5 ORANGE — hexagon ──────────────────────────────────────
-  5: (id) => `
-<defs>
-  <radialGradient id="a${id}" cx="36%" cy="30%" r="64%">
-    <stop offset="0%"   stop-color="#ffcc88"/>
-    <stop offset="28%"  stop-color="#ff7700"/>
-    <stop offset="70%"  stop-color="#cc4400"/>
-    <stop offset="100%" stop-color="#5a1800"/>
-  </radialGradient>
-  <radialGradient id="b${id}" cx="32%" cy="26%" r="52%">
-    <stop offset="0%"   stop-color="rgba(255,255,255,.9)"/>
-    <stop offset="44%"  stop-color="rgba(255,255,255,.28)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </radialGradient>
-  <radialGradient id="c${id}" cx="68%" cy="70%" r="52%">
-    <stop offset="0%"   stop-color="rgba(0,0,0,.5)"/>
-    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-  </radialGradient>
-  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
-</defs>
-<ellipse cx="50" cy="54" rx="44" ry="42" fill="rgba(255,100,0,.38)" filter="url(#f${id})"/>
-<polygon points="50,9 84,28 84,72 50,91 16,72 16,28" fill="url(#a${id})"/>
-<polygon points="50,9 84,28 84,72 50,91 16,72 16,28" fill="url(#c${id})"/>
-<g stroke="rgba(255,255,255,.2)" stroke-width="1" fill="none">
-  <polygon points="50,29 67,39 67,61 50,71 33,61 33,39"/>
-  <line x1="50" y1="9"  x2="50" y2="91"/>
-  <line x1="16" y1="28" x2="84" y2="72"/>
-  <line x1="84" y1="28" x2="16" y2="72"/>
-</g>
-<ellipse cx="34" cy="27" rx="17" ry="11" fill="url(#b${id})" transform="rotate(-25,34,27)"/>
-<ellipse cx="26" cy="21" rx="6.5" ry="4" fill="rgba(255,255,255,.95)" transform="rotate(-25,26,21)"/>
-`,
-  // ── 6 WHITE — circle (multi-facet) ──────────────────────────
-  6: (id) => `
-<defs>
-  <radialGradient id="a${id}" cx="36%" cy="30%" r="64%">
-    <stop offset="0%"   stop-color="#ffffff"/>
-    <stop offset="35%"  stop-color="#cccccc"/>
-    <stop offset="72%"  stop-color="#888888"/>
-    <stop offset="100%" stop-color="#333333"/>
-  </radialGradient>
-  <radialGradient id="b${id}" cx="32%" cy="26%" r="52%">
-    <stop offset="0%"   stop-color="rgba(255,255,255,.95)"/>
-    <stop offset="40%"  stop-color="rgba(255,255,255,.35)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </radialGradient>
-  <radialGradient id="c${id}" cx="68%" cy="70%" r="52%">
-    <stop offset="0%"   stop-color="rgba(0,0,0,.45)"/>
-    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
-  </radialGradient>
-  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
-</defs>
-<circle cx="50" cy="53" r="43" fill="rgba(180,180,180,.38)" filter="url(#f${id})"/>
-<circle cx="50" cy="50" r="40" fill="url(#a${id})"/>
-<circle cx="50" cy="50" r="40" fill="url(#c${id})"/>
-<g stroke="rgba(255,255,255,.28)" stroke-width="1" fill="none">
-  <circle cx="50" cy="50" r="24"/>
-  <circle cx="50" cy="50" r="14"/>
-  <line x1="50" y1="10" x2="50" y2="90"/>
-  <line x1="10" y1="50" x2="90" y2="50"/>
-  <line x1="22" y1="22" x2="78" y2="78"/>
-  <line x1="78" y1="22" x2="22" y2="78"/>
-</g>
-<ellipse cx="34" cy="28" rx="17" ry="11" fill="url(#b${id})" transform="rotate(-28,34,28)"/>
-<ellipse cx="26" cy="21" rx="6.5" ry="4" fill="rgba(255,255,255,1)" transform="rotate(-28,26,21)"/>
-`,
-};
-
-// Build full SVG string for a gem
-function buildSVG(vc, bonus) {
-  const id = `g${vc}${bonus}`;
-  let body;
-  if (bonus === 'hyper') {
-    body = `
-<defs>
-  <radialGradient id="a${id}" cx="36%" cy="30%" r="65%">
-    <stop offset="0%"   stop-color="#f0ccff"/>
-    <stop offset="30%"  stop-color="#aa33ff"/>
-    <stop offset="72%"  stop-color="#6600bb"/>
-    <stop offset="100%" stop-color="#220044"/>
-  </radialGradient>
-  <radialGradient id="b${id}" cx="32%" cy="26%" r="52%">
-    <stop offset="0%"   stop-color="rgba(255,255,255,.92)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </radialGradient>
-  <filter id="f${id}"><feGaussianBlur stdDeviation="2.5"/></filter>
-</defs>
-<ellipse cx="50" cy="53" rx="46" ry="44" fill="rgba(160,40,255,.45)" filter="url(#f${id})"/>
-<polygon points="50,8 92,50 50,92 8,50" fill="url(#a${id})"/>
-<g stroke="rgba(255,255,255,.3)" stroke-width="2" fill="none">
-  <line x1="50" y1="8" x2="50" y2="92"/>
-  <line x1="8" y1="50" x2="92" y2="50"/>
-  <line x1="29" y1="29" x2="71" y2="71"/>
-  <line x1="71" y1="29" x2="29" y2="71"/>
-  <polygon points="50,29 71,50 50,71 29,50"/>
-</g>
-<ellipse cx="33" cy="26" rx="17" ry="11" fill="url(#b${id})" transform="rotate(-30,33,26)"/>
-<ellipse cx="25" cy="19" rx="6.5" ry="4" fill="rgba(255,255,255,.98)" transform="rotate(-30,25,19)"/>`;
-  } else if (bonus === 'bomb') {
-    body = `
-<defs>
-  <radialGradient id="a${id}" cx="36%" cy="30%" r="65%">
-    <stop offset="0%"   stop-color="#ff9977"/>
-    <stop offset="30%"  stop-color="#dd2200"/>
-    <stop offset="72%"  stop-color="#880000"/>
-    <stop offset="100%" stop-color="#220000"/>
-  </radialGradient>
-  <radialGradient id="b${id}" cx="32%" cy="26%" r="52%">
-    <stop offset="0%"   stop-color="rgba(255,255,255,.92)"/>
-    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-  </radialGradient>
-  <filter id="f${id}"><feGaussianBlur stdDeviation="2.5"/></filter>
-</defs>
-<ellipse cx="50" cy="53" rx="46" ry="44" fill="rgba(220,30,0,.45)" filter="url(#f${id})"/>
-<circle cx="50" cy="50" r="38" fill="url(#a${id})"/>
-<g stroke="rgba(255,200,50,.35)" stroke-width="1.5" fill="none">
-  <line x1="50" y1="12" x2="50" y2="88"/>
-  <line x1="12" y1="50" x2="88" y2="50"/>
-  <line x1="23" y1="23" x2="77" y2="77"/>
-  <line x1="77" y1="23" x2="23" y2="77"/>
-  <circle cx="50" cy="50" r="22"/>
-</g>
-<ellipse cx="34" cy="27" rx="17" ry="11" fill="url(#b${id})" transform="rotate(-28,34,27)"/>
-<ellipse cx="26" cy="20" rx="6.5" ry="4" fill="rgba(255,255,255,.98)" transform="rotate(-28,26,20)"/>`;
+  if(bt){
+    let svg;
+    if(bt==='hyper') svg=BONUS_SVGS.hyper();
+    else if(bt==='bomb') svg=BONUS_SVGS.bomb(GEM_COLORS[ci]);
+    else if(bt==='star') svg=BONUS_SVGS.star(GEM_COLORS[ci]);
+    else svg=BONUS_SVGS.flame(GEM_COLORS[ci]);
+    el.style.backgroundImage=svgToDataURL(svg);
   } else {
-    body = (GEM_SVGS[vc] || GEM_SVGS[2])(id);
+    el.style.backgroundImage=GEM_URLS[ci];
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
+  el.style.backgroundSize='100% 100%';
+  el.style.backgroundRepeat='no-repeat';
+  el.style.setProperty('--glow',GEM_GLOW[ci]);
+  el.className='gem'+(bt?' bonus-'+bt:'');
 }
 
-// Load all gems as Image objects (async, once)
-function preloadGems() {
-  if (_gemsReady) return;
-  const jobs = [];
-  for (let v = 0; v < GN; v++) jobs.push([v, 'none']);
-  jobs.push([0,'hyper'],[0,'bomb']);
-
-  let done = 0;
-  for (const [v, bonus] of jobs) {
-    const key = `${v}_${bonus}`;
-    const svg = buildSVG(v, bonus);
-    const blob = new Blob([svg], {type:'image/svg+xml'});
-    const url  = URL.createObjectURL(blob);
-    const img  = new Image();
-    img.onload = () => { GEM_IMGS[key] = img; URL.revokeObjectURL(url); done++; if(done===jobs.length)_gemsReady=true; };
-    img.src = url;
-  }
-}
-
-function ensurePreRender() { preloadGems(); }
-
-function drawGem(ctx, cx, cy, gr, vc, isSel, isFl, isSt, isHy, isBm) {
-  const t     = Date.now();
-  const bonus = isBm?'bomb': isHy?'hyper':'none';
-  const key   = `${vc}_${bonus}`;
-  const img   = GEM_IMGS[key];
-  const s     = gr * 2.1;
-
-  if (img) {
-    // slight scale-up on selection for a 'pop' feel
-    const sc = isSel ? 1.08 : 1.0;
-    ctx.drawImage(img, cx - s*sc*.5, cy - s*sc*.5, s*sc, s*sc);
-  } else {
-    // fallback circle while loading
-    const g = ctx.createRadialGradient(cx-gr*.3,cy-gr*.3,0,cx,cy,gr);
-    g.addColorStop(0,'#fff'); g.addColorStop(1,'#888');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,gr,0,Math.PI*2); ctx.fill();
-  }
-
-  // ── Selection pulse ring ──
-  if (isSel) {
-    const p = .5 + .5*Math.sin(t/200);
-    ctx.save();
-    ctx.strokeStyle = `rgba(255,255,${Math.floor(160+95*p)},${.72+.28*p})`;
-    ctx.lineWidth   = 3;
-    ctx.shadowColor = 'rgba(255,255,255,.9)';
-    ctx.shadowBlur  = 18;
-    ctx.beginPath(); ctx.arc(cx, cy, gr*1.15, 0, Math.PI*2); ctx.stroke();
-    ctx.restore();
-  }
-
-  // ── Bonus overlays ──
-  if (!isFl && !isSt && !isHy && !isBm) return;
-  ctx.save();
-  ctx.textAlign='center'; ctx.textBaseline='middle';
-  if (isFl) {
-    const a=t/700;   // slowed down
-    ctx.strokeStyle='rgba(255,220,60,.9)'; ctx.lineWidth=2.2;
-    for(let i=0;i<8;i++){
-      const ang=a+i*Math.PI/4;
-      ctx.beginPath();
-      ctx.moveTo(cx+Math.cos(ang)*gr*.48,cy+Math.sin(ang)*gr*.48);
-      ctx.lineTo(cx+Math.cos(ang)*gr*.94,cy+Math.sin(ang)*gr*.94);
-      ctx.stroke();
-    }
-    ctx.fillStyle='rgba(255,255,255,.95)';
-    ctx.shadowColor='rgba(255,80,0,.9)'; ctx.shadowBlur=10;
-    ctx.font=`bold ${Math.max(9,gr*.52)}px Arial`;
-    ctx.fillText('3×3',cx,cy);
-  } else if (isSt) {
-    const a=t/500;   // slowed down
-    ctx.strokeStyle='rgba(255,255,70,.9)'; ctx.lineWidth=2.4;
-    ctx.setLineDash([6,4]); ctx.lineDashOffset=-a*8;
-    ctx.beginPath(); ctx.arc(cx,cy,gr*.76,0,Math.PI*2); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle='rgba(255,255,255,.95)';
-    ctx.shadowColor='rgba(255,210,0,.9)'; ctx.shadowBlur=10;
-    ctx.font=`bold ${Math.max(8,gr*.38)}px Arial`;
-    ctx.fillText('★ALL',cx,cy);
-  } else if (isHy) {
-    const al=.45+.55*Math.sin(t/300);  // slowed
-    ctx.strokeStyle=`rgba(255,255,255,${al})`; ctx.lineWidth=3;
-    ctx.shadowColor='rgba(210,100,255,.95)'; ctx.shadowBlur=16;
-    ctx.beginPath(); ctx.moveTo(cx-gr*.9,cy); ctx.lineTo(cx+gr*.9,cy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx,cy-gr*.9); ctx.lineTo(cx,cy+gr*.9); ctx.stroke();
-    ctx.fillStyle='rgba(255,255,255,.95)';
-    ctx.font=`bold ${Math.max(8,gr*.34)}px Arial`;
-    ctx.fillText('R+C',cx,cy);
-  } else if (isBm) {
-    const a=t/220;  // slowed
-    ctx.shadowColor='rgba(255,80,0,.85)'; ctx.shadowBlur=8;
-    for(let i=0;i<8;i++){
-      const ang=a+i*Math.PI/4;
-      ctx.fillStyle='rgba(255,180,40,.94)';
-      ctx.beginPath();
-      ctx.moveTo(cx+Math.cos(ang)*gr*.6, cy+Math.sin(ang)*gr*.6);
-      ctx.lineTo(cx+Math.cos(ang+.2)*gr,  cy+Math.sin(ang+.2)*gr);
-      ctx.lineTo(cx+Math.cos(ang-.2)*gr,  cy+Math.sin(ang-.2)*gr);
-      ctx.closePath(); ctx.fill();
-    }
-    ctx.shadowBlur=12; ctx.fillStyle='rgba(255,255,255,.95)';
-    ctx.font=`bold ${Math.max(9,gr*.52)}px Arial`;
-    ctx.shadowColor='rgba(255,40,0,.95)';
-    ctx.fillText('5×5',cx,cy);
-  }
-  ctx.restore();
-}
-
-
-function lc(h,a){const s=h.replace('#','');return'#'+s.replace(/[0-9a-f]{2}/gi,m=>Math.min(255,parseInt(m,16)+a).toString(16).padStart(2,'0'));}
-function dc(h,a){const s=h.replace('#','');return'#'+s.replace(/[0-9a-f]{2}/gi,m=>Math.max(0,parseInt(m,16)-a).toString(16).padStart(2,'0'));}
-function rr(ctx,x,y,w,h,r){
-  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
-  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
-  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
-  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
-}
-
-// ═══ GRID — identical to original ════════════════════════════
+// ═══ GRID INIT ══════════════════════════════════════════════
 function rndGem(){return Math.floor(Math.random()*GN);}
 function makeBoard(){
   board=[];
@@ -795,131 +813,140 @@ function makeBoard(){
       board[r].push(v);
     }
   }
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)applyGem(r,c);
 }
 
-// ═══ INPUT: tap + swipe ════════════════════════════════════════
-let _drag=null, _swiped=false;
-const SWIPE_MIN=16;
+// ═══ SELECTION ══════════════════════════════════════════════
+function setSel(r,c){
+  clearSel();
+  sel=[r,c];
+  cells[r][c].classList.add('sel');
+  if(isBonus(board[r][c]))showBonusTip(r,c,board[r][c]);
+}
+function clearSel(){
+  if(sel)cells[sel[0]][sel[1]].classList.remove('sel');
+  sel=null;clearAreaHL();clearBonusTip();
+}
 
-function getRC(clientX,clientY){
-  const rect=canvas.getBoundingClientRect();
-  const x=clientX-rect.left, y=clientY-rect.top;
-  const c=Math.floor(x/(CELL+GAP)), r=Math.floor(y/(CELL+GAP));
+// ═══ INPUT ══════════════════════════════════════════════════
+let _drag=null,_swiped=false;
+const SWIPE_MIN=14;
+
+function getRCFromEvent(clientX,clientY){
+  const boardEl=document.getElementById('board');
+  const rect=boardEl.getBoundingClientRect();
+  const x=clientX-rect.left,y=clientY-rect.top;
+  const step=CS+GAP;
+  const c=Math.floor(x/step),r=Math.floor(y/step);
   if(r<0||r>=ROWS||c<0||c>=COLS)return null;
   return[r,c];
 }
+
 function onStart(cx,cy){
   if(busy)return;
-  const rc=getRC(cx,cy); if(!rc)return;
+  const rc=getRCFromEvent(cx,cy);if(!rc)return;
   if(board[rc[0]][rc[1]]===-1)return;
-  _drag={r:rc[0],c:rc[1],x:cx,y:cy}; _swiped=false;
+  _drag={r:rc[0],c:rc[1],x:cx,y:cy};_swiped=false;
 }
 function onMove(cx,cy){
   if(!_drag||busy)return;
-  const dx=cx-_drag.x, dy=cy-_drag.y;
+  const dx=cx-_drag.x,dy=cy-_drag.y;
   if(!_swiped&&(Math.abs(dx)>SWIPE_MIN||Math.abs(dy)>SWIPE_MIN)){
     _swiped=true;
-    const {r:r1,c:c1}=_drag; _drag=null;
+    const{r:r1,c:c1}=_drag;_drag=null;
     let r2=r1,c2=c1;
     if(Math.abs(dx)>Math.abs(dy)){c2=c1+(dx>0?1:-1);}
     else{r2=r1+(dy>0?1:-1);}
-    if(r2>=0&&r2<ROWS&&c2>=0&&c2<COLS&&board[r2][c2]!==-1){
-      clearSel(); trySwap(r1,c1,r2,c2);
-    }
+    if(r2>=0&&r2<ROWS&&c2>=0&&c2<COLS){clearSel();trySwap(r1,c1,r2,c2);}
   }
 }
 function onEnd(cx,cy){
   if(!_drag)return;
-  const{r:r1,c:c1}=_drag; _drag=null;
+  const{r:r1,c:c1}=_drag;_drag=null;
   if(_swiped||busy)return;
-  // tap logic
   if(!sel){setSel(r1,c1);return;}
   const[sr,sc]=sel;
   if(sr===r1&&sc===c1){clearSel();return;}
   if(Math.abs(sr-r1)+Math.abs(sc-c1)===1){clearSel();trySwap(sr,sc,r1,c1);}
-  else{setSel(r1,c1);}
-}
-canvas.addEventListener('mousedown',e=>{e.preventDefault();onStart(e.clientX,e.clientY);});
-canvas.addEventListener('mousemove',e=>{if(_drag)onMove(e.clientX,e.clientY);});
-canvas.addEventListener('mouseup',e=>onEnd(e.clientX,e.clientY));
-canvas.addEventListener('mouseleave',()=>{if(_drag&&!_swiped){_drag=null;clearSel();}});
-canvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];onStart(t.clientX,t.clientY);},{passive:false});
-canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);},{passive:false});
-canvas.addEventListener('touchend',e=>{e.preventDefault();const t=e.changedTouches[0];onEnd(t.clientX,t.clientY);},{passive:false});
-canvas.addEventListener('touchcancel',()=>{_drag=null;clearSel();});
-
-// ═══ SELECTION — identical to original ════════════════════════
-function setSel(r,c){
-  sel=[r,c];
-  anims[r][c]={type:'sel',t:0,dur:999};
-  // show bonus tip if special gem
-  const v=board[r][c];
-  if(isBonus(v)) showBonusTip(r,c,v);
-}
-function clearSel(){
-  if(sel)anims[sel[0]][sel[1]]=null;
-  sel=null; clearAreaHL(); clearBonusTip();
+  else setSel(r1,c1);
 }
 
-// ═══ SWAP ════════════════════════════════════════════════════
-const SW=0.28;  // swap duration — was 0.2, now slower and smoother
+// attach to board div
+function attachInput(){
+  const boardEl=document.getElementById('board');
+  boardEl.addEventListener('mousedown',e=>{e.preventDefault();onStart(e.clientX,e.clientY);});
+  boardEl.addEventListener('mousemove',e=>{if(_drag)onMove(e.clientX,e.clientY);});
+  boardEl.addEventListener('mouseup',e=>onEnd(e.clientX,e.clientY));
+  boardEl.addEventListener('mouseleave',()=>{if(_drag&&!_swiped){_drag=null;clearSel();}});
+  boardEl.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];onStart(t.clientX,t.clientY);},{passive:false});
+  boardEl.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);},{passive:false});
+  boardEl.addEventListener('touchend',e=>{e.preventDefault();const t=e.changedTouches[0];onEnd(t.clientX,t.clientY);},{passive:false});
+  boardEl.addEventListener('touchcancel',()=>{_drag=null;clearSel();});
+}
+
+// ═══ SWAP ═══════════════════════════════════════════════════
+const SW_DUR=290;  // ms
+
 function trySwap(r1,c1,r2,c2){
   busy=true;
-  const dx=(c2-c1)*(CELL+GAP),dy=(r2-r1)*(CELL+GAP);
-  let d1=false,d2=false;
-  function afterBoth(){
-    const v1=board[r1][c1], v2=board[r2][c2];
-    const b1=isBonus(v1), b2=isBonus(v2);
-    // ── Bonus gem: activate immediately on swap ──
+  const dx=(c2-c1)*(CS+GAP),dy=(r2-r1)*(CS+GAP);
+
+  // animate both gems
+  animSwapGem(r1,c1, dx, dy);
+  animSwapGem(r2,c2,-dx,-dy);
+
+  setTimeout(()=>{
+    const v1=board[r1][c1],v2=board[r2][c2];
+    const b1=isBonus(v1),b2=isBonus(v2);
+
+    // ── bonus gem activation ──
     if(b1||b2){
-      board[r1][c1]=v2; board[r2][c2]=v1;
+      board[r1][c1]=v2;board[r2][c2]=v1;
+      applyGem(r1,c1);applyGem(r2,c2);
       const dst=new Set();
-      if(b1) activateBonus(r2,c2,v1,dst);
-      if(b2) activateBonus(r1,c1,v2,dst);
-      dst.add(r1*COLS+c1); dst.add(r2*COLS+c2);
+      if(b1)expandBonus(r2,c2,v1,dst);
+      if(b2)expandBonus(r1,c1,v2,dst);
+      dst.add(r1*COLS+c1);dst.add(r2*COLS+c2);
       const pts=dst.size*40;
-      combo=0; score+=pts;
-      const best=getBest();if(score>best)saveBest(score);
+      combo=0;score+=pts;
+      if(score>getBest())saveBest(score);
       updateUI();
-      const{x,y}=cxy(r1,c1);
       const lbl=v1>=BB||v2>=BB?'💣':v1>=BH||v2>=BH?'💥':v1>=BS||v2>=BS?'⭐':'🔥';
-      floats.push({x:x+CELL/2,y:y+CELL/2,txt:lbl+' +'+pts,a:1});
-      let pending=0;
-      for(const idx of dst){const r=Math.floor(idx/COLS),c=idx%COLS;if(board[r][c]!==-1)pending++;}
-      if(!pending){doGravity(dst);return;}
-      let done2=0;
-      for(const idx of dst){
-        const r=Math.floor(idx/COLS),c=idx%COLS;
-        if(board[r][c]===-1)continue;
-        spawnParts(r,c,gColor(board[r][c]));
-        anims[r][c]={type:'ex',t:0,dur:.42,onDone:()=>{board[r][c]=-1;if(++done2===pending)doGravity(dst);}};
-      }
+      showScorePop(r1,c1,lbl+' +'+pts);
+      explodeDst(dst,()=>doGravity(dst));
       return;
     }
-    // ── Normal swap ──
-    const t=board[r1][c1];board[r1][c1]=board[r2][c2];board[r2][c2]=t;
+
+    // ── normal swap ──
+    board[r1][c1]=v2;board[r2][c2]=v1;
+    applyGem(r1,c1);applyGem(r2,c2);
     const m=findMatches();
     if(!m){
-      const t2=board[r1][c1];board[r1][c1]=board[r2][c2];board[r2][c2]=t2;
-      let e1=false,e2=false;
-      anims[r1][c1]={type:'sw',t:0,dur:SW,dx:-dx,dy:-dy,onDone:()=>{e1=true;if(e1&&e2)busy=false;}};
-      anims[r2][c2]={type:'sw',t:0,dur:SW,dx: dx,dy: dy,onDone:()=>{e2=true;if(e1&&e2)busy=false;}};
+      // swap back
+      animSwapGem(r1,c1,-dx,-dy);
+      animSwapGem(r2,c2, dx, dy);
+      setTimeout(()=>{
+        board[r1][c1]=v1;board[r2][c2]=v2;
+        applyGem(r1,c1);applyGem(r2,c2);
+        busy=false;
+      },SW_DUR);
       return;
     }
-    combo=0; resolveMatches(m);
-  }
-  anims[r1][c1]={type:'sw',t:0,dur:SW,dx, dy,onDone:()=>{d1=true;if(d1&&d2)afterBoth();}};
-  anims[r2][c2]={type:'sw',t:0,dur:SW,dx:-dx,dy:-dy,onDone:()=>{d2=true;if(d1&&d2)afterBoth();}};
+    combo=0;resolveMatches(m);
+  },SW_DUR);
 }
 
-function activateBonus(r,c,v,dst){
-  if(v>=BB){for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}}
-  else if(v>=BH){for(let cc=0;cc<COLS;cc++)dst.add(r*COLS+cc);for(let rr=0;rr<ROWS;rr++)dst.add(rr*COLS+c);}
-  else if(v>=BS){const col=v-BS;for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===col)dst.add(rr*COLS+cc);}
-  else if(v>=BF){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}}
+function animSwapGem(r,c,dx,dy){
+  const g=gems[r][c];
+  g.style.setProperty('--sdx',dx+'px');
+  g.style.setProperty('--sdy',dy+'px');
+  g.classList.remove('swapping');
+  void g.offsetWidth;
+  g.classList.add('swapping');
+  setTimeout(()=>g.classList.remove('swapping'),SW_DUR+20);
 }
 
-// ═══ MATCH FINDING — identical to original + bomb(6+) ════════
+// ═══ MATCH FINDING ══════════════════════════════════════════
 function findMatches(){
   const hG=[],vG=[];
   for(let r=0;r<ROWS;r++){
@@ -927,7 +954,7 @@ function findMatches(){
       const v=board[r][c];if(v===-1){c++;continue;}
       const vc=gColor(v);let l=1;
       while(c+l<COLS&&board[r][c+l]!==-1&&gColor(board[r][c+l])===vc)l++;
-      if(l>=3){const cells=[];for(let k=0;k<l;k++)cells.push([r,c+k]);hG.push({cells,len:l,color:vc});}
+      if(l>=3){const cells2=[];for(let k=0;k<l;k++)cells2.push([r,c+k]);hG.push({cells:cells2,len:l,color:vc});}
       c+=l;
     }
   }
@@ -936,7 +963,7 @@ function findMatches(){
       const v=board[r][c];if(v===-1){r++;continue;}
       const vc=gColor(v);let l=1;
       while(r+l<ROWS&&board[r+l][c]!==-1&&gColor(board[r+l][c])===vc)l++;
-      if(l>=3){const cells=[];for(let k=0;k<l;k++)cells.push([r+k,c]);vG.push({cells,len:l,color:vc});}
+      if(l>=3){const cells2=[];for(let k=0;k<l;k++)cells2.push([r+k,c]);vG.push({cells:cells2,len:l,color:vc});}
       r+=l;
     }
   }
@@ -947,7 +974,6 @@ function findMatches(){
   for(const g of vG)for(const[r,c]of g.cells)vMap.set(r*COLS+c,g);
 
   const done=new Set(),result=[];
-  // L/T intersections → hyper
   for(const[k,hg]of hMap){
     if(vMap.has(k)&&!done.has(k)){
       const vg=vMap.get(k);
@@ -977,7 +1003,7 @@ function findMatches(){
   return result.length?result:null;
 }
 
-// ═══ CASCADE — identical to original + bomb ════════════════════
+// ═══ CASCADE ════════════════════════════════════════════════
 function expandBonus(r,c,v,dst){
   if(v>=BB){for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}}
   else if(v>=BH){for(let cc=0;cc<COLS;cc++)dst.add(r*COLS+cc);for(let rr=0;rr<ROWS;rr++)dst.add(rr*COLS+c);}
@@ -992,56 +1018,69 @@ function resolveMatches(groups){
     const lb=g.cells.length>=6?8:g.cells.length>=5?4:g.cells.length===4?2:1;
     pts+=g.cells.length*10*lb;
   }
-  const lvlMult=1+(level-1)*0.1;
-  pts=Math.round(pts*combo*lvlMult);
+  pts=Math.round(pts*combo*(1+(level-1)*.1));
   const prevLv=level;
-  score+=pts;
-  const best=getBest(); if(score>best)saveBest(score);
-  updateUI();
-  if(level>prevLv)showLevelUp(level);
-  // mode effects
+  score+=pts;if(score>getBest())saveBest(score);
+  updateUI();if(level>prevLv)showLevelUp(level);
   if(gameMode==='moves'){movesLeft--;updateUI();if(movesLeft<=0)setTimeout(()=>endGame('Mutări Epuizate!'),800);}
   if(gameMode==='timer'){const tot=groups.reduce((s,g)=>s+g.cells.length,0);timerSec=Math.min(timerSec+Math.ceil(tot*.5),99);updateUI();}
   if(gameMode==='objective'){let cnt=0;for(const g of groups)if(g.color===objType)cnt+=g.cells.length;objCount=Math.min(objCount+cnt,objTarget);updateUI();if(objCount>=objTarget)setTimeout(()=>endGame('Obiectiv Completat! 🏆'),800);}
 
   const pre=groups.some(g=>g.type==='bomb')?'💣':groups.some(g=>g.type==='hyper')?'💥':groups.some(g=>g.type==='star')?'⭐':groups.some(g=>g.type==='flame')?'🔥':'';
-  const{x,y}=cxy(Math.round(groups.flatMap(g=>g.cells).reduce((s,[r])=>s+r,0)/groups.flatMap(g=>g.cells).length),
-                  Math.round(groups.flatMap(g=>g.cells).reduce((s,[,c])=>s+c,0)/groups.flatMap(g=>g.cells).length));
-  floats.push({x:x+CELL/2,y:y+CELL/2,txt:pre+(combo>1?`×${combo} `:'')+'+'+pts,a:1});
+  const allC=groups.flatMap(g=>g.cells);
+  const mr=Math.round(allC.reduce((s,[r])=>s+r,0)/allC.length);
+  const mc=Math.round(allC.reduce((s,[,c])=>s+c,0)/allC.length);
+  showScorePop(mr,mc,pre+(combo>1?`×${combo} `:'')+'+'+pts);
   if(combo>1||groups.some(g=>g.type!=='normal'))showBadge(combo,groups);
 
-  const dst=new Set(), newB=[];
+  const dst=new Set(),newB=[];
   for(const g of groups){
     for(const[r,c]of g.cells){dst.add(r*COLS+c);if(isBonus(board[r][c]))expandBonus(r,c,board[r][c],dst);}
     if(g.type!=='normal')newB.push({r:g.pivot[0],c:g.pivot[1],btype:g.type,color:g.color});
   }
 
+  explodeDst(dst,()=>{
+    for(const{r:br,c:bc,btype,color}of newB){
+      if(board[br][bc]===-1){
+        board[br][bc]=btype==='bomb'?BB+color:btype==='star'?BS+color:btype==='hyper'?BH:BF+color;
+        dst.delete(br*COLS+bc);
+        applyGem(br,bc);
+        // pop-in animation
+        const g=gems[br][bc];
+        g.style.transform='scale(0)';
+        requestAnimationFrame(()=>{
+          g.style.transition='transform .3s cubic-bezier(.34,1.56,.64,1)';
+          g.style.transform='scale(1)';
+          setTimeout(()=>{g.style.transition='';g.style.transform='';},320);
+        });
+      }
+    }
+    doGravity(dst);
+  });
+}
+
+function explodeDst(dst,cb){
   let pending=0;
   for(const idx of dst){const r=Math.floor(idx/COLS),c=idx%COLS;if(board[r][c]!==-1)pending++;}
-  if(pending===0){doGravity(dst);return;}
-
+  if(!pending){cb();return;}
   let done2=0;
   for(const idx of dst){
     const r=Math.floor(idx/COLS),c=idx%COLS;
     if(board[r][c]===-1)continue;
-    spawnParts(r,c,gColor(board[r][c]));
-    anims[r][c]={type:'ex',t:0,dur:.42,onDone:()=>{
-      board[r][c]=-1;
-      if(++done2===pending){
-        for(const{r:br,c:bc,btype,color}of newB){
-          if(board[br][bc]===-1){
-            board[br][bc]=btype==='bomb'?BB+color:btype==='star'?BS+color:btype==='hyper'?BH:BF+color;
-            dst.delete(br*COLS+bc);
-          }
-        }
-        doGravity(dst);
-      }
-    }};
+    spawnParticles(r,c,gColor(board[r][c]));
+    const g=gems[r][c];
+    g.classList.remove('exploding');void g.offsetWidth;
+    g.classList.add('exploding');
+    board[r][c]=-1;
+    setTimeout(()=>{
+      applyGem(r,c);
+      if(++done2===pending)cb();
+    },450);
   }
 }
 
 function doGravity(matchSet){
-  const step=CELL+GAP;
+  const step=CS+GAP;
   const jobs=[];
   for(let c=0;c<COLS;c++){
     const stack=[];
@@ -1050,17 +1089,28 @@ function doGravity(matchSet){
     for(let r=ROWS-1;r>=0;r--){
       const nv=stack[ROWS-1-r];
       let eb=0;for(let rr=r+1;rr<ROWS;rr++)if(matchSet.has(rr*COLS+c))eb++;
-      const wasMt=matchSet.has(r*COLS+c);
+      const wasMatch=matchSet.has(r*COLS+c);
       board[r][c]=nv;
-      if(wasMt||eb>0){const fy=wasMt?-(r+1)*step:-eb*step;jobs.push({r,c,fy,delay:(ROWS-1-r)*0.016});}
+      if(wasMatch||eb>0){
+        const fy=wasMatch?-(r+1)*step:-eb*step;
+        jobs.push({r,c,fy,delay:(ROWS-1-r)*22});
+      }
     }
   }
   if(!jobs.length){checkChain();return;}
-  let land=0;
+  for(const{r,c}of jobs)applyGem(r,c);
+  let landed=0;
   for(const{r,c,fy,delay}of jobs){
     setTimeout(()=>{
-      anims[r][c]={type:'fall',t:0,dur:.38,fy,onDone:()=>{if(++land===jobs.length)checkChain();}};
-    },delay*1000);
+      const g=gems[r][c];
+      g.style.setProperty('--fall-from',fy+'px');
+      g.classList.remove('falling');void g.offsetWidth;
+      g.classList.add('falling');
+      setTimeout(()=>{
+        g.classList.remove('falling');
+        if(++landed===jobs.length)checkChain();
+      },450);
+    },delay);
   }
 }
 
@@ -1070,33 +1120,46 @@ function checkChain(){
   else{combo=0;busy=false;if(!hasMoves())noMoves();}
 }
 
-// ═══ PARTICLES — Bejeweled style ═════════════════════════════
-// Multiple particle types: sparks, shards, glows
-function spawnParts(r,c,type){
-  const{x,y}=cxy(r,c);
-  const cx2=x+CELL/2, cy2=y+CELL/2;
-  const col = ['#ff2244','#2266ff','#00cc55','#ffcc00','#cc22ff','#ff7700','#aaaaaa'][type] || '#fff';
-  const col2= ['#ff99aa','#88bbff','#88ffaa','#ffee88','#dd88ff','#ffbb77','#dddddd'][type] || '#fff';
+// ═══ PARTICLES ══════════════════════════════════════════════
+function spawnParticles(r,c,type){
+  const wrap=document.getElementById('boardWrap');
+  const boardEl=document.getElementById('board');
+  const br=boardEl.getBoundingClientRect(),wr=wrap.getBoundingClientRect();
+  const cellEl=cells[r][c];
+  const cr=cellEl.getBoundingClientRect();
+  const cx=cr.left-wr.left+cr.width/2;
+  const cy=cr.top-wr.top+cr.height/2;
+  const col=GEM_GLOW[type].replace('rgba(','').replace(',.8)','').replace(',.7)','').replace(',.9)','');
+  const hexCol='rgb('+col+')';
 
-  // big slow shards (4-6)
-  for(let i=0;i<5;i++){
-    const a=Math.random()*Math.PI*2, spd=1.4+Math.random()*2.0;
-    parts.push({x:cx2,y:cy2,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd-1.2,
-      r:3.5+Math.random()*3,a:1,col,type:'shard'});
+  // glow ring
+  const ring=document.createElement('div');
+  ring.className='spark glow-ring';
+  ring.style.cssText=`left:${cx}px;top:${cy}px;width:${CS}px;height:${CS}px;--col:${hexCol};`;
+  wrap.appendChild(ring);
+  setTimeout(()=>ring.remove(),580);
+
+  // sparks
+  const count=10+Math.floor(Math.random()*6);
+  for(let i=0;i<count;i++){
+    const a=Math.random()*Math.PI*2;
+    const d=22+Math.random()*38;
+    const sz=3+Math.random()*5;
+    const dur=(.3+Math.random()*.35).toFixed(2);
+    const sp=document.createElement('div');
+    sp.className='spark';
+    sp.style.cssText=`left:${cx}px;top:${cy}px;width:${sz}px;height:${sz}px;`+
+      `background:${i%3===0?'#fff':hexCol};`+
+      `box-shadow:0 0 ${sz+2}px ${hexCol};`+
+      `--dx:${(Math.cos(a)*d).toFixed(1)}px;--dy:${(Math.sin(a)*d).toFixed(1)}px;--dur:${dur}s;`;
+    wrap.appendChild(sp);
+    setTimeout(()=>sp.remove(),+dur*1000+60);
   }
-  // small fast sparks (8-10)
-  for(let i=0;i<9;i++){
-    const a=Math.random()*Math.PI*2, spd=2.2+Math.random()*3.0;
-    parts.push({x:cx2,y:cy2,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd-1.5,
-      r:1.5+Math.random()*2,a:1,col:col2,type:'spark'});
-  }
-  // glow ring (1 large fading circle)
-  parts.push({x:cx2,y:cy2,vx:0,vy:0,r:CELL*.35,a:.7,col,type:'glow',maxR:CELL*.7});
 }
 
-// ═══ HINT — identical to original ════════════════════════════
+// ═══ HINT ═══════════════════════════════════════════════════
 function findHint(){
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
     for(const[nr,nc]of[[r,c+1],[r+1,c]]){
       if(nr>=ROWS||nc>=COLS)continue;
       const t=board[r][c];board[r][c]=board[nr][nc];board[nr][nc]=t;
@@ -1108,7 +1171,7 @@ function findHint(){
   return null;
 }
 function hasMoves(){
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
     for(const[nr,nc]of[[r,c+1],[r+1,c]]){
       if(nr>=ROWS||nc>=COLS)continue;
       const t=board[r][c];board[r][c]=board[nr][nc];board[nr][nc]=t;
@@ -1120,59 +1183,8 @@ function hasMoves(){
   return false;
 }
 
-// ═══ UI ═══════════════════════════════════════════════════════
-function updateUI(){
-  score=Math.max(0,score);
-  document.getElementById('score-disp').textContent=score.toLocaleString();
-  document.getElementById('best-disp').textContent=getBest().toLocaleString();
-  // level
-  let lv=1;
-  for(let i=1;i<LEVEL_THRESHOLDS.length;i++){if(score>=LEVEL_THRESHOLDS[i])lv=i+1;else break;}
-  lv=Math.min(lv,LEVEL_THRESHOLDS.length-1);
-  level=lv;
-  document.getElementById('level-disp').textContent=level;
-  const lo=LEVEL_THRESHOLDS[level-1]||0,hi=LEVEL_THRESHOLDS[level]||LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length-1];
-  document.getElementById('level-bar').style.width=(hi>lo?Math.min(100,Math.round((score-lo)/(hi-lo)*100)):100)+'%';
-  // mode specifics
-  if(gameMode==='moves')document.getElementById('moves-disp').textContent=movesLeft;
-  if(gameMode==='timer'){
-    const el=document.getElementById('timer-disp');
-    el.textContent=timerSec;
-    el.className='stat-val'+(timerSec<=10?' timer-low':'');
-  }
-  if(gameMode==='objective')document.getElementById('obj-disp').textContent=objCount+'/'+objTarget;
-}
-function showBadge(n,groups){
-  const w=document.getElementById('boardWrap');
-  const old=w.querySelector('.combo-badge');if(old)old.remove();
-  const el=document.createElement('div');el.className='combo-badge';
-  const isBm=groups&&groups.some(g=>g.type==='bomb');
-  const isHy=groups&&groups.some(g=>g.type==='hyper');
-  const isSt=groups&&groups.some(g=>g.type==='star');
-  const isFl=groups&&groups.some(g=>g.type==='flame');
-  el.textContent=isBm?'💣 Bombă!':isHy?'💥 Cruce!':isSt?'⭐ Star Gem!':isFl?'🔥 Flacără!':`${n}× Combo!`;
-  w.appendChild(el);setTimeout(()=>el.remove(),1400);
-}
-function showLevelUp(lv){
-  const w=document.getElementById('boardWrap');
-  const old=w.querySelector('.lu-banner');if(old)old.remove();
-  const el=document.createElement('div');el.className='lu-banner';
-  el.innerHTML=`<span class="lu-title">NIVEL ${lv}</span><span class="lu-sub">+${Math.round((lv-1)*10)}% scor bonus</span>`;
-  w.appendChild(el);setTimeout(()=>el.remove(),2000);
-}
-function noMoves(){
-  endGame('Nicio mutare!');
-}
-function endGame(title){
-  busy=true;
-  const best=getBest(); if(score>best)saveBest(score);
-  document.getElementById('msg-title').textContent=title;
-  document.getElementById('msg-sub').textContent=`Scor: ${score.toLocaleString()}${score>best?' 🏆 Record!':''}`;
-  document.getElementById('message').classList.add('visible');
-}
-
-// ═══ BONUS TIP + AREA HIGHLIGHT ════════════════════════════════
-let _tipEl=null, _hlEls=[];
+// ═══ BONUS TIP + AREA HIGHLIGHT ════════════════════════════
+let _tipEl=null,_hlEls=[];
 function clearBonusTip(){if(_tipEl){_tipEl.remove();_tipEl=null;}}
 function clearAreaHL(){_hlEls.forEach(e=>e.remove());_hlEls=[];}
 function showBonusTip(r,c,v){
@@ -1184,71 +1196,132 @@ function showBonusTip(r,c,v){
     bomb: {n:'💣 Bombă',  d:'Swipe spre vecin → explozie 5×5'},
   };
   const bt=v>=BB?'bomb':v>=BH?'hyper':v>=BS?'star':'flame';
-  const tip=TIPS[bt]; if(!tip)return;
+  const tip=TIPS[bt];if(!tip)return;
   const wrap=document.getElementById('boardWrap');
-  const cr=canvas.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
-  const{x,y}=cxy(r,c);
+  const cr=cells[r][c].getBoundingClientRect(),wr=wrap.getBoundingClientRect();
   const el=document.createElement('div');el.className='bonus-tip';
   el.innerHTML=`<strong>${tip.n}</strong>${tip.d}`;
-  let left=cr.left-wr.left+x+CELL/2-80;
-  let top=cr.top-wr.top+y+CELL+6;
+  let left=cr.left-wr.left+cr.width/2-80;
+  let top=cr.bottom-wr.top+6;
   left=Math.max(4,Math.min(left,wr.width-170));
-  if(top+70>wr.height)top=cr.top-wr.top+y-76;
+  if(top+70>wr.height)top=cr.top-wr.top-80;
   el.style.left=left+'px';el.style.top=top+'px';
   wrap.appendChild(el);_tipEl=el;
   setTimeout(()=>{if(_tipEl===el)clearBonusTip();},3000);
   // area highlight
   clearAreaHL();
-  const bt2=bt;
-  const{x:ox,y:oy}=cxy(0,0); // cell origin offset
   function mkHL(row,col,cls){
-    const{x:hx,y:hy}=cxy(row,col);
     const e=document.createElement('div');
     e.className='area-hl'+(cls?' '+cls:'');
-    e.style.cssText=`left:${cr.left-wr.left+hx}px;top:${cr.top-wr.top+hy}px;width:${CELL}px;height:${CELL}px;`;
+    const cr2=cells[row][col].getBoundingClientRect(),wr2=wrap.getBoundingClientRect();
+    e.style.cssText=`left:${cr2.left-wr2.left}px;top:${cr2.top-wr2.top}px;width:${CS}px;height:${CS}px;`;
     wrap.appendChild(e);_hlEls.push(e);
   }
-  if(bt2==='flame'){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)mkHL(nr,nc,'');}}
-  else if(bt2==='bomb'){for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)mkHL(nr,nc,'');}}
-  else if(bt2==='hyper'){for(let cc=0;cc<COLS;cc++)mkHL(r,cc,'cross-h');for(let rr=0;rr<ROWS;rr++)if(rr!==r)mkHL(rr,c,'cross-v');}
-  else if(bt2==='star'){const col=gColor(v);for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===col)mkHL(rr,cc,'');}
+  if(bt==='flame'){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)mkHL(nr,nc,'');}}
+  else if(bt==='bomb'){for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)mkHL(nr,nc,'');}}
+  else if(bt==='hyper'){for(let cc=0;cc<COLS;cc++)mkHL(r,cc,'cross-h');for(let rr=0;rr<ROWS;rr++)if(rr!==r)mkHL(rr,c,'cross-v');}
+  else if(bt==='star'){const col2=gColor(v);for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===col2)mkHL(rr,cc,'');}
 }
 
-// ═══ TIMER MODE ════════════════════════════════════════════════
+// ═══ UI ═════════════════════════════════════════════════════
+function updateUI(){
+  score=Math.max(0,score);
+  document.getElementById('score-disp').textContent=score.toLocaleString();
+  document.getElementById('best-disp').textContent=getBest().toLocaleString();
+  let lv=1;for(let i=1;i<LEVEL_THRESHOLDS.length;i++){if(score>=LEVEL_THRESHOLDS[i])lv=i+1;else break;}
+  lv=Math.min(lv,LEVEL_THRESHOLDS.length-1);level=lv;
+  document.getElementById('level-disp').textContent=level;
+  const lo=LEVEL_THRESHOLDS[level-1]||0,hi=LEVEL_THRESHOLDS[level]||LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length-1];
+  document.getElementById('level-bar').style.width=(hi>lo?Math.min(100,Math.round((score-lo)/(hi-lo)*100)):100)+'%';
+  if(gameMode==='moves')document.getElementById('moves-disp').textContent=movesLeft;
+  if(gameMode==='timer'){
+    const el=document.getElementById('timer-disp');
+    el.textContent=timerSec;
+    el.className='stat-val'+(timerSec<=10?' timer-low':'');
+  }
+  if(gameMode==='objective')document.getElementById('obj-disp').textContent=objCount+'/'+objTarget;
+}
+
+function showScorePop(r,c,text){
+  const wrap=document.getElementById('boardWrap');
+  const cr=cells[r][c].getBoundingClientRect(),wr=wrap.getBoundingClientRect();
+  const el=document.createElement('div');el.className='score-pop';
+  el.textContent=text;
+  el.style.left=(cr.left-wr.left+cr.width/2-24)+'px';
+  el.style.top=(cr.top-wr.top)+'px';
+  wrap.appendChild(el);setTimeout(()=>el.remove(),950);
+}
+
+function showBadge(n,groups){
+  const w=document.getElementById('boardWrap');
+  const old=w.querySelector('.combo-badge');if(old)old.remove();
+  const el=document.createElement('div');el.className='combo-badge';
+  const isBm=groups&&groups.some(g=>g.type==='bomb');
+  const isHy=groups&&groups.some(g=>g.type==='hyper');
+  const isSt=groups&&groups.some(g=>g.type==='star');
+  const isFl=groups&&groups.some(g=>g.type==='flame');
+  el.textContent=isBm?'💣 Bombă!':isHy?'💥 Cruce!':isSt?'⭐ Star Gem!':isFl?'🔥 Flacără!':`${n}× Combo!`;
+  w.appendChild(el);setTimeout(()=>el.remove(),1600);
+}
+
+function showLevelUp(lv){
+  const w=document.getElementById('boardWrap');
+  const old=w.querySelector('.lu-banner');if(old)old.remove();
+  const el=document.createElement('div');el.className='lu-banner';
+  el.innerHTML=`<span class="lu-title">NIVEL ${lv}</span><span class="lu-sub">+${Math.round((lv-1)*10)}% scor</span>`;
+  w.appendChild(el);setTimeout(()=>el.remove(),2100);
+}
+
+function noMoves(){endGame('Nicio mutare!');}
+function endGame(title){
+  busy=true;
+  const best=getBest();if(score>best)saveBest(score);
+  document.getElementById('msg-title').textContent=title;
+  document.getElementById('msg-sub').textContent=`Scor: ${score.toLocaleString()}${score>=best&&score>0?' 🏆 Record!':''}`;
+  document.getElementById('message').classList.add('visible');
+}
+
+// ═══ TIMER ══════════════════════════════════════════════════
 function startTimer(){
-  clearInterval(timerInterval);
-  timerSec=60; updateUI();
-  timerInterval=setInterval(()=>{
-    timerSec--; updateUI();
-    if(timerSec<=0){clearInterval(timerInterval);timerInterval=null;endGame('Timp expirat!');}
-  },1000);
+  clearInterval(timerInterval);timerSec=60;updateUI();
+  timerInterval=setInterval(()=>{timerSec--;updateUI();if(timerSec<=0){clearInterval(timerInterval);timerInterval=null;endGame('Timp expirat!');}},1000);
 }
 
-// ═══ PUBLIC ═══════════════════════════════════════════════════
+// ═══ PUBLIC ═════════════════════════════════════════════════
 const G={
   newGame(){
     clearInterval(timerInterval);timerInterval=null;
     document.getElementById('message').classList.remove('visible');
-    score=0;level=1;combo=0;sel=null;busy=false;parts=[];floats=[];
+    score=0;level=1;combo=0;sel=null;busy=false;
     if(gameMode==='moves')movesLeft=30;
     if(gameMode==='objective'){
       objType=Math.floor(Math.random()*GN);
       objTarget=15+Math.floor(Math.random()*10);
       objCount=0;
-      document.getElementById('obj-label').textContent=GEMS[objType].color.toUpperCase().slice(1,4)+'…';
+      document.getElementById('obj-label').textContent='Colectează '+
+        ['Roșii','Albastre','Verzi','Galbene','Violet','Portocalii','Albe'][objType];
     }
-    makeBoard();initAnims();updateUI();
+    buildBoard();
+    attachInput();
+    makeBoard();
+    updateUI();
     if(gameMode==='timer')startTimer();
   },
   hint(){
     if(busy)return;
     const h=findHint();if(!h)return;
-    for(const[r,c]of h)anims[r][c]={type:'hint',t:0,dur:1.1};
+    cells[h[0][0]][h[0][1]].classList.add('hint');
+    cells[h[1][0]][h[1][1]].classList.add('hint');
+    setTimeout(()=>{
+      cells[h[0][0]][h[0][1]].classList.remove('hint');
+      cells[h[1][0]][h[1][1]].classList.remove('hint');
+    },1500);
   }
 };
 
-// ═══ INIT ═════════════════════════════════════════════════════
-requestAnimationFrame(loop);
+// ═══ INIT ═══════════════════════════════════════════════════
+document.getElementById('modeScreen').style.display='flex';
+document.getElementById('gameWrap').style.display='none';
 </script>
 </body>
 </html>
