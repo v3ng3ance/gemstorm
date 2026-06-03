@@ -252,8 +252,18 @@ function loop(ts){
     a.t+=dt/a.dur;
     if(a.t>=1){a.t=1;const cb=a.onDone;anims[r][c]=null;if(cb)cb();}
   }
-  for(const p of parts){p.x+=p.vx*dt*60;p.y+=p.vy*dt*60;p.vy+=0.3*dt*60;p.a-=dt*3;p.r*=0.95;}
-  parts=parts.filter(p=>p.a>0&&p.r>0.2);
+  for(const p of parts){
+    p.x+=p.vx*dt*60; p.y+=p.vy*dt*60;
+    if(p.type==='glow'){
+      p.r = Math.min(p.r + dt*60*1.8, p.maxR||p.r);
+      p.a -= dt*2.8;
+    } else if(p.type==='shard'){
+      p.vy+=0.22*dt*60; p.a-=dt*1.8; p.r*=0.97;
+    } else {
+      p.vy+=0.35*dt*60; p.a-=dt*3.5; p.r*=0.95;
+    }
+  }
+  parts=parts.filter(p=>p.a>0&&p.r>0.15);
   for(const f of floats){f.y-=dt*48;f.a-=dt*1.5;}
   floats=floats.filter(f=>f.a>0);
   draw();
@@ -309,8 +319,17 @@ function draw(){
   }
   // particles
   for(const p of parts){
-    ctx.save();ctx.globalAlpha=p.a;ctx.fillStyle=p.col;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.save(); ctx.globalAlpha=p.a;
+    if(p.type==='glow'){
+      const pg=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+      pg.addColorStop(0,p.col.replace(')',',0.6)').replace('rgb','rgba'));
+      pg.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    } else {
+      ctx.shadowColor=p.col; ctx.shadowBlur=p.type==='shard'?6:3;
+      ctx.fillStyle=p.col; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
   }
   // score floaters
   for(const f of floats){
@@ -322,260 +341,431 @@ function draw(){
 }
 
 
-// ═══ GEM RENDERING — Bejeweled style ═════════════════════════
-// 7 gem types matching Bejeweled 2: diamond, square, circle,
-// triangle, hexagon, kite, star — each with strong 3D lighting.
-// Pre-rendered once into OffscreenCanvas.
+// ═══ GEM RENDERING — Professional SVG-to-Canvas ══════════════
+// Each gem shape is defined as an SVG string, converted to an
+// Image object once, then blitted every frame. This gives full
+// SVG quality (sub-pixel gradients, filters) at canvas speed.
 
-const GEM_CACHE = {};
-let _preRenderDone = false;
+const GEM_IMGS  = {};   // vc+bonus → HTMLImageElement (ready)
+const GEM_PEND  = {};   // vc+bonus → Promise
+let _gemsReady  = false;
 
-// [colorLight, colorMid, colorDark, glowColor]
-const GEM_PAL = [
-  ['#ff6688','#ee0033','#880011','rgba(255,0,40,.9)'],    // 0 red    – square
-  ['#66aaff','#1155ee','#001188','rgba(20,80,255,.9)'],   // 1 blue   – diamond
-  ['#66ff88','#00cc44','#005522','rgba(0,200,60,.9)'],    // 2 green  – circle
-  ['#ffee66','#ffcc00','#886600','rgba(240,185,0,.9)'],   // 3 yellow – diamond (rotated)
-  ['#ff88ee','#ee00aa','#880066','rgba(220,0,150,.9)'],   // 4 purple – triangle
-  ['#ffaa44','#ff6600','#883300','rgba(255,80,0,.9)'],    // 5 orange – hexagon
-  ['#dddddd','#aaaaaa','#555555','rgba(180,180,180,.9)'], // 6 white  – circle
-];
+// Gem definitions: 7 shapes matching Bejeweled 2
+// Each has a unique silhouette + multi-layer gradient lighting
+const GEM_SVGS = {
+  // ── 0 RED — rounded square ─────────────────────────────────
+  0: (id) => `
+<defs>
+  <radialGradient id="a${id}" cx="35%" cy="30%" r="65%">
+    <stop offset="0%"   stop-color="#ffb0c0"/>
+    <stop offset="30%"  stop-color="#ff2244"/>
+    <stop offset="75%"  stop-color="#bb0022"/>
+    <stop offset="100%" stop-color="#550008"/>
+  </radialGradient>
+  <radialGradient id="b${id}" cx="30%" cy="28%" r="55%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.9)"/>
+    <stop offset="40%"  stop-color="rgba(255,255,255,.3)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="c${id}" cx="70%" cy="72%" r="55%">
+    <stop offset="0%"   stop-color="rgba(0,0,0,.5)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+  <filter id="f${id}"><feGaussianBlur in="SourceGraphic" stdDeviation="1.5"/></filter>
+</defs>
+<!-- glow -->
+<ellipse cx="50" cy="53" rx="44" ry="44" fill="rgba(255,0,40,.35)" filter="url(#f${id})"/>
+<!-- body -->
+<rect x="10" y="10" width="80" height="80" rx="22" ry="22" fill="url(#a${id})"/>
+<!-- dark shading -->
+<rect x="10" y="10" width="80" height="80" rx="22" ry="22" fill="url(#c${id})"/>
+<!-- facet lines -->
+<g stroke="rgba(255,255,255,.2)" stroke-width="1" fill="none">
+  <line x1="28" y1="10" x2="28" y2="90"/>
+  <line x1="72" y1="10" x2="72" y2="90"/>
+  <line x1="10" y1="28" x2="90" y2="28"/>
+  <line x1="10" y1="72" x2="90" y2="72"/>
+</g>
+<!-- specular -->
+<ellipse cx="34" cy="30" rx="18" ry="12" fill="url(#b${id})" transform="rotate(-30,34,30)"/>
+<ellipse cx="27" cy="24" rx="7" ry="4.5" fill="rgba(255,255,255,.95)" transform="rotate(-30,27,24)"/>
+`,
+  // ── 1 BLUE — classic diamond ────────────────────────────────
+  1: (id) => `
+<defs>
+  <radialGradient id="a${id}" cx="35%" cy="28%" r="65%">
+    <stop offset="0%"   stop-color="#b0d0ff"/>
+    <stop offset="28%"  stop-color="#2266ff"/>
+    <stop offset="70%"  stop-color="#0033cc"/>
+    <stop offset="100%" stop-color="#001066"/>
+  </radialGradient>
+  <radialGradient id="b${id}" cx="32%" cy="26%" r="50%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.92)"/>
+    <stop offset="45%"  stop-color="rgba(255,255,255,.28)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="c${id}" cx="65%" cy="72%" r="55%">
+    <stop offset="0%"   stop-color="rgba(0,0,0,.55)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>
+<ellipse cx="50" cy="54" rx="42" ry="40" fill="rgba(30,80,255,.4)" filter="url(#f${id})"/>
+<!-- crown top -->
+<polygon points="50,8 82,36 50,48 18,36" fill="url(#a${id})"/>
+<!-- pavilion bottom -->
+<polygon points="18,36 82,36 65,72 50,92 35,72" fill="url(#a${id})"/>
+<!-- dark pavilion shading -->
+<polygon points="50,48 82,36 65,72 50,92 35,72 18,36" fill="url(#c${id})"/>
+<!-- crown facet lines -->
+<g stroke="rgba(255,255,255,.25)" stroke-width="1" fill="none">
+  <line x1="50" y1="8"  x2="50" y2="48"/>
+  <line x1="18" y1="36" x2="82" y2="36"/>
+  <line x1="34" y1="22" x2="50" y2="48"/>
+  <line x1="66" y1="22" x2="50" y2="48"/>
+</g>
+<g stroke="rgba(0,0,0,.18)" stroke-width="1" fill="none">
+  <line x1="35" y1="72" x2="50" y2="48"/>
+  <line x1="65" y1="72" x2="50" y2="48"/>
+</g>
+<!-- specular -->
+<ellipse cx="34" cy="26" rx="16" ry="10" fill="url(#b${id})" transform="rotate(-25,34,26)"/>
+<ellipse cx="26" cy="20" rx="6" ry="4" fill="rgba(255,255,255,.95)" transform="rotate(-25,26,20)"/>
+`,
+  // ── 2 GREEN — circle ────────────────────────────────────────
+  2: (id) => `
+<defs>
+  <radialGradient id="a${id}" cx="36%" cy="30%" r="64%">
+    <stop offset="0%"   stop-color="#aaffcc"/>
+    <stop offset="28%"  stop-color="#00dd55"/>
+    <stop offset="70%"  stop-color="#009933"/>
+    <stop offset="100%" stop-color="#003d14"/>
+  </radialGradient>
+  <radialGradient id="b${id}" cx="32%" cy="26%" r="52%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.9)"/>
+    <stop offset="42%"  stop-color="rgba(255,255,255,.28)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="c${id}" cx="68%" cy="70%" r="52%">
+    <stop offset="0%"   stop-color="rgba(0,0,0,.48)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>
+<circle cx="50" cy="52" r="44" fill="rgba(0,200,60,.38)" filter="url(#f${id})"/>
+<circle cx="50" cy="50" r="40" fill="url(#a${id})"/>
+<circle cx="50" cy="50" r="40" fill="url(#c${id})"/>
+<!-- facet ring lines -->
+<g stroke="rgba(255,255,255,.18)" stroke-width="1" fill="none">
+  <circle cx="50" cy="50" r="26"/>
+  <line x1="50" y1="10" x2="50" y2="90"/>
+  <line x1="10" y1="50" x2="90" y2="50"/>
+  <line x1="21" y1="21" x2="79" y2="79"/>
+  <line x1="79" y1="21" x2="21" y2="79"/>
+</g>
+<ellipse cx="35" cy="29" rx="17" ry="11" fill="url(#b${id})" transform="rotate(-28,35,29)"/>
+<ellipse cx="27" cy="22" rx="6.5" ry="4" fill="rgba(255,255,255,.95)" transform="rotate(-28,27,22)"/>
+`,
+  // ── 3 YELLOW — rhombus ─────────────────────────────────────
+  3: (id) => `
+<defs>
+  <radialGradient id="a${id}" cx="35%" cy="28%" r="65%">
+    <stop offset="0%"   stop-color="#fff5aa"/>
+    <stop offset="30%"  stop-color="#ffcc00"/>
+    <stop offset="72%"  stop-color="#cc9900"/>
+    <stop offset="100%" stop-color="#664c00"/>
+  </radialGradient>
+  <radialGradient id="b${id}" cx="30%" cy="24%" r="50%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.92)"/>
+    <stop offset="44%"  stop-color="rgba(255,255,255,.28)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="c${id}" cx="68%" cy="72%" r="52%">
+    <stop offset="0%"   stop-color="rgba(0,0,0,.5)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>
+<ellipse cx="50" cy="54" rx="44" ry="42" fill="rgba(230,180,0,.38)" filter="url(#f${id})"/>
+<polygon points="50,8 92,50 50,92 8,50" fill="url(#a${id})"/>
+<polygon points="50,8 92,50 50,92 8,50" fill="url(#c${id})"/>
+<g stroke="rgba(255,255,255,.22)" stroke-width="1" fill="none">
+  <line x1="50" y1="8"  x2="50" y2="92"/>
+  <line x1="8"  y1="50" x2="92" y2="50"/>
+  <line x1="29" y1="29" x2="71" y2="71"/>
+  <line x1="71" y1="29" x2="29" y2="71"/>
+  <polygon points="50,29 71,50 50,71 29,50"/>
+</g>
+<ellipse cx="33" cy="26" rx="16" ry="10" fill="url(#b${id})" transform="rotate(-30,33,26)"/>
+<ellipse cx="25" cy="20" rx="6" ry="3.8" fill="rgba(255,255,255,.95)" transform="rotate(-30,25,20)"/>
+`,
+  // ── 4 PURPLE — triangle ─────────────────────────────────────
+  4: (id) => `
+<defs>
+  <radialGradient id="a${id}" cx="38%" cy="32%" r="65%">
+    <stop offset="0%"   stop-color="#f0aaff"/>
+    <stop offset="30%"  stop-color="#cc22ff"/>
+    <stop offset="72%"  stop-color="#8800cc"/>
+    <stop offset="100%" stop-color="#380055"/>
+  </radialGradient>
+  <radialGradient id="b${id}" cx="34%" cy="28%" r="50%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.9)"/>
+    <stop offset="44%"  stop-color="rgba(255,255,255,.28)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="c${id}" cx="60%" cy="70%" r="55%">
+    <stop offset="0%"   stop-color="rgba(0,0,0,.5)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>
+<ellipse cx="50" cy="60" rx="42" ry="36" fill="rgba(180,0,255,.38)" filter="url(#f${id})"/>
+<polygon points="50,7 93,83 7,83" fill="url(#a${id})"/>
+<polygon points="50,7 93,83 7,83" fill="url(#c${id})"/>
+<g stroke="rgba(255,255,255,.22)" stroke-width="1" fill="none">
+  <line x1="50" y1="7"  x2="50" y2="83"/>
+  <line x1="29" y1="52" x2="71" y2="52"/>
+  <line x1="50" y1="7"  x2="29" y2="52"/>
+  <line x1="50" y1="7"  x2="71" y2="52"/>
+  <polygon points="50,30 68,70 32,70"/>
+</g>
+<ellipse cx="38" cy="30" rx="15" ry="9" fill="url(#b${id})" transform="rotate(-20,38,30)"/>
+<ellipse cx="31" cy="24" rx="5.5" ry="3.5" fill="rgba(255,255,255,.95)" transform="rotate(-20,31,24)"/>
+`,
+  // ── 5 ORANGE — hexagon ──────────────────────────────────────
+  5: (id) => `
+<defs>
+  <radialGradient id="a${id}" cx="36%" cy="30%" r="64%">
+    <stop offset="0%"   stop-color="#ffcc88"/>
+    <stop offset="28%"  stop-color="#ff7700"/>
+    <stop offset="70%"  stop-color="#cc4400"/>
+    <stop offset="100%" stop-color="#5a1800"/>
+  </radialGradient>
+  <radialGradient id="b${id}" cx="32%" cy="26%" r="52%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.9)"/>
+    <stop offset="44%"  stop-color="rgba(255,255,255,.28)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="c${id}" cx="68%" cy="70%" r="52%">
+    <stop offset="0%"   stop-color="rgba(0,0,0,.5)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>
+<ellipse cx="50" cy="54" rx="44" ry="42" fill="rgba(255,100,0,.38)" filter="url(#f${id})"/>
+<polygon points="50,9 84,28 84,72 50,91 16,72 16,28" fill="url(#a${id})"/>
+<polygon points="50,9 84,28 84,72 50,91 16,72 16,28" fill="url(#c${id})"/>
+<g stroke="rgba(255,255,255,.2)" stroke-width="1" fill="none">
+  <polygon points="50,29 67,39 67,61 50,71 33,61 33,39"/>
+  <line x1="50" y1="9"  x2="50" y2="91"/>
+  <line x1="16" y1="28" x2="84" y2="72"/>
+  <line x1="84" y1="28" x2="16" y2="72"/>
+</g>
+<ellipse cx="34" cy="27" rx="17" ry="11" fill="url(#b${id})" transform="rotate(-25,34,27)"/>
+<ellipse cx="26" cy="21" rx="6.5" ry="4" fill="rgba(255,255,255,.95)" transform="rotate(-25,26,21)"/>
+`,
+  // ── 6 WHITE — circle (multi-facet) ──────────────────────────
+  6: (id) => `
+<defs>
+  <radialGradient id="a${id}" cx="36%" cy="30%" r="64%">
+    <stop offset="0%"   stop-color="#ffffff"/>
+    <stop offset="35%"  stop-color="#cccccc"/>
+    <stop offset="72%"  stop-color="#888888"/>
+    <stop offset="100%" stop-color="#333333"/>
+  </radialGradient>
+  <radialGradient id="b${id}" cx="32%" cy="26%" r="52%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.95)"/>
+    <stop offset="40%"  stop-color="rgba(255,255,255,.35)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <radialGradient id="c${id}" cx="68%" cy="70%" r="52%">
+    <stop offset="0%"   stop-color="rgba(0,0,0,.45)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+  </radialGradient>
+  <filter id="f${id}"><feGaussianBlur stdDeviation="2"/></filter>
+</defs>
+<circle cx="50" cy="53" r="43" fill="rgba(180,180,180,.38)" filter="url(#f${id})"/>
+<circle cx="50" cy="50" r="40" fill="url(#a${id})"/>
+<circle cx="50" cy="50" r="40" fill="url(#c${id})"/>
+<g stroke="rgba(255,255,255,.28)" stroke-width="1" fill="none">
+  <circle cx="50" cy="50" r="24"/>
+  <circle cx="50" cy="50" r="14"/>
+  <line x1="50" y1="10" x2="50" y2="90"/>
+  <line x1="10" y1="50" x2="90" y2="50"/>
+  <line x1="22" y1="22" x2="78" y2="78"/>
+  <line x1="78" y1="22" x2="22" y2="78"/>
+</g>
+<ellipse cx="34" cy="28" rx="17" ry="11" fill="url(#b${id})" transform="rotate(-28,34,28)"/>
+<ellipse cx="26" cy="21" rx="6.5" ry="4" fill="rgba(255,255,255,1)" transform="rotate(-28,26,21)"/>
+`,
+};
 
-function renderGem(vc, sz, bonus) {
-  const key = `${vc}_${sz}_${bonus}`;
-  if (GEM_CACHE[key]) return GEM_CACHE[key];
-
-  const pad = Math.ceil(sz * 0.45);
-  const dim = sz * 2 + pad * 2;
-  const oc  = new OffscreenCanvas(dim, dim);
-  const ox  = oc.getContext('2d');
-  const cx  = dim / 2, cy = dim / 2;
-  const r   = sz;
-
-  let cL, cM, cD, gw;
+// Build full SVG string for a gem
+function buildSVG(vc, bonus) {
+  const id = `g${vc}${bonus}`;
+  let body;
   if (bonus === 'hyper') {
-    cL='#dd88ff'; cM='#9922ff'; cD='#440088'; gw='rgba(160,30,255,.9)';
+    body = `
+<defs>
+  <radialGradient id="a${id}" cx="36%" cy="30%" r="65%">
+    <stop offset="0%"   stop-color="#f0ccff"/>
+    <stop offset="30%"  stop-color="#aa33ff"/>
+    <stop offset="72%"  stop-color="#6600bb"/>
+    <stop offset="100%" stop-color="#220044"/>
+  </radialGradient>
+  <radialGradient id="b${id}" cx="32%" cy="26%" r="52%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.92)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <filter id="f${id}"><feGaussianBlur stdDeviation="2.5"/></filter>
+</defs>
+<ellipse cx="50" cy="53" rx="46" ry="44" fill="rgba(160,40,255,.45)" filter="url(#f${id})"/>
+<polygon points="50,8 92,50 50,92 8,50" fill="url(#a${id})"/>
+<g stroke="rgba(255,255,255,.3)" stroke-width="2" fill="none">
+  <line x1="50" y1="8" x2="50" y2="92"/>
+  <line x1="8" y1="50" x2="92" y2="50"/>
+  <line x1="29" y1="29" x2="71" y2="71"/>
+  <line x1="71" y1="29" x2="29" y2="71"/>
+  <polygon points="50,29 71,50 50,71 29,50"/>
+</g>
+<ellipse cx="33" cy="26" rx="17" ry="11" fill="url(#b${id})" transform="rotate(-30,33,26)"/>
+<ellipse cx="25" cy="19" rx="6.5" ry="4" fill="rgba(255,255,255,.98)" transform="rotate(-30,25,19)"/>`;
   } else if (bonus === 'bomb') {
-    cL='#ff8866'; cM='#dd1100'; cD='#550000'; gw='rgba(220,20,0,.9)';
+    body = `
+<defs>
+  <radialGradient id="a${id}" cx="36%" cy="30%" r="65%">
+    <stop offset="0%"   stop-color="#ff9977"/>
+    <stop offset="30%"  stop-color="#dd2200"/>
+    <stop offset="72%"  stop-color="#880000"/>
+    <stop offset="100%" stop-color="#220000"/>
+  </radialGradient>
+  <radialGradient id="b${id}" cx="32%" cy="26%" r="52%">
+    <stop offset="0%"   stop-color="rgba(255,255,255,.92)"/>
+    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+  </radialGradient>
+  <filter id="f${id}"><feGaussianBlur stdDeviation="2.5"/></filter>
+</defs>
+<ellipse cx="50" cy="53" rx="46" ry="44" fill="rgba(220,30,0,.45)" filter="url(#f${id})"/>
+<circle cx="50" cy="50" r="38" fill="url(#a${id})"/>
+<g stroke="rgba(255,200,50,.35)" stroke-width="1.5" fill="none">
+  <line x1="50" y1="12" x2="50" y2="88"/>
+  <line x1="12" y1="50" x2="88" y2="50"/>
+  <line x1="23" y1="23" x2="77" y2="77"/>
+  <line x1="77" y1="23" x2="23" y2="77"/>
+  <circle cx="50" cy="50" r="22"/>
+</g>
+<ellipse cx="34" cy="27" rx="17" ry="11" fill="url(#b${id})" transform="rotate(-28,34,27)"/>
+<ellipse cx="26" cy="20" rx="6.5" ry="4" fill="rgba(255,255,255,.98)" transform="rotate(-28,26,20)"/>`;
   } else {
-    [cL, cM, cD, gw] = GEM_PAL[vc];
+    body = (GEM_SVGS[vc] || GEM_SVGS[2])(id);
   }
-
-  // ── Shared draw helpers ──────────────────────────────────────
-  function applyBodyGradient(path_fn) {
-    // 1. outer glow
-    const gg = ox.createRadialGradient(cx, cy, r*.2, cx+r*.05, cy+r*.08, r*1.35);
-    gg.addColorStop(0, gw); gg.addColorStop(1,'rgba(0,0,0,0)');
-    ox.fillStyle = gg; ox.beginPath(); ox.arc(cx,cy,r*1.35,0,Math.PI*2); ox.fill();
-
-    path_fn();
-
-    // 2. dark base fill
-    const gb = ox.createLinearGradient(cx-r,cy-r, cx+r,cy+r);
-    gb.addColorStop(0, cL); gb.addColorStop(0.45, cM); gb.addColorStop(1, cD);
-    ox.fillStyle = gb; ox.fill();
-
-    // 3. dark bottom-right shading
-    const gsh = ox.createRadialGradient(cx+r*.35, cy+r*.4, 0, cx+r*.3, cy+r*.35, r*1.1);
-    gsh.addColorStop(0,'rgba(0,0,0,.5)'); gsh.addColorStop(1,'rgba(0,0,0,0)');
-    ox.fillStyle = gsh; path_fn(); ox.fill();
-
-    // 4. bright top-left face
-    const gl = ox.createRadialGradient(cx-r*.3,cy-r*.35, 0, cx-r*.2,cy-r*.25, r*.9);
-    gl.addColorStop(0,'rgba(255,255,255,.45)'); gl.addColorStop(1,'rgba(255,255,255,0)');
-    ox.fillStyle = gl; path_fn(); ox.fill();
-
-    // 5. large specular blob
-    const gs1 = ox.createRadialGradient(cx-r*.28,cy-r*.34, 0, cx-r*.2,cy-r*.25, r*.55);
-    gs1.addColorStop(0,'rgba(255,255,255,.9)'); gs1.addColorStop(.45,'rgba(255,255,255,.3)'); gs1.addColorStop(1,'rgba(255,255,255,0)');
-    ox.fillStyle = gs1; path_fn(); ox.fill();
-
-    // 6. sharp specular dot
-    const gs2 = ox.createRadialGradient(cx-r*.4,cy-r*.46, 0, cx-r*.4,cy-r*.46, r*.18);
-    gs2.addColorStop(0,'rgba(255,255,255,1)'); gs2.addColorStop(1,'rgba(255,255,255,0)');
-    ox.fillStyle = gs2; path_fn(); ox.fill();
-
-    // 7. rim
-    path_fn();
-    ox.strokeStyle='rgba(255,255,255,.2)'; ox.lineWidth=1.2; ox.stroke();
-  }
-
-  // Draw facet lines clipped to shape
-  function facetLines(path_fn, lines) {
-    ox.save(); path_fn(); ox.clip();
-    ox.strokeStyle='rgba(255,255,255,.22)'; ox.lineWidth=0.9;
-    for (const [x1,y1,x2,y2] of lines) {
-      ox.beginPath(); ox.moveTo(cx+x1*r,cy+y1*r); ox.lineTo(cx+x2*r,cy+y2*r); ox.stroke();
-    }
-    ox.restore();
-  }
-
-  // ── SHAPE 0: Red — rounded square (like Bejeweled cushion) ──
-  function squarePath() {
-    const s = r*.88, rr2 = r*.28;
-    ox.beginPath();
-    ox.moveTo(cx-s+rr2, cy-s);
-    ox.lineTo(cx+s-rr2, cy-s); ox.arcTo(cx+s,cy-s, cx+s,cy-s+rr2, rr2);
-    ox.lineTo(cx+s, cy+s-rr2); ox.arcTo(cx+s,cy+s, cx+s-rr2,cy+s, rr2);
-    ox.lineTo(cx-s+rr2,cy+s);  ox.arcTo(cx-s,cy+s, cx-s,cy+s-rr2, rr2);
-    ox.lineTo(cx-s,cy-s+rr2);  ox.arcTo(cx-s,cy-s, cx-s+rr2,cy-s, rr2);
-    ox.closePath();
-  }
-
-  // ── SHAPE 1: Blue — classic diamond ──
-  function diamondPath() {
-    ox.beginPath();
-    ox.moveTo(cx, cy-r);
-    ox.lineTo(cx+r*.78, cy-r*.18);
-    ox.lineTo(cx+r*.55, cy+r*.9);
-    ox.lineTo(cx,       cy+r*.55);
-    ox.lineTo(cx-r*.55, cy+r*.9);
-    ox.lineTo(cx-r*.78, cy-r*.18);
-    ox.closePath();
-  }
-
-  // ── SHAPE 2: Green — circle ──
-  function circlePath() {
-    ox.beginPath(); ox.arc(cx,cy,r*.92,0,Math.PI*2);
-  }
-
-  // ── SHAPE 3: Yellow — rotated square (rhombus) ──
-  function rhombusPath() {
-    const s=r*.92;
-    ox.beginPath();
-    ox.moveTo(cx,   cy-s);
-    ox.lineTo(cx+s, cy);
-    ox.lineTo(cx,   cy+s);
-    ox.lineTo(cx-s, cy);
-    ox.closePath();
-  }
-
-  // ── SHAPE 4: Purple — triangle ──
-  function trianglePath() {
-    ox.beginPath();
-    ox.moveTo(cx, cy-r*.92);
-    ox.lineTo(cx+r*.92, cy+r*.72);
-    ox.lineTo(cx-r*.92, cy+r*.72);
-    ox.closePath();
-  }
-
-  // ── SHAPE 5: Orange — hexagon ──
-  function hexagonPath() {
-    ox.beginPath();
-    for(let i=0;i<6;i++){
-      const a = i*Math.PI/3 - Math.PI/6;
-      const x = cx + Math.cos(a)*r*.9, y = cy + Math.sin(a)*r*.9;
-      i===0 ? ox.moveTo(x,y) : ox.lineTo(x,y);
-    }
-    ox.closePath();
-  }
-
-  // ── SHAPE 6: White — circle (slightly smaller) ──
-  function whitePath() {
-    ox.beginPath(); ox.arc(cx,cy,r*.88,0,Math.PI*2);
-  }
-
-  const PATHS  = [squarePath,diamondPath,circlePath,rhombusPath,trianglePath,hexagonPath,whitePath];
-  const FACETS = [
-    // square: cross lines + diagonal
-    [[-.6,-.6,.6,-.6],[-.6,-.2,.6,-.2],[0,-.6,0,.6],[-.35,-.35,.35,.35]],
-    // diamond: crown facets
-    [[0,-.92,.68,-.18],[0,-.92,-.68,-.18],[-.68,-.18,.55,.9],[.68,-.18,-.55,.9],[0,-.45,0,.5]],
-    // circle: radial lines
-    [[0,-.85,0,.85],[-.85,0,.85,0],[-.6,-.6,.6,.6],[-.6,.6,.6,-.6]],
-    // rhombus: diagonals
-    [[0,-.85,0,.85],[-.85,0,.85,0],[-.5,-.5,.5,.5]],
-    // triangle: internal lines from apex
-    [[0,-.85,-.75,.65],[0,-.85,.75,.65],[-.75,.65,.75,.65],[0,-.25,0,.65]],
-    // hexagon: spoke lines
-    ...Array.from({length:6},(_,i)=>{const a=i*Math.PI/3-Math.PI/6;return[[0,0,Math.cos(a)*.85,Math.sin(a)*.85]];}),
-    // white circle: radial
-    [[0,-.8,0,.8],[-.8,0,.8,0],[-.56,-.56,.56,.56],[-.56,.56,.56,-.56]],
-  ];
-
-  const pathFn = PATHS[vc] || circlePath;
-  applyBodyGradient(pathFn);
-  facetLines(pathFn, (FACETS[vc]||[]).flat().length ? FACETS[vc] : []);
-
-  GEM_CACHE[key] = oc;
-  return oc;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${body}</svg>`;
 }
 
-function ensurePreRender() {
-  if (_preRenderDone || !CELL) return;
-  _preRenderDone = true;
-  const sz = Math.ceil(CELL * .41);
-  for (let v = 0; v < GN; v++) renderGem(v, sz, 'none');
-  renderGem(0, sz, 'hyper');
-  renderGem(0, sz, 'bomb');
+// Load all gems as Image objects (async, once)
+function preloadGems() {
+  if (_gemsReady) return;
+  const jobs = [];
+  for (let v = 0; v < GN; v++) jobs.push([v, 'none']);
+  jobs.push([0,'hyper'],[0,'bomb']);
+
+  let done = 0;
+  for (const [v, bonus] of jobs) {
+    const key = `${v}_${bonus}`;
+    const svg = buildSVG(v, bonus);
+    const blob = new Blob([svg], {type:'image/svg+xml'});
+    const url  = URL.createObjectURL(blob);
+    const img  = new Image();
+    img.onload = () => { GEM_IMGS[key] = img; URL.revokeObjectURL(url); done++; if(done===jobs.length)_gemsReady=true; };
+    img.src = url;
+  }
 }
+
+function ensurePreRender() { preloadGems(); }
 
 function drawGem(ctx, cx, cy, gr, vc, isSel, isFl, isSt, isHy, isBm) {
   const t     = Date.now();
   const bonus = isBm?'bomb': isHy?'hyper':'none';
-  const sz    = Math.ceil(gr);
-  const oc    = renderGem(vc, sz, bonus);
-  const pad   = Math.ceil(sz * .45);
-  const dim   = sz * 2 + pad * 2;
+  const key   = `${vc}_${bonus}`;
+  const img   = GEM_IMGS[key];
+  const s     = gr * 2.1;
 
-  ctx.drawImage(oc, cx-sz-pad, cy-sz-pad, dim, dim);
+  if (img) {
+    // slight scale-up on selection for a 'pop' feel
+    const sc = isSel ? 1.08 : 1.0;
+    ctx.drawImage(img, cx - s*sc*.5, cy - s*sc*.5, s*sc, s*sc);
+  } else {
+    // fallback circle while loading
+    const g = ctx.createRadialGradient(cx-gr*.3,cy-gr*.3,0,cx,cy,gr);
+    g.addColorStop(0,'#fff'); g.addColorStop(1,'#888');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,gr,0,Math.PI*2); ctx.fill();
+  }
 
-  // ── Selection ring ──
+  // ── Selection pulse ring ──
   if (isSel) {
-    const p = .5 + .5*Math.sin(t/170);
+    const p = .5 + .5*Math.sin(t/200);
     ctx.save();
-    ctx.strokeStyle = `rgba(255,255,${Math.floor(180+75*p)},${.75+.25*p})`;
+    ctx.strokeStyle = `rgba(255,255,${Math.floor(160+95*p)},${.72+.28*p})`;
     ctx.lineWidth   = 3;
     ctx.shadowColor = 'rgba(255,255,255,.9)';
-    ctx.shadowBlur  = 16;
-    ctx.beginPath(); ctx.arc(cx, cy, gr*1.1, 0, Math.PI*2); ctx.stroke();
+    ctx.shadowBlur  = 18;
+    ctx.beginPath(); ctx.arc(cx, cy, gr*1.15, 0, Math.PI*2); ctx.stroke();
     ctx.restore();
   }
 
   // ── Bonus overlays ──
   if (!isFl && !isSt && !isHy && !isBm) return;
   ctx.save();
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
   if (isFl) {
-    const a=t/560;
-    ctx.strokeStyle='rgba(255,210,50,.9)'; ctx.lineWidth=2;
+    const a=t/700;   // slowed down
+    ctx.strokeStyle='rgba(255,220,60,.9)'; ctx.lineWidth=2.2;
     for(let i=0;i<8;i++){
       const ang=a+i*Math.PI/4;
       ctx.beginPath();
-      ctx.moveTo(cx+Math.cos(ang)*gr*.46,cy+Math.sin(ang)*gr*.46);
-      ctx.lineTo(cx+Math.cos(ang)*gr*.92,cy+Math.sin(ang)*gr*.92);
+      ctx.moveTo(cx+Math.cos(ang)*gr*.48,cy+Math.sin(ang)*gr*.48);
+      ctx.lineTo(cx+Math.cos(ang)*gr*.94,cy+Math.sin(ang)*gr*.94);
       ctx.stroke();
     }
-    ctx.fillStyle='#fff'; ctx.shadowColor='rgba(255,80,0,.9)'; ctx.shadowBlur=8;
-    ctx.font=`bold ${Math.max(9,gr*.5)}px Arial`; ctx.fillText('3×3',cx,cy);
+    ctx.fillStyle='rgba(255,255,255,.95)';
+    ctx.shadowColor='rgba(255,80,0,.9)'; ctx.shadowBlur=10;
+    ctx.font=`bold ${Math.max(9,gr*.52)}px Arial`;
+    ctx.fillText('3×3',cx,cy);
   } else if (isSt) {
-    const a=t/390;
-    ctx.strokeStyle='rgba(255,255,60,.9)'; ctx.lineWidth=2.2;
-    ctx.setLineDash([5,4]); ctx.lineDashOffset=-a*10;
-    ctx.beginPath(); ctx.arc(cx,cy,gr*.74,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle='#fff'; ctx.shadowColor='rgba(255,200,0,.9)'; ctx.shadowBlur=8;
-    ctx.font=`bold ${Math.max(8,gr*.37)}px Arial`; ctx.fillText('★ALL',cx,cy);
+    const a=t/500;   // slowed down
+    ctx.strokeStyle='rgba(255,255,70,.9)'; ctx.lineWidth=2.4;
+    ctx.setLineDash([6,4]); ctx.lineDashOffset=-a*8;
+    ctx.beginPath(); ctx.arc(cx,cy,gr*.76,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='rgba(255,255,255,.95)';
+    ctx.shadowColor='rgba(255,210,0,.9)'; ctx.shadowBlur=10;
+    ctx.font=`bold ${Math.max(8,gr*.38)}px Arial`;
+    ctx.fillText('★ALL',cx,cy);
   } else if (isHy) {
-    const al=.5+.5*Math.sin(t/230);
-    ctx.strokeStyle=`rgba(255,255,255,${al})`; ctx.lineWidth=2.8;
-    ctx.shadowColor='rgba(200,80,255,.9)'; ctx.shadowBlur=12;
-    ctx.beginPath(); ctx.moveTo(cx-gr*.88,cy); ctx.lineTo(cx+gr*.88,cy); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx,cy-gr*.88); ctx.lineTo(cx,cy+gr*.88); ctx.stroke();
-    ctx.fillStyle='#fff'; ctx.font=`bold ${Math.max(8,gr*.33)}px Arial`; ctx.fillText('R+C',cx,cy);
+    const al=.45+.55*Math.sin(t/300);  // slowed
+    ctx.strokeStyle=`rgba(255,255,255,${al})`; ctx.lineWidth=3;
+    ctx.shadowColor='rgba(210,100,255,.95)'; ctx.shadowBlur=16;
+    ctx.beginPath(); ctx.moveTo(cx-gr*.9,cy); ctx.lineTo(cx+gr*.9,cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx,cy-gr*.9); ctx.lineTo(cx,cy+gr*.9); ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.95)';
+    ctx.font=`bold ${Math.max(8,gr*.34)}px Arial`;
+    ctx.fillText('R+C',cx,cy);
   } else if (isBm) {
-    const a=t/165;
-    ctx.shadowColor='rgba(255,80,0,.8)'; ctx.shadowBlur=6;
+    const a=t/220;  // slowed
+    ctx.shadowColor='rgba(255,80,0,.85)'; ctx.shadowBlur=8;
     for(let i=0;i<8;i++){
       const ang=a+i*Math.PI/4;
-      ctx.fillStyle='rgba(255,170,40,.92)';
+      ctx.fillStyle='rgba(255,180,40,.94)';
       ctx.beginPath();
-      ctx.moveTo(cx+Math.cos(ang)*gr*.58,cy+Math.sin(ang)*gr*.58);
-      ctx.lineTo(cx+Math.cos(ang+.22)*gr*.98,cy+Math.sin(ang+.22)*gr*.98);
-      ctx.lineTo(cx+Math.cos(ang-.22)*gr*.98,cy+Math.sin(ang-.22)*gr*.98);
+      ctx.moveTo(cx+Math.cos(ang)*gr*.6, cy+Math.sin(ang)*gr*.6);
+      ctx.lineTo(cx+Math.cos(ang+.2)*gr,  cy+Math.sin(ang+.2)*gr);
+      ctx.lineTo(cx+Math.cos(ang-.2)*gr,  cy+Math.sin(ang-.2)*gr);
       ctx.closePath(); ctx.fill();
     }
-    ctx.shadowBlur=9; ctx.fillStyle='#fff'; ctx.shadowColor='rgba(255,50,0,.9)';
-    ctx.font=`bold ${Math.max(9,gr*.5)}px Arial`; ctx.fillText('5×5',cx,cy);
+    ctx.shadowBlur=12; ctx.fillStyle='rgba(255,255,255,.95)';
+    ctx.font=`bold ${Math.max(9,gr*.52)}px Arial`;
+    ctx.shadowColor='rgba(255,40,0,.95)';
+    ctx.fillText('5×5',cx,cy);
   }
   ctx.restore();
 }
@@ -672,7 +862,7 @@ function clearSel(){
 }
 
 // ═══ SWAP ════════════════════════════════════════════════════
-const SW=0.2;
+const SW=0.28;  // swap duration — was 0.2, now slower and smoother
 function trySwap(r1,c1,r2,c2){
   busy=true;
   const dx=(c2-c1)*(CELL+GAP),dy=(r2-r1)*(CELL+GAP);
@@ -702,7 +892,7 @@ function trySwap(r1,c1,r2,c2){
         const r=Math.floor(idx/COLS),c=idx%COLS;
         if(board[r][c]===-1)continue;
         spawnParts(r,c,gColor(board[r][c]));
-        anims[r][c]={type:'ex',t:0,dur:.28,onDone:()=>{board[r][c]=-1;if(++done2===pending)doGravity(dst);}};
+        anims[r][c]={type:'ex',t:0,dur:.42,onDone:()=>{board[r][c]=-1;if(++done2===pending)doGravity(dst);}};
       }
       return;
     }
@@ -835,7 +1025,7 @@ function resolveMatches(groups){
     const r=Math.floor(idx/COLS),c=idx%COLS;
     if(board[r][c]===-1)continue;
     spawnParts(r,c,gColor(board[r][c]));
-    anims[r][c]={type:'ex',t:0,dur:.28,onDone:()=>{
+    anims[r][c]={type:'ex',t:0,dur:.42,onDone:()=>{
       board[r][c]=-1;
       if(++done2===pending){
         for(const{r:br,c:bc,btype,color}of newB){
@@ -869,7 +1059,7 @@ function doGravity(matchSet){
   let land=0;
   for(const{r,c,fy,delay}of jobs){
     setTimeout(()=>{
-      anims[r][c]={type:'fall',t:0,dur:.26,fy,onDone:()=>{if(++land===jobs.length)checkChain();}};
+      anims[r][c]={type:'fall',t:0,dur:.38,fy,onDone:()=>{if(++land===jobs.length)checkChain();}};
     },delay*1000);
   }
 }
@@ -880,14 +1070,28 @@ function checkChain(){
   else{combo=0;busy=false;if(!hasMoves())noMoves();}
 }
 
-// ═══ PARTICLES — identical to original ═══════════════════════
+// ═══ PARTICLES — Bejeweled style ═════════════════════════════
+// Multiple particle types: sparks, shards, glows
 function spawnParts(r,c,type){
-  const{x,y}=cxy(r,c);const cx2=x+CELL/2,cy2=y+CELL/2;
-  const col=GEMS[type].color;
-  for(let i=0;i<8;i++){
-    const a=Math.random()*Math.PI*2,spd=1+Math.random()*2.2;
-    parts.push({x:cx2,y:cy2,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd-.8,r:2+Math.random()*2.5,a:1,col});
+  const{x,y}=cxy(r,c);
+  const cx2=x+CELL/2, cy2=y+CELL/2;
+  const col = ['#ff2244','#2266ff','#00cc55','#ffcc00','#cc22ff','#ff7700','#aaaaaa'][type] || '#fff';
+  const col2= ['#ff99aa','#88bbff','#88ffaa','#ffee88','#dd88ff','#ffbb77','#dddddd'][type] || '#fff';
+
+  // big slow shards (4-6)
+  for(let i=0;i<5;i++){
+    const a=Math.random()*Math.PI*2, spd=1.4+Math.random()*2.0;
+    parts.push({x:cx2,y:cy2,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd-1.2,
+      r:3.5+Math.random()*3,a:1,col,type:'shard'});
   }
+  // small fast sparks (8-10)
+  for(let i=0;i<9;i++){
+    const a=Math.random()*Math.PI*2, spd=2.2+Math.random()*3.0;
+    parts.push({x:cx2,y:cy2,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd-1.5,
+      r:1.5+Math.random()*2,a:1,col:col2,type:'spark'});
+  }
+  // glow ring (1 large fading circle)
+  parts.push({x:cx2,y:cy2,vx:0,vy:0,r:CELL*.35,a:.7,col,type:'glow',maxR:CELL*.7});
 }
 
 // ═══ HINT — identical to original ════════════════════════════
@@ -1039,7 +1243,7 @@ const G={
   hint(){
     if(busy)return;
     const h=findHint();if(!h)return;
-    for(const[r,c]of h)anims[r][c]={type:'hint',t:0,dur:.9};
+    for(const[r,c]of h)anims[r][c]={type:'hint',t:0,dur:1.1};
   }
 };
 
