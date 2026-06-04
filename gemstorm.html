@@ -202,7 +202,7 @@ function rafLoop(ts){
       el.style.transform=`translateY(${s.y}px)`;
       el.style.opacity=Math.max(0,Math.min(1,s.alpha));
       const settled=Math.abs(s.y)<.4&&Math.abs(s.vy)<1&&Math.abs(s.alpha-1)<.02;
-      if(settled){el.style.transform='';el.style.opacity='1';animState[r][c]=null;if(s.onDone)s.onDone();}
+      if(settled){el.style.transform='';el.style.opacity='1';el.style.zIndex='1';animState[r][c]=null;if(s.onDone)s.onDone();}
     } else if(s.type==='sel'){
       const pulse=Math.sin(s.t*5.5)*.06+1;
       el.style.transform=`scale(${pulse})`;
@@ -299,13 +299,16 @@ function drawAllGems(){
 
 function setSel(r,c){
   clearSel();sel=[r,c];
+  gemCanvases[r][c].style.zIndex='8';
   animState[r][c]={type:'sel',t:0};
   if(isBonus(board[r][c]))showBonusTip(r,c,board[r][c]);
 }
 function clearSel(){
   if(sel){
     const[sr,sc]=sel;
-    if(animState[sr][sc]?.type==='sel'){animState[sr][sc]=null;gemCanvases[sr][sc].style.transform='';}
+    if(animState[sr][sc]?.type==='sel')animState[sr][sc]=null;
+    gemCanvases[sr][sc].style.transform='';
+    gemCanvases[sr][sc].style.zIndex='1';
   }
   sel=null;clearAreaHL();clearBonusTip();
 }
@@ -389,11 +392,14 @@ function trySwap(r1,c1,r2,c2){
 function animSwap(r,c,tx,ty,cb){
   const el=gemCanvases[r][c];
   animState[r][c]=null;
-  el.style.transition='none';el.style.transform='';
+  el.style.transition='none';el.style.transform='';el.style.zIndex='10';
   void el.offsetWidth;
-  el.style.transition='transform 160ms cubic-bezier(.4,0,.2,1)';
+  el.style.transition='transform 180ms cubic-bezier(.25,0,.25,1)';
   el.style.transform=`translate(${tx}px,${ty}px)`;
-  setTimeout(()=>{el.style.transition='none';el.style.transform='';animState[r][c]=null;if(cb)cb();},170);
+  setTimeout(()=>{
+    el.style.transition='none';el.style.transform='';el.style.zIndex='1';
+    animState[r][c]=null;if(cb)cb();
+  },190);
 }
 
 function findMatches(){
@@ -448,9 +454,12 @@ function explodeDst(dst,cb){
   for(const idx of dst){
     const r=Math.floor(idx/COLS),c=idx%COLS;if(board[r][c]===-1)continue;
     spawnParticles(r,c,gColor(board[r][c]));
-    animState[r][c]={type:'explode',t:0,dur:.18,onDone:()=>{
-      board[r][c]=-1;drawGemOnCanvas(r,c);
-      gemCanvases[r][c].style.transform='';gemCanvases[r][c].style.opacity='1';
+    gemCanvases[r][c].style.zIndex='5';
+    animState[r][c]={type:'explode',t:0,dur:.22,onDone:()=>{
+      board[r][c]=-1;
+      const el2=gemCanvases[r][c];
+      el2.style.transform='';el2.style.opacity='1';el2.style.zIndex='1';
+      drawGemOnCanvas(r,c);
       if(++done2===pending)cb();
     }};
   }
@@ -469,7 +478,7 @@ function doGravity(matchSet){
     }
   }
   if(!jobs.length){checkChain();return;}
-  for(const{r,c}of jobs)drawGemOnCanvas(r,c);
+  for(const{r,c}of jobs){drawGemOnCanvas(r,c);gemCanvases[r][c].style.zIndex='1';}
   let landed=0;
   for(const{r,c,fy,delay}of jobs){
     setTimeout(()=>{
