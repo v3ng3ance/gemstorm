@@ -8,9 +8,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Raleway:wght@400;600&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--gold:#f0c040;--panel:#12122a;--border:#2a2a5a;--text:#c8c8ff;--dim:#5050a0;--cs:52px;}
-body{min-height:100vh;background:radial-gradient(ellipse 120% 80% at 50% 0%,#1a0a3a,#0a0818 60%,#050510);
+body{min-height:100dvh;background:radial-gradient(ellipse 120% 80% at 50% 0%,#1a0a3a,#0a0818 60%,#050510);
   color:var(--text);font-family:'Raleway',sans-serif;
-  display:flex;flex-direction:column;align-items:center;padding:14px 8px 40px;gap:10px;overflow-x:hidden;}
+  display:flex;flex-direction:column;align-items:center;padding:10px 8px 24px;gap:8px;
+  overflow-x:hidden;overflow-y:auto;}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;
   background-image:radial-gradient(1px 1px at 15% 20%,rgba(255,255,255,.5) 0%,transparent 100%),
     radial-gradient(1px 1px at 40% 60%,rgba(200,180,255,.5) 0%,transparent 100%),
@@ -89,11 +90,24 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,4vw,1.8rem);lett
   background:transparent;border-width:3px;border-style:solid;
   animation:glowExpand .6s ease-out forwards;}
 @keyframes glowExpand{0%{transform:translate(-50%,-50%) scale(.1);opacity:.9}100%{transform:translate(-50%,-50%) scale(3.2);opacity:0}}
-@media(max-width:560px){
-  .game-wrap{flex-direction:column;align-items:center;}
-  .side-panel{flex-direction:row;max-width:100%;min-width:0;flex-wrap:wrap;justify-content:center;width:100%;}
-  .stat-box,.level-bar-wrap{flex:1;min-width:80px;}
-  .btn{font-size:.6rem;padding:7px 10px;}
+@media(max-width:600px){
+  h1{font-size:1rem;letter-spacing:.06em;}
+  .subtitle{display:none;}
+  .game-wrap{flex-direction:column;align-items:center;gap:6px;width:100%;}
+  .side-panel{
+    flex-direction:row;flex-wrap:wrap;
+    max-width:100%;min-width:0;width:100%;
+    gap:5px;
+    order:-1; /* panel above board */
+  }
+  .stat-box{flex:1;min-width:60px;padding:5px 6px;}
+  .stat-label{font-size:.44rem;letter-spacing:.14em;margin-bottom:1px;}
+  .stat-val{font-size:.95rem;}
+  .level-bar-wrap{flex:1;min-width:80px;padding:5px 8px;}
+  .btn{font-size:.56rem;padding:6px 8px;}
+  /* hide less important stats on small screens to save space */
+  #box-moves:not([style*="none"]) ~ #box-timer,
+  #box-timer:not([style*="none"]) ~ #box-moves{display:none!important;}
 }
 </style>
 </head>
@@ -232,10 +246,22 @@ function saveBest(v){localStorage.setItem(BEST_KEY[gameMode],v);}
 
 let CS=52,GAP=3;
 function calcCS(){
-  const isMobile=window.innerWidth<=560;
-  let avail=isMobile?window.innerWidth-24:Math.min(window.innerWidth-160,480);
-  CS=Math.max(36,Math.min(Math.floor((avail-GAP*7)/8),64));
-  document.documentElement.style.setProperty('--cs',CS+'px');
+  // Board needs: 8 cells + 7 gaps + board padding (16px) + border (4px)
+  // On mobile: full width minus body padding (16px) minus board chrome (20px)
+  const boardChrome = 20; // padding 8*2 + border 2*2
+  const bodyPad     = 16; // body padding-left + right (8px each)
+  const vw          = window.innerWidth;
+  const isMobile    = vw <= 600;
+
+  let avail;
+  if(isMobile){
+    avail = vw - bodyPad - boardChrome;
+  } else {
+    // desktop: leave room for side panel (~140px) + gaps
+    avail = Math.min(vw - 180, 480) - boardChrome;
+  }
+  CS = Math.max(32, Math.min(Math.floor((avail - GAP*7) / 8), 64));
+  document.documentElement.style.setProperty('--cs', CS+'px');
 }
 window.addEventListener('resize',()=>{clearTimeout(window._rt);window._rt=setTimeout(calcCS,80);});
 window.addEventListener('orientationchange',()=>setTimeout(calcCS,300));
@@ -358,11 +384,13 @@ function attachInput(){
 function trySwap(r1,c1,r2,c2){
   busy=true;
   const dx=(c2-c1)*(CS+GAP),dy=(r2-r1)*(CS+GAP);
-  let d1=false,d2=false;
-  function afterBoth(){
-    const v1=board[r1][c1],v2=board[r2][c2];
-    const b1=isBonus(v1),b2=isBonus(v2);
-    if(b1||b2){
+  const v1=board[r1][c1],v2=board[r2][c2];
+
+  // ── Check bonus activation first ──
+  const b1=isBonus(v1),b2=isBonus(v2);
+  if(b1||b2){
+    // animate swap visually then activate
+    animSwapGo(r1,c1,r2,c2,dx,dy,()=>{
       board[r1][c1]=v2;board[r2][c2]=v1;
       drawGemOnCanvas(r1,c1);drawGemOnCanvas(r2,c2);
       const dst=new Set();
@@ -373,20 +401,56 @@ function trySwap(r1,c1,r2,c2){
       if(score>getBest())saveBest(score);updateUI();
       const lbl=v1>=BB||v2>=BB?'💣':v1>=BH||v2>=BH?'💥':v1>=BS||v2>=BS?'⭐':'🔥';
       showScorePop(r1,c1,lbl+' +'+pts);
-      explodeDst(dst,()=>doGravity(dst));return;
-    }
+      explodeDst(dst,()=>doGravity(dst));
+    });
+    return;
+  }
+
+  // ── Check if swap produces a match BEFORE animating ──
+  board[r1][c1]=v2;board[r2][c2]=v1;
+  const m=findMatches();
+  board[r1][c1]=v1;board[r2][c2]=v2; // restore immediately
+
+  if(!m){
+    // Invalid swap — short bump animation, NO visual swap, instant return
+    animBump(r1,c1,dx*.4,dy*.4,()=>{busy=false;});
+    animBump(r2,c2,-dx*.4,-dy*.4,null);
+    return;
+  }
+
+  // ── Valid swap — animate then resolve ──
+  animSwapGo(r1,c1,r2,c2,dx,dy,()=>{
     board[r1][c1]=v2;board[r2][c2]=v1;
     drawGemOnCanvas(r1,c1);drawGemOnCanvas(r2,c2);
-    const m=findMatches();
-    if(!m){
-      animSwap(r1,c1,-dx,-dy,()=>{board[r1][c1]=v1;board[r2][c2]=v2;drawGemOnCanvas(r1,c1);drawGemOnCanvas(r2,c2);busy=false;});
-      animSwap(r2,c2, dx, dy,null);
-      return;
-    }
     combo=0;resolveMatches(m);
-  }
-  animSwap(r1,c1,dx,dy,()=>{d1=true;if(d1&&d2)afterBoth();});
-  animSwap(r2,c2,-dx,-dy,()=>{d2=true;if(d1&&d2)afterBoth();});
+  });
+}
+
+// Animate two gems swapping to their new positions, call cb when done
+function animSwapGo(r1,c1,r2,c2,dx,dy,cb){
+  let d1=false,d2=false;
+  animSwap(r1,c1, dx, dy,()=>{d1=true;if(d1&&d2)cb();});
+  animSwap(r2,c2,-dx,-dy,()=>{d2=true;if(d1&&d2)cb();});
+}
+
+// Short bounce toward neighbor then back — for invalid swap feedback
+function animBump(r,c,tx,ty,cb){
+  const el=gemCanvases[r][c];
+  el.style.zIndex='2';
+  el.style.transition='none';el.style.transform='';
+  void el.offsetWidth;
+  // go
+  el.style.transition='transform 100ms ease-out';
+  el.style.transform=`translate(${tx}px,${ty}px)`;
+  setTimeout(()=>{
+    // return
+    el.style.transition='transform 120ms ease-in-out';
+    el.style.transform='';
+    setTimeout(()=>{
+      el.style.transition='none';el.style.zIndex='1';
+      if(cb)cb();
+    },130);
+  },105);
 }
 
 function animSwap(r,c,tx,ty,cb){
