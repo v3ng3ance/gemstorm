@@ -429,11 +429,51 @@ function trySwap(r1,c1,r2,c2){
     animSwapGo(r1,c1,r2,c2,dx,dy,()=>{
       board[r1][c1]=v2;board[r2][c2]=v1;drawGemOnCanvas(r1,c1);drawGemOnCanvas(r2,c2);
       const dst=new Set();
-      if(b1)expandBonus(r2,c2,v1,dst);if(b2)expandBonus(r1,c1,v2,dst);
+      if(b1)expandBonus(r2,c2,v1,dst);
+      if(b2)expandBonus(r1,c1,v2,dst);
       dst.add(r1*COLS+c1);dst.add(r2*COLS+c2);
-      const pts=dst.size*40;combo=0;score+=pts;if(score>getBest())saveBest(score);updateUI();
-      const lbl=v1>=BB||v2>=BB?'💣':v1>=BH||v2>=BH?'💥':v1>=BS||v2>=BS?'⭐':'🔥';
-      showScorePop(r1,c1,lbl+' +'+pts);explodeDst(dst,()=>doGravity(dst));
+
+      // ── Combo bonus scoring & naming ──────────────────────────
+      // Determine the two types involved
+      const t1=b1?(v1>=BB?'bomb':v1>=BH?'hyper':v1>=BS?'star':'flame'):'normal';
+      const t2=b2?(v2>=BB?'bomb':v2>=BH?'hyper':v2>=BS?'star':'flame'):'normal';
+      const types=new Set([t1,t2]);
+
+      // Name + multiplier for each combination
+      let comboName='',mult=1;
+      if(types.has('bomb')&&types.has('hyper')){  comboName='⚡ MEGABLAST!';  mult=8;}
+      else if(types.has('bomb')&&types.has('star')){comboName='🌟 SUPERNOVA!'; mult=7;}
+      else if(types.has('bomb')&&types.has('flame')){comboName='💥 INFERNO!';  mult=5;}
+      else if(types.has('hyper')&&types.has('star')){comboName='✨ RAINBOW!';  mult=6;}
+      else if(types.has('hyper')&&types.has('flame')){comboName='⚡ SHOCKWAVE!';mult=4;}
+      else if(types.has('star')&&types.has('flame')){ comboName='🔥 WILDFIRE!'; mult=4;}
+      else if(t1===t2&&t1==='bomb'){  comboName='💣 DOUBLE BOMB!'; mult=6;}
+      else if(t1===t2&&t1==='hyper'){ comboName='💠 CROSS STORM!'; mult=5;}
+      else if(t1===t2&&t1==='star'){  comboName='⭐ STAR STORM!';  mult=5;}
+      else if(t1===t2&&t1==='flame'){ comboName='🔥 DOUBLE FLAME!';mult=3;}
+      else{ // single bonus + normal gem
+        comboName= t1==='bomb'||t2==='bomb' ?'💣 BOMB!':
+                   t1==='hyper'||t2==='hyper'?'💥 CROSS!':
+                   t1==='star'||t2==='star'  ?'⭐ STAR!':'🔥 FLAME!';
+        mult=1;
+      }
+
+      const basePts = dst.size * 40;
+      const pts = Math.round(basePts * mult * (1+(level-1)*.1));
+      combo=0; score+=pts;
+      if(score>getBest())saveBest(score);
+      updateUI();
+
+      // Show score pop + special banner for combinations
+      showScorePop(r1,c1,'+'+pts);
+      if(mult>1) showComboBanner(comboName, pts, r1, c1);
+
+      // Screen shake intensity based on power
+      if(mult>=6){ doComboFX(5); }
+      else if(mult>=4){ doComboFX(4); }
+      else if(mult>=2){ doComboFX(3); }
+
+      explodeDst(dst,()=>doGravity(dst));
     });return;
   }
 
@@ -481,14 +521,12 @@ function findMatches(){
     const pivot=cls.reduce((best,cell)=>Math.abs(cell[0]-pr)+Math.abs(cell[1]-pc)<Math.abs(best[0]-pr)+Math.abs(best[1]-pc)?cell:best,cls[0]);
     result.push({type:'hyper',cells:cls,pivot,color:hg.color});for(const i of idx)done.add(i);}}
   for(const g of hG){const rem=g.cells.filter(([r,c])=>!done.has(r*COLS+c));if(rem.length<3)continue;
-    // sort by column, pivot = middle gem
     const sorted=[...rem].sort((a,b)=>a[1]-b[1]);
-    const pivot=sorted[Math.floor(sorted.length/2)];
+    const pivot=sorted[Math.floor(sorted.length/2)]; // exact middle column
     const type=g.len>=6?'bomb':g.len>=5?'star':g.len===4?'flame':'normal';result.push({type,cells:rem,pivot,color:g.color});for(const[r,c]of rem)done.add(r*COLS+c);}
   for(const g of vG){const rem=g.cells.filter(([r,c])=>!done.has(r*COLS+c));if(rem.length<3)continue;
-    // sort by row, pivot = middle gem
     const sorted=[...rem].sort((a,b)=>a[0]-b[0]);
-    const pivot=sorted[Math.floor(sorted.length/2)];
+    const pivot=sorted[Math.floor(sorted.length/2)]; // exact middle row
     const type=g.len>=6?'bomb':g.len>=5?'star':g.len===4?'flame':'normal';result.push({type,cells:rem,pivot,color:g.color});for(const[r,c]of rem)done.add(r*COLS+c);}
   return result.length?result:null;
 }
@@ -524,7 +562,11 @@ function resolveMatches(groups,swapR,swapC){
     }
     if(g.type!=='normal'){
       let pr=g.pivot[0],pc=g.pivot[1];
-      if(swapR!==undefined&&g.cells.some(([r,c])=>r===swapR&&c===swapC)){pr=swapR;pc=swapC;}
+      // For flame (4-match): use swapped gem as pivot (it's the "new" gem)
+      // For star/bomb/hyper (5+ match): always use geometric center
+      if(g.type==='flame' && swapR!==undefined && g.cells.some(([r,c])=>r===swapR&&c===swapC)){
+        pr=swapR;pc=swapC;
+      }
       newB.push({r:pr,c:pc,btype:g.type,color:g.color});
     }
   }
@@ -696,6 +738,18 @@ function showScorePop(r,c,text){
   const kf=`@keyframes scorePopAnim{0%{transform:translateY(0) scale(.5);opacity:1}20%{transform:translateY(-12px) scale(1.15);opacity:1}100%{transform:translateY(-60px) scale(.9);opacity:0}}`;
   if(!document.getElementById('scoreKF')){const st=document.createElement('style');st.id='scoreKF';st.textContent=kf;document.head.appendChild(st);}
   wrap.appendChild(el);setTimeout(()=>el.remove(),1000);
+}
+
+function showComboBanner(name, pts, r, c){
+  const wrap=document.getElementById('boardWrap');
+  if(!wrap)return;
+  // Remove any existing banner
+  const old=wrap.querySelector('.combo-banner');if(old)old.remove();
+  const el=document.createElement('div');
+  el.className='combo-banner';
+  el.innerHTML=`<span class="combo-banner-name">${name}</span><span class="combo-banner-pts">+${pts.toLocaleString()}</span>`;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(),1800);
 }
 
 function showBadge(n,groups){
