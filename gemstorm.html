@@ -132,8 +132,6 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,4vw,1.8rem);lett
     <button class="btn gold" onclick="G.hint()">💡 Hint</button>
     <button class="btn" onclick="G.newGame()">↺ Restart</button>
     <button class="btn" onclick="doShuffle()" style="margin-top:0">🔀 Shuffle</button>
-    <button class="btn" id="btn-daily" onclick="G.startDaily()">📅 Daily</button>
-    <button class="btn" onclick="showStats()">📊 Stats</button>
     <button class="btn" onclick="backToMenu()">☰ Menu</button>
   </div>
   <div class="board-wrap" id="boardWrap">
@@ -753,23 +751,6 @@ document.getElementById('gameWrap').style.display='none';
 })();
 
 // ══════════════════════════════════════════════════════
-//  STATISTICS
-// ══════════════════════════════════════════════════════
-const STATS_KEY='gb_stats_v2';
-function loadStats(){try{return JSON.parse(localStorage.getItem(STATS_KEY))||{};}catch{return{};}}
-function saveStats(s){localStorage.setItem(STATS_KEY,JSON.stringify(s));}
-function incStat(key,val){const s=loadStats();s[key]=(s[key]||0)+(val||1);saveStats(s);}
-function showStats(){
-  const s=loadStats();
-  document.getElementById('stat-gems').textContent=(s.gems||0).toLocaleString();
-  document.getElementById('stat-best-combo').textContent=(s.bestCombo||0)+'×';
-  document.getElementById('stat-games').textContent=(s.games||0).toLocaleString();
-  document.getElementById('stat-bonus').textContent=(s.bonusGems||0).toLocaleString();
-  document.getElementById('statsScreen').classList.add('visible');
-}
-function closeStats(){document.getElementById('statsScreen').classList.remove('visible');}
-
-// ══════════════════════════════════════════════════════
 //  COMBO FX
 // ══════════════════════════════════════════════════════
 const COMBO_COLORS=['','','rgba(240,192,64,.25)','rgba(255,140,30,.3)','rgba(255,60,120,.35)','rgba(255,0,80,.4)'];
@@ -806,50 +787,6 @@ function doShuffle(){
 }
 
 // ══════════════════════════════════════════════════════
-//  DAILY CHALLENGE
-// ══════════════════════════════════════════════════════
-function getDailyKey(){const d=new Date();return 'daily_'+d.getFullYear()+'_'+d.getMonth()+'_'+d.getDate();}
-function getDailySeed(){const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();}
-function seededRnd(seed){
-  let s=seed^0x9e3779b9;
-  return function(){s=Math.imul(s^(s>>>16),0x45d9f3b);s=Math.imul(s^(s>>>16),0x45d9f3b);return((s^(s>>>16))>>>0)/0x100000000;};
-}
-function makeDailyBoard(){
-  const rng=seededRnd(getDailySeed()),b=[];
-  for(let r=0;r<ROWS;r++){b.push([]);
-    for(let c=0;c<COLS;c++){
-      let v;
-      do{v=Math.floor(rng()*GN);}while(
-        (c>=2&&gColor(b[r][c-1])===v&&gColor(b[r][c-2])===v)||
-        (r>=2&&gColor(b[r-1][c])===v&&gColor(b[r-2][c])===v));
-      b[r].push(v);}}
-  return b;
-}
-function updateDailyButton(){
-  const btn=document.getElementById('btn-daily');if(!btn)return;
-  const done=!!localStorage.getItem(getDailyKey());
-  btn.textContent=done?'📅 Daily ✓':'📅 Daily';
-  btn.style.borderColor=done?'#44cc44':'';btn.style.color=done?'#88ff88':'';
-}
-function startDaily(){
-  gameMode='classic';
-  document.getElementById('modeScreen').style.display='none';
-  document.getElementById('gameWrap').style.display='flex';
-  document.getElementById('subtitle').textContent='📅 Daily Challenge';
-  ['box-moves','box-timer','box-obj'].forEach(id=>document.getElementById(id).style.display='none');
-  calcCS();
-  score=0;level=1;combo=0;sel=null;busy=false;_continueUsed=false;
-  document.getElementById('message').classList.remove('visible');
-  buildBoard();attachInput();
-  board=makeDailyBoard();
-  drawAllGems();updateUI();
-  if(!rafId)rafId=requestAnimationFrame(rafLoop);
-  localStorage.setItem(getDailyKey(),'1');
-  updateDailyButton();
-  incStat('games');
-}
-
-// ══════════════════════════════════════════════════════
 //  CONTINUE AFTER GAME OVER
 // ══════════════════════════════════════════════════════
 let _continueUsed=false;
@@ -874,7 +811,6 @@ function doContinue(){
 
 // Extend G object with new actions
 G.shuffle=doShuffle;
-G.startDaily=startDaily;
 G.continueGame=doContinue;
 
 // Track stats + combo FX in checkChain (called after every cascade)
@@ -884,13 +820,11 @@ let _resolveHook=null;
 const _resolveMatches_orig=resolveMatches;
 resolveMatches=function(groups,swapR,swapC){
   // stats
-  incStat('gems',groups.reduce((s,g)=>s+g.cells.length,0));
   const bc=groups.filter(g=>g.type!=='normal').length;
   if(bc>0)incStat('bonusGems',bc);
   // best combo (combo hasn't been incremented yet, resolveMatches does combo++ inside)
   const nextCombo=combo+1;
   setTimeout(()=>doComboFX(nextCombo),180);
-  const st=loadStats();if(nextCombo>(st.bestCombo||0)){st.bestCombo=nextCombo;saveStats(st);}
   _resolveMatches_orig(groups, swapR, swapC);
 };
 
@@ -906,8 +840,7 @@ const _newGame_orig=G.newGame.bind(G);
 G.newGame=function(){
   _continueUsed=false;
   const btn=document.getElementById('btn-continue');if(btn)btn.style.display='none';
-  incStat('games');
-  updateDailyButton();
+  
   _newGame_orig();
 };
 
@@ -924,28 +857,22 @@ showScorePop=function(r,c,text){
 };
 
 // Init
-updateDailyButton();
 
+
+function incStat(){} function loadStats(){return{};} function saveStats(){} function closeStats(){} function showStats(){}
 </script>
 
-<div id="statsScreen" style="display:none;position:fixed;inset:0;background:rgba(0,0,12,.95);
-  z-index:200;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-family:'Raleway',sans-serif;">
-  <h2 style="font-family:'Cinzel Decorative',serif;color:var(--gold);font-size:1.2rem;">📊 Statistics</h2>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;width:min(90vw,360px);">
-    <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;">
-      <div id="stat-gems" style="font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--gold);">0</div>
       <div style="font-size:.52rem;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;">Gems Destroyed</div></div>
     <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;">
-      <div id="stat-best-combo" style="font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--gold);">0×</div>
+      
       <div style="font-size:.52rem;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;">Best Combo</div></div>
     <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;">
-      <div id="stat-games" style="font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--gold);">0</div>
+      
       <div style="font-size:.52rem;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;">Games Played</div></div>
     <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;">
-      <div id="stat-bonus" style="font-family:'Cinzel Decorative',serif;font-size:1.1rem;color:var(--gold);">0</div>
+      
       <div style="font-size:.52rem;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;">Bonus Gems Made</div></div>
   </div>
-  <button class="btn gold" onclick="closeStats()" style="width:auto;padding:10px 28px;margin-top:8px">Close</button>
 </div>
 
 <div id="gem-imgs" style="display:none">
