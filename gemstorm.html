@@ -400,11 +400,12 @@ function trySwap(r1,c1,r2,c2){
   const v1=board[r1][c1],v2=board[r2][c2];
   const b1=isBonus(v1),b2=isBonus(v2);
 
-  // Bonus gem activates only when:
-  // - swapped with a gem of the SAME color, OR
-  // - swapped with another bonus gem
+  // Bonus activation rules:
+  // 1. bonus + same-color gem → activate (swap counts as part of a 3-match)
+  // 2. bonus + bonus, same color → both activate
+  // 3. bonus + different color → treat as normal swap (check for 3-match via findMatches)
   const sameColor = gColor(v1)===gColor(v2);
-  const bonusActivate = (b1||b2) && (sameColor || (b1&&b2));
+  const bonusActivate = (b1||b2) && sameColor;
 
   if(bonusActivate){
     animSwapGo(r1,c1,r2,c2,dx,dy,()=>{
@@ -496,11 +497,21 @@ function resolveMatches(groups,swapR,swapC){
   showScorePop(mr,mc,pre+(combo>1?`×${combo} `:'')+'+'+pts);
   if(combo>1||groups.some(g=>g.type!=='normal'))showBadge(combo,groups);
   const dst=new Set(),newB=[];
-  for(const g of groups){for(const[r,c]of g.cells){dst.add(r*COLS+c);if(isBonus(board[r][c]))expandBonus(r,c,board[r][c],dst);}if(g.type!=='normal'){
-      // prefer the swapped gem position as pivot if it's part of this match
+  for(const g of groups){
+    for(const[r,c]of g.cells){
+      dst.add(r*COLS+c);
+      // Activate any bonus gem that is part of this match group
+      // (whether from explicit swap or cascade)
+      if(isBonus(board[r][c])){
+        expandBonus(r,c,board[r][c],dst);
+      }
+    }
+    if(g.type!=='normal'){
       let pr=g.pivot[0],pc=g.pivot[1];
       if(swapR!==undefined&&g.cells.some(([r,c])=>r===swapR&&c===swapC)){pr=swapR;pc=swapC;}
-      newB.push({r:pr,c:pc,btype:g.type,color:g.color});}}
+      newB.push({r:pr,c:pc,btype:g.type,color:g.color});
+    }
+  }
   explodeDst(dst,()=>{
     for(const{r:br,c:bc,btype,color}of newB){if(board[br][bc]===-1){board[br][bc]=btype==='bomb'?BB+color:btype==='star'?BS+color:btype==='hyper'?BH+color:BF+color;dst.delete(br*COLS+bc);drawGemOnCanvas(br,bc);const el=gemCanvases[br][bc];el.style.opacity='0';el.style.transform='scale(0)';requestAnimationFrame(()=>{el.style.transition='transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s';el.style.opacity='1';el.style.transform='scale(1)';setTimeout(()=>{el.style.transition='';},360);});}}
     doGravity(dst);
@@ -882,7 +893,7 @@ resolveMatches=function(groups,swapR,swapC){
   const nextCombo=combo+1;
   setTimeout(()=>doComboFX(nextCombo),180);
   const st=loadStats();if(nextCombo>(st.bestCombo||0)){st.bestCombo=nextCombo;saveStats(st);}
-  _resolveMatches_orig(groups);
+  _resolveMatches_orig(groups, swapR, swapC);
 };
 
 // patch endGame to offer continue
