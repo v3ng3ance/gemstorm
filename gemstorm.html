@@ -500,8 +500,6 @@ function resolveMatches(groups,swapR,swapC){
   for(const g of groups){
     for(const[r,c]of g.cells){
       dst.add(r*COLS+c);
-      // Activate any bonus gem that is part of this match group
-      // (whether from explicit swap or cascade)
       if(isBonus(board[r][c])){
         expandBonus(r,c,board[r][c],dst);
       }
