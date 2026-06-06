@@ -225,19 +225,23 @@ function getGemSVG(cIdx,bonus){
   return e?`url('${e.src}')`:'';}
 function drawGemOnCanvas(r,c){
   const v=board[r][c],el=gemCanvases[r][c];
-  if(v===-1){el.style.backgroundImage='none';el.removeAttribute('data-bonus');el.removeAttribute('data-bonus-label');const _oi=el.querySelector('.bonus-icon');if(_oi)_oi.remove();return;}
+  if(v===-1){
+    el.style.backgroundImage='none';el.removeAttribute('data-bonus');el.removeAttribute('data-bonus-label');
+    const _oi=el.querySelector('.bonus-icon');if(_oi)_oi.remove();return;
+  }
   if(v===RAINBOW_VAL){
     const e=document.getElementById('gem-img-0');
     if(e){el.style.backgroundImage=`url('${e.src}')`;el.style.backgroundSize='100% 100%';}
-    ['bg-flame','bg-star','bg-hyper','bg-bomb','bg-wild'].forEach(c=>el.classList.remove(c));
-    const _ri=el.querySelector('.bonus-icon');if(_ri)_ri.remove();el.classList.add('bg-rainbow');el.removeAttribute('data-bonus');el.removeAttribute('data-bonus-label');return;
+    ['bg-flame','bg-star','bg-hyper','bg-bomb','bg-wild','bg-rainbow'].forEach(x=>el.classList.remove(x));
+    const _ri=el.querySelector('.bonus-icon');if(_ri)_ri.remove();
+    el.classList.add('bg-rainbow');el.removeAttribute('data-bonus');el.removeAttribute('data-bonus-label');return;
   }
   const ci=gColor(v);
   const bonus=v>=BW?'wild':v>=BB?'bomb':v>=BH?'hyper':v>=BS?'star':v>=BF?'flame':'none';
-  el.style.backgroundImage=getGemSVG(ci,bonus);
+  const e=document.getElementById('gem-img-'+ci);
+  el.style.backgroundImage=e?`url('${e.src}')`:'';
   el.style.backgroundSize='100% 100%';
-  ['bg-flame','bg-star','bg-hyper','bg-bomb','bg-rainbow'].forEach(c=>el.classList.remove(c));
-  // Remove old bonus icon
+  ['bg-flame','bg-star','bg-hyper','bg-bomb','bg-wild','bg-rainbow'].forEach(x=>el.classList.remove(x));
   const _oldIcon=el.querySelector('.bonus-icon');if(_oldIcon)_oldIcon.remove();
   if(bonus!=='none'){
     el.classList.add('bg-'+bonus);
@@ -669,13 +673,13 @@ function doGravity(matchSet, newB){
     // Inject bonus gem at the correct position if this col has one
     if(bonusByCol[c]!==undefined){
       const{val,pivotRow}=bonusByCol[c];
-      // Count surviving gems that were strictly ABOVE pivotRow
-      let aboveCount=0;
-      for(let r=0;r<pivotRow;r++){
-        if(board[r][c]!==-1 && !matchSet.has(r*COLS+c)) aboveCount++;
+      // Count surviving gems strictly BELOW pivotRow — bonus sits on top of them
+      let belowCount=0;
+      for(let r=pivotRow+1;r<ROWS;r++){
+        if(board[r][c]!==-1 && !matchSet.has(r*COLS+c)) belowCount++;
       }
-      // Insert at position from bottom = surviving.length - aboveCount
-      const insertIdx=Math.max(0, Math.min(stack.length-aboveCount, stack.length));
+      // stack[0]=bottom-most, so insert at index belowCount from bottom
+      const insertIdx=Math.min(belowCount, stack.length);
       stack.splice(insertIdx, 0, val);
     }
 
