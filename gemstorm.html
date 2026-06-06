@@ -87,11 +87,21 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,4vw,1.8rem);lett
   background:transparent;border-width:3px;border-style:solid;
   animation:glowExpand .6s ease-out forwards;}
 @keyframes glowExpand{0%{transform:translate(-50%,-50%) scale(.1);opacity:.9}100%{transform:translate(-50%,-50%) scale(3.2);opacity:0}}
-@media(max-width:560px){
-  .game-wrap{flex-direction:column;align-items:center;}
-  .side-panel{flex-direction:row;max-width:100%;min-width:0;flex-wrap:wrap;justify-content:center;width:100%;}
-  .stat-box,.level-bar-wrap{flex:1;min-width:80px;}
-  .btn{font-size:.6rem;padding:7px 10px;}
+@media(max-width:600px){
+  h1{font-size:1rem;letter-spacing:.06em;}
+  .subtitle{display:none;}
+  .game-wrap{flex-direction:column;align-items:center;gap:6px;width:100%;}
+  .side-panel{
+    flex-direction:row;flex-wrap:wrap;
+    max-width:100%;min-width:0;width:100%;
+    gap:5px;order:-1;
+  }
+  .stat-box{flex:1;min-width:60px;padding:5px 6px;}
+  .stat-label{font-size:.44rem;letter-spacing:.14em;margin-bottom:1px;}
+  .stat-val{font-size:.95rem;}
+  .level-bar-wrap{flex:1;min-width:80px;padding:5px 8px;}
+  .btn{font-size:.56rem;padding:6px 8px;}
+  .board-wrap{padding:8px;border-width:2px;}
 }
 
 @keyframes comboFlash{0%{opacity:.4}100%{opacity:0}}
@@ -281,11 +291,21 @@ function saveBest(v){localStorage.setItem(BEST_KEY[gameMode],v);}
 
 let CS=52,GAP=3;
 function calcCS(){
-  const boardChrome=20,bodyPad=16,vw=window.innerWidth;
-  const isMobile=vw<=600;
-  let avail=isMobile?vw-bodyPad-boardChrome:Math.min(vw-180,480)-boardChrome;
-  CS=Math.max(32,Math.min(Math.floor((avail-GAP*7)/8),64));
-  document.documentElement.style.setProperty('--cs',CS+'px');
+  const vw = window.innerWidth;
+  const isMobile = vw <= 600;
+  if(isMobile){
+    // body padding: 8px left + 8px right = 16px
+    // board-wrap border: 2px*2 = 4px
+    // board-wrap padding: 8px*2 = 16px
+    // safety margin: 4px
+    const taken = 16 + 4 + 16 + 4;
+    const avail = vw - taken;
+    CS = Math.max(30, Math.floor((avail - GAP*7) / 8));
+  } else {
+    const avail = Math.min(vw - 180, 480) - 20;
+    CS = Math.min(Math.floor((avail - GAP*7) / 8), 64);
+  }
+  document.documentElement.style.setProperty('--cs', CS+'px');
 }
 window.addEventListener('resize',()=>{clearTimeout(window._rt);window._rt=setTimeout(calcCS,80);});
 window.addEventListener('orientationchange',()=>setTimeout(calcCS,300));
