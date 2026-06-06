@@ -401,11 +401,11 @@ function trySwap(r1,c1,r2,c2){
   const b1=isBonus(v1),b2=isBonus(v2);
 
   // Bonus activation rules:
-  // 1. bonus + same-color gem → activate (swap counts as part of a 3-match)
-  // 2. bonus + bonus, same color → both activate
-  // 3. bonus + different color → treat as normal swap (check for 3-match via findMatches)
+  // - bonus + bonus → always activate both (regardless of color)
+  // - bonus + same-color normal gem → activate
+  // - bonus + different-color normal gem → normal swap rules
   const sameColor = gColor(v1)===gColor(v2);
-  const bonusActivate = (b1||b2) && sameColor;
+  const bonusActivate = (b1 && b2) || ((b1||b2) && sameColor);
 
   if(bonusActivate){
     animSwapGo(r1,c1,r2,c2,dx,dy,()=>{
