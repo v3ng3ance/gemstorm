@@ -476,7 +476,7 @@ function trySwap(r1,c1,r2,c2){
       else if(mult>=4){ doComboFX(4); }
       else if(mult>=2){ doComboFX(3); }
 
-      explodeDst(dst,()=>doGravity(dst));
+      explodeDst(dst,()=>doGravity(dst,[]));
     });return;
   }
 
