@@ -179,7 +179,7 @@ s.textContent=`
 @keyframes gflame{0%,100%{filter:drop-shadow(0 0 3px rgba(255,140,0,.7)) drop-shadow(0 0 7px rgba(255,70,0,.35)) brightness(1.05)}50%{filter:drop-shadow(0 0 8px rgba(255,210,0,1)) drop-shadow(0 0 16px rgba(255,100,0,.55)) brightness(1.2)}}
 @keyframes gstar{0%,100%{filter:drop-shadow(0 0 3px rgba(255,210,0,.7)) drop-shadow(0 0 7px rgba(255,170,0,.35)) brightness(1.05)}50%{filter:drop-shadow(0 0 9px rgba(255,255,80,1)) drop-shadow(0 0 20px rgba(255,200,0,.55)) brightness(1.22)}}
 @keyframes ghyper{0%{filter:drop-shadow(0 0 4px rgba(160,70,255,.8)) hue-rotate(0deg) brightness(1.05)}50%{filter:drop-shadow(0 0 9px rgba(120,180,255,1)) hue-rotate(40deg) brightness(1.2)}100%{filter:drop-shadow(0 0 4px rgba(160,70,255,.8)) hue-rotate(0deg) brightness(1.05)}}
-@keyframes gbomb{0%,100%{filter:drop-shadow(0 0 3px rgba(255,50,0,.7)) drop-shadow(0 0 7px rgba(200,0,0,.35)) brightness(1.04)}40%{filter:drop-shadow(0 0 10px rgba(255,130,0,1)) drop-shadow(0 0 20px rgba(255,40,0,.6)) brightness(1.18)}60%{filter:drop-shadow(0 0 5px rgba(255,60,0,.8)) brightness(.97)}}
+@keyframes gbomb{0%,100%{filter:drop-shadow(0 0 5px rgba(255,50,0,.8)) drop-shadow(0 0 10px rgba(200,0,0,.5)) brightness(1.06)}35%{filter:drop-shadow(0 0 12px rgba(255,130,0,1)) drop-shadow(0 0 24px rgba(255,40,0,.7)) drop-shadow(0 0 36px rgba(255,0,0,.3)) brightness(1.25)}65%{filter:drop-shadow(0 0 7px rgba(255,60,0,.9)) brightness(.97)}}
 @keyframes gwild{0%{filter:drop-shadow(0 0 5px #ff4466) hue-rotate(0deg) brightness(1.1)}25%{filter:drop-shadow(0 0 9px #ffaa00) hue-rotate(90deg) brightness(1.2)}50%{filter:drop-shadow(0 0 9px #44ee88) hue-rotate(180deg) brightness(1.2)}75%{filter:drop-shadow(0 0 9px #44aaff) hue-rotate(270deg) brightness(1.2)}100%{filter:drop-shadow(0 0 5px #ff4466) hue-rotate(360deg) brightness(1.1)}}
 .bg-flame{animation:gflame .9s ease-in-out infinite}
 .bg-star{animation:gstar .8s ease-in-out infinite}
@@ -207,7 +207,7 @@ function drawGemOnCanvas(r,c){
   const bonus=v>=BW?'wild':v>=BB?'bomb':v>=BH?'hyper':v>=BS?'star':v>=BF?'flame':'none';
   el.style.backgroundImage=getGemSVG(ci,bonus);
   el.style.backgroundSize='100% 100%';
-  ['bg-flame','bg-star','bg-hyper','bg-bomb','bg-wild','bg-rainbow'].forEach(c=>el.classList.remove(c));
+  ['bg-flame','bg-star','bg-hyper','bg-bomb','bg-wild','bg-rainbow','bg-super'].forEach(c=>el.classList.remove(c));
   // Remove old bonus icon
   const _oldIcon=el.querySelector('.bonus-icon');if(_oldIcon)_oldIcon.remove();
   if(bonus!=='none'){
@@ -529,11 +529,11 @@ function findMatches(){
   for(const g of hG){const rem=g.cells.filter(([r,c])=>!done.has(r*COLS+c));if(rem.length<3)continue;
     const sorted=[...rem].sort((a,b)=>a[1]-b[1]);
     const pivot=sorted[Math.floor(sorted.length/2)]; // exact middle column
-    const type=g.len>=6?'bomb':g.len>=5?'star':g.len===4?'flame':'normal';result.push({type,cells:rem,pivot,color:g.color});for(const[r,c]of rem)done.add(r*COLS+c);}
+    const type=g.len>=6?'super':g.len>=5?'star':g.len===4?'flame':'normal';result.push({type,cells:rem,pivot,color:g.color});for(const[r,c]of rem)done.add(r*COLS+c);}
   for(const g of vG){const rem=g.cells.filter(([r,c])=>!done.has(r*COLS+c));if(rem.length<3)continue;
     const sorted=[...rem].sort((a,b)=>a[0]-b[0]);
     const pivot=sorted[Math.floor(sorted.length/2)]; // exact middle row
-    const type=g.len>=6?'bomb':g.len>=5?'star':g.len===4?'flame':'normal';result.push({type,cells:rem,pivot,color:g.color});for(const[r,c]of rem)done.add(r*COLS+c);}
+    const type=g.len>=6?'super':g.len>=5?'star':g.len===4?'flame':'normal';result.push({type,cells:rem,pivot,color:g.color});for(const[r,c]of rem)done.add(r*COLS+c);}
   return result.length?result:null;
 }
 
@@ -543,7 +543,7 @@ function expandBonus(r,c,v,dst,_processed){
   if(_processed.has(key))return;
   _processed.add(key);
   if(v>=BW){const wCol=_processed.wildColor!==undefined?_processed.wildColor:gColor(v);for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===wCol)dst.add(rr*COLS+cc);}
-  else if(v>=BB){for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}}
+  else if(v>=BB){for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)dst.add(rr*COLS+cc);}
   else if(v>=BH){for(let cc=0;cc<COLS;cc++)dst.add(r*COLS+cc);for(let rr=0;rr<ROWS;rr++)dst.add(rr*COLS+c);}
   else if(v>=BS){const col=v-BS;for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===col)dst.add(rr*COLS+cc);}
   else if(v>=BF){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}}
@@ -620,7 +620,7 @@ function doGravity(matchSet, newB){
   // Map: col -> {val, pivotRow} for bonus gems to inject
   const bonusByCol={};
   for(const{r:br,c:bc,btype,color}of newB){
-    const val=btype==='bomb'?BB+color:btype==='star'?BS+color:btype==='hyper'?BH+color:BF+color;
+    const val=btype==='super'||btype==='bomb'?BB+color:btype==='star'?BS+color:btype==='hyper'?BH+color:BF+color;
     bonusByCol[bc]={val,pivotRow:br};
   }
 
