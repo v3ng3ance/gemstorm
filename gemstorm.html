@@ -172,62 +172,25 @@ const BONUS_IMGS={
 
 (function(){if(document.getElementById('gcss'))return;const s=document.createElement('style');s.id='gcss';
 s.textContent=`
-@keyframes ghint{0%,100%{transform:scale(1);filter:brightness(1)}35%{transform:scale(1.18) rotate(-7deg);filter:brightness(1.5) drop-shadow(0 0 10px rgba(255,255,80,.9))}70%{transform:scale(1.18) rotate(7deg);filter:brightness(1.5) drop-shadow(0 0 10px rgba(255,255,80,.9))}}
-@keyframes gflame{0%,100%{filter:drop-shadow(0 0 5px rgba(255,140,0,.8))}50%{filter:drop-shadow(0 0 12px rgba(255,220,0,1)) drop-shadow(0 0 22px rgba(255,80,0,.9)) brightness(1.1)}}
-@keyframes gstar{0%,100%{filter:drop-shadow(0 0 5px rgba(255,210,0,.8))}50%{filter:drop-shadow(0 0 14px rgba(255,255,80,1)) brightness(1.2)}}
-@keyframes ghyper{0%{filter:drop-shadow(0 0 8px rgba(255,80,220,.9))}50%{filter:drop-shadow(0 0 8px rgba(80,255,200,.9))}100%{filter:drop-shadow(0 0 8px rgba(255,80,220,.9))}}
-@keyframes gbomb{0%,100%{filter:drop-shadow(0 0 5px rgba(255,40,0,.8))}50%{filter:drop-shadow(0 0 16px rgba(255,140,0,1)) brightness(1.1)}}
-@keyframes grainbow{0%{filter:drop-shadow(0 0 8px #ff4466) hue-rotate(0deg)}25%{filter:drop-shadow(0 0 8px #44aaff) hue-rotate(90deg)}50%{filter:drop-shadow(0 0 8px #44ff88) hue-rotate(180deg)}75%{filter:drop-shadow(0 0 8px #ffcc00) hue-rotate(270deg)}100%{filter:drop-shadow(0 0 8px #ff4466) hue-rotate(360deg)}}
+@keyframes ghint{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.18) rotate(7deg);filter:brightness(1.5) drop-shadow(0 0 10px rgba(255,255,80,.9))}}
 .bg-hint{animation:ghint .55s ease-in-out 3}
-.bg-flame{animation:gflame .9s ease-in-out infinite;}.bg-star{animation:gstar .8s ease-in-out infinite;}
-.bg-hyper{animation:ghyper 1.4s linear infinite;}.bg-bomb{animation:gbomb .55s ease-in-out infinite;}
-.bg-wild{animation:gwild 1s linear infinite;}
-@keyframes gflame{0%,100%{filter:drop-shadow(0 0 4px rgba(255,120,0,.8)) drop-shadow(0 0 8px rgba(255,60,0,.4));}50%{filter:drop-shadow(0 0 8px rgba(255,200,0,1)) drop-shadow(0 0 18px rgba(255,80,0,.7)) brightness(1.12);}}
-@keyframes gstar{0%,100%{filter:drop-shadow(0 0 4px rgba(255,200,0,.8)) drop-shadow(0 0 8px rgba(255,180,0,.4));}50%{filter:drop-shadow(0 0 10px rgba(255,255,80,1)) drop-shadow(0 0 22px rgba(255,200,0,.7)) brightness(1.15);}}
-@keyframes ghyper{0%{filter:drop-shadow(0 0 5px rgba(180,60,255,.9)) hue-rotate(0deg);}50%{filter:drop-shadow(0 0 10px rgba(100,160,255,.9)) hue-rotate(180deg);}100%{filter:drop-shadow(0 0 5px rgba(180,60,255,.9)) hue-rotate(360deg);}}
-@keyframes gbomb{0%,100%{filter:drop-shadow(0 0 4px rgba(255,40,0,.8)) drop-shadow(0 0 8px rgba(200,0,0,.4));}40%{filter:drop-shadow(0 0 12px rgba(255,120,0,1)) drop-shadow(0 0 24px rgba(255,0,0,.7)) brightness(1.12);}60%{filter:drop-shadow(0 0 6px rgba(255,60,0,.9)) brightness(.96);}}
-@keyframes gwild{0%{filter:drop-shadow(0 0 6px #ff4466) hue-rotate(0deg) brightness(1.1);}25%{filter:drop-shadow(0 0 10px #ffaa00) hue-rotate(90deg) brightness(1.2);}50%{filter:drop-shadow(0 0 10px #44ff88) hue-rotate(180deg) brightness(1.2);}75%{filter:drop-shadow(0 0 10px #44aaff) hue-rotate(270deg) brightness(1.2);}100%{filter:drop-shadow(0 0 6px #ff4466) hue-rotate(360deg) brightness(1.1);}}
-.bi-flame{background:radial-gradient(circle,rgba(255,120,0,.18) 0%,transparent 70%);}
-.bi-star {background:radial-gradient(circle,rgba(255,220,0,.18) 0%,transparent 70%);}
-.bi-hyper{background:radial-gradient(circle,rgba(160,80,255,.18) 0%,transparent 70%);}
-.bi-bomb {background:radial-gradient(circle,rgba(255,40,0,.18) 0%,transparent 70%);}
-.bi-wild {background:radial-gradient(circle,rgba(255,80,200,.15) 0%,transparent 70%);}
+@keyframes grainbow{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
 .bg-rainbow{animation:grainbow 1.2s linear infinite}
-/* bonus overlay icons handled via JS child divs */
-.bonus-icon{position:absolute;inset:0;pointer-events:none;z-index:12;
-  display:flex;align-items:center;justify-content:center;}
-.bonus-icon svg{width:72%;height:72%;filter:drop-shadow(0 1px 5px rgba(0,0,0,.8));}
-
-/* flame: rotating ring of sparks */
-@keyframes bi-flame{
-  0%  {transform:rotate(0deg)   scale(1);}
-  50% {transform:rotate(180deg) scale(1.15);}
-  100%{transform:rotate(360deg) scale(1);}
-}
-/* star: pulse + spin */
-@keyframes bi-star{
-  0%,100%{transform:scale(1)    rotate(0deg);}
-  50%    {transform:scale(1.18) rotate(20deg);}
-}
-/* hyper: rainbow hue cycle */
-@keyframes bi-hyper{
-  0%  {filter:hue-rotate(0deg)   brightness(1.1);}
-  100%{filter:hue-rotate(360deg) brightness(1.1);}
-}
-/* bomb: throb */
-@keyframes bi-bomb{
-  0%,100%{transform:scale(1);}
-  40%    {transform:scale(1.22);}
-  60%    {transform:scale(.9);}
-}
-.bi-flame svg{animation:bi-flame 1.1s linear infinite;transform-origin:center;}
-.bi-star  svg{animation:bi-star  .9s ease-in-out infinite;transform-origin:center;}
-.bi-hyper svg{animation:bi-hyper 1.4s linear infinite;transform-origin:center;}
-.bi-bomb  svg{animation:bi-bomb  .65s ease-in-out infinite;transform-origin:center;}
+@keyframes gflame{0%,100%{filter:drop-shadow(0 0 3px rgba(255,140,0,.7)) drop-shadow(0 0 7px rgba(255,70,0,.35)) brightness(1.05)}50%{filter:drop-shadow(0 0 8px rgba(255,210,0,1)) drop-shadow(0 0 16px rgba(255,100,0,.55)) brightness(1.2)}}
+@keyframes gstar{0%,100%{filter:drop-shadow(0 0 3px rgba(255,210,0,.7)) drop-shadow(0 0 7px rgba(255,170,0,.35)) brightness(1.05)}50%{filter:drop-shadow(0 0 9px rgba(255,255,80,1)) drop-shadow(0 0 20px rgba(255,200,0,.55)) brightness(1.22)}}
+@keyframes ghyper{0%{filter:drop-shadow(0 0 4px rgba(160,70,255,.8)) hue-rotate(0deg) brightness(1.05)}50%{filter:drop-shadow(0 0 9px rgba(120,180,255,1)) hue-rotate(40deg) brightness(1.2)}100%{filter:drop-shadow(0 0 4px rgba(160,70,255,.8)) hue-rotate(0deg) brightness(1.05)}}
+@keyframes gbomb{0%,100%{filter:drop-shadow(0 0 3px rgba(255,50,0,.7)) drop-shadow(0 0 7px rgba(200,0,0,.35)) brightness(1.04)}40%{filter:drop-shadow(0 0 10px rgba(255,130,0,1)) drop-shadow(0 0 20px rgba(255,40,0,.6)) brightness(1.18)}60%{filter:drop-shadow(0 0 5px rgba(255,60,0,.8)) brightness(.97)}}
+@keyframes gwild{0%{filter:drop-shadow(0 0 5px #ff4466) hue-rotate(0deg) brightness(1.1)}25%{filter:drop-shadow(0 0 9px #ffaa00) hue-rotate(90deg) brightness(1.2)}50%{filter:drop-shadow(0 0 9px #44ee88) hue-rotate(180deg) brightness(1.2)}75%{filter:drop-shadow(0 0 9px #44aaff) hue-rotate(270deg) brightness(1.2)}100%{filter:drop-shadow(0 0 5px #ff4466) hue-rotate(360deg) brightness(1.1)}}
+.bg-flame{animation:gflame .9s ease-in-out infinite}
+.bg-star{animation:gstar .8s ease-in-out infinite}
+.bg-hyper{animation:ghyper 1.4s ease-in-out infinite}
+.bg-bomb{animation:gbomb .65s ease-in-out infinite}
+.bg-wild{animation:gwild 1.1s linear infinite}
+.gem-canvas{position:absolute;background-size:100% 100%;border-radius:4px;overflow:visible;transition:transform .1s}
 `;document.head.appendChild(s);})();
 
 const RAINBOW_VAL=50;
-const BONUS_ICONS={wild:`<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff4466"/><stop offset="25%" stop-color="#ffaa00"/><stop offset="50%" stop-color="#44ee88"/><stop offset="75%" stop-color="#44aaff"/><stop offset="100%" stop-color="#ff4466"/></linearGradient></defs><polygon points="16,2 19.5,11 29,11 21.5,17 24.5,27 16,21.5 7.5,27 10.5,17 3,11 12.5,11" fill="url(#wg2)" opacity=".95"/><polygon points="16,6 18.5,12.5 25.5,12.5 20,16.5 22,23 16,19 10,23 12,16.5 6.5,12.5 13.5,12.5" fill="rgba(255,255,255,.35)"/><circle cx="16" cy="16" r="4" fill="white" opacity=".9"/></svg>`,flame:`<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><polygon points="16,1 18,10 24.5,5.5 20,13 28,12 21,17 27,23 19,21 20,30 16,24 12,30 13,21 5,23 11,17 4,12 12,13 8,5.5 14,10" fill="rgba(255,200,50,.85)" stroke="rgba(255,100,0,.6)" stroke-width=".5"/><polygon points="16,6 17.5,12 22.5,12 18.5,15.5 20,21 16,18 12,21 13.5,15.5 9.5,12 14.5,12" fill="rgba(255,160,0,.9)"/><circle cx="16" cy="16" r="4.5" fill="rgba(255,230,150,.85)"/><circle cx="16" cy="16" r="2.5" fill="white" opacity=".95"/></svg>`,star:`<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><polygon points="16,2 19.5,11.5 29.5,11.5 22,18 24.5,28 16,22.5 7.5,28 10,18 2.5,11.5 12.5,11.5" fill="rgba(255,230,50,.95)" stroke="rgba(255,180,0,.8)" stroke-width=".8"/><polygon points="16,6.5 18.5,13 25,13 20,16.5 22,23 16,19.5 10,23 12,16.5 7,13 13.5,13" fill="rgba(255,255,180,.7)"/><circle cx="16" cy="16" r="4" fill="rgba(255,240,100,.9)"/><circle cx="16" cy="16" r="2.2" fill="white" opacity=".95"/></svg>`,hyper:`<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="14" width="28" height="4" rx="2" fill="rgba(200,140,255,.95)"/><rect x="14" y="2" width="4" height="28" rx="2" fill="rgba(140,200,255,.95)"/><line x1="5" y1="5" x2="27" y2="27" stroke="rgba(180,100,255,.4)" stroke-width="1.5" stroke-linecap="round"/><line x1="27" y1="5" x2="5" y2="27" stroke="rgba(100,180,255,.4)" stroke-width="1.5" stroke-linecap="round"/><circle cx="16" cy="16" r="9.5" fill="none" stroke="rgba(200,160,255,.65)" stroke-width="1.5"/><circle cx="16" cy="16" r="5.5" fill="none" stroke="rgba(220,180,255,.55)" stroke-width="1.2"/><circle cx="16" cy="16" r="3.5" fill="rgba(210,180,255,.85)"/><circle cx="16" cy="16" r="1.5" fill="white"/></svg>`,bomb:`<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><polygon points="16,2 17.5,6 21,3 20.5,7.5 24.5,5.5 22,9.5 27,9 23.5,12 28,13.5 23.5,14.5 27,18 22,17.5 24.5,22 20,20 20.5,25 17,22 16,27 15,22 11.5,25 12,20 7.5,22 10,17.5 5,18 8.5,14.5 4,13.5 8.5,12 5,9 10,9.5 7.5,5.5 11.5,7.5 11,3 15,6" fill="rgba(255,80,20,.88)" stroke="rgba(255,40,0,.6)" stroke-width=".5" stroke-linejoin="round"/><circle cx="16" cy="14.5" r="7" fill="rgba(220,40,0,.9)"/><ellipse cx="13.5" cy="11.5" rx="3" ry="2" fill="rgba(255,220,180,.65)" transform="rotate(-20,13.5,11.5)"/><circle cx="16" cy="14.5" r="2.8" fill="rgba(180,20,0,.6)"/><circle cx="16" cy="13.5" r="1.2" fill="rgba(255,200,120,.8)"/></svg>`,}
+const BONUS_ICONS={flame:`<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="12,1 14.5,9 20,6 15,12 22,11 14,17 16,23 12,19 8,23 10,17 2,11 9,12 4,6 9.5,9" fill="none" stroke="rgba(255,220,80,.95)" stroke-width="1.2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.5" fill="rgba(255,180,0,.9)"/><circle cx="12" cy="12" r="1.8" fill="white"/></svg>`,star:`<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="12,2 15,9 22,9 16.5,14 18.5,21 12,17 5.5,21 7.5,14 2,9 9,9" fill="rgba(255,240,100,.95)" stroke="rgba(255,200,0,.8)" stroke-width=".8"/><polygon points="12,6 13.8,10.5 18.5,10.5 14.5,13.5 16,18 12,15 8,18 9.5,13.5 5.5,10.5 10.2,10.5" fill="rgba(255,255,200,.7)"/></svg>`,hyper:`<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="12" y1="1" x2="12" y2="23" stroke="rgba(200,140,255,.95)" stroke-width="2.5" stroke-linecap="round"/><line x1="1" y1="12" x2="23" y2="12" stroke="rgba(140,200,255,.95)" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="none" stroke="rgba(220,180,255,.8)" stroke-width="1.5"/><circle cx="12" cy="12" r="2" fill="rgba(255,255,255,.95)"/><circle cx="12" cy="12" r="1" fill="rgba(180,100,255,.9)"/></svg>`,bomb:`<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polygon points="12,2 13.5,5 16,3.5 15,6.5 18,6 16,8.5 19,10 15.5,10.5 17,14 13,12.5 12,16 11,12.5 7,14 8.5,10.5 5,10 8,8.5 6,6 9,6.5 8,3.5 10.5,5" fill="rgba(255,120,40,.9)" stroke="rgba(255,60,0,.7)" stroke-width=".5"/><circle cx="12" cy="10" r="3.5" fill="rgba(255,50,0,.85)"/><circle cx="10.5" cy="8.5" r="1.2" fill="rgba(255,200,150,.8)"/></svg>`};
 function getGemSVG(cIdx,bonus){
   const e=document.getElementById('gem-img-'+cIdx);
   return e?`url('${e.src}')`:'';}
@@ -241,19 +204,15 @@ function drawGemOnCanvas(r,c){
     const _ri=el.querySelector('.bonus-icon');if(_ri)_ri.remove();el.classList.add('bg-rainbow');el.removeAttribute('data-bonus');el.removeAttribute('data-bonus-label');return;
   }
   const ci=gColor(v);
-  const bonus=v>=BB?'bomb':v>=BH?'hyper':v>=BS?'star':v>=BF?'flame':'none';
+  const bonus=v>=BW?'wild':v>=BB?'bomb':v>=BH?'hyper':v>=BS?'star':v>=BF?'flame':'none';
   el.style.backgroundImage=getGemSVG(ci,bonus);
   el.style.backgroundSize='100% 100%';
-  ['bg-flame','bg-star','bg-hyper','bg-bomb','bg-rainbow'].forEach(c=>el.classList.remove(c));
+  ['bg-flame','bg-star','bg-hyper','bg-bomb','bg-wild','bg-rainbow'].forEach(c=>el.classList.remove(c));
   // Remove old bonus icon
   const _oldIcon=el.querySelector('.bonus-icon');if(_oldIcon)_oldIcon.remove();
   if(bonus!=='none'){
     el.classList.add('bg-'+bonus);
-    el.removeAttribute('data-bonus');el.removeAttribute('data-bonus-label');
-    const icon=document.createElement('div');
-    icon.className='bonus-icon bi-'+bonus;
-    icon.innerHTML=BONUS_ICONS[bonus]||'';
-    el.appendChild(icon);
+    el.setAttribute('data-bonus',bonus);
   } else {
     el.removeAttribute('data-bonus');el.removeAttribute('data-bonus-label');
   }
@@ -323,8 +282,8 @@ function rafLoop(ts){
 // ═══════════════════════════════════════════════════════════════
 const ROWS=8,COLS=8,GN=7;
 const LEVEL_THRESHOLDS=[0,500,1200,2200,3500,5200,7500,10500,14000,19000,99999];
-const BF=100,BS=200,BH=300,BB=400;
-function gColor(v){return v>=BB?v-BB:v>=BH?v-BH:v>=BS?v-BS:v>=BF?v-BF:v;}
+const BF=100,BS=200,BH=300,BB=400,BW=500;
+function gColor(v){return v>=BW?v-BW:v>=BB?v-BB:v>=BH?v-BH:v>=BS?v-BS:v>=BF?v-BF:v;}
 function isBonus(v){return v>=BF;}
 
 let gameMode='classic',movesLeft=30,timerSec=60,timerInterval=null;
@@ -575,12 +534,12 @@ function findMatches(){
 }
 
 function expandBonus(r,c,v,dst,_processed){
-  if(!_processed) _processed=new Set();
+  if(!_processed)_processed=new Set();
   const key=r*COLS+c;
-  if(_processed.has(key)) return;
+  if(_processed.has(key))return;
   _processed.add(key);
-
-  if(v>=BB){for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}}
+  if(v>=BW){const wCol=_processed.wildColor!==undefined?_processed.wildColor:gColor(v);for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===wCol)dst.add(rr*COLS+cc);}
+  else if(v>=BB){for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}}
   else if(v>=BH){for(let cc=0;cc<COLS;cc++)dst.add(r*COLS+cc);for(let rr=0;rr<ROWS;rr++)dst.add(rr*COLS+c);}
   else if(v>=BS){const col=v-BS;for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===col)dst.add(rr*COLS+cc);}
   else if(v>=BF){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}}
@@ -684,7 +643,7 @@ function doGravity(matchSet, newB){
     }
 
     // Fill top with new random gems
-    while(stack.length<ROWS) stack.push(Math.floor(Math.random()*GN));
+    while(stack.length<ROWS){if(Math.random()<1/80)stack.push(BW+Math.floor(Math.random()*GN));else stack.push(Math.floor(Math.random()*GN));}
     while(stack.length>ROWS) stack.shift(); // safety trim
 
     for(let r=ROWS-1;r>=0;r--){
