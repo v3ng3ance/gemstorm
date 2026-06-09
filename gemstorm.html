@@ -10,7 +10,8 @@
 :root{--gold:#f0c040;--panel:#12122a;--border:#2a2a5a;--text:#c8c8ff;--dim:#5050a0;--cs:52px;}
 body{min-height:100vh;background:radial-gradient(ellipse 120% 80% at 50% 0%,#1a0a3a,#0a0818 60%,#050510);
   color:var(--text);font-family:'Raleway',sans-serif;
-  display:flex;flex-direction:column;align-items:center;padding:14px 8px 40px;gap:10px;overflow-x:hidden;}
+  display:flex;flex-direction:column;align-items:center;padding:14px 8px 40px;gap:10px;
+  overflow-x:hidden;max-width:100vw;}
 body::before{content:'';position:fixed;inset:0;pointer-events:none;
   background-image:radial-gradient(1px 1px at 15% 20%,rgba(255,255,255,.5) 0%,transparent 100%),
     radial-gradient(1px 1px at 40% 60%,rgba(200,180,255,.5) 0%,transparent 100%),
@@ -47,7 +48,7 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,4vw,1.8rem);lett
   background:radial-gradient(ellipse at 50% 30%,#1a1040,#080618);
   box-shadow:0 0 60px rgba(60,20,160,.5),inset 0 0 60px rgba(0,0,0,.6);}
 #board{display:grid;grid-template-columns:repeat(8,var(--cs));grid-template-rows:repeat(8,var(--cs));
-  gap:3px;position:relative;}
+  gap:var(--gap,3px);position:relative;}
 .cell{width:var(--cs);height:var(--cs);position:relative;cursor:pointer;border-radius:6px;}
 .cell::before{content:'';position:absolute;inset:0;border-radius:6px;background:rgba(255,255,255,.02);}
 /* Gem is now a div styled with SVG background */
@@ -88,20 +89,25 @@ h1{font-family:'Cinzel Decorative',serif;font-size:clamp(1.2rem,4vw,1.8rem);lett
   animation:glowExpand .6s ease-out forwards;}
 @keyframes glowExpand{0%{transform:translate(-50%,-50%) scale(.1);opacity:.9}100%{transform:translate(-50%,-50%) scale(3.2);opacity:0}}
 @media(max-width:600px){
+  body{padding:8px 8px 20px;gap:6px;overflow-x:hidden;}
   h1{font-size:1rem;letter-spacing:.06em;}
   .subtitle{display:none;}
-  .game-wrap{flex-direction:column;align-items:center;gap:6px;width:100%;}
+  /* Stack: panel above, board below, both centered */
+  .game-wrap{flex-direction:column;align-items:center;gap:6px;width:100%;max-width:100%;}
+  /* Side panel: horizontal scrolling row of compact boxes */
   .side-panel{
-    flex-direction:row;flex-wrap:wrap;
+    flex-direction:row;flex-wrap:wrap;justify-content:center;
     max-width:100%;min-width:0;width:100%;
-    gap:5px;order:-1;
+    gap:4px;order:-1;
   }
-  .stat-box{flex:1;min-width:60px;padding:5px 6px;}
-  .stat-label{font-size:.44rem;letter-spacing:.14em;margin-bottom:1px;}
-  .stat-val{font-size:.95rem;}
-  .level-bar-wrap{flex:1;min-width:80px;padding:5px 8px;}
-  .btn{font-size:.56rem;padding:6px 8px;}
-  .board-wrap{padding:8px;border-width:2px;}
+  .side-panel .btn{font-size:.5rem;padding:5px 6px;min-width:0;flex:1;}
+  .stat-box{flex:0 1 auto;min-width:55px;padding:4px 6px;}
+  .stat-label{font-size:.42rem;letter-spacing:.1em;margin-bottom:1px;}
+  .stat-val{font-size:.9rem;}
+  .level-bar-wrap{flex:0 1 100px;padding:4px 8px;}
+  /* Board: no extra width, fits screen */
+  .board-wrap{padding:6px;border-width:2px;width:fit-content;max-width:100%;}
+  #board{gap:2px;}
 }
 
 @keyframes comboFlash{0%{opacity:.4}100%{opacity:0}}
@@ -207,12 +213,11 @@ function drawGemOnCanvas(r,c){
   const bonus=v>=BW?'wild':v>=BB?'bomb':v>=BH?'hyper':v>=BS?'star':v>=BF?'flame':'none';
   el.style.backgroundImage=getGemSVG(ci,bonus);
   el.style.backgroundSize='100% 100%';
-  ['bg-flame','bg-star','bg-hyper','bg-bomb','bg-wild','bg-rainbow','bg-super'].forEach(c=>el.classList.remove(c));
+  ['bg-flame','bg-star','bg-hyper','bg-bomb','bg-wild','bg-rainbow'].forEach(c=>el.classList.remove(c));
   // Remove old bonus icon
   const _oldIcon=el.querySelector('.bonus-icon');if(_oldIcon)_oldIcon.remove();
   if(bonus!=='none'){
-    el.classList.add('bg-'+bonus);
-    el.setAttribute('data-bonus',bonus);
+    el.classList.add('bg-'+bonus);el.setAttribute('data-bonus',bonus);
   } else {
     el.removeAttribute('data-bonus');el.removeAttribute('data-bonus-label');
   }
@@ -249,12 +254,8 @@ function rafLoop(ts){
     if(!el)continue;
     s.t+=dt;
     if(s.type==='explode'){
-      const prog=Math.min(1,s.t/s.dur);
-      const sc=1+prog*.7;
-      const al=Math.max(0,1-prog*1.1);
-      el.style.transform=`scale(${sc})`;
-      el.style.opacity=al;
-      if(prog>=1){el.style.transform='scale(0)';el.style.opacity='0';animState[r][c]=null;if(s.onDone)s.onDone();}
+      // CSS handles the animation, we just wait for onDone signal
+      // (initiated in explodeDst via CSS transition)
     } else if(s.type==='fall'){
       const sp=SPRING_SLOW;
       const xr=springStep(s.y,s.vy,0,dt,sp);
@@ -266,8 +267,10 @@ function rafLoop(ts){
       const settled=Math.abs(s.y)<.4&&Math.abs(s.vy)<1&&Math.abs(s.alpha-1)<.02;
       if(settled){el.style.transform='';el.style.opacity='1';animState[r][c]=null;if(s.onDone)s.onDone();}
     } else if(s.type==='sel'){
-      const pulse=Math.sin(s.t*5.5)*.06+1;
+      const pulse=Math.sin(s.t*5.5)*.07+1;
+      const bright=Math.sin(s.t*5.5)*.12+1;
       el.style.transform=`scale(${pulse})`;
+      el.style.filter=`brightness(${bright})`;
     } else if(s.type==='hint'){
       const bounce=Math.sin(s.t*12)*.1+1;
       const rot=Math.sin(s.t*10)*5;
@@ -294,21 +297,12 @@ function saveBest(v){localStorage.setItem(BEST_KEY[gameMode],v);}
 
 let CS=52,GAP=3;
 function calcCS(){
-  const vw = window.innerWidth;
-  const isMobile = vw <= 600;
-  if(isMobile){
-    // body padding: 8px left + 8px right = 16px
-    // board-wrap border: 2px*2 = 4px
-    // board-wrap padding: 8px*2 = 16px
-    // safety margin: 4px
-    const taken = 16 + 4 + 16 + 4;
-    const avail = vw - taken;
-    CS = Math.max(30, Math.floor((avail - GAP*7) / 8));
-  } else {
-    const avail = Math.min(vw - 180, 480) - 20;
-    CS = Math.min(Math.floor((avail - GAP*7) / 8), 64);
-  }
-  document.documentElement.style.setProperty('--cs', CS+'px');
+  const vw=window.innerWidth,isMobile=vw<=600;
+  GAP=isMobile?2:3;
+  const avail=isMobile?(vw-36):(Math.min(vw-160,480)-20);
+  CS=Math.max(26,Math.floor((avail-GAP*7)/8));
+  document.documentElement.style.setProperty('--cs',CS+'px');
+  document.documentElement.style.setProperty('--gap',GAP+'px');
 }
 window.addEventListener('resize',()=>{clearTimeout(window._rt);window._rt=setTimeout(calcCS,80);});
 window.addEventListener('orientationchange',()=>setTimeout(calcCS,300));
@@ -422,13 +416,12 @@ function trySwap(r1,c1,r2,c2){
   const b1=isBonus(v1),b2=isBonus(v2);
 
   // Bonus activation rules:
-  // - wild + any gem → activate, targets other gem's color
   // - bonus + bonus → always activate both (regardless of color)
   // - bonus + same-color normal gem → activate
   // - bonus + different-color normal gem → normal swap rules
-  const w1=v1>=BW, w2=v2>=BW;
-  const sameColor = gColor(v1)===gColor(v2);
-  const bonusActivate = (b1&&b2) || ((b1||b2)&&sameColor) || w1 || w2;
+  const w1=v1>=BW,w2=v2>=BW;
+  const sameColor=gColor(v1)===gColor(v2);
+  const bonusActivate=(b1&&b2)||((b1||b2)&&sameColor)||w1||w2;
 
   if(bonusActivate){
     animSwapGo(r1,c1,r2,c2,dx,dy,()=>{
@@ -495,21 +488,26 @@ function animSwapGo(r1,c1,r2,c2,dx,dy,cb){
   animSwap(r2,c2,-dx,-dy,()=>{d2=true;if(d1&&d2)cb();});
 }
 function animBump(r,c,tx,ty,cb){
-  const el=gemCanvases[r][c],mx=CS*.30;
+  const el=gemCanvases[r][c],mx=CS*.22;
   const cx2=Math.max(-mx,Math.min(mx,tx)),cy2=Math.max(-mx,Math.min(mx,ty));
-  el.style.zIndex='2';el.style.transition='none';el.style.transform='';void el.offsetWidth;
-  el.style.transition='transform 90ms ease-out';el.style.transform=`translate(${cx2}px,${cy2}px)`;
-  setTimeout(()=>{el.style.transition='transform 100ms ease-in';el.style.transform='';
-    setTimeout(()=>{el.style.transition='none';el.style.zIndex='1';if(cb)cb();},105);},95);
+  el.style.zIndex='2';el.style.transition='none';
+  el.style.transform='';void el.offsetWidth;
+  el.style.transition='transform 70ms cubic-bezier(.4,0,1,1)';
+  el.style.transform=`translate(${cx2}px,${cy2}px)`;
+  setTimeout(()=>{
+    el.style.transition='transform 80ms cubic-bezier(0,0,.6,1)';
+    el.style.transform='';
+    setTimeout(()=>{el.style.transition='none';el.style.zIndex='1';if(cb)cb();},85);
+  },72);
 }
 
 function animSwap(r,c,tx,ty,cb){
   const el=gemCanvases[r][c];
   animState[r][c]=null;el.style.transition='none';el.style.transform='';el.style.zIndex='10';
   void el.offsetWidth;
-  el.style.transition='transform 180ms cubic-bezier(.25,0,.25,1)';
+  el.style.transition='transform 160ms cubic-bezier(.4,0,.2,1)';
   el.style.transform=`translate(${tx}px,${ty}px)`;
-  setTimeout(()=>{el.style.transition='none';el.style.transform='';el.style.zIndex='1';animState[r][c]=null;if(cb)cb();},190);
+  setTimeout(()=>{el.style.transition='none';el.style.transform='';el.style.zIndex='1';animState[r][c]=null;if(cb)cb();},170);
 }
 
 function findMatches(){
@@ -542,22 +540,30 @@ function expandBonus(r,c,v,dst,_processed){
   const key=r*COLS+c;
   if(_processed.has(key))return;
   _processed.add(key);
-  if(v>=BW){const wCol=_processed.wildColor!==undefined?_processed.wildColor:gColor(v);for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===wCol)dst.add(rr*COLS+cc);}
-  else if(v>=BB){for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)dst.add(rr*COLS+cc);}
-  else if(v>=BH){for(let cc=0;cc<COLS;cc++)dst.add(r*COLS+cc);for(let rr=0;rr<ROWS;rr++)dst.add(rr*COLS+c);}
-  else if(v>=BS){const col=v-BS;for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===col)dst.add(rr*COLS+cc);}
-  else if(v>=BF){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}}
-
-  // Chain: activate any bonus gems newly added to dst by this explosion
-  for(const idx of [...dst]){
-    const nr=Math.floor(idx/COLS),nc=idx%COLS;
-    if(nr===r&&nc===c) continue;
-    if(_processed.has(idx)) continue;
+  if(v>=BW){
+    const wCol=_processed.wildColor!==undefined?_processed.wildColor:gColor(v);
+    for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===wCol)dst.add(rr*COLS+cc);
+  } else if(v>=BB){
+    // bomb/super: clear entire board
+    for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)dst.add(rr*COLS+cc);
+  } else if(v>=BH){
+    for(let cc=0;cc<COLS;cc++)dst.add(r*COLS+cc);
+    for(let rr=0;rr<ROWS;rr++)dst.add(rr*COLS+c);
+  } else if(v>=BS){
+    const col=v-BS;
+    for(let rr=0;rr<ROWS;rr++)for(let cc=0;cc<COLS;cc++)if(gColor(board[rr][cc])===col)dst.add(rr*COLS+cc);
+  } else if(v>=BF){
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)dst.add(nr*COLS+nc);}
+  }
+  // Chain reaction: activate bonus gems caught in explosion
+  for(const id of [...dst]){
+    const nr=Math.floor(id/COLS),nc=id%COLS;
+    if(nr===r&&nc===c)continue;
+    if(_processed.has(id))continue;
     const bv=board[nr][nc];
-    if(isBonus(bv)) expandBonus(nr,nc,bv,dst,_processed);
+    if(isBonus(bv))expandBonus(nr,nc,bv,dst,_processed);
   }
 }
-
 function resolveMatches(groups,swapR,swapC){
   combo++;
   let pts=0;
@@ -597,18 +603,38 @@ function resolveMatches(groups,swapR,swapC){
 }
 
 function explodeDst(dst,cb){
-  let pending=0;
-  for(const idx of dst){const r=Math.floor(idx/COLS),c=idx%COLS;if(board[r][c]!==-1)pending++;}
-  if(!pending){cb();return;}
-  let done2=0;
+  const cells2=[];
   for(const idx of dst){
-    const r=Math.floor(idx/COLS),c=idx%COLS;if(board[r][c]===-1)continue;
-    spawnParticles(r,c,gColor(board[r][c]));
-    animState[r][c]={type:'explode',t:0,dur:.18,onDone:()=>{
-      board[r][c]=-1;drawGemOnCanvas(r,c);
-      gemCanvases[r][c].style.transform='';gemCanvases[r][c].style.opacity='1';
-      if(++done2===pending)cb();
-    }};
+    const r=Math.floor(idx/COLS),c=idx%COLS;
+    if(board[r][c]!==-1) cells2.push({r,c,v:board[r][c]});
+  }
+  if(!cells2.length){cb();return;}
+  // Spawn particles for all first
+  for(const{r,c,v}of cells2){
+    spawnParticles(r,c,gColor(v),isBonus(v)?'large':'small');
+  }
+  let done2=0;
+  const total=cells2.length;
+  for(const{r,c}of cells2){
+    const el=gemCanvases[r][c];
+    // Phase 1: bright flash + scale up
+    el.style.transition='filter 45ms ease-out, transform 45ms ease-out';
+    el.style.filter='brightness(3.5) saturate(0)';
+    el.style.transform='scale(1.25)';
+    el.style.zIndex='8';
+    setTimeout(()=>{
+      // Phase 2: shrink to nothing
+      el.style.transition='transform 110ms cubic-bezier(.4,0,1,1), opacity 90ms 15ms ease-in, filter 110ms ease-in';
+      el.style.transform='scale(0)';
+      el.style.opacity='0';
+      el.style.filter='';
+      setTimeout(()=>{
+        el.style.transition='none';el.style.filter='';
+        el.style.transform='';el.style.opacity='1';el.style.zIndex='1';
+        board[r][c]=-1;drawGemOnCanvas(r,c);
+        if(++done2===total) cb();
+      },120);
+    },48);
   }
 }
 
@@ -690,21 +716,39 @@ function doGravity(matchSet, newB){
     return;
   }
 
-  let landed=0;
-  for(const{r,c,fy,delay}of jobs){
-    setTimeout(()=>{
-      const el=gemCanvases[r][c];
-      el.style.opacity='0';
-      animState[r][c]={type:'fall',y:fy,vy:0,alpha:0,valpha:0,t:0,
-        onDone:()=>{
-          if(++landed===jobs.length){
-            bonusPopIn();
-            checkChain();
-          }
-        }
-      };
-    },delay);
+  // Set initial positions before any paint
+  for(const{r,c,fy}of jobs){
+    const el=gemCanvases[r][c];
+    el.style.transition='none';
+    el.style.transform=`translateY(${fy}px)`;
+    el.style.opacity='0';
   }
+  let landed=0;
+  const total=jobs.length;
+  // Double rAF to ensure initial positions are painted
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    for(const{r,c,fy,delay}of jobs){
+      const el=gemCanvases[r][c];
+      const dist=Math.abs(fy);
+      const dur=Math.round(Math.min(380,160+dist*.35));
+      el.style.transition=
+        `transform ${dur}ms cubic-bezier(.22,.8,.36,1) ${delay}ms,`+
+        `opacity ${Math.round(dur*.35)}ms ease ${delay}ms`;
+      el.style.transform='translateY(0)';
+      el.style.opacity='1';
+    }
+    // Max duration + small buffer
+    const maxMs=jobs.reduce((mx,{fy,delay})=>
+      Math.max(mx,Math.round(Math.min(380,160+Math.abs(fy)*.35))+delay),0)+30;
+    setTimeout(()=>{
+      // Landing squish: quick scale Y compress then release
+      for(const{r,c}of jobs){
+        const el=gemCanvases[r][c];
+        el.style.transition='none';el.style.transform='';el.style.opacity='1';
+      }
+      bonusPopIn();checkChain();
+    },maxMs);
+  }));
 }
 
 let _ht=null;
