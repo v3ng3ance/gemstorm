@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestiune Financiară</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --bg:#f8f9fa;--surface:#ffffff;--surface2:#f1f3f5;
+    --border:#dee2e6;--border2:#adb5bd;
+    --text:#212529;--text2:#6c757d;--text3:#adb5bd;
+    --blue:#1971c2;--blue-bg:#e7f5ff;--blue-light:#74c0fc;
+    --green:#2f9e44;--green-bg:#ebfbee;--green-light:#8ce99a;
+    --red:#e03131;--red-bg:#fff5f5;--red-light:#ffa8a8;
+    --amber:#e67700;--amber-bg:#fff9db;--amber-light:#ffe066;
+    --purple:#7048e8;--purple-bg:#f3f0ff;
+    --radius:8px;--radius-lg:12px;--shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;}
+  
+  /* AUTH */
+  #auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+  .auth-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.5rem;width:100%;max-width:380px;}
+  .auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:2rem;}
+  .auth-logo-icon{width:40px;height:40px;background:var(--blue);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;}
+  .auth-logo h1{font-size:18px;font-weight:600;color:var(--text);}
+  .auth-logo span{font-size:12px;color:var(--text2);display:block;font-weight:400;}
+  .form-group{margin-bottom:1rem;}
+  .form-group label{display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;}
+  .form-group input,select.form-control{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;color:var(--text);background:var(--surface);transition:border-color .15s;}
+  .form-group input:focus,select.form-control:focus{outline:none;border-color:var(--blue);}
+  .btn{padding:9px 16px;border-radius:var(--radius);border:1px solid transparent;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+  .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .btn-primary:hover{background:#1864ab;}
+  .btn-outline{background:transparent;color:var(--text);border-color:var(--border);}
+  .btn-outline:hover{background:var(--surface2);}
+  .btn-danger{background:var(--red);color:#fff;border-color:var(--red);}
+  .btn-danger:hover{background:#c92a2a;}
+  .btn-success{background:var(--green);color:#fff;border-color:var(--green);}
+  .btn-success:hover{background:#276736;}
+  .btn-full{width:100%;justify-content:center;}
+  .btn-sm{padding:5px 10px;font-size:12px;}
+  
+  /* APP LAYOUT */
+  #app{display:none;min-height:100vh;flex-direction:column;}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .topbar-left{display:flex;align-items:center;gap:12px;}
+  .topbar-logo{width:32px;height:32px;background:var(--blue);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;}
+  .topbar-title{font-weight:600;font-size:15px;}
+  .topbar-right{display:flex;align-items:center;gap:8px;}
+  .user-badge{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:var(--radius);background:var(--surface2);font-size:13px;}
+  .user-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;}
+  
+  /* NAV */
+  nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;gap:4px;overflow-x:auto;}
+  .nav-btn{padding:10px 14px;border:none;background:transparent;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:all .15s;}
+  .nav-btn:hover{color:var(--text);}
+  .nav-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+  .nav-btn i{font-size:16px;}
+  
+  /* CONTENT */
+  .content{padding:1.5rem;max-width:1200px;margin:0 auto;width:100%;}
+  
+  /* CARDS */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+  .card-title{font-size:14px;font-weight:600;color:var(--text);}
+  
+  /* METRIC CARDS */
+  .metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:1.5rem;}
+  .metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;}
+  .metric-label{font-size:12px;color:var(--text2);font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+  .metric-value{font-size:22px;font-weight:600;color:var(--text);}
+  .metric-sub{font-size:11px;color:var(--text3);margin-top:4px;}
+  .metric-icon{width:32px;height:32px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:16px;float:right;margin-top:-4px;}
+  
+  /* TABLE */
+  .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{background:var(--surface2);padding:10px 14px;text-align:left;font-weight:600;color:var(--text2);font-size:12px;border-bottom:1px solid var(--border);}
+  td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:var(--bg);}
+  
+  /* BADGES */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+  .badge-green{background:var(--green-bg);color:var(--green);}
+  .badge-red{background:var(--red-bg);color:var(--red);}
+  .badge-blue{background:var(--blue-bg);color:var(--blue);}
+  .badge-amber{background:var(--amber-bg);color:var(--amber);}
+  .badge-purple{background:var(--purple-bg);color:var(--purple);}
+  
+  /* GRID */
+  .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.25rem;}
+  .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem;}
+  
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;}
+  .modal{background:var(--surface);border-radius:var(--radius-lg);padding:1.75rem;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+  .modal-title{font-size:16px;font-weight:600;}
+  .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);padding:2px;border-radius:4px;}
+  .modal-close:hover{background:var(--surface2);}
+  .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border);}
+  
+  /* ALERT */
+  .alert{padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:1rem;display:flex;align-items:center;gap:8px;}
+  .alert-error{background:var(--red-bg);color:var(--red);border:1px solid var(--red-light);}
+  .alert-success{background:var(--green-bg);color:var(--green);border:1px solid var(--green-light);}
+  .alert-info{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-light);}
+  .alert-warning{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-light);}
+  
+  /* PAGE SECTIONS */
+  .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;}
+  .page-title{font-size:18px;font-weight:600;}
+  .page-sub{font-size:13px;color:var(--text2);margin-top:2px;}
+  
+  /* TABS */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:1.25rem;}
+  .tab-btn{padding:8px 14px;background:none;border:none;border-bottom:2px solid transparent;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;margin-bottom:-1px;transition:all .15s;}
+  .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+  
+  /* CHART CONTAINER */
+  .chart-container{position:relative;height:240px;}
+  
+  /* FORM ROW */
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  
+  /* STATUS DOT */
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+  .dot-green{background:var(--green);}
+  .dot-red{background:var(--red);}
+  .dot-amber{background:var(--amber);}
+  
+  /* EMPTY STATE */
+  .empty{text-align:center;padding:3rem 1rem;color:var(--text3);}
+  .empty i{font-size:40px;display:block;margin-bottom:1rem;opacity:.4;}
+  .empty p{font-size:14px;}
+  
+  /* FILTER BAR */
+  .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;}
+  .filter-bar input,.filter-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text);background:var(--surface);}
+  .filter-bar input:focus,.filter-bar select:focus{outline:none;border-color:var(--blue);}
+  
+  /* PROGRESS */
+  .progress-bar{background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;}
+  .progress-fill{height:100%;border-radius:4px;transition:width .3s;}
+  
+  /* SEPARATOR */
+  .sep{border:none;border-top:1px solid var(--border);margin:1rem 0;}
+  
+  /* PRINT HIDE */
+  @media print{.topbar,nav,.btn,.modal-overlay,.no-print{display:none!important;}.content{padding:0;}}
+  
+  /* MOBILE */
+  @media(max-width:600px){
+    .form-row{grid-template-columns:1fr;}
+    .content{padding:1rem;}
+    .metrics-grid{grid-template-columns:1fr 1fr;}
+    nav{gap:0;}
+    .nav-btn{padding:10px 10px;font-size:12px;}
+  }
+  
+  .hidden{display:none!important;}
+  input[type=number]{-moz-appearance:textfield;}
+  textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;color:var(--text);background:var(--surface);resize:vertical;font-family:inherit;}
+  textarea:focus{outline:none;border-color:var(--blue);}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon"><i class="ti ti-chart-pie"></i></div>
+      <div>
+        <h1>Gestiune Financiară</h1>
+        <span>Vânzări · Încasări · Cheltuieli</span>
+      </div>
+    </div>
+    <div id="auth-error" class="alert alert-error hidden"></div>
+    <div class="form-group">
+      <label>Utilizator</label>
+      <input type="text" id="login-user" placeholder="Introduceți utilizatorul" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Parolă</label>
+      <input type="password" id="login-pass" placeholder="Introduceți parola" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doLogin()"><i class="ti ti-login"></i> Autentificare</button>
+    <p style="margin-top:1rem;font-size:12px;color:var(--text3);text-align:center;">Admin implicit: admin / admin123</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo"><i class="ti ti-chart-pie"></i></div>
+      <span class="topbar-title">Gestiune Financiară</span>
+    </div>
+    <div class="topbar-right">
+      <div class="user-badge">
+        <div class="user-avatar" id="topbar-avatar"></div>
+        <span id="topbar-username"></span>
+        <span id="topbar-role" class="badge badge-blue" style="font-size:10px;"></span>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()"><i class="ti ti-logout"></i></button>
+    </div>
+  </div>
+  
+  <nav id="main-nav">
+    <button class="nav-btn active" onclick="showPage('dashboard',this)" id="nav-dashboard">
+      <i class="ti ti-dashboard"></i> Dashboard
+    </button>
+    <button class="nav-btn" onclick="showPage('incasari',this)" id="nav-incasari">
+      <i class="ti ti-cash"></i> Declarare Încasări
+    </button>
+    <button class="nav-btn" onclick="showPage('vanzari',this)" id="nav-vanzari">
+      <i class="ti ti-shopping-cart"></i> Vânzări
+    </button>
+    <button class="nav-btn" onclick="showPage('cheltuieli',this)" id="nav-cheltuieli">
+      <i class="ti ti-receipt"></i> Cheltuieli
+    </button>
+    <button class="nav-btn hidden" onclick="showPage('rapoarte',this)" id="nav-rapoarte">
+      <i class="ti ti-chart-bar"></i> Rapoarte
+    </button>
+    <button class="nav-btn hidden" onclick="showPage('utilizatori',this)" id="nav-utilizatori">
+      <i class="ti ti-users"></i> Utilizatori
+    </button>
+  </nav>
+
+  <!-- PAGES -->
+  <div class="content">
+    
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub" id="dash-period">Rezumat luna curentă</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <select id="dash-filter" onchange="renderDashboard()" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text);background:var(--surface);">
+            <option value="luna">Luna aceasta</option>
+            <option value="saptamana">Săptămâna aceasta</option>
+            <option value="azi">Azi</option>
+            <option value="total">Total</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="metrics-grid" id="dash-metrics"></div>
+      
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="ti ti-chart-line" style="color:var(--blue)"></i> Evoluție (ultimele 30 zile)</span>
+          </div>
+          <div class="chart-container"><canvas id="chart-evolution"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="ti ti-chart-donut" style="color:var(--purple)"></i> Structura cheltuielilor</span>
+          </div>
+          <div class="chart-container"><canvas id="chart-cheltuieli"></canvas></div>
+        </div>
+      </div>
+      
+      <div style="margin-top:1.25rem;" class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="ti ti-clock" style="color:var(--amber)"></i> Ultimele declarații</span>
+            <span class="badge badge-amber" id="dash-pending-count"></span>
+          </div>
+          <div id="dash-recent-declarations"></div>
+        </div>
+        <div class="card" id="admin-summary-card">
+          <div class="card-header">
+            <span class="card-title"><i class="ti ti-users" style="color:var(--green)"></i> Performanță utilizatori</span>
+          </div>
+          <div id="dash-user-perf"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- INCASARI -->
+    <div id="page-incasari" class="page hidden">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Declarare Încasări</div>
+          <div class="page-sub">Înregistrează încasările la sfârșitul zilei</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-incasare')"><i class="ti ti-plus"></i> Declarare nouă</button>
+      </div>
+      
+      <div id="incasari-alert-zone"></div>
+      
+      <div class="filter-bar">
+        <input type="date" id="filter-inc-data" onchange="renderIncasari()">
+        <select id="filter-inc-user" onchange="renderIncasari()">
+          <option value="">Toți utilizatorii</option>
+        </select>
+        <select id="filter-inc-status" onchange="renderIncasari()">
+          <option value="">Toate statusurile</option>
+          <option value="aprobat">Aprobate</option>
+          <option value="in-asteptare">În așteptare</option>
+          <option value="respins">Respinse</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="clearFiltersInc()"><i class="ti ti-x"></i> Resetare</button>
+      </div>
+      
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Utilizator</th>
+              <th>Tip</th>
+              <th>Sumă</th>
+              <th>Notă</th>
+              <th>Status</th>
+              <th class="admin-only">Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-incasari"></tbody>
+        </table>
+      </div>
+    </div>
+    
+    <!-- VANZARI -->
+    <div id="page-vanzari" class="page hidden">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Vânzări</div>
+          <div class="page-sub">Înregistrează și urmărește vânzările</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-vanzare')"><i class="ti ti-plus"></i> Vânzare nouă</button>
+      </div>
+      
+      <div class="filter-bar">
+        <input type="date" id="filter-van-data" onchange="renderVanzari()">
+        <input type="text" id="filter-van-search" placeholder="Caută produs..." onkeyup="renderVanzari()" style="min-width:180px;">
+        <select id="filter-van-cat" onchange="renderVanzari()">
+          <option value="">Toate categoriile</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="clearFiltersVan()"><i class="ti ti-x"></i> Resetare</button>
+      </div>
+      
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Produs/Serviciu</th>
+              <th>Categorie</th>
+              <th>Cantitate</th>
+              <th>Preț unitar</th>
+              <th>Total</th>
+              <th>Utilizator</th>
+              <th>Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-vanzari"></tbody>
+        </table>
+      </div>
+      <div id="vanzari-total" style="text-align:right;margin-top:10px;font-size:13px;color:var(--text2);"></div>
+    </div>
+    
+    <!-- CHELTUIELI -->
+    <div id="page-cheltuieli" class="page hidden">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Cheltuieli</div>
+          <div class="page-sub">Înregistrează și monitorizează cheltuielile</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-cheltuiala')"><i class="ti ti-plus"></i> Cheltuială nouă</button>
+      </div>
+      
+      <div class="filter-bar">
+        <input type="date" id="filter-che-data" onchange="renderCheltuieli()">
+        <select id="filter-che-cat" onchange="renderCheltuieli()">
+          <option value="">Toate categoriile</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="clearFiltersChe()"><i class="ti ti-x"></i> Resetare</button>
+      </div>
+      
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descriere</th>
+              <th>Categorie</th>
+              <th>Sumă</th>
+              <th>Utilizator</th>
+              <th>Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-cheltuieli"></tbody>
+        </table>
+      </div>
+      <div id="cheltuieli-total" style="text-align:right;margin-top:10px;font-size:13px;color:var(--text2);"></div>
+    </div>
+    
+    <!-- RAPOARTE (admin) -->
+    <div id="page-rapoarte" class="page hidden">
+      <div class="page-header">
+        <div class="page-title">Rapoarte</div>
+      </div>
+      
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header">
+          <span class="card-title">Generează raport</span>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="form-group" style="margin:0;">
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">De la</label>
+            <input type="date" id="rap-from" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px;">Până la</label>
+            <input type="date" id="rap-to" style="padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;">
+          </div>
+          <button class="btn btn-primary" onclick="genRaport()"><i class="ti ti-file-analytics"></i> Generează</button>
+          <button class="btn btn-outline" onclick="printRaport()"><i class="ti ti-printer"></i> Printează</button>
+        </div>
+      </div>
+      
+      <div id="raport-content"></div>
+    </div>
+    
+    <!-- UTILIZATORI (admin) -->
+    <div id="page-utilizatori" class="page hidden">
+      <div class="page-header">
+        <div class="page-title">Gestionare utilizatori</div>
+        <button class="btn btn-primary" onclick="openModal('modal-user')"><i class="ti ti-user-plus"></i> Utilizator nou</button>
+      </div>
+      
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Utilizator</th>
+              <th>Rol</th>
+              <th>Locație/Magazin</th>
+              <th>Înregistrări</th>
+              <th>Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-users"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div>
+
+<!-- MODALS -->
+
+<!-- Modal: Declarare încasare -->
+<div class="modal-overlay hidden" id="modal-incasare">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title"><i class="ti ti-cash" style="color:var(--green)"></i> Declarare încasare</span>
+      <button class="modal-close" onclick="closeModal('modal-incasare')">×</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data *</label>
+        <input type="date" id="inc-data">
+      </div>
+      <div class="form-group">
+        <label>Tip încasare *</label>
+        <select id="inc-tip" class="form-control">
+          <option value="">Selectează tipul</option>
+          <option>Numerar - Magazin</option>
+          <option>Card - Magazin</option>
+          <option>Numerar - Individual</option>
+          <option>Transfer bancar</option>
+          <option>Online</option>
+          <option>Altele</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Sumă (RON) *</label>
+      <input type="number" id="inc-suma" placeholder="0.00" min="0" step="0.01">
+    </div>
+    <div class="form-group">
+      <label>Notă / Observații</label>
+      <textarea id="inc-nota" rows="2" placeholder="Detalii suplimentare..."></textarea>
+    </div>
+    <div id="inc-error" class="alert alert-error hidden"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-incasare')">Anulează</button>
+      <button class="btn btn-success" onclick="saveIncasare()"><i class="ti ti-check"></i> Salvează declarația</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Vânzare -->
+<div class="modal-overlay hidden" id="modal-vanzare">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title"><i class="ti ti-shopping-cart" style="color:var(--blue)"></i> Vânzare nouă</span>
+      <button class="modal-close" onclick="closeModal('modal-vanzare')">×</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data *</label>
+        <input type="date" id="van-data">
+      </div>
+      <div class="form-group">
+        <label>Categorie *</label>
+        <select id="van-cat" class="form-control">
+          <option value="">Selectează categoria</option>
+          <option>Produse</option>
+          <option>Servicii</option>
+          <option>Abonamente</option>
+          <option>Altele</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Produs / Serviciu *</label>
+      <input type="text" id="van-produs" placeholder="Denumire produs sau serviciu">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Cantitate *</label>
+        <input type="number" id="van-cant" placeholder="1" min="0.01" step="0.01" oninput="calcTotalVan()">
+      </div>
+      <div class="form-group">
+        <label>Preț unitar (RON) *</label>
+        <input type="number" id="van-pret" placeholder="0.00" min="0" step="0.01" oninput="calcTotalVan()">
+      </div>
+    </div>
+    <div style="background:var(--blue-bg);border-radius:var(--radius);padding:10px 14px;margin-bottom:1rem;">
+      <span style="font-size:13px;color:var(--text2);">Total:</span>
+      <span style="font-size:18px;font-weight:600;color:var(--blue);margin-left:8px;" id="van-total-preview">0.00 RON</span>
+    </div>
+    <div class="form-group">
+      <label>Observații</label>
+      <input type="text" id="van-nota" placeholder="Opțional">
+    </div>
+    <div id="van-error" class="alert alert-error hidden"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-vanzare')">Anulează</button>
+      <button class="btn btn-primary" onclick="saveVanzare()"><i class="ti ti-check"></i> Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Cheltuială -->
+<div class="modal-overlay hidden" id="modal-cheltuiala">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title"><i class="ti ti-receipt" style="color:var(--red)"></i> Cheltuială nouă</span>
+      <button class="modal-close" onclick="closeModal('modal-cheltuiala')">×</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Data *</label>
+        <input type="date" id="che-data">
+      </div>
+      <div class="form-group">
+        <label>Categorie *</label>
+        <select id="che-cat" class="form-control">
+          <option value="">Selectează categoria</option>
+          <option>Salarii</option>
+          <option>Chirii</option>
+          <option>Utilități</option>
+          <option>Marfă / Materii prime</option>
+          <option>Transport</option>
+          <option>Marketing</option>
+          <option>IT / Software</option>
+          <option>Servicii externe</option>
+          <option>Altele</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Descriere *</label>
+      <input type="text" id="che-desc" placeholder="Descriere cheltuială">
+    </div>
+    <div class="form-group">
+      <label>Sumă (RON) *</label>
+      <input type="number" id="che-suma" placeholder="0.00" min="0" step="0.01">
+    </div>
+    <div class="form-group">
+      <label>Observații</label>
+      <textarea id="che-nota" rows="2" placeholder="Detalii suplimentare..."></textarea>
+    </div>
+    <div id="che-error" class="alert alert-error hidden"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-cheltuiala')">Anulează</button>
+      <button class="btn btn-danger" onclick="saveCheltuiala()"><i class="ti ti-check"></i> Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: User -->
+<div class="modal-overlay hidden" id="modal-user">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-user-title"><i class="ti ti-user-plus" style="color:var(--blue)"></i> Utilizator nou</span>
+      <button class="modal-close" onclick="closeModal('modal-user')">×</button>
+    </div>
+    <input type="hidden" id="user-edit-id">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nume utilizator *</label>
+        <input type="text" id="user-name" placeholder="ex: ionpopescu">
+      </div>
+      <div class="form-group">
+        <label>Rol *</label>
+        <select id="user-role" class="form-control">
+          <option value="user">Angajat</option>
+          <option value="manager">Manager</option>
+          <option value="admin">Administrator</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Parolă *</label>
+      <input type="password" id="user-pass" placeholder="Minim 4 caractere">
+    </div>
+    <div class="form-group">
+      <label>Locație / Magazin</label>
+      <input type="text" id="user-location" placeholder="ex: Magazin Central">
+    </div>
+    <div id="user-error" class="alert alert-error hidden"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-user')">Anulează</button>
+      <button class="btn btn-primary" onclick="saveUser()"><i class="ti ti-check"></i> Salvează</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Aprobare declaratie (admin) -->
+<div class="modal-overlay hidden" id="modal-aprobare">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Aprobare declarație</span>
+      <button class="modal-close" onclick="closeModal('modal-aprobare')">×</button>
+    </div>
+    <div id="aprobare-info" style="background:var(--surface2);border-radius:var(--radius);padding:14px;margin-bottom:1rem;font-size:13px;"></div>
+    <div class="form-group">
+      <label>Notă aprobare (opțional)</label>
+      <textarea id="aprobare-nota" rows="2" placeholder="Observații pentru angajat..."></textarea>
+    </div>
+    <input type="hidden" id="aprobare-id">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-aprobare')">Anulează</button>
+      <button class="btn btn-danger" onclick="respingeDeclaratie()"><i class="ti ti-x"></i> Respinge</button>
+      <button class="btn btn-success" onclick="aprobaDeclaratie()"><i class="ti ti-check"></i> Aprobă</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+const STATE = {
+  currentUser: null,
+  users: [],
+  incasari: [],
+  vanzari: [],
+  cheltuieli: [],
+  charts: {}
+};
+
+// ==================== INIT DATA ====================
+function initData() {
+  const saved = localStorage.getItem('gf_data');
+  if (saved) {
+    const d = JSON.parse(saved);
+    STATE.users = d.users || [];
+    STATE.incasari = d.incasari || [];
+    STATE.vanzari = d.vanzari || [];
+    STATE.cheltuieli = d.cheltuieli || [];
+  }
+  
+  // Seed admin if no users
+  if (!STATE.users.find(u => u.role === 'admin')) {
+    STATE.users.push({
+      id: 'user_admin',
+      username: 'admin',
+      password: 'admin123',
+      role: 'admin',
+      location: 'Sediu central',
+      created: today()
+    });
+  }
+  
+  // Seed demo data if empty
+  if (STATE.incasari.length === 0) seedDemoData();
+  
+  saveData();
+}
+
+function saveData() {
+  localStorage.setItem('gf_data', JSON.stringify({
+    users: STATE.users,
+    incasari: STATE.incasari,
+    vanzari: STATE.vanzari,
+    cheltuieli: STATE.cheltuieli
+  }));
+}
+
+function seedDemoData() {
+  const now = new Date();
+  const fmt = d => d.toISOString().slice(0,10);
+  
+  // Demo users
+  ['ion', 'maria', 'alex'].forEach((n, i) => {
+    STATE.users.push({
+      id: 'user_' + n,
+      username: n,
+      password: '1234',
+      role: i === 2 ? 'manager' : 'user',
+      location: ['Magazin Nord', 'Magazin Sud', 'Punct Lucru'][i],
+      created: today()
+    });
+  });
+  
+  // Demo incasari (last 30 days)
+  const types = ['Numerar - Magazin', 'Card - Magazin', 'Numerar - Individual', 'Transfer bancar'];
+  for (let i = 0; i < 25; i++) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    STATE.incasari.push({
+      id: 'inc_' + i,
+      data: fmt(d),
+      userId: ['user_ion', 'user_maria', 'user_alex'][i % 3],
+      username: ['ion', 'maria', 'alex'][i % 3],
+      tip: types[i % 4],
+      suma: +(Math.random() * 3000 + 500).toFixed(2),
+      nota: '',
+      status: i > 5 ? 'aprobat' : (i > 2 ? 'in-asteptare' : 'aprobat'),
+      created: new Date().toISOString()
+    });
+  }
+  
+  // Demo vanzari
+  const prods = [['Produs A', 'Produse'], ['Serviciu B', 'Servicii'], ['Abonament C', 'Abonamente'], ['Produs D', 'Produse']];
+  for (let i = 0; i < 20; i++) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const p = prods[i % 4];
+    const cant = +(Math.random() * 5 + 1).toFixed(1);
+    const pret = +(Math.random() * 200 + 50).toFixed(2);
+    STATE.vanzari.push({
+      id: 'van_' + i,
+      data: fmt(d),
+      produs: p[0],
+      categorie: p[1],
+      cantitate: cant,
+      pret: pret,
+      total: +(cant * pret).toFixed(2),
+      nota: '',
+      userId: ['user_ion', 'user_maria', 'user_alex'][i % 3],
+      username: ['ion', 'maria', 'alex'][i % 3],
+      created: new Date().toISOString()
+    });
+  }
+  
+  // Demo cheltuieli
+  const cats = ['Salarii', 'Chirii', 'Utilități', 'Marfă / Materii prime', 'Transport'];
+  for (let i = 0; i < 15; i++) {
+    const d = new Date(now); d.setDate(d.getDate() - i * 2);
+    STATE.cheltuieli.push({
+      id: 'che_' + i,
+      data: fmt(d),
+      descriere: cats[i % 5] + ' - ' + fmt(d),
+      categorie: cats[i % 5],
+      suma: +(Math.random() * 2000 + 200).toFixed(2),
+      nota: '',
+      userId: 'user_admin',
+      username: 'admin',
+      created: new Date().toISOString()
+    });
+  }
+}
+
+function today() {
+  return new Date().toISOString().slice(0,10);
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+
+// ==================== AUTH ====================
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const user = STATE.users.find(x => x.username === u && x.password === p);
+  if (!user) {
+    showError('auth-error', 'Utilizator sau parolă incorectă.');
+    return;
+  }
+  STATE.currentUser = user;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app').style.flexDirection = 'column';
+  setupUserUI();
+  showPage('dashboard', document.querySelector('.nav-btn'));
+}
+
+document.getElementById('login-pass').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
+
+function doLogout() {
+  STATE.currentUser = null;
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  document.getElementById('auth-error').classList.add('hidden');
+}
+
+function setupUserUI() {
+  const u = STATE.currentUser;
+  const colors = {admin:'#1971c2', manager:'#7048e8', user:'#2f9e44'};
+  const av = document.getElementById('topbar-avatar');
+  av.textContent = u.username.slice(0,2).toUpperCase();
+  av.style.background = colors[u.role] || '#888';
+  document.getElementById('topbar-username').textContent = u.username;
+  const rb = document.getElementById('topbar-role');
+  rb.textContent = {admin:'Administrator', manager:'Manager', user:'Angajat'}[u.role];
+  
+  const isAdmin = u.role === 'admin' || u.role === 'manager';
+  document.getElementById('nav-rapoarte').classList.toggle('hidden', !isAdmin);
+  document.getElementById('nav-utilizatori').classList.toggle('hidden', u.role !== 'admin');
+  document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !isAdmin));
+}
+
+// ==================== NAVIGATION ====================
+function showPage(page, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  document.getElementById('page-' + page).classList.remove('hidden');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'incasari') { populateUserFilter(); renderIncasari(); setTodayDates(); }
+  if (page === 'vanzari') { renderVanzari(); populateCatFilter('filter-van-cat', getCategories('vanzari')); setTodayDates(); }
+  if (page === 'cheltuieli') { renderCheltuieli(); populateCatFilter('filter-che-cat', getCategories('cheltuieli')); setTodayDates(); }
+  if (page === 'utilizatori') renderUsers();
+  if (page === 'rapoarte') initRaport();
+}
+
+function setTodayDates() {
+  const t = today();
+  ['inc-data','van-data','che-data'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.value) el.value = t;
+  });
+}
+
+function getCategories(type) {
+  const arr = type === 'vanzari' ? STATE.vanzari : STATE.cheltuieli;
+  return [...new Set(arr.map(x => x.categorie).filter(Boolean))];
+}
+
+function populateCatFilter(id, cats) {
+  const sel = document.getElementById(id);
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Toate categoriile</option>';
+  cats.forEach(c => sel.innerHTML += `<option${cur===c?' selected':''}>${c}</option>`);
+}
+
+function populateUserFilter() {
+  const sel = document.getElementById('filter-inc-user');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Toți utilizatorii</option>';
+  STATE.users.filter(u => u.role !== 'admin' || STATE.currentUser.role === 'admin').forEach(u => {
+    sel.innerHTML += `<option value="${u.id}"${cur===u.id?' selected':''}>${u.username}</option>`;
+  });
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  const filter = document.getElementById('dash-filter').value;
+  const {from, to} = getDateRange(filter);
+  
+  const inc = STATE.incasari.filter(x => x.data >= from && x.data <= to && x.status !== 'respins');
+  const van = STATE.vanzari.filter(x => x.data >= from && x.data <= to);
+  const che = STATE.cheltuieli.filter(x => x.data >= from && x.data <= to);
+  
+  const totalInc = inc.reduce((s,x) => s + x.suma, 0);
+  const totalVan = van.reduce((s,x) => s + x.total, 0);
+  const totalChe = che.reduce((s,x) => s + x.suma, 0);
+  const profit = totalInc + totalVan - totalChe;
+  const pending = STATE.incasari.filter(x => x.status === 'in-asteptare').length;
+  
+  document.getElementById('dash-metrics').innerHTML = `
+    <div class="metric-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="metric-label"><span class="dot dot-green"></span> Încasări</div>
+          <div class="metric-value">${fmt(totalInc)}</div>
+          <div class="metric-sub">${inc.length} declarații</div>
+        </div>
+        <div class="metric-icon" style="background:var(--green-bg);color:var(--green);"><i class="ti ti-cash"></i></div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="metric-label"><span class="dot dot-amber"></span> Vânzări</div>
+          <div class="metric-value">${fmt(totalVan)}</div>
+          <div class="metric-sub">${van.length} înregistrări</div>
+        </div>
+        <div class="metric-icon" style="background:var(--amber-bg);color:var(--amber);"><i class="ti ti-shopping-cart"></i></div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="metric-label"><span class="dot dot-red"></span> Cheltuieli</div>
+          <div class="metric-value">${fmt(totalChe)}</div>
+          <div class="metric-sub">${che.length} înregistrări</div>
+        </div>
+        <div class="metric-icon" style="background:var(--red-bg);color:var(--red);"><i class="ti ti-receipt"></i></div>
+      </div>
+    </div>
+    <div class="metric-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="metric-label"><span class="dot ${profit >= 0 ? 'dot-green' : 'dot-red'}"></span> Profit net</div>
+          <div class="metric-value" style="color:${profit >= 0 ? 'var(--green)' : 'var(--red)'}">${fmt(profit)}</div>
+          <div class="metric-sub">${profit >= 0 ? 'Pozitiv' : 'Negativ'}</div>
+        </div>
+        <div class="metric-icon" style="background:var(--purple-bg);color:var(--purple);"><i class="ti ti-trending-up"></i></div>
+      </div>
+    </div>
+  `;
+  
+  if (pending > 0) {
+    document.getElementById('dash-pending-count').textContent = pending + ' în așteptare';
+    document.getElementById('dash-pending-count').classList.remove('hidden');
+  } else {
+    document.getElementById('dash-pending-count').classList.add('hidden');
+  }
+  
+  renderEvolutionChart();
+  renderCheltuieliChart();
+  renderRecentDeclarations();
+  renderUserPerf();
+}
+
+function getDateRange(filter) {
+  const now = new Date();
+  const fmt = d => d.toISOString().slice(0,10);
+  if (filter === 'azi') return {from: fmt(now), to: fmt(now)};
+  if (filter === 'saptamana') {
+    const mon = new Date(now); mon.setDate(now.getDate() - now.getDay() + 1);
+    return {from: fmt(mon), to: fmt(now)};
+  }
+  if (filter === 'luna') {
+    const first = new Date(now.getFullYear(), now.getMonth(), 1);
+    return {from: fmt(first), to: fmt(now)};
+  }
+  return {from: '2000-01-01', to: '2099-12-31'};
+}
+
+function renderEvolutionChart() {
+  const days = 30;
+  const labels = [], incData = [], vanData = [], cheData = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0,10);
+    labels.push(ds.slice(5));
+    incData.push(STATE.incasari.filter(x => x.data === ds && x.status !== 'respins').reduce((s,x) => s + x.suma, 0));
+    vanData.push(STATE.vanzari.filter(x => x.data === ds).reduce((s,x) => s + x.total, 0));
+    cheData.push(STATE.cheltuieli.filter(x => x.data === ds).reduce((s,x) => s + x.suma, 0));
+  }
+  
+  if (STATE.charts.evolution) STATE.charts.evolution.destroy();
+  const ctx = document.getElementById('chart-evolution').getContext('2d');
+  STATE.charts.evolution = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {label:'Încasări', data:incData, borderColor:'#2f9e44', backgroundColor:'rgba(47,158,68,0.07)', tension:0.3, fill:true, pointRadius:2},
+        {label:'Vânzări', data:vanData, borderColor:'#e67700', backgroundColor:'rgba(230,119,0,0.07)', tension:0.3, fill:true, pointRadius:2},
+        {label:'Cheltuieli', data:cheData, borderColor:'#e03131', backgroundColor:'rgba(224,49,49,0.07)', tension:0.3, fill:true, pointRadius:2},
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:11},boxWidth:12}}},
+      scales:{x:{ticks:{maxTicksLimit:8,font:{size:10}},grid:{display:false}}, y:{ticks:{font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(0)+'k':v}, grid:{color:'rgba(0,0,0,0.04)'}}}
+    }
+  });
+}
+
+function renderCheltuieliChart() {
+  const {from, to} = getDateRange(document.getElementById('dash-filter').value);
+  const che = STATE.cheltuieli.filter(x => x.data >= from && x.data <= to);
+  const byCat = {};
+  che.forEach(x => { byCat[x.categorie] = (byCat[x.categorie] || 0) + x.suma; });
+  const labels = Object.keys(byCat);
+  const data = Object.values(byCat);
+  const colors = ['#1971c2','#2f9e44','#e67700','#e03131','#7048e8','#e64980','#0ca678','#f76707'];
+  
+  if (STATE.charts.cheltuieli) STATE.charts.cheltuieli.destroy();
+  const ctx = document.getElementById('chart-cheltuieli').getContext('2d');
+  if (!labels.length) { ctx.clearRect(0,0,500,300); return; }
+  STATE.charts.cheltuieli = new Chart(ctx, {
+    type: 'doughnut',
+    data: {labels, datasets:[{data, backgroundColor:colors.slice(0,labels.length), borderWidth:2, borderColor:'#fff'}]},
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}
+    }
+  });
+}
+
+function renderRecentDeclarations() {
+  const recent = [...STATE.incasari].sort((a,b) => b.created.localeCompare(a.created)).slice(0,6);
+  const isAdmin = STATE.currentUser.role === 'admin' || STATE.currentUser.role === 'manager';
+  
+  if (!recent.length) {
+    document.getElementById('dash-recent-declarations').innerHTML = '<div class="empty"><i class="ti ti-inbox"></i><p>Nicio declarație înregistrată</p></div>';
+    return;
+  }
+  
+  let html = '<div style="display:flex;flex-direction:column;gap:8px;">';
+  recent.forEach(r => {
+    const sc = {aprobat:'badge-green', 'in-asteptare':'badge-amber', respins:'badge-red'}[r.status];
+    const sl = {aprobat:'Aprobat', 'in-asteptare':'În așteptare', respins:'Respins'}[r.status];
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:var(--radius);gap:8px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:500;font-size:13px;">${r.username} <span style="color:var(--text3);font-weight:400;">· ${r.data}</span></div>
+        <div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.tip}</div>
+      </div>
+      <div style="font-weight:600;font-size:13px;color:var(--green);white-space:nowrap;">${fmt(r.suma)}</div>
+      <span class="badge ${sc}">${sl}</span>
+      ${isAdmin && r.status === 'in-asteptare' ? `<button class="btn btn-sm btn-outline" onclick="openAprobare('${r.id}')"><i class="ti ti-check"></i></button>` : ''}
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('dash-recent-declarations').innerHTML = html;
+}
+
+function renderUserPerf() {
+  const isAdmin = STATE.currentUser.role === 'admin' || STATE.currentUser.role === 'manager';
+  const card = document.getElementById('admin-summary-card');
+  if (!isAdmin) { card.style.display = 'none'; return; }
+  
+  const {from, to} = getDateRange(document.getElementById('dash-filter').value);
+  const users = STATE.users.filter(u => u.role !== 'admin');
+  
+  if (!users.length) { document.getElementById('dash-user-perf').innerHTML = '<div class="empty"><i class="ti ti-users"></i><p>Niciun angajat</p></div>'; return; }
+  
+  const maxInc = Math.max(...users.map(u => STATE.incasari.filter(x => x.userId === u.id && x.data >= from && x.data <= to && x.status !== 'respins').reduce((s,x) => s + x.suma, 0)), 1);
+  
+  let html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+  users.forEach(u => {
+    const total = STATE.incasari.filter(x => x.userId === u.id && x.data >= from && x.data <= to && x.status !== 'respins').reduce((s,x) => s + x.suma, 0);
+    const pct = Math.round((total / maxInc) * 100);
+    const roleC = {admin:'badge-blue', manager:'badge-purple', user:'badge-green'}[u.role];
+    const roleL = {admin:'Admin', manager:'Manager', user:'Angajat'}[u.role];
+    html += `<div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:13px;font-weight:500;">${u.username} <span class="badge ${roleC}" style="font-size:10px;">${roleL}</span></span>
+        <span style="font-size:13px;color:var(--text2);">${fmt(total)}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:var(--blue);"></div></div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('dash-user-perf').innerHTML = html;
+}
+
+// ==================== INCASARI ====================
+function renderIncasari() {
+  const filterData = document.getElementById('filter-inc-data').value;
+  const filterUser = document.getElementById('filter-inc-user').value;
+  const filterStatus = document.getElementById('filter-inc-status').value;
+  const isAdmin = STATE.currentUser.role === 'admin' || STATE.currentUser.role === 'manager';
+  
+  let data = STATE.incasari;
+  if (!isAdmin) data = data.filter(x => x.userId === STATE.currentUser.id);
+  if (filterData) data = data.filter(x => x.data === filterData);
+  if (filterUser) data = data.filter(x => x.userId === filterUser);
+  if (filterStatus) data = data.filter(x => x.status === filterStatus);
+  
+  data = [...data].sort((a,b) => b.data.localeCompare(a.data));
+  
+  const tbody = document.getElementById('tbl-incasari');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty" style="padding:2rem;"><i class="ti ti-inbox"></i><p>Nicio înregistrare</p></div></td></tr>`;
+    return;
+  }
+  
+  tbody.innerHTML = data.map(r => {
+    const sc = {aprobat:'badge-green', 'in-asteptare':'badge-amber', respins:'badge-red'}[r.status];
+    const sl = {aprobat:'Aprobat', 'in-asteptare':'În așteptare', respins:'Respins'}[r.status];
+    return `<tr>
+      <td>${r.data}</td>
+      <td><strong>${r.username}</strong></td>
+      <td>${r.tip}</td>
+      <td><strong style="color:var(--green);">${fmt(r.suma)}</strong></td>
+      <td style="color:var(--text2);font-size:12px;">${r.nota || '—'}</td>
+      <td><span class="badge ${sc}">${sl}</span></td>
+      <td class="admin-only">
+        ${isAdmin && r.status === 'in-asteptare' ? `<button class="btn btn-sm btn-success" onclick="openAprobare('${r.id}')"><i class="ti ti-check"></i> Aprobare</button>` : ''}
+        ${isAdmin ? `<button class="btn btn-sm btn-outline" style="color:var(--red);" onclick="deleteItem('incasari','${r.id}')"><i class="ti ti-trash"></i></button>` : ''}
+        ${r.userId === STATE.currentUser.id && r.status === 'in-asteptare' ? `<button class="btn btn-sm btn-outline" style="color:var(--red);" onclick="deleteItem('incasari','${r.id}')"><i class="ti ti-trash"></i></button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function saveIncasare() {
+  const data = document.getElementById('inc-data').value;
+  const tip = document.getElementById('inc-tip').value;
+  const suma = parseFloat(document.getElementById('inc-suma').value);
+  const nota = document.getElementById('inc-nota').value.trim();
+  
+  if (!data || !tip || !suma || suma <= 0) {
+    showError('inc-error', 'Completați toate câmpurile obligatorii (*).');
+    return;
+  }
+  
+  STATE.incasari.push({
+    id: 'inc_' + uid(),
+    data, tip, suma, nota,
+    userId: STATE.currentUser.id,
+    username: STATE.currentUser.username,
+    status: 'in-asteptare',
+    created: new Date().toISOString()
+  });
+  
+  saveData();
+  closeModal('modal-incasare');
+  renderIncasari();
+  showAlert('incasari-alert-zone', 'success', 'Declarația a fost înregistrată și așteaptă aprobarea.');
+}
+
+function openAprobare(id) {
+  const r = STATE.incasari.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('aprobare-id').value = id;
+  document.getElementById('aprobare-nota').value = '';
+  document.getElementById('aprobare-info').innerHTML = `
+    <table style="width:100%;">
+      <tr><td style="color:var(--text2);padding:3px 0;">Utilizator:</td><td><strong>${r.username}</strong></td></tr>
+      <tr><td style="color:var(--text2);padding:3px 0;">Data:</td><td>${r.data}</td></tr>
+      <tr><td style="color:var(--text2);padding:3px 0;">Tip:</td><td>${r.tip}</td></tr>
+      <tr><td style="color:var(--text2);padding:3px 0;">Sumă:</td><td><strong style="color:var(--green);">${fmt(r.suma)}</strong></td></tr>
+      ${r.nota ? `<tr><td style="color:var(--text2);padding:3px 0;">Notă:</td><td>${r.nota}</td></tr>` : ''}
+    </table>`;
+  openModal('modal-aprobare');
+}
+
+function aprobaDeclaratie() {
+  const id = document.getElementById('aprobare-id').value;
+  const r = STATE.incasari.find(x => x.id === id);
+  if (!r) return;
+  r.status = 'aprobat';
+  r.notaAprobare = document.getElementById('aprobare-nota').value;
+  r.aprobatDe = STATE.currentUser.username;
+  saveData();
+  closeModal('modal-aprobare');
+  renderIncasari();
+  renderDashboard();
+}
+
+function respingeDeclaratie() {
+  const id = document.getElementById('aprobare-id').value;
+  const r = STATE.incasari.find(x => x.id === id);
+  if (!r) return;
+  r.status = 'respins';
+  r.notaAprobare = document.getElementById('aprobare-nota').value;
+  r.aprobatDe = STATE.currentUser.username;
+  saveData();
+  closeModal('modal-aprobare');
+  renderIncasari();
+}
+
+// ==================== VANZARI ====================
+function renderVanzari() {
+  const filterData = document.getElementById('filter-van-data').value;
+  const filterSearch = document.getElementById('filter-van-search').value.toLowerCase();
+  const filterCat = document.getElementById('filter-van-cat').value;
+  const isAdmin = STATE.currentUser.role === 'admin' || STATE.currentUser.role === 'manager';
+  
+  let data = STATE.vanzari;
+  if (!isAdmin) data = data.filter(x => x.userId === STATE.currentUser.id);
+  if (filterData) data = data.filter(x => x.data === filterData);
+  if (filterSearch) data = data.filter(x => x.produs.toLowerCase().includes(filterSearch));
+  if (filterCat) data = data.filter(x => x.categorie === filterCat);
+  data = [...data].sort((a,b) => b.data.localeCompare(a.data));
+  
+  const tbody = document.getElementById('tbl-vanzari');
+  const total = data.reduce((s,x) => s + x.total, 0);
+  
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty" style="padding:2rem;"><i class="ti ti-shopping-cart"></i><p>Nicio vânzare înregistrată</p></div></td></tr>`;
+    document.getElementById('vanzari-total').textContent = '';
+    return;
+  }
+  
+  tbody.innerHTML = data.map(r => `<tr>
+    <td>${r.data}</td>
+    <td><strong>${r.produs}</strong></td>
+    <td><span class="badge badge-blue">${r.categorie}</span></td>
+    <td>${r.cantitate}</td>
+    <td>${fmt(r.pret)}</td>
+    <td><strong style="color:var(--amber);">${fmt(r.total)}</strong></td>
+    <td style="color:var(--text2);">${r.username}</td>
+    <td>
+      ${(isAdmin || r.userId === STATE.currentUser.id) ? `<button class="btn btn-sm btn-outline" style="color:var(--red);" onclick="deleteItem('vanzari','${r.id}')"><i class="ti ti-trash"></i></button>` : ''}
+    </td>
+  </tr>`).join('');
+  
+  document.getElementById('vanzari-total').innerHTML = `Total filtrat: <strong style="color:var(--amber);">${fmt(total)}</strong> | ${data.length} înregistrări`;
+}
+
+function calcTotalVan() {
+  const c = parseFloat(document.getElementById('van-cant').value) || 0;
+  const p = parseFloat(document.getElementById('van-pret').value) || 0;
+  document.getElementById('van-total-preview').textContent = fmt(c * p);
+}
+
+function saveVanzare() {
+  const data = document.getElementById('van-data').value;
+  const produs = document.getElementById('van-produs').value.trim();
+  const cat = document.getElementById('van-cat').value;
+  const cant = parseFloat(document.getElementById('van-cant').value);
+  const pret = parseFloat(document.getElementById('van-pret').value);
+  const nota = document.getElementById('van-nota').value.trim();
+  
+  if (!data || !produs || !cat || !cant || !pret || cant <= 0 || pret <= 0) {
+    showError('van-error', 'Completați toate câmpurile obligatorii (*).');
+    return;
+  }
+  
+  STATE.vanzari.push({
+    id: 'van_' + uid(),
+    data, produs, categorie: cat,
+    cantitate: cant, pret, total: +(cant * pret).toFixed(2),
+    nota,
+    userId: STATE.currentUser.id,
+    username: STATE.currentUser.username,
+    created: new Date().toISOString()
+  });
+  
+  saveData();
+  closeModal('modal-vanzare');
+  renderVanzari();
+  populateCatFilter('filter-van-cat', getCategories('vanzari'));
+}
+
+// ==================== CHELTUIELI ====================
+function renderCheltuieli() {
+  const filterData = document.getElementById('filter-che-data').value;
+  const filterCat = document.getElementById('filter-che-cat').value;
+  const isAdmin = STATE.currentUser.role === 'admin' || STATE.currentUser.role === 'manager';
+  
+  let data = STATE.cheltuieli;
+  if (!isAdmin) data = data.filter(x => x.userId === STATE.currentUser.id);
+  if (filterData) data = data.filter(x => x.data === filterData);
+  if (filterCat) data = data.filter(x => x.categorie === filterCat);
+  data = [...data].sort((a,b) => b.data.localeCompare(a.data));
+  
+  const tbody = document.getElementById('tbl-cheltuieli');
+  const total = data.reduce((s,x) => s + x.suma, 0);
+  
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty" style="padding:2rem;"><i class="ti ti-receipt"></i><p>Nicio cheltuială înregistrată</p></div></td></tr>`;
+    document.getElementById('cheltuieli-total').textContent = '';
+    return;
+  }
+  
+  tbody.innerHTML = data.map(r => `<tr>
+    <td>${r.data}</td>
+    <td>${r.descriere}</td>
+    <td><span class="badge badge-red">${r.categorie}</span></td>
+    <td><strong style="color:var(--red);">${fmt(r.suma)}</strong></td>
+    <td style="color:var(--text2);">${r.username}</td>
+    <td>
+      ${(isAdmin || r.userId === STATE.currentUser.id) ? `<button class="btn btn-sm btn-outline" style="color:var(--red);" onclick="deleteItem('cheltuieli','${r.id}')"><i class="ti ti-trash"></i></button>` : ''}
+    </td>
+  </tr>`).join('');
+  
+  document.getElementById('cheltuieli-total').innerHTML = `Total filtrat: <strong style="color:var(--red);">${fmt(total)}</strong> | ${data.length} înregistrări`;
+}
+
+function saveCheltuiala() {
+  const data = document.getElementById('che-data').value;
+  const desc = document.getElementById('che-desc').value.trim();
+  const cat = document.getElementById('che-cat').value;
+  const suma = parseFloat(document.getElementById('che-suma').value);
+  const nota = document.getElementById('che-nota').value.trim();
+  
+  if (!data || !desc || !cat || !suma || suma <= 0) {
+    showError('che-error', 'Completați toate câmpurile obligatorii (*).');
+    return;
+  }
+  
+  STATE.cheltuieli.push({
+    id: 'che_' + uid(),
+    data, descriere: desc, categorie: cat, suma, nota,
+    userId: STATE.currentUser.id,
+    username: STATE.currentUser.username,
+    created: new Date().toISOString()
+  });
+  
+  saveData();
+  closeModal('modal-cheltuiala');
+  renderCheltuieli();
+  populateCatFilter('filter-che-cat', getCategories('cheltuieli'));
+}
+
+// ==================== RAPOARTE ====================
+function initRaport() {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1);
+  document.getElementById('rap-from').value = first.toISOString().slice(0,10);
+  document.getElementById('rap-to').value = today();
+}
+
+function genRaport() {
+  const from = document.getElementById('rap-from').value;
+  const to = document.getElementById('rap-to').value;
+  if (!from || !to) { alert('Selectați perioada!'); return; }
+  
+  const inc = STATE.incasari.filter(x => x.data >= from && x.data <= to && x.status !== 'respins');
+  const van = STATE.vanzari.filter(x => x.data >= from && x.data <= to);
+  const che = STATE.cheltuieli.filter(x => x.data >= from && x.data <= to);
+  
+  const totalInc = inc.reduce((s,x) => s + x.suma, 0);
+  const totalVan = van.reduce((s,x) => s + x.total, 0);
+  const totalChe = che.reduce((s,x) => s + x.suma, 0);
+  const profit = totalInc + totalVan - totalChe;
+  
+  // By user
+  const byUser = {};
+  [...inc, ...van].forEach(x => {
+    if (!byUser[x.username]) byUser[x.username] = {inc:0, van:0};
+    if (x.suma) byUser[x.username].inc += x.suma;
+    if (x.total) byUser[x.username].van += x.total;
+  });
+  
+  // By cat cheltuieli
+  const byCat = {};
+  che.forEach(x => { byCat[x.categorie] = (byCat[x.categorie] || 0) + x.suma; });
+  
+  document.getElementById('raport-content').innerHTML = `
+    <div id="raport-printable">
+      <div class="card" style="margin-bottom:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+          <h2 style="font-size:16px;font-weight:600;">Raport financiar</h2>
+          <span style="font-size:13px;color:var(--text2);">${from} — ${to}</span>
+        </div>
+        <div class="metrics-grid">
+          <div class="metric-card" style="background:var(--green-bg);">
+            <div class="metric-label" style="color:var(--green);">Încasări totale</div>
+            <div class="metric-value" style="color:var(--green);">${fmt(totalInc)}</div>
+          </div>
+          <div class="metric-card" style="background:var(--amber-bg);">
+            <div class="metric-label" style="color:var(--amber);">Vânzări totale</div>
+            <div class="metric-value" style="color:var(--amber);">${fmt(totalVan)}</div>
+          </div>
+          <div class="metric-card" style="background:var(--red-bg);">
+            <div class="metric-label" style="color:var(--red);">Cheltuieli totale</div>
+            <div class="metric-value" style="color:var(--red);">${fmt(totalChe)}</div>
+          </div>
+          <div class="metric-card" style="background:${profit>=0?'var(--green-bg)':'var(--red-bg)'};">
+            <div class="metric-label" style="color:${profit>=0?'var(--green)':'var(--red)'};">Profit net</div>
+            <div class="metric-value" style="color:${profit>=0?'var(--green)':'var(--red)'};">${fmt(profit)}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:1rem;">Performanță angajați</div>
+          <table style="width:100%;font-size:13px;">
+            <thead><tr><th>Angajat</th><th>Încasări</th><th>Vânzări</th></tr></thead>
+            <tbody>
+              ${Object.entries(byUser).map(([u,v]) => `<tr><td><strong>${u}</strong></td><td style="color:var(--green);">${fmt(v.inc)}</td><td style="color:var(--amber);">${fmt(v.van)}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:1rem;">Cheltuieli pe categorii</div>
+          <table style="width:100%;font-size:13px;">
+            <thead><tr><th>Categorie</th><th>Sumă</th><th>Pondere</th></tr></thead>
+            <tbody>
+              ${Object.entries(byCat).map(([c,v]) => `<tr><td>${c}</td><td style="color:var(--red);">${fmt(v)}</td><td style="color:var(--text2);">${totalChe>0?Math.round(v/totalChe*100):0}%</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function printRaport() {
+  window.print();
+}
+
+// ==================== UTILIZATORI ====================
+function renderUsers() {
+  const tbody = document.getElementById('tbl-users');
+  tbody.innerHTML = STATE.users.map(u => {
+    const roleC = {admin:'badge-blue', manager:'badge-purple', user:'badge-green'}[u.role];
+    const roleL = {admin:'Administrator', manager:'Manager', user:'Angajat'}[u.role];
+    const totalInc = STATE.incasari.filter(x => x.userId === u.id).length;
+    const totalVan = STATE.vanzari.filter(x => x.userId === u.id).length;
+    return `<tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="user-avatar" style="width:32px;height:32px;font-size:12px;background:${{admin:'#1971c2',manager:'#7048e8',user:'#2f9e44'}[u.role]};">${u.username.slice(0,2).toUpperCase()}</div>
+          <div>
+            <div style="font-weight:500;">${u.username}</div>
+            <div style="font-size:12px;color:var(--text3);">Creat: ${u.created}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge ${roleC}">${roleL}</span></td>
+      <td style="color:var(--text2);">${u.location || '—'}</td>
+      <td style="color:var(--text2);font-size:12px;">${totalInc} încasări · ${totalVan} vânzări</td>
+      <td>
+        ${u.id !== 'user_admin' ? `
+          <button class="btn btn-sm btn-outline" onclick="editUser('${u.id}')"><i class="ti ti-edit"></i></button>
+          <button class="btn btn-sm btn-outline" style="color:var(--red);" onclick="deleteUser('${u.id}')"><i class="ti ti-trash"></i></button>
+        ` : '<span style="font-size:12px;color:var(--text3);">—</span>'}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function saveUser() {
+  const editId = document.getElementById('user-edit-id').value;
+  const username = document.getElementById('user-name').value.trim().toLowerCase();
+  const role = document.getElementById('user-role').value;
+  const pass = document.getElementById('user-pass').value;
+  const location = document.getElementById('user-location').value.trim();
+  
+  if (!username || !role) { showError('user-error', 'Completați toate câmpurile obligatorii.'); return; }
+  if (!editId && !pass) { showError('user-error', 'Parola este obligatorie pentru utilizatori noi.'); return; }
+  if (!editId && pass.length < 4) { showError('user-error', 'Parola trebuie să aibă minim 4 caractere.'); return; }
+  
+  const existing = STATE.users.find(u => u.username === username && u.id !== editId);
+  if (existing) { showError('user-error', 'Acest nume de utilizator există deja.'); return; }
+  
+  if (editId) {
+    const u = STATE.users.find(x => x.id === editId);
+    if (u) {
+      u.username = username; u.role = role; u.location = location;
+      if (pass) u.password = pass;
+    }
+  } else {
+    STATE.users.push({id:'user_'+uid(), username, password:pass, role, location, created:today()});
+  }
+  
+  saveData();
+  closeModal('modal-user');
+  renderUsers();
+}
+
+function editUser(id) {
+  const u = STATE.users.find(x => x.id === id);
+  if (!u) return;
+  document.getElementById('user-edit-id').value = id;
+  document.getElementById('user-name').value = u.username;
+  document.getElementById('user-role').value = u.role;
+  document.getElementById('user-pass').value = '';
+  document.getElementById('user-location').value = u.location || '';
+  document.getElementById('modal-user-title').innerHTML = '<i class="ti ti-edit" style="color:var(--blue)"></i> Editare utilizator';
+  openModal('modal-user');
+}
+
+function deleteUser(id) {
+  if (!confirm('Ștergeți utilizatorul? Datele lui vor rămâne.')) return;
+  STATE.users = STATE.users.filter(x => x.id !== id);
+  saveData();
+  renderUsers();
+}
+
+// ==================== HELPERS ====================
+function deleteItem(type, id) {
+  if (!confirm('Ștergeți înregistrarea?')) return;
+  STATE[type] = STATE[type].filter(x => x.id !== id);
+  saveData();
+  if (type === 'incasari') renderIncasari();
+  if (type === 'vanzari') renderVanzari();
+  if (type === 'cheltuieli') renderCheltuieli();
+}
+
+function fmt(n) {
+  return new Intl.NumberFormat('ro-RO', {minimumFractionDigits:2, maximumFractionDigits:2}).format(n || 0) + ' RON';
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id);
+  el.innerHTML = '<i class="ti ti-alert-circle"></i> ' + msg;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  el.innerHTML = `<div class="alert alert-${type}"><i class="ti ti-${type==='success'?'check':'info'}-circle"></i> ${msg}</div>`;
+  setTimeout(() => { el.innerHTML = ''; }, 4000);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.remove('hidden');
+  // Reset error messages
+  document.querySelectorAll(`#${id} .alert`).forEach(e => e.classList.add('hidden'));
+  // Reset edit id for user modal
+  if (id === 'modal-user') {
+    document.getElementById('user-edit-id').value = '';
+    document.getElementById('modal-user-title').innerHTML = '<i class="ti ti-user-plus" style="color:var(--blue)"></i> Utilizator nou';
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+function clearFiltersInc() {
+  document.getElementById('filter-inc-data').value = '';
+  document.getElementById('filter-inc-user').value = '';
+  document.getElementById('filter-inc-status').value = '';
+  renderIncasari();
+}
+
+function clearFiltersVan() {
+  document.getElementById('filter-van-data').value = '';
+  document.getElementById('filter-van-search').value = '';
+  document.getElementById('filter-van-cat').value = '';
+  renderVanzari();
+}
+
+function clearFiltersChe() {
+  document.getElementById('filter-che-data').value = '';
+  document.getElementById('filter-che-cat').value = '';
+  renderCheltuieli();
+}
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.add('hidden');
+  });
+});
+
+// ESC key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
+  }
+});
+
+// ==================== START ====================
+initData();
+</script>
+</body>
+</html>
