@@ -406,8 +406,13 @@ class Ent{
   uRld(t){if(this.rld&&t>=this.re){this.rld=false;const w=this.w0;const g=Math.min(w.maxA-w.ammo,w.res);w.ammo+=g;w.res-=g;}}
 
   phys(dt){
-    this.vy+=0.52*dt;this.x+=this.vx*dt;this.y+=this.vy*dt;
-    this.vx*=this.onG?0.76:0.92;this.onG=false;
+    // Use fixed gravity per frame, not scaled by dt, to keep feel consistent
+    const dtc = Math.min(dt, 1.5); // clamp per-entity dt too
+    this.vy += 0.45 * dtc;
+    this.x  += this.vx * dtc;
+    this.y  += this.vy * dtc;
+    this.vx *= this.onG ? 0.76 : 0.92;
+    this.onG = false;
     for(const p of MAP.plats){
       const ix=this.x+this.w>p.x&&this.x<p.x+p.w;
       if(!ix)continue;
@@ -425,8 +430,10 @@ class Ent{
       this.vy=0;
       this.onG=true;
     }
-    if(this.mv&&this.onG)this.frm+=dt*.85;else this.frm=0;
-    if(this.fl>0)this.fl-=dt;
+    // frm: walk cycle counter, increments smoothly, no sharp reset
+    if(this.mv && this.onG) this.frm += dtc;
+    else this.frm = 0; // reset only when stopped and on ground
+    if(this.fl>0) this.fl -= dtc;
   }
 
   draw(){
@@ -456,8 +463,11 @@ function drawSoldier(c,isP,aim,frm,fr){
   const bc=isP?'#2a6040':'#702020';
   const ac=isP?'#1e4830':'#501818';
   const hc=isP?'#1a3828':'#3a1010';
-  const bob=Math.sin(frm*1.6)*1.3;
-  const sw=Math.sin(frm*1.6)*8;
+  // frm is a walk cycle counter. Use slower frequency, smaller amplitude.
+  // Multiply by 0.18 so full cycle = ~35 frames (smooth walk, not jitter)
+  const phase = frm * 0.18;
+  const bob = Math.sin(phase) * 0.8;   // max ±0.8px vertical, barely visible
+  const sw  = Math.sin(phase) * 6;     // leg swing degrees
   const s=fr?1:-1;
   // legs
   c.fillStyle=ac;
@@ -710,12 +720,12 @@ function drawCrosshair(){
   cx.strokeStyle='rgba(255,255,255,.11)';cx.lineWidth=1;cx.setLineDash([4,8]);
   cx.beginPath();cx.moveTo(bx2,by2);cx.lineTo(x,y);cx.stroke();
   cx.setLineDash([]);
-  cx.strokeStyle=slowMo>0?'rgba(255,100,100,.9)':'rgba(255,255,255,.82)';cx.lineWidth=1.5;
+  cx.strokeStyle='rgba(255,255,255,0.82)'; cx.lineWidth=1.5;
   cx.beginPath();cx.moveTo(x-10,y);cx.lineTo(x-3,y);cx.stroke();
   cx.beginPath();cx.moveTo(x+3,y);cx.lineTo(x+10,y);cx.stroke();
   cx.beginPath();cx.moveTo(x,y-10);cx.lineTo(x,y-3);cx.stroke();
   cx.beginPath();cx.moveTo(x,y+3);cx.lineTo(x,y+10);cx.stroke();
-  cx.fillStyle=slowMo>0?'rgba(255,60,60,.9)':'rgba(255,80,80,.9)';
+  cx.fillStyle='rgba(255,80,80,0.9)';
   cx.beginPath();cx.arc(x,y,2,0,Math.PI*2);cx.fill();
   cx.restore();
 }
@@ -914,8 +924,7 @@ function updBL(dt){
           else if(zone==='legs') dmg*=0.65;
           tg.hp-=dmg; tg.vx+=b.vx*.06; tg.vy+=b.vy*.04; tg.fl=6;
           if(zone==='head' && b.own && b.own.isP){
-              slowMo=0; // no slowmo - disabled
-              shake(6);
+              shake(5);
               addK(TX[lang].headshot+' +'+Math.round(dmg)+'dmg','#ff3030');
             }
             // no shake on regular hits - keeps game smooth
@@ -1281,9 +1290,10 @@ function drawMenuBg(){
 // ── Main loop ────────────────────────────────────────────────────
 function loop(ts){
   requestAnimationFrame(loop);
-  // Always use real delta time for physics — no slowMo on gameplay
-  const dt=lts===0?1:Math.min((ts-lts)/16.667,2.5);
+  // Clamp dt tightly — never more than 2 frames to prevent physics spikes on slow frames
+  const dt=lts===0?1:Math.min((ts-lts)/16.667,2.0);
   lts=ts; const t=ts;
+  // slowMo counter — purely visual (crosshair color), no effect on physics
   if(slowMo>0){ slowMo-=dt; if(slowMo<0) slowMo=0; }
 
   // Respawn timer
