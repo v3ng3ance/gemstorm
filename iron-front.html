@@ -412,7 +412,7 @@ class Ent{
 
   phys(dt){
     const dtc=Math.min(dt,1.5);
-    this.vy+=0.38*dtc;   // lighter gravity = more floaty like Soldat
+    this.vy+=0.32*dtc;   // gravity calibrated so vy=-11 reaches ~195px height
     this.x+=this.vx*dtc;
     this.y+=this.vy*dtc;
     this.vx*=this.onG?0.78:0.93;
@@ -1024,7 +1024,7 @@ class Bot extends Ent{
     if(this.dt2<=0){this.dt2=60+Math.random()*80;if(Math.random()<.3)this.mdir*=-1;}
     this.vx+=this.mdir*.07*dt;this.vx=Math.max(-3.5,Math.min(3.5,this.vx));
     this.jcd-=dt;
-    if(this.onG&&this.jcd<=0&&Math.random()<DIFF.jc){this.vy=-8.2;this.jcd=55;}
+    if(this.onG&&this.jcd<=0&&Math.random()<DIFF.jc){this.vy=-11;this.jcd=55;}
     // aim error applied at shoot time, not permanently on aim angle
     if(Math.random()<DIFF.sc&&dist<DIFF.sd){
       const savedAim=this.aim;
@@ -1195,7 +1195,7 @@ function inp1(dt,t){
   // Mobile joystick
   if(Math.abs(joyX)>.15){p1.vx+=joyX*.5*dt;mv=true;}
   // Jump: W, ArrowUp, Space
-  if((keys['KeyW']||keys['ArrowUp']||keys['Space'])&&p1.onG)p1.vy=-8.2;
+  if((keys['KeyW']||keys['ArrowUp']||keys['Space'])&&p1.onG)p1.vy=-11;
   p1.mv=mv;p1.vx=Math.max(-5,Math.min(5,p1.vx));
   // Aim from mouse
   const sxm=p1.fr?1:-1;
