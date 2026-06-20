@@ -463,39 +463,36 @@ function drawSoldier(c,isP,aim,frm,fr){
   const bc=isP?'#2a6040':'#702020';
   const ac=isP?'#1e4830':'#501818';
   const hc=isP?'#1a3828':'#3a1010';
-  // frm is a walk cycle counter. Use slower frequency, smaller amplitude.
-  // Multiply by 0.18 so full cycle = ~35 frames (smooth walk, not jitter)
-  const phase = frm * 0.18;
-  const bob = Math.sin(phase) * 0.8;   // max ±0.8px vertical, barely visible
-  const sw  = Math.sin(phase) * 6;     // leg swing degrees
   const s=fr?1:-1;
-  // legs
+  // Legs: simple alternating rectangles, no vertical bob
+  const sw=Math.sin(frm*0.22)*10; // leg swing, slow and subtle
   c.fillStyle=ac;
-  c.save();c.rotate(sw*s*Math.PI/180);
-  c.fillRect(s*-7,-22+bob,s*6,14);c.fillStyle='#181620';c.fillRect(s*-8,-10+bob,s*7,5);c.restore();
+  c.save();c.rotate( sw*s*Math.PI/180);
+  c.fillRect(s*-7,-22,s*6,14);c.fillStyle='#181620';c.fillRect(s*-8,-10,s*7,5);
+  c.restore();
   c.save();c.rotate(-sw*s*Math.PI/180);
-  c.fillRect(s*1,-22+bob,s*6,14);c.fillStyle='#181620';c.fillRect(s*1,-10+bob,s*7,5);c.restore();
-  // torso
-  c.fillStyle=bc;c.fillRect(s*-9,-42+bob,s*18,22);
-  c.fillStyle=ac;c.fillRect(s*-9,-42+bob,s*18,7);c.fillRect(s*-9,-26+bob,s*18,5);
-  c.fillStyle='rgba(0,0,0,.2)';c.fillRect(s*-7,-40+bob,s*4,5);c.fillRect(s*3,-40+bob,s*4,5);
-  // head
-  c.fillStyle='#c49060';c.beginPath();c.arc(0,-50+bob,6.5,0,Math.PI*2);c.fill();
-  c.fillStyle=hc;c.beginPath();c.arc(0,-52+bob,7,Math.PI,0);c.fill();
-  c.fillRect(-7,-54+bob,14,5);
-  c.fillStyle='rgba(0,0,0,.44)';c.fillRect(-4,-52+bob,8,3);
-  c.strokeStyle='rgba(80,160,255,.5)';c.lineWidth=1;
-  c.beginPath();c.arc(-2,-51+bob,1.8,0,Math.PI*2);c.stroke();
-  c.beginPath();c.arc(2,-51+bob,1.8,0,Math.PI*2);c.stroke();
-  // weapon arm — rotates by raw world-space aim angle
-  const shX=s*6,shY=-33+bob;
-  c.save();c.translate(shX,shY);c.rotate(aim);
-  c.fillStyle=bc;c.fillRect(-2,-2,9,5);
-  c.fillStyle='#484f5e';c.fillRect(7,-4,20,6);
-  c.fillStyle='#30363c';c.fillRect(5,-5,13,8);
-  c.fillStyle='#5c6370';c.fillRect(26,-3,7,3);
-  c.fillStyle='#38302a';c.fillRect(2,-5,6,8);
-  c.fillStyle='#28303e';c.fillRect(12,-7,8,3);
+  c.fillRect(s*1,-22,s*6,14);c.fillStyle='#181620';c.fillRect(s*1,-10,s*7,5);
+  c.restore();
+  // Torso — completely static, no bob
+  c.fillStyle=bc; c.fillRect(s*-9,-42,s*18,22);
+  c.fillStyle=ac; c.fillRect(s*-9,-42,s*18,7); c.fillRect(s*-9,-26,s*18,5);
+  c.fillStyle='rgba(0,0,0,.2)'; c.fillRect(s*-7,-40,s*4,5); c.fillRect(s*3,-40,s*4,5);
+  // Head — static
+  c.fillStyle='#c49060'; c.beginPath(); c.arc(0,-50,6.5,0,Math.PI*2); c.fill();
+  c.fillStyle=hc; c.beginPath(); c.arc(0,-52,7,Math.PI,0); c.fill();
+  c.fillRect(-7,-54,14,5);
+  c.fillStyle='rgba(0,0,0,.44)'; c.fillRect(-4,-52,8,3);
+  c.strokeStyle='rgba(80,160,255,.5)'; c.lineWidth=1;
+  c.beginPath(); c.arc(-2,-51,1.8,0,Math.PI*2); c.stroke();
+  c.beginPath(); c.arc( 2,-51,1.8,0,Math.PI*2); c.stroke();
+  // Weapon arm — rotates with aim, no bob
+  c.save(); c.translate(s*6,-33); c.rotate(aim);
+  c.fillStyle=bc;      c.fillRect(-2,-2,9,5);
+  c.fillStyle='#484f5e'; c.fillRect(7,-4,20,6);
+  c.fillStyle='#30363c'; c.fillRect(5,-5,13,8);
+  c.fillStyle='#5c6370'; c.fillRect(26,-3,7,3);
+  c.fillStyle='#38302a'; c.fillRect(2,-5,6,8);
+  c.fillStyle='#28303e'; c.fillRect(12,-7,8,3);
   c.restore();
 }
 
