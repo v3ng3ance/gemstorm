@@ -852,56 +852,71 @@ function updBL(dt){
     const b=BL[i];
     b.tr.push({x:b.x,y:b.y});if(b.tr.length>b.trl)b.tr.shift();
     if(b.gren){b.vy+=.4*dt*speed;b.vx*=.997;}
-    // sub-steps to prevent tunneling
-    const steps=Math.ceil(Math.max(Math.abs(b.vx),Math.abs(b.vy))*dt/7)||1;
-    const sdx=b.vx*dt*speed/steps,sdy=b.vy*dt*speed/steps;
+
+    const moveX=b.vx*dt*speed;
+    const moveY=b.vy*dt*speed;
+    const steps=Math.ceil(Math.max(Math.abs(moveX),Math.abs(moveY))/6)+1;
+    const sdx=moveX/steps, sdy=moveY/steps;
     let hit=false;
+
     for(let s=0;s<steps&&!hit;s++){
-      b.x+=sdx;b.y+=sdy;b.life-=dt/steps;
+      b.x+=sdx; b.y+=sdy; b.life-=dt/steps;
+
+      // Platform collision
       for(const p of MAP.plats){
         if(b.x>p.x&&b.x<p.x+p.w&&b.y>p.y&&b.y<p.y+p.h){
-          if(b.gren&&b.bn>0){b.bn--;(Math.abs(b.vy)>Math.abs(b.vx)?b.vy*=-.52:b.vx*=-.52);b.vy*=.72;}
-          else if(b.gren){expl(b.x,b.y,95,b.dmg,b.own);hit=true;}
-          else{
-            // bullet hole on platform
+          if(b.gren&&b.bn>0){
+            b.bn--;
+            if(Math.abs(b.vy)>Math.abs(b.vx)) b.vy*=-.52; else b.vx*=-.52;
+            b.vy*=.72;
+          } else if(b.gren){
+            expl(b.x,b.y,95,b.dmg,b.own); hit=true;
+          } else {
             holes.push({x:b.x,y:b.y,r:2+Math.random()*1.5,a:.8});
-            if(holes.length>120)holes.shift();
+            if(holes.length>120) holes.shift();
             for(let k=0;k<3;k++) PA.push({x:b.x,y:b.y,vx:(Math.random()-.5)*3,vy:(Math.random()-.5)*3,lf:6,col:'#c0a030',sz:1.8,k:'s'});
             hit=true;
           }
           break;
         }
       }
-      if(hit)break;
+      if(hit) break;
+
+      // Entity collision — enlarged hitbox matches visual soldier size
       const tgts=[p1,...bots].filter(e=>e&&!e.dead&&e!==b.own);
       for(const tg of tgts){
-        const pad=5;
-        if(b.x>tg.x-pad&&b.x<tg.x+tg.w+pad&&b.y>tg.y-pad&&b.y<tg.y+tg.h+pad){
-          if(b.gren){expl(b.x,b.y,95,b.dmg,b.own);}
-          else{
-            const zone=tg.hitZone(b.x,b.y);
+        // Hitbox: center on soldier torso, wider than physics box
+        const hx=tg.x-6, hy=tg.y-10, hw=tg.w+12, hh=tg.h+10;
+        if(b.x>hx && b.x<hx+hw && b.y>hy && b.y<hy+hh){
+          if(b.gren){
+            expl(b.x,b.y,95,b.dmg,b.own);
+          } else {
+            // Zone based on visual position (head at top of extended box)
+            const rel=(b.y-hy)/hh;
+            const zone = rel<0.28 ? 'head' : rel<0.68 ? 'torso' : 'legs';
             let dmg=b.dmg;
-            let hsEffect=false;
-            if(zone==='head'){dmg*=2.5;hsEffect=true;}
-            else if(zone==='legs'){dmg*=0.65;}
-            tg.hp-=dmg;tg.vx+=b.vx*.08;tg.vy+=b.vy*.06;tg.fl=6;
-            if(hsEffect&&b.own&&b.own.isP){
-              slowMo=45;shake(10);
+            if(zone==='head')  dmg*=2.5;
+            else if(zone==='legs') dmg*=0.65;
+            tg.hp-=dmg; tg.vx+=b.vx*.08; tg.vy+=b.vy*.06; tg.fl=6;
+            if(zone==='head' && b.own && b.own.isP){
+              slowMo=45; shake(10);
               addK(TX[lang].headshot+' +'+Math.round(dmg)+'dmg','#ff3030');
-            }else if(zone==='head'){shake(8);}
-            else{shake(4);}
-            for(let k=0;k<7;k++) PA.push({x:tg.x+tg.w/2,y:b.y,
-              vx:(Math.random()-.5)*5.5,vy:(Math.random()-.5)*5-1,lf:13,col:'#cc1818',sz:2.2,k:'b'});
-            // damage number popup
+            } else { shake(zone==='head'?8:4); }
+            for(let k=0;k<7;k++) PA.push({
+              x:tg.x+tg.w/2, y:b.y,
+              vx:(Math.random()-.5)*5.5, vy:(Math.random()-.5)*5-1,
+              lf:13, col:'#cc1818', sz:2.2, k:'b'
+            });
             PA.push({x:b.x,y:b.y-10,vx:(Math.random()-.5)*.5,vy:-1.5,
-              lf:30,col:zone==='head'?'#ff4040':'#ffcc30',sz:0,k:'txt',val:Math.round(dmg),big:zone==='head'});
+              lf:30,col:zone==='head'?'#ff4040':'#ffcc30',sz:0,k:'txt',
+              val:Math.round(dmg),big:zone==='head'});
           }
-          if(tg.hp<=0&&!tg.dead)handleDeath(tg,b.own,tg.hitZone(b.x,b.y));
-          hit=true;break;
+          if(tg.hp<=0&&!tg.dead) handleDeath(tg,b.own,'torso');
+          hit=true; break;
         }
       }
     }
-    if(hit||b.life<=0||b.x<0||b.x>MW||b.y<0||b.y>MH+120)BL.splice(i,1);
+    if(hit||b.life<=0||b.x<0||b.x>MW||b.y<0||b.y>MH+120) BL.splice(i,1);
   }
 }
 
