@@ -393,7 +393,8 @@ class Ent{
       const a=this.aim+(Math.random()-0.5)*w.spr*2;
       BL.push({x:ox,y:oy,vx:Math.cos(a)*w.spd,vy:Math.sin(a)*w.spd,
         dmg:w.dmg,col:w.col,sz:w.sz,own:this,
-        gren:w.gren||false,life:w.gren?140:65,bn:w.gren?3:0,trl:w.trl||3,tr:[]});
+        gren:w.gren||false,life:w.gren?140:65,bn:w.gren?3:0,trl:w.trl||3,tr:[],
+        minDist:20}); // must travel 20px before hitting anyone
     }
     for(let i=0;i<5;i++){
       const a2=this.aim+(Math.random()-0.5)*0.4;
@@ -861,6 +862,7 @@ function updBL(dt){
 
     for(let s=0;s<steps&&!hit;s++){
       b.x+=sdx; b.y+=sdy; b.life-=dt/steps;
+      if(b.minDist>0){ b.minDist-=Math.sqrt(sdx*sdx+sdy*sdy); }
 
       // Platform collision
       for(const p of MAP.plats){
@@ -882,20 +884,30 @@ function updBL(dt){
       }
       if(hit) break;
 
-      // Entity collision — enlarged hitbox matches visual soldier size
+      // Skip entity check until bullet has traveled minimum distance
+      if(b.minDist>0) continue;
+
+      // Entity collision — hitbox matches visual soldier exactly
+      // Origin in draw() = (entity.x+w/2, entity.y+h) i.e. feet
+      // Head top at y=-57 from feet → world y = entity.y+h-57 = entity.y-25
+      // Feet bottom at y=0 from feet → world y = entity.y+h = entity.y+32
+      // Full visual height = 57px, centered around entity.x+w/2
       const tgts=[p1,...bots].filter(e=>e&&!e.dead&&e!==b.own);
       for(const tg of tgts){
-        // Hitbox: center on soldier torso, wider than physics box
-        const hx=tg.x-6, hy=tg.y-10, hw=tg.w+12, hh=tg.h+10;
-        if(b.x>hx && b.x<hx+hw && b.y>hy && b.y<hy+hh){
+        const cx2=tg.x+tg.w/2;   // horizontal center
+        const vtop=tg.y-25;       // top of helmet in world coords
+        const vbot=tg.y+tg.h;     // bottom of feet
+        const vheight=vbot-vtop;  // ~57px
+        const vleft=cx2-10;       // visual width ~20px
+        const vright=cx2+10;
+        if(b.x>vleft && b.x<vright && b.y>vtop && b.y<vbot){
           if(b.gren){
             expl(b.x,b.y,95,b.dmg,b.own);
           } else {
-            // Zone based on visual position (head at top of extended box)
-            const rel=(b.y-hy)/hh;
-            const zone = rel<0.28 ? 'head' : rel<0.68 ? 'torso' : 'legs';
+            const rel=(b.y-vtop)/vheight;
+            const zone = rel<0.26 ? 'head' : rel<0.65 ? 'torso' : 'legs';
             let dmg=b.dmg;
-            if(zone==='head')  dmg*=2.5;
+            if(zone==='head')      dmg*=2.5;
             else if(zone==='legs') dmg*=0.65;
             tg.hp-=dmg; tg.vx+=b.vx*.08; tg.vy+=b.vy*.06; tg.fl=6;
             if(zone==='head' && b.own && b.own.isP){
@@ -903,7 +915,7 @@ function updBL(dt){
               addK(TX[lang].headshot+' +'+Math.round(dmg)+'dmg','#ff3030');
             } else { shake(zone==='head'?8:4); }
             for(let k=0;k<7;k++) PA.push({
-              x:tg.x+tg.w/2, y:b.y,
+              x:cx2, y:b.y,
               vx:(Math.random()-.5)*5.5, vy:(Math.random()-.5)*5-1,
               lf:13, col:'#cc1818', sz:2.2, k:'b'
             });
