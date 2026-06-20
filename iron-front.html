@@ -648,12 +648,24 @@ function drawPA(dt){
   for(let i=PA.length-1;i>=0;i--){
     const p=PA[i];
     p.x+=p.vx*dt*speed;p.y+=p.vy*dt*speed;p.lf-=dt;
-    if(p.k!=='m')p.vy+=.28*dt*speed;p.vx*=.93;
+    if(p.k!=='m'&&p.k!=='txt')p.vy+=.28*dt*speed;
+    p.vx*=.93;
     if(p.lf<=0){PA.splice(i,1);continue;}
-    cx.globalAlpha=Math.min(1,p.lf/13);cx.fillStyle=p.col;
     const sx=p.x-cam.x+cam.shakeX,sy=p.y-cam.y+cam.shakeY;
-    if(p.k==='m'){cx.beginPath();cx.arc(sx,sy,p.sz*(1+.04*(18-p.lf)),0,Math.PI*2);cx.fill();}
-    else{cx.beginPath();cx.arc(sx,sy,p.sz,0,Math.PI*2);cx.fill();}
+    if(p.k==='txt'){
+      // damage number
+      cx.globalAlpha=Math.min(1,p.lf/20);
+      cx.fillStyle=p.col;
+      cx.font='bold '+(p.big?13:10)+'px monospace';
+      cx.textAlign='center';
+      cx.fillText((p.big?'*':'')+p.val,sx,sy);
+      cx.textAlign='left';
+    }else{
+      cx.globalAlpha=Math.min(1,p.lf/13);
+      cx.fillStyle=p.col;
+      if(p.k==='m'){cx.beginPath();cx.arc(sx,sy,p.sz*(1+.04*(18-p.lf)),0,Math.PI*2);cx.fill();}
+      else{cx.beginPath();cx.arc(sx,sy,p.sz,0,Math.PI*2);cx.fill();}
+    }
   }
   cx.globalAlpha=1;
 }
@@ -714,18 +726,26 @@ function updateHUD(){
   document.getElementById('h1').textContent=Math.round(hp);
   document.getElementById('b1').style.width=hp+'%';
   const w=p1.w0;
-  const rldPct=p1.rld?Math.max(0,1-(p1.re-performance.now())/950):1;
+  // reload progress: p1.re is set to t+950 where t=ts (RAF time)
+  const rldPct=p1.rld?Math.max(0,Math.min(1,1-(p1.re-lts)/950)):1;
   document.getElementById('w1').textContent=w.name+(p1.rld?' ↺':'');
   document.getElementById('w1').style.color=p1.rld?'#ff8020':'#c08820';
-  // Show ammo — red if low, yellow if reloading
   const ammoCol=w.ammo===0?'#ff3030':w.ammo<=Math.ceil(w.maxA*.25)?'#ff8030':'#b06818';
-  document.getElementById('a1').textContent=w.ammo+'/'+w.res+(w.ammo===0&&w.res===0?' ⚠ NO AMMO':'');
+  document.getElementById('a1').textContent=w.ammo+'/'+w.res+(w.ammo===0&&w.res===0?' ⚠':'');
   document.getElementById('a1').style.color=ammoCol;
   // Reload bar
   let rb=document.getElementById('rldbar');
-  if(!rb){rb=document.createElement('div');rb.id='rldbar';rb.style.cssText='height:3px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:2px;overflow:hidden;width:100px';const rf=document.createElement('div');rf.id='rldfill';rf.style.cssText='height:100%;border-radius:2px;background:#ff8020;transition:width .05s';rb.appendChild(rf);document.getElementById('a1').after(rb);}
-  document.getElementById('rldfill').style.width=(rldPct*100)+'%';
-  document.getElementById('rldfill').style.background=rldPct>=1?'rgba(255,255,255,0)':'#ff8020';
+  if(!rb){
+    rb=document.createElement('div');rb.id='rldbar';
+    rb.style.cssText='height:3px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:2px;overflow:hidden;width:100px';
+    const rf=document.createElement('div');rf.id='rldfill';
+    rf.style.cssText='height:100%;border-radius:2px;background:#ff8020';
+    rb.appendChild(rf);
+    const a1=document.getElementById('a1');
+    if(a1&&a1.parentNode)a1.parentNode.insertBefore(rb,a1.nextSibling);
+  }
+  const fill=document.getElementById('rldfill');
+  if(fill){fill.style.width=(rldPct*100)+'%';fill.style.background=rldPct>=1?'transparent':'#ff8020';}
   document.getElementById('sc').textContent=kills;
   document.getElementById('ks2').textContent=streak;
   document.getElementById('bc').textContent=bots.filter(b=>!b.dead).length;
@@ -888,7 +908,7 @@ function updBL(dt){
               vx:(Math.random()-.5)*5.5,vy:(Math.random()-.5)*5-1,lf:13,col:'#cc1818',sz:2.2,k:'b'});
             // damage number popup
             PA.push({x:b.x,y:b.y-10,vx:(Math.random()-.5)*.5,vy:-1.5,
-              lf:30,col:zone==='head'?'#ff4040':'#ffcc30',sz:0,k:'txt',val:Math.round(dmg),zone});
+              lf:30,col:zone==='head'?'#ff4040':'#ffcc30',sz:0,k:'txt',val:Math.round(dmg),big:zone==='head'});
           }
           if(tg.hp<=0&&!tg.dead)handleDeath(tg,b.own,tg.hitZone(b.x,b.y));
           hit=true;break;
@@ -899,23 +919,7 @@ function updBL(dt){
   }
 }
 
-// Draw damage numbers
-function drawDmgNums(dt){
-  for(let i=PA.length-1;i>=0;i--){
-    const p=PA[i];
-    if(p.k!=='txt')continue;
-    p.x+=p.vx*dt;p.y+=p.vy*dt;p.lf-=dt;
-    if(p.lf<=0){PA.splice(i,1);continue;}
-    const a=Math.min(1,p.lf/20);
-    cx.globalAlpha=a;
-    cx.fillStyle=p.col;
-    cx.font=`bold ${p.zone==='head'?13:10}px monospace`;
-    cx.textAlign='center';
-    cx.fillText(p.zone==='head'?'❖'+p.val:p.val,p.x-cam.x,p.y-cam.y);
-    cx.textAlign='left';
-  }
-  cx.globalAlpha=1;
-}
+// damage numbers now handled inside drawPA
 
 // ── Bot AI ───────────────────────────────────────────────────────
 class Bot extends Ent{
@@ -1122,7 +1126,7 @@ joy.addEventListener('touchmove',e=>{
   let dx=t.clientX-joyBase.x,dy=t.clientY-joyBase.y;
   const d=Math.sqrt(dx*dx+dy*dy);
   if(d>R){dx=dx/d*R;dy=dy/d*R;}
-  jstick.style.transform=`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  jstick.style.transform='translate(calc(-50% + '+dx+'px), calc(-50% + '+dy+'px))';
   joyX=dx/R;joyY=dy/R;
   if(joyY<-.5&&p1&&p1.onG)p1.vy=-11; // jump on swipe up
 },{passive:false});
@@ -1215,7 +1219,6 @@ function startSolo(){
   kills=0;streak=0;BL=[];PA=[];EX=[];BD=[];holes=[];drops=[];crates=[];gSec=0;isDead=false;
   spawnCrates();
   document.getElementById('ov').style.display='none';
-  document.getElementById('b2').parentElement&&(document.getElementById('b2').parentElement.parentElement.style.visibility='hidden');
   if(isMobile())document.getElementById('mc').className='show';
   lts=0;gMode='solo';
 }
@@ -1293,7 +1296,6 @@ function loop(ts){
   if(p1){
     drawBg();drawBD();drawPlats();drawHoles();
     drawCrates();drawDrops();drawEX(dt);drawBullets();drawPA(dt);
-    drawDmgNums(rawDt);
     for(const b of bots)if(!b.dead)b.draw();
     if(!p1.dead)p1.draw();
     drawMM();updateHUD();drawCrosshair();
