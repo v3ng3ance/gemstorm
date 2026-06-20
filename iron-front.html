@@ -1023,9 +1023,9 @@ class Bot extends Ent{
       else this.mv=false;
     }
     if(this.dt2<=0){this.dt2=60+Math.random()*80;if(Math.random()<.3)this.mdir*=-1;}
-    this.vx+=this.mdir*.07*dt;this.vx=Math.max(-3.5,Math.min(3.5,this.vx));
+    this.vx+=this.mdir*.05*dt;this.vx=Math.max(-2.8,Math.min(2.8,this.vx));
     this.jcd-=dt;
-    if(this.onG&&this.jcd<=0&&Math.random()<DIFF.jc){this.vy=-11;this.jcd=55;}
+    if(this.onG&&this.jcd<=0&&Math.random()<DIFF.jc){this.vy=-9.2;this.jcd=55;}
     // aim error applied at shoot time, not permanently on aim angle
     if(Math.random()<DIFF.sc&&dist<DIFF.sd){
       const savedAim=this.aim;
@@ -1039,9 +1039,9 @@ class Bot extends Ent{
 
 // ── Difficulty presets ───────────────────────────────────────────
 function setDiff(l){
-  if(l===0)      DIFF={sc:.010,sd:280,ms:.20,jc:.005,ae:.55,rf:120};
-  else if(l===1) DIFF={sc:.016,sd:360,ms:.24,jc:.008,ae:.40,rf:80};
-  else           DIFF={sc:.036,sd:540,ms:.40,jc:.015,ae:.12,rf:26};
+  if(l===0)      DIFF={sc:.010,sd:260,ms:.14,jc:.004,ae:.55,rf:120};
+  else if(l===1) DIFF={sc:.016,sd:340,ms:.18,jc:.007,ae:.40,rf:80};
+  else           DIFF={sc:.032,sd:500,ms:.28,jc:.012,ae:.14,rf:28};
 }
 
 // ── Camera ───────────────────────────────────────────────────────
@@ -1191,13 +1191,13 @@ function inp1(dt,t){
   if(!p1||p1.dead||isDead)return;
   let mv=false;
   // Movement: WASD + Arrow keys
-  if(keys['KeyA']||keys['ArrowLeft']) {p1.vx-=.44*dt;mv=true;}
-  if(keys['KeyD']||keys['ArrowRight']){p1.vx+=.44*dt;mv=true;}
+  if(keys['KeyA']||keys['ArrowLeft']) {p1.vx-=.26*dt;mv=true;}
+  if(keys['KeyD']||keys['ArrowRight']){p1.vx+=.26*dt;mv=true;}
   // Mobile joystick
-  if(Math.abs(joyX)>.15){p1.vx+=joyX*.5*dt;mv=true;}
+  if(Math.abs(joyX)>.15){p1.vx+=joyX*.30*dt;mv=true;}
   // Jump: W, ArrowUp, Space
-  if((keys['KeyW']||keys['ArrowUp']||keys['Space'])&&p1.onG)p1.vy=-11;
-  p1.mv=mv;p1.vx=Math.max(-5,Math.min(5,p1.vx));
+  if((keys['KeyW']||keys['ArrowUp']||keys['Space'])&&p1.onG)p1.vy=-9.2;
+  p1.mv=mv;p1.vx=Math.max(-3.2,Math.min(3.2,p1.vx));
   // Aim from mouse
   const sxm=p1.fr?1:-1;
   const fX=p1.x+p1.w/2-cam.x,fY=p1.y+p1.h-cam.y;
