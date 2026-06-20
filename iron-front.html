@@ -726,26 +726,12 @@ function updateHUD(){
   document.getElementById('h1').textContent=Math.round(hp);
   document.getElementById('b1').style.width=hp+'%';
   const w=p1.w0;
-  // reload progress: p1.re is set to t+950 where t=ts (RAF time)
-  const rldPct=p1.rld?Math.max(0,Math.min(1,1-(p1.re-lts)/950)):1;
-  document.getElementById('w1').textContent=w.name+(p1.rld?' ↺':'');
-  document.getElementById('w1').style.color=p1.rld?'#ff8020':'#c08820';
   const ammoCol=w.ammo===0?'#ff3030':w.ammo<=Math.ceil(w.maxA*.25)?'#ff8030':'#b06818';
-  document.getElementById('a1').textContent=w.ammo+'/'+w.res+(w.ammo===0&&w.res===0?' ⚠':'');
+  const rldTxt=p1.rld?' [R]':'';
+  document.getElementById('w1').textContent=w.name+rldTxt;
+  document.getElementById('w1').style.color=p1.rld?'#ff8020':'#c08820';
+  document.getElementById('a1').textContent=w.ammo+'/'+w.res+(w.ammo===0&&w.res===0?' NO AMMO':'');
   document.getElementById('a1').style.color=ammoCol;
-  // Reload bar
-  let rb=document.getElementById('rldbar');
-  if(!rb){
-    rb=document.createElement('div');rb.id='rldbar';
-    rb.style.cssText='height:3px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:2px;overflow:hidden;width:100px';
-    const rf=document.createElement('div');rf.id='rldfill';
-    rf.style.cssText='height:100%;border-radius:2px;background:#ff8020';
-    rb.appendChild(rf);
-    const a1=document.getElementById('a1');
-    if(a1&&a1.parentNode)a1.parentNode.insertBefore(rb,a1.nextSibling);
-  }
-  const fill=document.getElementById('rldfill');
-  if(fill){fill.style.width=(rldPct*100)+'%';fill.style.background=rldPct>=1?'transparent':'#ff8020';}
   document.getElementById('sc').textContent=kills;
   document.getElementById('ks2').textContent=streak;
   document.getElementById('bc').textContent=bots.filter(b=>!b.dead).length;
