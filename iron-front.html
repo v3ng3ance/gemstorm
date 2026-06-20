@@ -348,7 +348,7 @@ class Ent{
     this.wp=mkW();this.wi=0;
     this.lsh=0;this.dead=false;this.aim=0;
     this.rld=false;this.re=0;
-    this.si=0;this.frm=0;this.mv=false;this.fl=0;this.nm='';
+    this.si=0;this.frm=0;this.mv=false;this.fl=0;this.nm='';this.armor=0;this._prevY=0;
     // For bot cover system
     this.coverX=0;this.coverMode=false;this.coverT=0;
   }
@@ -406,34 +406,35 @@ class Ent{
   uRld(t){if(this.rld&&t>=this.re){this.rld=false;const w=this.w0;const g=Math.min(w.maxA-w.ammo,w.res);w.ammo+=g;w.res-=g;}}
 
   phys(dt){
-    // Use fixed gravity per frame, not scaled by dt, to keep feel consistent
-    const dtc = Math.min(dt, 1.5); // clamp per-entity dt too
-    this.vy += 0.45 * dtc;
-    this.x  += this.vx * dtc;
-    this.y  += this.vy * dtc;
-    this.vx *= this.onG ? 0.76 : 0.92;
-    this.onG = false;
+    const dtc=Math.min(dt,1.5);
+    this.vy+=0.38*dtc;   // lighter gravity = more floaty like Soldat
+    this.x+=this.vx*dtc;
+    this.y+=this.vy*dtc;
+    this.vx*=this.onG?0.78:0.93;
+    this.onG=false;
     for(const p of MAP.plats){
       const ix=this.x+this.w>p.x&&this.x<p.x+p.w;
       if(!ix)continue;
-      if(this.vy>=0&&this.y+this.h>p.y&&this.y+this.h<p.y+p.h+16){this.y=p.y-this.h;this.vy=0;this.onG=true;}
-      if(this.vy<0&&this.y<p.y+p.h&&this.y+this.h>p.y){this.y=p.y+p.h;this.vy=.5;}
-      if(this.y+this.h>p.y+2&&this.y<p.y+p.h-2){
-        if(this.vx<0&&this.x<p.x+p.w&&this.x+this.w>p.x+p.w){this.x=p.x+p.w;this.vx=0;}
-        if(this.vx>0&&this.x+this.w>p.x&&this.x<p.x){this.x=p.x-this.w;this.vx=0;}
+      if(p.t==='g'||p.t==='g2'||p.t==='gs'||p.t==='c'||p.t==='w'){
+        // Solid platforms — block from all sides
+        if(this.vy>=0&&this.y+this.h>p.y&&this.y+this.h<p.y+p.h+14){this.y=p.y-this.h;this.vy=0;this.onG=true;}
+        if(this.vy<0&&this.y<p.y+p.h&&this.y+this.h>p.y){this.y=p.y+p.h;this.vy=.5;}
+        if(this.y+this.h>p.y+2&&this.y<p.y+p.h-2){
+          if(this.vx<0&&this.x<p.x+p.w&&this.x+this.w>p.x+p.w){this.x=p.x+p.w;this.vx=0;}
+          if(this.vx>0&&this.x+this.w>p.x&&this.x<p.x){this.x=p.x-this.w;this.vx=0;}
+        }
+      } else {
+        // One-way platforms (like Soldat): land on top, can jump through from below
+        if(this.vy>=0&&this.y+this.h>p.y&&this.y+this.h<p.y+16&&this._prevY+this.h<=p.y+2){
+          this.y=p.y-this.h;this.vy=0;this.onG=true;
+        }
       }
     }
     this.x=Math.max(12,Math.min(MW-this.w-12,this.x));
-    // Clamp Y — never teleport. If fell below map, push back to ground level.
-    if(this.y>MH-this.h){
-      this.y=MH-this.h;
-      this.vy=0;
-      this.onG=true;
-    }
-    // frm: walk cycle counter, increments smoothly, no sharp reset
-    if(this.mv && this.onG) this.frm += dtc;
-    else this.frm = 0; // reset only when stopped and on ground
-    if(this.fl>0) this.fl -= dtc;
+    if(this.y>MH-this.h){this.y=MH-this.h;this.vy=0;this.onG=true;}
+    this._prevY=this.y; // track previous Y for one-way platform check
+    if(this.mv&&this.onG)this.frm+=dtc;else this.frm=0;
+    if(this.fl>0)this.fl-=dtc;
   }
 
   draw(){
@@ -464,8 +465,8 @@ function drawSoldier(c,isP,aim,frm,fr){
   const ac=isP?'#1e4830':'#501818';
   const hc=isP?'#1a3828':'#3a1010';
   const s=fr?1:-1;
-  // Legs: simple alternating rectangles, no vertical bob
-  const sw=Math.sin(frm*0.22)*10; // leg swing, slow and subtle
+  // Legs only swing — no vertical bob anywhere
+  const sw=Math.sin(frm*0.2)*9;
   c.fillStyle=ac;
   c.save();c.rotate( sw*s*Math.PI/180);
   c.fillRect(s*-7,-22,s*6,14);c.fillStyle='#181620';c.fillRect(s*-8,-10,s*7,5);
@@ -473,26 +474,26 @@ function drawSoldier(c,isP,aim,frm,fr){
   c.save();c.rotate(-sw*s*Math.PI/180);
   c.fillRect(s*1,-22,s*6,14);c.fillStyle='#181620';c.fillRect(s*1,-10,s*7,5);
   c.restore();
-  // Torso — completely static, no bob
-  c.fillStyle=bc; c.fillRect(s*-9,-42,s*18,22);
-  c.fillStyle=ac; c.fillRect(s*-9,-42,s*18,7); c.fillRect(s*-9,-26,s*18,5);
-  c.fillStyle='rgba(0,0,0,.2)'; c.fillRect(s*-7,-40,s*4,5); c.fillRect(s*3,-40,s*4,5);
+  // Torso — static
+  c.fillStyle=bc;c.fillRect(s*-9,-42,s*18,22);
+  c.fillStyle=ac;c.fillRect(s*-9,-42,s*18,7);c.fillRect(s*-9,-26,s*18,5);
+  c.fillStyle='rgba(0,0,0,.2)';c.fillRect(s*-7,-40,s*4,5);c.fillRect(s*3,-40,s*4,5);
   // Head — static
-  c.fillStyle='#c49060'; c.beginPath(); c.arc(0,-50,6.5,0,Math.PI*2); c.fill();
-  c.fillStyle=hc; c.beginPath(); c.arc(0,-52,7,Math.PI,0); c.fill();
+  c.fillStyle='#c49060';c.beginPath();c.arc(0,-50,6.5,0,Math.PI*2);c.fill();
+  c.fillStyle=hc;c.beginPath();c.arc(0,-52,7,Math.PI,0);c.fill();
   c.fillRect(-7,-54,14,5);
-  c.fillStyle='rgba(0,0,0,.44)'; c.fillRect(-4,-52,8,3);
-  c.strokeStyle='rgba(80,160,255,.5)'; c.lineWidth=1;
-  c.beginPath(); c.arc(-2,-51,1.8,0,Math.PI*2); c.stroke();
-  c.beginPath(); c.arc( 2,-51,1.8,0,Math.PI*2); c.stroke();
+  c.fillStyle='rgba(0,0,0,.44)';c.fillRect(-4,-52,8,3);
+  c.strokeStyle='rgba(80,160,255,.5)';c.lineWidth=1;
+  c.beginPath();c.arc(-2,-51,1.8,0,Math.PI*2);c.stroke();
+  c.beginPath();c.arc( 2,-51,1.8,0,Math.PI*2);c.stroke();
   // Weapon arm — rotates with aim, no bob
-  c.save(); c.translate(s*6,-33); c.rotate(aim);
+  c.save();c.translate(s*6,-33);c.rotate(aim);
   c.fillStyle=bc;      c.fillRect(-2,-2,9,5);
-  c.fillStyle='#484f5e'; c.fillRect(7,-4,20,6);
-  c.fillStyle='#30363c'; c.fillRect(5,-5,13,8);
-  c.fillStyle='#5c6370'; c.fillRect(26,-3,7,3);
-  c.fillStyle='#38302a'; c.fillRect(2,-5,6,8);
-  c.fillStyle='#28303e'; c.fillRect(12,-7,8,3);
+  c.fillStyle='#484f5e';c.fillRect(7,-4,20,6);
+  c.fillStyle='#30363c';c.fillRect(5,-5,13,8);
+  c.fillStyle='#5c6370';c.fillRect(26,-3,7,3);
+  c.fillStyle='#38302a';c.fillRect(2,-5,6,8);
+  c.fillStyle='#28303e';c.fillRect(12,-7,8,3);
   c.restore();
 }
 
@@ -575,25 +576,33 @@ function drawPlats(){
     }else if(t==='c'||t==='w'){
       cx.fillStyle='#060810';cx.fillRect(sx,sy,p.w,p.h);
     }else{
-      // platforms
-      const pc=t==='p2'?'#281e10':t==='ps'?'#182030':'#202a18';
-      const pg=cx.createLinearGradient(0,sy,0,sy+p.h);
-      pg.addColorStop(0,t==='p2'?'#302416':t==='ps'?'#202838':'#28341e');
-      pg.addColorStop(1,pc);
-      cx.fillStyle=pg;cx.fillRect(sx,sy,p.w,p.h);
-      // panel lines
-      for(let bx2=0;bx2<p.w;bx2+=30){
-        cx.strokeStyle='rgba(0,0,0,.3)';cx.lineWidth=.8;
-        cx.beginPath();cx.moveTo(sx+bx2,sy);cx.lineTo(sx+bx2,sy+p.h);cx.stroke();
+      // Floating platforms — Soldat style: solid metal/stone slab
+      const isDesert=t==='p2', isSnow=t==='ps';
+      // Main slab
+      const baseC=isDesert?'#3a2a14':isSnow?'#2a3848':'#2a3420';
+      const topC =isDesert?'#5a4020':isSnow?'#4060a0':'#4a6830';
+      const edgeC=isDesert?'#7a6030':isSnow?'#6888c8':'#608040';
+      cx.fillStyle=baseC; cx.fillRect(sx,sy,p.w,p.h);
+      // Top bright strip — the "landing surface"
+      cx.fillStyle=topC;  cx.fillRect(sx,sy,p.w,4);
+      // Top edge highlight (bright line)
+      cx.fillStyle=edgeC; cx.fillRect(sx,sy,p.w,1.5);
+      // Metal rivets at ends
+      cx.fillStyle='rgba(255,255,255,0.25)';
+      cx.fillRect(sx+2,sy+1,4,2); cx.fillRect(sx+p.w-6,sy+1,4,2);
+      // Underside shadow
+      cx.fillStyle='rgba(0,0,0,0.5)'; cx.fillRect(sx,sy+p.h,p.w,4);
+      // One-way indicator: small arrow/triangle on top surface
+      if(p.w>40){
+        cx.fillStyle='rgba(255,255,255,0.12)';
+        const mid=sx+p.w/2;
+        cx.beginPath();cx.moveTo(mid,sy-3);cx.lineTo(mid-5,sy+1);cx.lineTo(mid+5,sy+1);cx.fill();
       }
-      // top highlight
-      const tc2=t==='p2'?'#604828':t==='ps'?'#4868a0':'#4a6830';
-      cx.fillStyle=tc2;cx.fillRect(sx,sy,p.w,3);
-      // moss/snow on top
-      if(t==='ps'){cx.fillStyle='rgba(200,220,240,.5)';for(let gx=(sx%8+8)%8;gx<sx+p.w&&gx<GW+4;gx+=8)cx.fillRect(gx,sy-2,2,3);}
-      else{cx.fillStyle='rgba(60,100,30,.4)';for(let gx=(sx%8+8)%8;gx<sx+p.w&&gx<GW+4;gx+=8)cx.fillRect(gx,sy-2,1.5,3);}
-      // shadow below
-      cx.fillStyle='rgba(0,0,0,.35)';cx.fillRect(sx,sy+p.h,p.w,4);
+      // Snow drift on top
+      if(isSnow){
+        cx.fillStyle='rgba(200,220,248,0.6)';
+        cx.fillRect(sx,sy-2,p.w,3);
+      }
     }
   }
 }
@@ -699,9 +708,11 @@ function drawMM(){
   // drops on minimap
   mc2.fillStyle='#ffe030';
   for(const d of drops)mc2.fillRect(d.x/sx-1.5,d.y/sy-1.5,3,3);
-  // crates on minimap
-  mc2.fillStyle='#50ff80';
-  for(const c of crates)if(c.active)mc2.fillRect(c.x/sx-1.5,c.y/sy-2,3,3);
+  // pickups on minimap
+  for(const pk of pickups)if(pk.active){
+    mc2.fillStyle=pk.glow||'#50ff80';
+    mc2.fillRect(pk.x/sx-1.5,pk.y/sy-2,3,3);
+  }
   mc2.strokeStyle='rgba(50,110,230,.2)';mc2.lineWidth=1;mc2.strokeRect(cam.x/sx,cam.y/sy,GW/sx,GH/sy);
 }
 
@@ -730,14 +741,15 @@ function drawCrosshair(){
 function updateHUD(){
   if(!p1)return;
   const hp=Math.max(0,p1.hp);
-  document.getElementById('h1').textContent=Math.round(hp);
+  const arm=Math.max(0,p1.armor||0);
+  document.getElementById('h1').textContent=Math.round(hp)+(arm>0?' / '+Math.round(arm)+'A':'');
   document.getElementById('b1').style.width=hp+'%';
+  document.getElementById('b1').style.background=hp>60?'#3078f0':hp>30?'#f09020':'#f03020';
   const w=p1.w0;
   const ammoCol=w.ammo===0?'#ff3030':w.ammo<=Math.ceil(w.maxA*.25)?'#ff8030':'#b06818';
-  const rldTxt=p1.rld?' [R]':'';
-  document.getElementById('w1').textContent=w.name+rldTxt;
+  document.getElementById('w1').textContent=w.name+(p1.rld?' [R]':'');
   document.getElementById('w1').style.color=p1.rld?'#ff8020':'#c08820';
-  document.getElementById('a1').textContent=w.ammo+'/'+w.res+(w.ammo===0&&w.res===0?' NO AMMO':'');
+  document.getElementById('a1').textContent=w.ammo+'/'+w.res+(w.ammo===0&&w.res===0?' GATA':'');
   document.getElementById('a1').style.color=ammoCol;
   document.getElementById('sc').textContent=kills;
   document.getElementById('ks2').textContent=streak;
@@ -919,7 +931,7 @@ function updBL(dt){
           let dmg=b.dmg;
           if(zone==='head')      dmg*=2.5;
           else if(zone==='legs') dmg*=0.65;
-          tg.hp-=dmg; tg.vx+=b.vx*.06; tg.vy+=b.vy*.04; tg.fl=6;
+          dmg=applyDamage(tg,dmg); tg.vx+=b.vx*.06; tg.vy+=b.vy*.04; tg.fl=6;
           if(zone==='head' && b.own && b.own.isP){
               shake(5);
               addK(TX[lang].headshot+' +'+Math.round(dmg)+'dmg','#ff3030');
@@ -1000,7 +1012,7 @@ class Bot extends Ent{
     if(this.dt2<=0){this.dt2=60+Math.random()*80;if(Math.random()<.3)this.mdir*=-1;}
     this.vx+=this.mdir*.07*dt;this.vx=Math.max(-3.5,Math.min(3.5,this.vx));
     this.jcd-=dt;
-    if(this.onG&&this.jcd<=0&&Math.random()<DIFF.jc){this.vy=-11;this.jcd=55;}
+    if(this.onG&&this.jcd<=0&&Math.random()<DIFF.jc){this.vy=-8.2;this.jcd=55;}
     // aim error applied at shoot time, not permanently on aim angle
     if(Math.random()<DIFF.sc&&dist<DIFF.sd){
       const savedAim=this.aim;
@@ -1028,51 +1040,112 @@ function updCam(){
   cam.y=Math.max(0,Math.min(MH-GH,cam.y));
 }
 
-// ── Ammo crates (static pickups on map) ─────────────────────────
-let crates=[];
-function spawnCrates(){
-  crates=[];
-  // Place crates on top of platforms, spread across map
-  const platList=MAP.plats.filter(p=>p.t==='p'||p.t==='p2'||p.t==='ps');
-  const positions=[0.15,0.3,0.5,0.65,0.8].map(f=>Math.floor(f*platList.length));
-  for(const idx of positions){
-    if(!platList[idx])continue;
-    const p=platList[idx];
-    crates.push({x:p.x+p.w/2,y:p.y-14,life:999,respawn:0,active:true});
-  }
+// ── Pickup system ────────────────────────────────────────────────
+// Types: 'ammo' | 'health' | 'armor' | 'weapon'
+let pickups=[];
+
+const PICKUP_COLORS={
+  ammo:  {box:'#5a3a10',top:'#7a5020',glow:'#ffe060',label:'AMO'},
+  health:{box:'#1a3a1a',top:'#206020',glow:'#40ff60',label:'+HP'},
+  armor: {box:'#1a2a4a',top:'#203060',glow:'#60a0ff',label:'ARM'},
+  weapon:{box:'#3a1a3a',top:'#502060',glow:'#e060ff',label:'WPN'},
+};
+
+function spawnPickups(){
+  pickups=[];
+  const platList=MAP.plats.filter(p=>p.t!=='g'&&p.t!=='g2'&&p.t!=='gs'&&p.t!=='c'&&p.t!=='w');
+  // Distribute ~18 pickups across platforms
+  const types=['ammo','ammo','ammo','health','health','armor','armor','weapon','weapon',
+               'ammo','health','armor','ammo','health','weapon','ammo','health','ammo'];
+  // Spread evenly: pick platform indices spread across the map
+  const step=Math.max(1,Math.floor(platList.length/types.length));
+  types.forEach((type,i)=>{
+    const p=platList[Math.min(i*step+Math.floor(Math.random()*step),platList.length-1)];
+    if(!p)return;
+    // Randomise weapon type
+    const wi=type==='weapon'?Math.floor(Math.random()*4):0;
+    pickups.push({
+      x:p.x+p.w*(.25+Math.random()*.5),
+      y:p.y-14,
+      type,wi,
+      active:true,
+      respawn:0,
+      // weapon pickups show which weapon
+      label:type==='weapon'?WD[wi].name.slice(0,3).toUpperCase():PICKUP_COLORS[type].label,
+      glow:PICKUP_COLORS[type].glow,
+      box:PICKUP_COLORS[type].box,
+      top:PICKUP_COLORS[type].top,
+    });
+  });
 }
-function updCrates(dt){
-  for(const c of crates){
-    if(!c.active){c.respawn-=dt;if(c.respawn<=0)c.active=true;continue;}
-    if(p1&&!p1.dead&&!isDead&&Math.hypot(p1.x+p1.w/2-c.x,p1.y+p1.h-c.y)<32){
-      // Refill ALL weapons ammo by half max
-      for(const w of p1.wp) w.res=Math.min(w.maxA*3, w.res+Math.floor(w.maxA/2));
-      addK('Munitie reincarcata!','#50ff80');
-      c.active=false;c.respawn=1800; // 30 seconds respawn
+
+function updPickups(dt){
+  const now=Date.now();
+  for(const pk of pickups){
+    if(!pk.active){pk.respawn-=dt;if(pk.respawn<=0)pk.active=true;continue;}
+    if(!p1||p1.dead||isDead)continue;
+    if(Math.hypot(p1.x+p1.w/2-pk.x,p1.y+pk.y+14-pk.y)<30){
+      applyPickup(pk);
+      pk.active=false;
+      pk.respawn=1500; // 25s respawn
     }
   }
 }
-function drawCrates(){
-  for(const c of crates){
-    if(!c.active)continue;
-    const sx=c.x-cam.x+cam.shakeX,sy=c.y-cam.y+cam.shakeY;
-    if(sx<-30||sx>GW+30)continue;
-    // crate box
-    cx.fillStyle='#604820';cx.fillRect(sx-10,sy-10,20,18);
-    cx.fillStyle='#805830';cx.fillRect(sx-9,sy-9,18,16);
-    // cross straps
-    cx.strokeStyle='#402810';cx.lineWidth=1.5;
-    cx.beginPath();cx.moveTo(sx-10,sy-1);cx.lineTo(sx+10,sy-1);cx.stroke();
-    cx.beginPath();cx.moveTo(sx,sy-10);cx.lineTo(sx,sy+8);cx.stroke();
-    // ammo icon
-    cx.fillStyle='#ffe060';cx.font='bold 8px monospace';cx.textAlign='center';
-    cx.fillText('AMO',sx,sy+2);cx.textAlign='left';
-    // glow pulse
-    cx.globalAlpha=.2+Math.sin(Date.now()*.004)*.15;
-    cx.strokeStyle='#80ff80';cx.lineWidth=2;
-    cx.beginPath();cx.arc(sx,sy-1,13,0,Math.PI*2);cx.stroke();
+
+function applyPickup(pk){
+  if(pk.type==='ammo'){
+    for(const w of p1.wp) w.res=Math.min(w.maxA*3,w.res+Math.floor(w.maxA*0.6));
+    addK('+ Munitie','#ffe060');
+  } else if(pk.type==='health'){
+    const gain=Math.min(100-p1.hp,35);
+    p1.hp=Math.min(100,p1.hp+35);
+    addK('+ '+Math.round(gain)+' HP','#40ff60');
+  } else if(pk.type==='armor'){
+    p1.armor=Math.min(100,(p1.armor||0)+50);
+    addK('+ Armura','#60a0ff');
+  } else if(pk.type==='weapon'){
+    const w=p1.wp[pk.wi];
+    w.ammo=w.maxA; w.res=w.maxA*2;
+    p1.wi=pk.wi; selW(pk.wi);
+    addK('+ '+WD[pk.wi].name,'#e060ff');
+  }
+}
+
+function drawPickups(){
+  const t=Date.now();
+  for(const pk of pickups){
+    if(!pk.active)continue;
+    const sx=pk.x-cam.x+cam.shakeX, sy=pk.y-cam.y+cam.shakeY;
+    if(sx<-40||sx>GW+40)continue;
+    // Box
+    cx.fillStyle=pk.box; cx.fillRect(sx-10,sy-9,20,18);
+    cx.fillStyle=pk.top; cx.fillRect(sx-10,sy-9,20,6);
+    // Inner highlight
+    cx.fillStyle='rgba(255,255,255,0.12)'; cx.fillRect(sx-9,sy-8,18,2);
+    // Cross strap
+    cx.strokeStyle='rgba(0,0,0,0.4)'; cx.lineWidth=1;
+    cx.beginPath();cx.moveTo(sx-10,sy);cx.lineTo(sx+10,sy);cx.stroke();
+    // Label
+    cx.fillStyle=pk.glow; cx.font='bold 7px monospace'; cx.textAlign='center';
+    cx.fillText(pk.label,sx,sy+4); cx.textAlign='left';
+    // Pulse glow
+    const pulse=0.18+Math.sin(t*0.005)*0.12;
+    cx.globalAlpha=pulse;
+    cx.strokeStyle=pk.glow; cx.lineWidth=2;
+    cx.beginPath();cx.arc(sx,sy,14,0,Math.PI*2);cx.stroke();
     cx.globalAlpha=1;
   }
+}
+
+// Armor absorbs 40% of damage
+function applyDamage(tg,dmg){
+  if(tg.armor&&tg.armor>0){
+    const absorbed=Math.min(tg.armor,dmg*0.4);
+    tg.armor-=absorbed; dmg-=absorbed;
+    if(tg.armor<0)tg.armor=0;
+  }
+  tg.hp-=dmg;
+  return dmg;
 }
 function updDrops(dt){
   for(let i=drops.length-1;i>=0;i--){
@@ -1103,31 +1176,34 @@ function updDrops(dt){
 let joyX=0,joyY=0; // mobile joystick
 function inp1(dt,t){
   if(!p1||p1.dead||isDead)return;
-  // Keyboard movement
   let mv=false;
-  if(keys['KeyA'])      {p1.vx-=.44*dt;mv=true;}
-  if(keys['KeyD'])      {p1.vx+=.44*dt;mv=true;}
+  // Movement: WASD + Arrow keys
+  if(keys['KeyA']||keys['ArrowLeft']) {p1.vx-=.44*dt;mv=true;}
+  if(keys['KeyD']||keys['ArrowRight']){p1.vx+=.44*dt;mv=true;}
   // Mobile joystick
   if(Math.abs(joyX)>.15){p1.vx+=joyX*.5*dt;mv=true;}
-  if((keys['KeyW']||keys['Space'])&&p1.onG)p1.vy=-11;
+  // Jump: W, ArrowUp, Space
+  if((keys['KeyW']||keys['ArrowUp']||keys['Space'])&&p1.onG)p1.vy=-8.2;
   p1.mv=mv;p1.vx=Math.max(-5,Math.min(5,p1.vx));
   // Aim from mouse
   const sxm=p1.fr?1:-1;
   const fX=p1.x+p1.w/2-cam.x,fY=p1.y+p1.h-cam.y;
   const psx=fX+sxm*6,psy=fY-33;
   p1.aim=Math.atan2(mouse.y-psy,mouse.x-psx);
-  // Flip with dead-zone — 15px hysteresis prevents jitter
+  // Flip with dead-zone
   const ddx=mouse.x-fX;
   if(ddx>15) p1.fr=true;
   else if(ddx<-15) p1.fr=false;
-  // Shoot
-  const sh=s1m||keys['KeyZ']||keys['KeyF'];
+  // Shoot: left click, Z, F, Ctrl
+  const sh=s1m||keys['KeyZ']||keys['KeyF']||keys['ControlLeft']||keys['ControlRight'];
   if(sh&&(p1.w0.auto||!s1h))p1.shoot([...bots].filter(e=>!e.dead),t);
   s1h=sh;
-  // Manual reload with R (or if ammo=0 and reserve>0, auto-reload on shoot attempt)
+  // Reload: R
   if(keys['KeyR']&&!p1.rld)p1.sRld(t);
+  // Weapon select: 1-4
   if(keys['Digit1'])selW(0);if(keys['Digit2'])selW(1);
   if(keys['Digit3'])selW(2);if(keys['Digit4'])selW(3);
+  // Scroll wheel weapon switch handled separately
   p1.uRld(t);p1.phys(dt);
 }
 function selW(i){
@@ -1246,8 +1322,8 @@ function startSolo(){
   p1.nm=document.getElementById('pn').value.trim().slice(0,10)||'TU';
   bots=[];
   for(let i=0;i<botCount;i++){const sp=SPWN[(i+1)%SPWN.length];const b=new Bot(sp.x,sp.y,i+1);bots.push(b);}
-  kills=0;streak=0;BL=[];PA=[];EX=[];BD=[];holes=[];drops=[];crates=[];gSec=0;isDead=false;
-  spawnCrates();
+  kills=0;streak=0;BL=[];PA=[];EX=[];BD=[];holes=[];drops=[];pickups=[];gSec=0;isDead=false;
+  spawnPickups();
   document.getElementById('ov').style.display='none';
   if(isMobile())document.getElementById('mc').className='show';
   lts=0;gMode='solo';
@@ -1304,7 +1380,7 @@ function loop(ts){
     if(gMode==='solo'){
       inp1(dt,t);
       for(const b of bots) if(!b.dead) b.ai(t,dt);
-      updBL(dt); updDrops(dt); updCrates(dt);
+      updBL(dt); updDrops(dt); updPickups(dt);
     }else if(gMode==='online-host'){
       inp1(dt,t);
       for(const b of bots.slice(1)) if(!b.dead) b.ai(t,dt);
@@ -1322,7 +1398,7 @@ function loop(ts){
   // Draw
   if(p1){
     drawBg(); drawBD(); drawPlats(); drawHoles();
-    drawCrates(); drawDrops(); drawEX(dt); drawBullets(); drawPA(dt);
+    drawPickups(); drawDrops(); drawEX(dt); drawBullets(); drawPA(dt);
     for(const b of bots) if(!b.dead) b.draw();
     if(!p1.dead) p1.draw();
     drawMM(); updateHUD(); drawCrosshair();
@@ -1335,6 +1411,14 @@ window.addEventListener('keydown',e=>{
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'].includes(e.code))e.preventDefault();
 });
 window.addEventListener('keyup',e=>{keys[e.code]=false;});
+// Scroll wheel = switch weapon
+window.addEventListener('wheel',e=>{
+  if(!p1||!gameRunning())return;
+  e.preventDefault();
+  const dir=e.deltaY>0?1:-1;
+  selW((p1.wi+dir+4)%4);
+},{passive:false});
+function gameRunning(){return gMode==='solo'||gMode==='online-host'||gMode==='online-client';}
 // Mouse
 window.addEventListener('mousemove',e=>{
   const r=cv.getBoundingClientRect();
