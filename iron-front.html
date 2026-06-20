@@ -369,9 +369,19 @@ class Ent{
   shoot(tgts,t){
     const w=this.w0;
     if(this.rld)return;
-    if(w.ammo<=0){this.sRld(t);return;}
+    if(w.ammo<=0){
+      // auto-reload if reserve available
+      if(w.res>0){this.sRld(t);return;}
+      // no reserve — auto-switch to a weapon that has ammo
+      for(let i=0;i<this.wp.length;i++){
+        if(this.wp[i].ammo>0||this.wp[i].res>0){this.wi=i;return;}
+      }
+      return; // truly out of ammo everywhere
+    }
     if(t-this.lsh<w.rate)return;
     this.lsh=t;w.ammo--;
+    // auto-reload if just emptied the clip
+    if(w.ammo===0&&w.res>0) this.sRld(t);
     const fX=this.x+this.w/2,fY=this.y+this.h;
     const sxm=this.fr?1:-1;
     const shX=fX+sxm*6,shY=fY-33;
@@ -408,10 +418,11 @@ class Ent{
       }
     }
     this.x=Math.max(12,Math.min(MW-this.w-12,this.x));
-    // Fell out of map — respawn above
-    if(this.y>MH+60){
-      if(this.isP){doRespawnImmediate();}
-      else{const s=SPWN[this.si];this.x=s.x;this.y=s.y;this.vx=0;this.vy=0;}
+    // Clamp Y — never teleport. If fell below map, push back to ground level.
+    if(this.y>MH-this.h){
+      this.y=MH-this.h;
+      this.vy=0;
+      this.onG=true;
     }
     if(this.mv&&this.onG)this.frm+=dt*.85;else this.frm=0;
     if(this.fl>0)this.fl-=dt;
@@ -669,6 +680,9 @@ function drawMM(){
   // drops on minimap
   mc2.fillStyle='#ffe030';
   for(const d of drops)mc2.fillRect(d.x/sx-1.5,d.y/sy-1.5,3,3);
+  // crates on minimap
+  mc2.fillStyle='#50ff80';
+  for(const c of crates)if(c.active)mc2.fillRect(c.x/sx-1.5,c.y/sy-2,3,3);
   mc2.strokeStyle='rgba(50,110,230,.2)';mc2.lineWidth=1;mc2.strokeRect(cam.x/sx,cam.y/sy,GW/sx,GH/sy);
 }
 
@@ -699,8 +713,19 @@ function updateHUD(){
   const hp=Math.max(0,p1.hp);
   document.getElementById('h1').textContent=Math.round(hp);
   document.getElementById('b1').style.width=hp+'%';
-  document.getElementById('w1').textContent=p1.w0.name+(p1.rld?' [RLD]':'');
-  document.getElementById('a1').textContent=p1.w0.ammo+'/'+p1.w0.res;
+  const w=p1.w0;
+  const rldPct=p1.rld?Math.max(0,1-(p1.re-performance.now())/950):1;
+  document.getElementById('w1').textContent=w.name+(p1.rld?' ↺':'');
+  document.getElementById('w1').style.color=p1.rld?'#ff8020':'#c08820';
+  // Show ammo — red if low, yellow if reloading
+  const ammoCol=w.ammo===0?'#ff3030':w.ammo<=Math.ceil(w.maxA*.25)?'#ff8030':'#b06818';
+  document.getElementById('a1').textContent=w.ammo+'/'+w.res+(w.ammo===0&&w.res===0?' ⚠ NO AMMO':'');
+  document.getElementById('a1').style.color=ammoCol;
+  // Reload bar
+  let rb=document.getElementById('rldbar');
+  if(!rb){rb=document.createElement('div');rb.id='rldbar';rb.style.cssText='height:3px;background:rgba(255,255,255,.07);border-radius:2px;margin-top:2px;overflow:hidden;width:100px';const rf=document.createElement('div');rf.id='rldfill';rf.style.cssText='height:100%;border-radius:2px;background:#ff8020;transition:width .05s';rb.appendChild(rf);document.getElementById('a1').after(rb);}
+  document.getElementById('rldfill').style.width=(rldPct*100)+'%';
+  document.getElementById('rldfill').style.background=rldPct>=1?'rgba(255,255,255,0)':'#ff8020';
   document.getElementById('sc').textContent=kills;
   document.getElementById('ks2').textContent=streak;
   document.getElementById('bc').textContent=bots.filter(b=>!b.dead).length;
@@ -918,10 +943,10 @@ class Bot extends Ent{
     const dx=this.tX-(this.x+this.w/2);
     const dy=this.tY-(this.y+this.h/2);
     const dist=Math.sqrt(dx*dx+dy*dy);
-    // smooth aim for bots (interpolate, no jitter)
+    // smooth aim for bots — dt-scaled lerp, no per-frame jitter
     const targetAim=Math.atan2(dy,dx);
     const aimDiff=((targetAim-this.aim+Math.PI*3)%(Math.PI*2))-Math.PI;
-    this.aim+=aimDiff*.15; // smooth lerp — no jitter
+    this.aim+=aimDiff*Math.min(1, 0.06*dt); // slow, smooth, frame-rate independent
     this.fr=dx>0;
     // Cover system: if low HP, look for nearby platform to hide behind
     if(this.hp<40&&this.coverT<=0){
@@ -970,17 +995,72 @@ function updCam(){
   cam.y=Math.max(0,Math.min(MH-GH,cam.y));
 }
 
-// ── Weapon drops update ──────────────────────────────────────────
+// ── Ammo crates (static pickups on map) ─────────────────────────
+let crates=[];
+function spawnCrates(){
+  crates=[];
+  // Place crates on top of platforms, spread across map
+  const platList=MAP.plats.filter(p=>p.t==='p'||p.t==='p2'||p.t==='ps');
+  const positions=[0.15,0.3,0.5,0.65,0.8].map(f=>Math.floor(f*platList.length));
+  for(const idx of positions){
+    if(!platList[idx])continue;
+    const p=platList[idx];
+    crates.push({x:p.x+p.w/2,y:p.y-14,life:999,respawn:0,active:true});
+  }
+}
+function updCrates(dt){
+  for(const c of crates){
+    if(!c.active){c.respawn-=dt;if(c.respawn<=0)c.active=true;continue;}
+    if(p1&&!p1.dead&&!isDead&&Math.hypot(p1.x+p1.w/2-c.x,p1.y+p1.h-c.y)<32){
+      // Refill ALL weapons ammo by half max
+      for(const w of p1.wp) w.res=Math.min(w.maxA*3, w.res+Math.floor(w.maxA/2));
+      addK('Munitie reincarcata!','#50ff80');
+      c.active=false;c.respawn=1800; // 30 seconds respawn
+    }
+  }
+}
+function drawCrates(){
+  for(const c of crates){
+    if(!c.active)continue;
+    const sx=c.x-cam.x+cam.shakeX,sy=c.y-cam.y+cam.shakeY;
+    if(sx<-30||sx>GW+30)continue;
+    // crate box
+    cx.fillStyle='#604820';cx.fillRect(sx-10,sy-10,20,18);
+    cx.fillStyle='#805830';cx.fillRect(sx-9,sy-9,18,16);
+    // cross straps
+    cx.strokeStyle='#402810';cx.lineWidth=1.5;
+    cx.beginPath();cx.moveTo(sx-10,sy-1);cx.lineTo(sx+10,sy-1);cx.stroke();
+    cx.beginPath();cx.moveTo(sx,sy-10);cx.lineTo(sx,sy+8);cx.stroke();
+    // ammo icon
+    cx.fillStyle='#ffe060';cx.font='bold 8px monospace';cx.textAlign='center';
+    cx.fillText('AMO',sx,sy+2);cx.textAlign='left';
+    // glow pulse
+    cx.globalAlpha=.2+Math.sin(Date.now()*.004)*.15;
+    cx.strokeStyle='#80ff80';cx.lineWidth=2;
+    cx.beginPath();cx.arc(sx,sy-1,13,0,Math.PI*2);cx.stroke();
+    cx.globalAlpha=1;
+  }
+}
 function updDrops(dt){
   for(let i=drops.length-1;i>=0;i--){
     const d=drops[i];
     d.life-=dt;
     if(d.life<=0){drops.splice(i,1);continue;}
-    // p1 picks up
-    if(p1&&!p1.dead&&Math.hypot(p1.x-d.x,p1.y-d.y)<28){
-      p1.wp[d.wi]={...d.wp,ammo:d.wp.ammo};
-      if(d.wi>p1.wi)p1.wi=d.wi;
-      addK('Picked up '+d.nm,'#ffdd50');
+    // p1 picks up — bigger radius, auto-pickup always
+    if(p1&&!p1.dead&&!isDead&&Math.hypot(p1.x+p1.w/2-d.x,p1.y+p1.h/2-d.y)<36){
+      const pw=p1.wp[d.wi];
+      if(d.wi===p1.wi){
+        // same weapon — refill ammo
+        const gained=Math.min(pw.maxA-pw.ammo, d.wp.ammo)+Math.min(pw.res, d.wp.res);
+        pw.ammo=Math.min(pw.maxA, pw.ammo+d.wp.ammo);
+        pw.res=Math.min(pw.maxA*3, pw.res+d.wp.res);
+        if(gained>0)addK('+'+d.wp.ammo+' '+d.nm+' ammo','#ffdd50');
+      }else{
+        // different weapon — take it, add ammo
+        pw.ammo=Math.min(pw.maxA, pw.ammo+d.wp.ammo);
+        pw.res=Math.min(pw.maxA*3, pw.res+d.wp.res);
+        if(pw.ammo>0)addK('Luat '+d.nm,'#ffdd50');
+      }
       drops.splice(i,1);
     }
   }
@@ -1010,11 +1090,10 @@ function inp1(dt,t){
   const sh=s1m||keys['KeyZ']||keys['KeyF'];
   if(sh&&(p1.w0.auto||!s1h))p1.shoot([...bots].filter(e=>!e.dead),t);
   s1h=sh;
+  // Manual reload with R (or if ammo=0 and reserve>0, auto-reload on shoot attempt)
+  if(keys['KeyR']&&!p1.rld)p1.sRld(t);
   if(keys['Digit1'])selW(0);if(keys['Digit2'])selW(1);
   if(keys['Digit3'])selW(2);if(keys['Digit4'])selW(3);
-  if(keys['KeyR'])p1.sRld(t);
-  // Pick up nearby weapon
-  if(keys['KeyE']){updDrops(0);}
   p1.uRld(t);p1.phys(dt);
 }
 function selW(i){
@@ -1133,9 +1212,9 @@ function startSolo(){
   p1.nm=document.getElementById('pn').value.trim().slice(0,10)||'TU';
   bots=[];
   for(let i=0;i<botCount;i++){const sp=SPWN[(i+1)%SPWN.length];const b=new Bot(sp.x,sp.y,i+1);bots.push(b);}
-  kills=0;streak=0;BL=[];PA=[];EX=[];BD=[];holes=[];drops=[];gSec=0;isDead=false;
+  kills=0;streak=0;BL=[];PA=[];EX=[];BD=[];holes=[];drops=[];crates=[];gSec=0;isDead=false;
+  spawnCrates();
   document.getElementById('ov').style.display='none';
-  document.getElementById('ml').textContent=TX[lang].ml;
   document.getElementById('b2').parentElement&&(document.getElementById('b2').parentElement.parentElement.style.visibility='hidden');
   if(isMobile())document.getElementById('mc').className='show';
   lts=0;gMode='solo';
@@ -1191,7 +1270,7 @@ function loop(ts){
     if(gMode==='solo'){
       inp1(dt,t);
       for(const b of bots)if(!b.dead)b.ai(t,dt);
-      updBL(dt);updDrops(rawDt);
+      updBL(dt);updDrops(rawDt);updCrates(rawDt);
     }else if(gMode==='online-host'){
       inp1(dt,t);
       for(const b of bots.slice(1))if(!b.dead)b.ai(t,dt); // skip slot 0 (remote player)
@@ -1213,7 +1292,7 @@ function loop(ts){
   // Draw
   if(p1){
     drawBg();drawBD();drawPlats();drawHoles();
-    drawDrops();drawEX(dt);drawBullets();drawPA(dt);
+    drawCrates();drawDrops();drawEX(dt);drawBullets();drawPA(dt);
     drawDmgNums(rawDt);
     for(const b of bots)if(!b.dead)b.draw();
     if(!p1.dead)p1.draw();
