@@ -412,7 +412,8 @@ class Ent{
 
   phys(dt){
     const dtc=Math.min(dt,1.5);
-    this.vy+=0.32*dtc;   // gravity calibrated so vy=-11 reaches ~195px height
+    this._prevY=this.y; // store BEFORE moving
+    this.vy+=0.32*dtc;
     this.x+=this.vx*dtc;
     this.y+=this.vy*dtc;
     this.vx*=this.onG?0.78:0.93;
@@ -429,15 +430,15 @@ class Ent{
           if(this.vx>0&&this.x+this.w>p.x&&this.x<p.x){this.x=p.x-this.w;this.vx=0;}
         }
       } else {
-        // One-way platforms (like Soldat): land on top, can jump through from below
-        if(this.vy>=0&&this.y+this.h>p.y&&this.y+this.h<p.y+16&&this._prevY+this.h<=p.y+2){
-          this.y=p.y-this.h;this.vy=0;this.onG=true;
+        // One-way platforms: only land when falling (vy>0) and feet cross top surface
+        // _prevY check removed — caused missed landings at high speed
+        if(this.vy>0&&this._prevY+this.h<=p.y+1&&this.y+this.h>=p.y){
+          this.y=p.y-this.h; this.vy=0; this.onG=true;
         }
       }
     }
     this.x=Math.max(12,Math.min(MW-this.w-12,this.x));
     if(this.y>MH-this.h){this.y=MH-this.h;this.vy=0;this.onG=true;}
-    this._prevY=this.y; // track previous Y for one-way platform check
     if(this.mv&&this.onG)this.frm+=dtc;else this.frm=0;
     if(this.fl>0)this.fl-=dtc;
   }
