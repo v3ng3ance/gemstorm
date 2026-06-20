@@ -645,11 +645,10 @@ function drawBullets(){
 }
 
 function drawPA(dt){
-  const speed=slowMo>0?.25:1;
   for(let i=PA.length-1;i>=0;i--){
     const p=PA[i];
-    p.x+=p.vx*dt*speed;p.y+=p.vy*dt*speed;p.lf-=dt;
-    if(p.k!=='m'&&p.k!=='txt')p.vy+=.28*dt*speed;
+    p.x+=p.vx*dt; p.y+=p.vy*dt; p.lf-=dt;
+    if(p.k!=='m'&&p.k!=='txt') p.vy+=.28*dt;
     p.vx*=.93;
     if(p.lf<=0){PA.splice(i,1);continue;}
     const sx=p.x-cam.x+cam.shakeX,sy=p.y-cam.y+cam.shakeY;
@@ -848,14 +847,13 @@ function doRespawn(){
 
 // ── Bullet update ────────────────────────────────────────────────
 function updBL(dt){
-  const speed=slowMo>0?.18:1;
   for(let i=BL.length-1;i>=0;i--){
     const b=BL[i];
     b.tr.push({x:b.x,y:b.y});if(b.tr.length>b.trl)b.tr.shift();
-    if(b.gren){b.vy+=.4*dt*speed;b.vx*=.997;}
+    if(b.gren){b.vy+=.4*dt;b.vx*=.997;}
 
-    const moveX=b.vx*dt*speed;
-    const moveY=b.vy*dt*speed;
+    const moveX=b.vx*dt;
+    const moveY=b.vy*dt;
     const steps=Math.ceil(Math.max(Math.abs(moveX),Math.abs(moveY))/6)+1;
     const sdx=moveX/steps, sdy=moveY/steps;
     let hit=false;
@@ -887,45 +885,51 @@ function updBL(dt){
       // Skip entity check until bullet has traveled minimum distance
       if(b.minDist>0) continue;
 
-      // Entity collision — hitbox matches visual soldier exactly
-      // Origin in draw() = (entity.x+w/2, entity.y+h) i.e. feet
-      // Head top at y=-57 from feet → world y = entity.y+h-57 = entity.y-25
-      // Feet bottom at y=0 from feet → world y = entity.y+h = entity.y+32
-      // Full visual height = 57px, centered around entity.x+w/2
+      // Entity collision using swept segment test:
+      // Check if bullet segment (prev→curr) passes through entity hitbox.
+      // This catches fast bullets that skip over thin targets.
       const tgts=[p1,...bots].filter(e=>e&&!e.dead&&e!==b.own);
+      const px=b.x-sdx, py=b.y-sdy; // previous position
       for(const tg of tgts){
-        const cx2=tg.x+tg.w/2;   // horizontal center
-        const vtop=tg.y-25;       // top of helmet in world coords
-        const vbot=tg.y+tg.h;     // bottom of feet
-        const vheight=vbot-vtop;  // ~57px
-        const vleft=cx2-10;       // visual width ~20px
-        const vright=cx2+10;
-        if(b.x>vleft && b.x<vright && b.y>vtop && b.y<vbot){
-          if(b.gren){
-            expl(b.x,b.y,95,b.dmg,b.own);
-          } else {
-            const rel=(b.y-vtop)/vheight;
-            const zone = rel<0.26 ? 'head' : rel<0.65 ? 'torso' : 'legs';
-            let dmg=b.dmg;
-            if(zone==='head')      dmg*=2.5;
-            else if(zone==='legs') dmg*=0.65;
-            tg.hp-=dmg; tg.vx+=b.vx*.08; tg.vy+=b.vy*.06; tg.fl=6;
-            if(zone==='head' && b.own && b.own.isP){
-              slowMo=45; shake(10);
+        const cx2=tg.x+tg.w/2;
+        const vtop=tg.y-25;          // top of helmet
+        const vbot=tg.y+tg.h;        // bottom of feet
+        const vleft=cx2-11;           // 22px wide hitbox
+        const vright=cx2+11;
+        // Quick AABB reject
+        const minX=Math.min(b.x,px), maxX=Math.max(b.x,px);
+        const minY=Math.min(b.y,py), maxY=Math.max(b.y,py);
+        if(maxX<vleft||minX>vright||maxY<vtop||minY>vbot) continue;
+        // Passed AABB — find closest point on segment to box center
+        // and use that Y for zone calculation
+        const hitY=Math.max(vtop,Math.min(vbot, b.y));
+        const hitX=Math.max(vleft,Math.min(vright, b.x));
+        if(b.gren){
+          expl(hitX,hitY,95,b.dmg,b.own);
+        } else {
+          const rel=(hitY-vtop)/(vbot-vtop);
+          const zone = rel<0.26 ? 'head' : rel<0.65 ? 'torso' : 'legs';
+          let dmg=b.dmg;
+          if(zone==='head')      dmg*=2.5;
+          else if(zone==='legs') dmg*=0.65;
+          tg.hp-=dmg; tg.vx+=b.vx*.06; tg.vy+=b.vy*.04; tg.fl=6;
+          if(zone==='head' && b.own && b.own.isP){
+              slowMo=0; // no slowmo - disabled
+              shake(6);
               addK(TX[lang].headshot+' +'+Math.round(dmg)+'dmg','#ff3030');
-            } else { shake(zone==='head'?8:4); }
-            for(let k=0;k<7;k++) PA.push({
-              x:cx2, y:b.y,
-              vx:(Math.random()-.5)*5.5, vy:(Math.random()-.5)*5-1,
-              lf:13, col:'#cc1818', sz:2.2, k:'b'
-            });
-            PA.push({x:b.x,y:b.y-10,vx:(Math.random()-.5)*.5,vy:-1.5,
-              lf:30,col:zone==='head'?'#ff4040':'#ffcc30',sz:0,k:'txt',
-              val:Math.round(dmg),big:zone==='head'});
-          }
-          if(tg.hp<=0&&!tg.dead) handleDeath(tg,b.own,'torso');
-          hit=true; break;
+            }
+            // no shake on regular hits - keeps game smooth
+          for(let k=0;k<6;k++) PA.push({
+            x:cx2, y:hitY,
+            vx:(Math.random()-.5)*5, vy:(Math.random()-.5)*5-1,
+            lf:12, col:'#cc1818', sz:2, k:'b'
+          });
+          PA.push({x:hitX,y:hitY-12,vx:0,vy:-1.2,
+            lf:28,col:zone==='head'?'#ff4040':'#ffcc30',sz:0,k:'txt',
+            val:Math.round(dmg),big:zone==='head'});
         }
+        if(tg.hp<=0&&!tg.dead) handleDeath(tg,b.own,'torso');
+        hit=true; break;
       }
     }
     if(hit||b.life<=0||b.x<0||b.x>MW||b.y<0||b.y>MH+120) BL.splice(i,1);
@@ -960,11 +964,17 @@ class Bot extends Ent{
     const dx=this.tX-(this.x+this.w/2);
     const dy=this.tY-(this.y+this.h/2);
     const dist=Math.sqrt(dx*dx+dy*dy);
-    // smooth aim for bots — dt-scaled lerp, no per-frame jitter
+    // Bot aim: smooth lerp using sin/cos to avoid angle-wrap oscillation
     const targetAim=Math.atan2(dy,dx);
-    const aimDiff=((targetAim-this.aim+Math.PI*3)%(Math.PI*2))-Math.PI;
-    this.aim+=aimDiff*Math.min(1, 0.06*dt); // slow, smooth, frame-rate independent
-    this.fr=dx>0;
+    const ta_sin=Math.sin(targetAim), ta_cos=Math.cos(targetAim);
+    const ca_sin=Math.sin(this.aim),   ca_cos=Math.cos(this.aim);
+    const spd=Math.min(0.06, 0.018*dt); // very slow, frame-rate independent
+    const new_sin=ca_sin+(ta_sin-ca_sin)*spd;
+    const new_cos=ca_cos+(ta_cos-ca_cos)*spd;
+    this.aim=Math.atan2(new_sin,new_cos);
+    // Facing direction with hysteresis
+    if(dx>18)       this.fr=true;
+    else if(dx<-18) this.fr=false;
     // Cover system: if low HP, look for nearby platform to hide behind
     if(this.hp<40&&this.coverT<=0){
       this.onCover=true;this.coverT=120;
@@ -1100,9 +1110,10 @@ function inp1(dt,t){
   const fX=p1.x+p1.w/2-cam.x,fY=p1.y+p1.h-cam.y;
   const psx=fX+sxm*6,psy=fY-33;
   p1.aim=Math.atan2(mouse.y-psy,mouse.x-psx);
-  // Flip with dead-zone
+  // Flip with dead-zone — 15px hysteresis prevents jitter
   const ddx=mouse.x-fX;
-  if(ddx>12)p1.fr=true;else if(ddx<-12)p1.fr=false;
+  if(ddx>15) p1.fr=true;
+  else if(ddx<-15) p1.fr=false;
   // Shoot
   const sh=s1m||keys['KeyZ']||keys['KeyF'];
   if(sh&&(p1.w0.auto||!s1h))p1.shoot([...bots].filter(e=>!e.dead),t);
@@ -1270,48 +1281,44 @@ function drawMenuBg(){
 // ── Main loop ────────────────────────────────────────────────────
 function loop(ts){
   requestAnimationFrame(loop);
-  let rawDt=lts===0?1:Math.min((ts-lts)/16.667,3);
-  lts=ts;const t=ts;
-  // Slow-mo effect
-  const dt=slowMo>0?rawDt*.18:rawDt;
-  if(slowMo>0){slowMo-=rawDt;if(slowMo<0)slowMo=0;}
+  // Always use real delta time for physics — no slowMo on gameplay
+  const dt=lts===0?1:Math.min((ts-lts)/16.667,2.5);
+  lts=ts; const t=ts;
+  if(slowMo>0){ slowMo-=dt; if(slowMo<0) slowMo=0; }
+
   // Respawn timer
   if(isDead){
-    respawnTimer-=rawDt/60;
+    respawnTimer-=dt/60;
     document.getElementById('rtimer').textContent=Math.max(0,Math.ceil(respawnTimer));
-    if(respawnTimer<=0){doRespawn();}
+    if(respawnTimer<=0) doRespawn();
   }
-  // Game logic
+  // Game logic — physics always at real speed
   if(p1&&!isDead){
     if(gMode==='solo'){
       inp1(dt,t);
-      for(const b of bots)if(!b.dead)b.ai(t,dt);
-      updBL(dt);updDrops(rawDt);updCrates(rawDt);
+      for(const b of bots) if(!b.dead) b.ai(t,dt);
+      updBL(dt); updDrops(dt); updCrates(dt);
     }else if(gMode==='online-host'){
       inp1(dt,t);
-      for(const b of bots.slice(1))if(!b.dead)b.ai(t,dt); // skip slot 0 (remote player)
-      updBL(dt);updDrops(rawDt);sendNet(dt,t);
+      for(const b of bots.slice(1)) if(!b.dead) b.ai(t,dt);
+      updBL(dt); updDrops(dt); sendNet(dt,t);
     }else if(gMode==='online-client'){
-      inp1(dt,t);updBL(dt);sendNet(dt,t);
+      inp1(dt,t); updBL(dt); sendNet(dt,t);
     }
     updCam();
   }
-  // Drop weapon life decay
-  for(let i=drops.length-1;i>=0;i--){drops[i].life-=rawDt;if(drops[i].life<=0)drops.splice(i,1);}
-  // Hole fade
-  for(const h of holes)h.a=Math.max(0,h.a-.0003*rawDt);
-  updateShake(rawDt);
+  for(let i=drops.length-1;i>=0;i--){ drops[i].life-=dt; if(drops[i].life<=0) drops.splice(i,1); }
+  for(const h of holes) h.a=Math.max(0,h.a-.0003*dt);
+  updateShake(dt);
   // Timer
-  if(p1&&!isDead){gSec+=rawDt/60;const ms=Math.floor(gSec/60),ss=Math.floor(gSec%60);document.getElementById('ti').textContent=ms+':'+(ss<10?'0':'')+ss;}
-  // Slow-mo vignette
-  if(slowMo>0){cx.fillStyle='rgba(80,0,0,0.12)';cx.fillRect(0,0,GW,GH);}
+  if(p1&&!isDead){gSec+=dt/60;const ms=Math.floor(gSec/60),ss=Math.floor(gSec%60);document.getElementById('ti').textContent=ms+':'+(ss<10?'0':'')+ss;}
   // Draw
   if(p1){
-    drawBg();drawBD();drawPlats();drawHoles();
-    drawCrates();drawDrops();drawEX(dt);drawBullets();drawPA(dt);
-    for(const b of bots)if(!b.dead)b.draw();
-    if(!p1.dead)p1.draw();
-    drawMM();updateHUD();drawCrosshair();
+    drawBg(); drawBD(); drawPlats(); drawHoles();
+    drawCrates(); drawDrops(); drawEX(dt); drawBullets(); drawPA(dt);
+    for(const b of bots) if(!b.dead) b.draw();
+    if(!p1.dead) p1.draw();
+    drawMM(); updateHUD(); drawCrosshair();
   }
 }
 
