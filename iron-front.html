@@ -162,9 +162,9 @@ html,body{width:100%;height:100%;background:#06080f;overflow:hidden;font-family:
     </div>
   </div>
   <div class="cg" id="cg">
-    <div>Miscare: <span>WASD</span></div><div>Salt: <span>W/Space</span></div>
-    <div>Trage: <span>Click/Z</span></div><div>Arma: <span>1 2 3 4</span></div>
-    <div>Reload: <span>R</span></div><div>Mobil: <span>Joystick+butoane</span></div>
+    <div>Miscare: <span>WASD / Sageti</span></div><div>Salt: <span>W / Sus / Space</span></div>
+    <div>Trage: <span>Click / Z / Ctrl</span></div><div>Arma: <span>1 2 3 4 / Scroll</span></div>
+    <div>Reload: <span>R</span></div><div>Mod tragere: <span>V (sing/burst/auto)</span></div>
   </div>
 </div>
 </div>
@@ -289,11 +289,12 @@ let MAP=MAPS[0];
 const MW=2400,MH=500;
 
 // ── Weapons ──────────────────────────────────────────────────────
+// mode: 'auto' = full auto | 'burst' = 3 shots | 'single' = one per click
 const WD=[
-  {name:'AK-47', dmg:22,rate:110,spr:0.07,maxA:30,res:90, auto:true, spd:16,sz:2.5,col:'#ffe060',trl:4},
-  {name:'Shotgun',dmg:16,rate:560,spr:0.28,maxA:8, res:32, auto:false,spd:12,sz:2.5,col:'#ffaa40',trl:3,pel:6},
-  {name:'Sniper', dmg:95,rate:1100,spr:0.006,maxA:5,res:20,auto:false,spd:28,sz:2, col:'#60ffff',trl:8},
-  {name:'RPG',    dmg:85,rate:1400,spr:0.03,maxA:3, res:9,  auto:false,spd:9,sz:5,  col:'#ff6020',trl:3,gren:true},
+  {name:'AK-47',  dmg:22, rate:110, spr:0.07, maxA:30,res:90, mode:'single',spd:16,sz:2.5,col:'#ffe060',trl:4},
+  {name:'Shotgun',dmg:16, rate:560, spr:0.28, maxA:8, res:32, mode:'single',spd:12,sz:2.5,col:'#ffaa40',trl:3,pel:6},
+  {name:'Sniper', dmg:95, rate:1100,spr:0.006,maxA:5, res:20, mode:'single',spd:28,sz:2,  col:'#60ffff',trl:8},
+  {name:'RPG',    dmg:85, rate:1400,spr:0.03, maxA:3, res:9,  mode:'single',spd:9, sz:5,  col:'#ff6020',trl:3,gren:true},
 ];
 function mkW(){return WD.map(w=>({...w,ammo:w.maxA,res:w.res}));}
 
@@ -349,6 +350,7 @@ class Ent{
     this.lsh=0;this.dead=false;this.aim=0;
     this.rld=false;this.re=0;
     this.si=0;this.frm=0;this.mv=false;this.fl=0;this.nm='';this.armor=0;this._prevY=0;
+    this.burstLeft=0; // remaining shots in burst
     // For bot cover system
     this.coverX=0;this.coverMode=false;this.coverT=0;
   }
@@ -368,39 +370,42 @@ class Ent{
 
   shoot(tgts,t){
     const w=this.w0;
-    if(this.rld)return;
+    if(this.rld) return;
     if(w.ammo<=0){
-      // auto-reload if reserve available
       if(w.res>0){this.sRld(t);return;}
-      // no reserve — auto-switch to a weapon that has ammo
-      for(let i=0;i<this.wp.length;i++){
-        if(this.wp[i].ammo>0||this.wp[i].res>0){this.wi=i;return;}
-      }
-      return; // truly out of ammo everywhere
+      for(let i=0;i<this.wp.length;i++){if(this.wp[i].ammo>0||this.wp[i].res>0){this.wi=i;return;}}
+      return;
     }
-    if(t-this.lsh<w.rate)return;
-    this.lsh=t;w.ammo--;
-    // auto-reload if just emptied the clip
+    if(t-this.lsh<w.rate) return;
+    // Fire mode logic
+    const mode=w.fireMode||w.mode||'single';
+    if(mode==='burst'){
+      if(this.burstLeft<=0) this.burstLeft=3;
+    }
+    this.lsh=t; w.ammo--;
     if(w.ammo===0&&w.res>0) this.sRld(t);
     const fX=this.x+this.w/2,fY=this.y+this.h;
     const sxm=this.fr?1:-1;
     const shX=fX+sxm*6,shY=fY-33;
-    const barrelLen=30;
-    const ox=shX+Math.cos(this.aim)*barrelLen;
-    const oy=shY+Math.sin(this.aim)*barrelLen;
+    const ox=shX+Math.cos(this.aim)*30;
+    const oy=shY+Math.sin(this.aim)*30;
     const n=w.pel||1;
     for(let i=0;i<n;i++){
       const a=this.aim+(Math.random()-0.5)*w.spr*2;
       BL.push({x:ox,y:oy,vx:Math.cos(a)*w.spd,vy:Math.sin(a)*w.spd,
         dmg:w.dmg,col:w.col,sz:w.sz,own:this,
-        gren:w.gren||false,life:w.gren?140:65,bn:w.gren?3:0,trl:w.trl||3,tr:[],
-        minDist:20}); // must travel 20px before hitting anyone
+        gren:w.gren||false,life:w.gren?140:65,bn:w.gren?3:0,trl:w.trl||3,tr:[],minDist:20});
     }
     for(let i=0;i<5;i++){
       const a2=this.aim+(Math.random()-0.5)*0.4;
       PA.push({x:ox,y:oy,vx:Math.cos(a2)*(2+Math.random()*4),vy:Math.sin(a2)*(2+Math.random()*4)-.4,lf:8,col:'#ffe080',sz:1.5,k:'s'});
     }
     PA.push({x:ox,y:oy,vx:Math.cos(this.aim)*.3,vy:-.4,lf:16,col:'rgba(130,130,130,0.45)',sz:7,k:'m'});
+    if(mode==='burst'&&this.burstLeft>0){
+      this.burstLeft--;
+      // Schedule next burst shot at faster rate (60% of normal rate)
+      if(this.burstLeft>0) this.lsh=t-w.rate*0.4;
+    }
   }
   sRld(t){const w=this.w0;if(w.res<=0||w.ammo>=w.maxA)return;this.rld=true;this.re=t+950;}
   uRld(t){if(this.rld&&t>=this.re){this.rld=false;const w=this.w0;const g=Math.min(w.maxA-w.ammo,w.res);w.ammo+=g;w.res-=g;}}
@@ -725,10 +730,13 @@ function drawCrosshair(){
   const by2=fY-33+Math.sin(p1.aim)*30;
   const x=mouse.x,y=mouse.y;
   cx.save();
-  cx.strokeStyle='rgba(255,255,255,.11)';cx.lineWidth=1;cx.setLineDash([4,8]);
+  // Aim line — dashed, very subtle
+  cx.setLineDash([4,8]);
+  cx.strokeStyle='rgba(255,255,255,.10)';cx.lineWidth=1;
   cx.beginPath();cx.moveTo(bx2,by2);cx.lineTo(x,y);cx.stroke();
-  cx.setLineDash([]);
-  cx.strokeStyle='rgba(255,255,255,0.82)'; cx.lineWidth=1.5;
+  cx.setLineDash([]); // MUST reset before any other stroke
+  // Crosshair reticle
+  cx.strokeStyle='rgba(255,255,255,0.82)';cx.lineWidth=1.5;
   cx.beginPath();cx.moveTo(x-10,y);cx.lineTo(x-3,y);cx.stroke();
   cx.beginPath();cx.moveTo(x+3,y);cx.lineTo(x+10,y);cx.stroke();
   cx.beginPath();cx.moveTo(x,y-10);cx.lineTo(x,y-3);cx.stroke();
@@ -736,6 +744,7 @@ function drawCrosshair(){
   cx.fillStyle='rgba(255,80,80,0.9)';
   cx.beginPath();cx.arc(x,y,2,0,Math.PI*2);cx.fill();
   cx.restore();
+  cx.setLineDash([]); // extra safety reset after restore
 }
 
 function updateHUD(){
@@ -747,8 +756,11 @@ function updateHUD(){
   document.getElementById('b1').style.background=hp>60?'#3078f0':hp>30?'#f09020':'#f03020';
   const w=p1.w0;
   const ammoCol=w.ammo===0?'#ff3030':w.ammo<=Math.ceil(w.maxA*.25)?'#ff8030':'#b06818';
-  document.getElementById('w1').textContent=w.name+(p1.rld?' [R]':'');
-  document.getElementById('w1').style.color=p1.rld?'#ff8020':'#c08820';
+  const fm=w.fireMode||w.mode||'single';
+  const fmLabel=fm==='auto'?'AUTO':fm==='burst'?'BURST':'SING';
+  const fmCol=fm==='auto'?'#ff6040':fm==='burst'?'#ffa040':'#c08820';
+  document.getElementById('w1').textContent=w.name+' ['+fmLabel+']'+(p1.rld?' R':'');
+  document.getElementById('w1').style.color=p1.rld?'#ff8020':fmCol;
   document.getElementById('a1').textContent=w.ammo+'/'+w.res+(w.ammo===0&&w.res===0?' GATA':'');
   document.getElementById('a1').style.color=ammoCol;
   document.getElementById('sc').textContent=kills;
@@ -1196,8 +1208,23 @@ function inp1(dt,t){
   else if(ddx<-15) p1.fr=false;
   // Shoot: left click, Z, F, Ctrl
   const sh=s1m||keys['KeyZ']||keys['KeyF']||keys['ControlLeft']||keys['ControlRight'];
-  if(sh&&(p1.w0.auto||!s1h))p1.shoot([...bots].filter(e=>!e.dead),t);
+  const w=p1.w0;
+  const mode=w.fireMode||w.mode||'single';
+  const canShoot = mode==='auto' ? sh : (sh&&!s1h);  // auto: hold; single/burst: tap
+  if(canShoot) p1.shoot([...bots].filter(e=>!e.dead),t);
+  // Continue burst even after releasing trigger
+  if(mode==='burst'&&p1.burstLeft>0) p1.shoot([...bots].filter(e=>!e.dead),t);
   s1h=sh;
+  // V key: cycle fire mode for current weapon
+  if(keys['KeyV']&&!p1._vHeld){
+    p1._vHeld=true;
+    const modes=['single','burst','auto'];
+    const cur=modes.indexOf(w.fireMode||w.mode||'single');
+    w.fireMode=modes[(cur+1)%modes.length];
+    p1.burstLeft=0;
+    addK('Mod tragere: '+w.fireMode.toUpperCase(),'#a0d0ff');
+  }
+  if(!keys['KeyV'])p1._vHeld=false;
   // Reload: R
   if(keys['KeyR']&&!p1.rld)p1.sRld(t);
   // Weapon select: 1-4
