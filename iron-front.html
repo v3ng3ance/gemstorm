@@ -86,9 +86,9 @@ html,body{width:100%;height:100%;background:#060c14;overflow:hidden;font-family:
       <div class="row">
         <label id="lb2">Dificultate:</label>
         <select id="diff">
-          <option value="2" id="d0">Usor — 2 boti</option>
-          <option value="4" selected id="d1">Normal — 4 boti</option>
-          <option value="6" id="d2">Greu — 6 boti</option>
+          <option value="0" id="d0">Usor — 2 boti, lenti</option>
+          <option value="1" selected id="d1">Normal — 4 boti</option>
+          <option value="2" id="d2">Greu — 6 boti, agresivi</option>
         </select>
       </div>
       <button class="btn" id="bs1" onclick="startSolo()" style="width:100%">&#9654; JOACA SINGUR</button>
@@ -173,7 +173,7 @@ window.addEventListener('resize',resizeCV);
 let lang='ro';
 const L={
   ro:{gt:'IRON FRONT',gs:'SHOOTER 2D · MULTIPLAYER',
-    sl:'MOD SINGUR',lb2:'Dificultate:',d0:'Usor — 2 boti',d1:'Normal — 4 boti',d2:'Greu — 6 boti',bs1:'\u25BA JOACA SINGUR',
+    sl:'MOD SINGUR',lb2:'Dificultate:',d0:'Usor — 2 boti, lenti',d1:'Normal — 4 boti',d2:'Greu — 6 boti, agresivi',bs1:'\u25BA JOACA SINGUR',
     sl2:'LOCAL 2 JUCATORI',lb3:'Boti AI:',o0:'Fara boti',o2:'2 boti',o4:'4 boti',bl:'\u25BA LOCAL 2P (aceeasi tastatura)',
     so:'ONLINE — WebRTC P2P',ln:'Nume:',lc:'Cod camera:',bc:'+ CREAZA CAMERA',bj:'INTRA',
     dt:'ELIMINAT',dp:'Ai cazut in lupta.',rsb:'\u21BA RESPAWN',
@@ -181,10 +181,10 @@ const L={
     killed:'a eliminat',bot:'Bot',
     waiting:'Asteapta jucatorul 2...',connected:'Conectat! Jocul incepe...',
     copied:'Cod copiat!',click:'Click pentru a copia',
-    cg:['Miscare:','WASD','Salt:','W / Space','Trage:','Z sau F','Arma:','1 2 3 4',
+    cg:['Miscare:','WASD','Salt:','W / Space','Trage:','Click / Z','Arma:','1 2 3 4',
         'P2 miscare:','Sageti','P2 salt:','Sus','P2 trage:','/ Numpad','P2 arma:','7 8 9 0']},
   en:{gt:'IRON FRONT',gs:'2D SHOOTER · MULTIPLAYER',
-    sl:'SOLO MODE',lb2:'Difficulty:',d0:'Easy — 2 bots',d1:'Normal — 4 bots',d2:'Hard — 6 bots',bs1:'\u25BA PLAY SOLO',
+    sl:'SOLO MODE',lb2:'Difficulty:',d0:'Easy — 2 bots, slow',d1:'Normal — 4 bots',d2:'Hard — 6 bots, aggressive',bs1:'\u25BA PLAY SOLO',
     sl2:'LOCAL 2 PLAYERS',lb3:'AI Bots:',o0:'No bots',o2:'2 bots',o4:'4 bots',bl:'\u25BA LOCAL 2P (same keyboard)',
     so:'ONLINE — WebRTC P2P',ln:'Name:',lc:'Room code:',bc:'+ CREATE ROOM',bj:'JOIN',
     dt:'ELIMINATED',dp:'You fell in battle.',rsb:'\u21BA RESPAWN',
@@ -192,7 +192,7 @@ const L={
     killed:'eliminated',bot:'Bot',
     waiting:'Waiting for player 2...',connected:'Connected! Starting...',
     copied:'Code copied!',click:'Click to copy',
-    cg:['Move:','WASD','Jump:','W / Space','Shoot:','Z or F','Weapon:','1 2 3 4',
+    cg:['Move:','WASD','Jump:','W / Space','Shoot:','Click / Z','Weapon:','1 2 3 4',
         'P2 move:','Arrows','P2 jump:','Up','P2 shoot:','/ Numpad','P2 weapon:','7 8 9 0']}
 };
 function setLang(l){
@@ -244,6 +244,10 @@ let BL=[],PA=[],EX=[],BD=[];
 let p1=null,p2=null,bots=[];
 let s1h=false,s2h=false;
 let peer=null,conn=null,rcode='',isHost=false,lping=0,pms=0,ntick=0;
+// Mouse aim — tracks cursor in CANVAS logical coordinates
+let mouse={x:GW/2,y:GH/2};
+// Bot difficulty params set at game start
+let DIFF={shootChance:0.018,shootDist:380,moveSpeed:0.28,jumpChance:0.008,aimErr:0.35,reactionFrames:90};
 
 /* ==================== ENTITY ==================== */
 class Ent{
@@ -265,9 +269,21 @@ class Ent{
     if(w.ammo<=0){this.sRld(t);return;}
     if(t-this.lsh<w.rate)return;
     this.lsh=t;w.ammo--;
-    // muzzle at mid-body height
-    const ox=this.x+this.w/2+Math.cos(this.aim)*13;
-    const oy=this.y+this.h*0.45+Math.sin(this.aim)*13;
+    // Muzzle position matches the gun barrel tip in dSoldier:
+    // Origin = (this.x+this.w/2, this.y+this.h) — feet/bottom of entity
+    // Shoulder in dSoldier = (sx*6, -33+bob) relative to origin
+    // Barrel tip = shoulder + rotate(aim) * (26+7) = 33px along aim direction
+    // In world coords: shoulder = (feet_x + sx*6, feet_y - 33)
+    // We skip bob for bullet origin (bob averages 0)
+    const feetX = this.x+this.w/2;
+    const feetY = this.y+this.h;
+    const sxm = this.fr?1:-1;
+    const shoulderWX = feetX + sxm*6;
+    const shoulderWY = feetY - 33;
+    // Barrel tip is ~33px from shoulder along aim direction
+    const barrelLen = 33;
+    const ox = shoulderWX + Math.cos(this.aim)*barrelLen;
+    const oy = shoulderWY + Math.sin(this.aim)*barrelLen;
     const n=w.pel||1;
     for(let i=0;i<n;i++){
       const a=this.aim+(Math.random()-0.5)*w.spr*2;
@@ -311,11 +327,9 @@ class Ent{
     cx.save();
     // pivot = center-x, bottom-y of entity (feet on ground)
     cx.translate(sx+this.w/2, sy+this.h);
-    if(!this.fr)cx.scale(-1,1);
     if(this.fl>0)cx.globalAlpha=0.4+Math.abs(Math.sin(this.fl*0.8))*0.5;
-    // aimAngle: when flipped, mirror around vertical axis
-    const ra=this.fr?this.aim:(Math.PI-this.aim);
-    dSoldier(cx,this.isP1,this.ipl,ra,this.frm);
+    // Pass raw world-space aim; dSoldier handles the flip internally
+    dSoldier(cx,this.isP1,this.ipl,this.aim,this.frm,this.fr);
     cx.restore();
     cx.globalAlpha=1;
     // HP bar
@@ -335,53 +349,69 @@ class Ent{
 }
 
 /* ==================== SOLDIER DRAWING ====================
-   Origin (0,0) = center-x, BOTTOM of entity (feet).
-   Head drawn upward at y=-48, feet at y=0.
+   Origin = center-x, BOTTOM of entity (feet at y=0, head at y≈-54).
+   aim  = world-space angle in radians (from atan2).
+   fr   = true if facing right.
+   Strategy: draw body mirrored with sx multiplier (+1 or -1).
+   Arm is drawn with translate to shoulder then rotate(aim) directly —
+   world-space aim works because we don't use ctx.scale for flip.
 */
-function dSoldier(c,isP1,ipl,aim,frm){
+function dSoldier(c,isP1,ipl,aim,frm,fr){
   const bc=ipl?(isP1?'#2a6040':'#204070'):'#702020';
   const ac=ipl?(isP1?'#1e4830':'#18305a'):'#501818';
   const hc=ipl?(isP1?'#1a3828':'#162448'):'#3a1010';
   const bob=Math.sin(frm*1.6)*1.4;
   const sw=Math.sin(frm*1.6)*9;
+  const sx=fr?1:-1; // horizontal mirror multiplier (no ctx.scale — avoids angle issues)
 
-  // -- LEGS (bottom of entity = y=0, legs go from y=-22 to y=0) --
+  // -- LEGS (y: 0 to -22) --
   c.fillStyle=ac;
-  c.save();c.rotate(sw*Math.PI/180);
-  c.fillRect(-7,-22+bob,6,14);       // left leg upper
-  c.fillStyle='#181620';c.fillRect(-8,-10+bob,7,5); // left boot
+  // left leg
+  c.save();c.rotate(sw*sx*Math.PI/180);
+  c.fillRect(sx*-7,-22+bob,sx*6,14);
+  c.fillStyle='#181620';c.fillRect(sx*-8,-10+bob,sx*7,5);
   c.restore();
-  c.save();c.rotate(-sw*Math.PI/180);
-  c.fillRect(1,-22+bob,6,14);        // right leg upper
-  c.fillStyle='#181620';c.fillRect(1,-10+bob,7,5);  // right boot
+  // right leg
+  c.save();c.rotate(-sw*sx*Math.PI/180);
+  c.fillRect(sx*1,-22+bob,sx*6,14);
+  c.fillStyle='#181620';c.fillRect(sx*1,-10+bob,sx*7,5);
   c.restore();
 
-  // -- TORSO (y=-42 to y=-22) --
-  c.fillStyle=bc;c.fillRect(-9,-42+bob,18,22);
+  // -- TORSO (y: -22 to -42) --
+  c.fillStyle=bc;c.fillRect(sx*-9,-42+bob,sx*18,22);
   c.fillStyle=ac;
-  c.fillRect(-9,-42+bob,18,7);  // chest armor
-  c.fillRect(-9,-26+bob,18,5);  // belt
+  c.fillRect(sx*-9,-42+bob,sx*18,7);
+  c.fillRect(sx*-9,-26+bob,sx*18,5);
   c.fillStyle='rgba(0,0,0,0.2)';
-  c.fillRect(-7,-40+bob,4,5);c.fillRect(3,-40+bob,4,5); // vest pockets
-  c.fillStyle=dim(bc,0.65);c.fillRect(8,-38+bob,4,10); // backpack
+  c.fillRect(sx*-7,-40+bob,sx*4,5);c.fillRect(sx*3,-40+bob,sx*4,5);
+  c.fillStyle=dim(bc,0.65);c.fillRect(sx*6,-38+bob,sx*4,10);
 
-  // -- HEAD (center at y=-50) --
+  // -- HEAD (center y≈-50) --
   c.fillStyle='#c49060';c.beginPath();c.arc(0,-50+bob,6.5,0,Math.PI*2);c.fill();
   c.fillStyle=hc;c.beginPath();c.arc(0,-52+bob,7,Math.PI,0);c.fill();
-  c.fillRect(-7,-54+bob,14,5); // helmet brim
-  c.fillStyle='rgba(0,0,0,0.45)';c.fillRect(-4,-52+bob,8,3); // visor stripe
+  c.fillRect(-7,-54+bob,14,5);
+  c.fillStyle='rgba(0,0,0,0.45)';c.fillRect(-4,-52+bob,8,3);
   c.strokeStyle='rgba(80,160,255,0.5)';c.lineWidth=1;
-  c.beginPath();c.arc(-2.5,-51+bob,1.8,0,Math.PI*2);c.stroke();
-  c.beginPath();c.arc(2.5,-51+bob,1.8,0,Math.PI*2);c.stroke();
+  c.beginPath();c.arc(-2,-51+bob,1.8,0,Math.PI*2);c.stroke();
+  c.beginPath();c.arc(2,-51+bob,1.8,0,Math.PI*2);c.stroke();
 
-  // -- WEAPON ARM (at torso center ~y=-33) --
-  c.save();c.rotate(aim);
-  c.fillStyle=bc;c.fillRect(2,-35+bob,10,5);   // arm
-  c.fillStyle='#484f5e';c.fillRect(9,-37+bob,20,6);  // gun body
-  c.fillStyle='#30363c';c.fillRect(7,-38+bob,13,8);  // receiver
-  c.fillStyle='#5c6370';c.fillRect(28,-36+bob,7,3);  // barrel
-  c.fillStyle='#38302a';c.fillRect(4,-38+bob,6,8);   // stock
-  c.fillStyle='#28303e';c.fillRect(14,-40+bob,8,3);  // scope
+  // -- WEAPON ARM --
+  // Pivot at shoulder on the correct side of the body.
+  // We rotate by `aim` directly — this is correct because we didn't use
+  // ctx.scale(-1,1), so the canvas coordinate system is NOT flipped.
+  // When facing left, shoulder is at negative X; gun barrel points in aim direction.
+  const shoulderX = sx*6; // shoulder X offset
+  const shoulderY = -33+bob;
+  c.save();
+  c.translate(shoulderX, shoulderY);
+  c.rotate(aim); // raw world-space angle — always correct
+  // Gun drawn extending to the RIGHT from pivot (positive X = barrel direction)
+  c.fillStyle=bc;c.fillRect(-2,-2,9,5);         // upper arm
+  c.fillStyle='#484f5e';c.fillRect(7,-4,20,6); // gun body
+  c.fillStyle='#30363c';c.fillRect(5,-5,13,8); // receiver
+  c.fillStyle='#5c6370';c.fillRect(26,-3,7,3); // barrel
+  c.fillStyle='#38302a';c.fillRect(2,-5,6,8);  // stock (behind pivot)
+  c.fillStyle='#28303e';c.fillRect(12,-7,8,3); // scope
   c.restore();
 }
 function dim(hex,f){
@@ -399,46 +429,81 @@ const BLD=Array.from({length:16},(_,i)=>({
 }));
 
 function drawBg(){
-  for(let y=0;y<GH*0.65;y+=3){
-    const t=y/(GH*0.65);
-    cx.fillStyle='rgb('+Math.round(5+10*t)+','+Math.round(8+20*t)+','+Math.round(14+40*t)+')';
-    cx.fillRect(0,y,GW,3);
-  }
-  cx.fillStyle='#0a1520';cx.fillRect(0,GH*0.65,GW,GH*0.35);
-  // stars
+  // Sky gradient — dark blue night
+  const skyGrad=cx.createLinearGradient(0,0,0,GH*0.62);
+  skyGrad.addColorStop(0,'#060d1a');
+  skyGrad.addColorStop(0.5,'#0d1f3a');
+  skyGrad.addColorStop(1,'#182840');
+  cx.fillStyle=skyGrad;cx.fillRect(0,0,GW,GH*0.62);
+  // Ground fog band
+  const fogGrad=cx.createLinearGradient(0,GH*0.55,0,GH*0.75);
+  fogGrad.addColorStop(0,'rgba(20,40,18,0)');
+  fogGrad.addColorStop(1,'rgba(10,20,10,1)');
+  cx.fillStyle=fogGrad;cx.fillRect(0,GH*0.55,GW,GH*0.2);
+  // Ground fill
+  cx.fillStyle='#0a1408';cx.fillRect(0,GH*0.72,GW,GH*0.28);
+
+  // Stars (parallax 0.05)
   for(const s of STA){
-    const sx=((s.x-cam.x*0.05)%MW+MW)%MW*(GW/MW);
-    cx.globalAlpha=s.b;cx.fillStyle='#b8d0ff';
-    cx.beginPath();cx.arc(sx,s.y,s.s,0,Math.PI*2);cx.fill();
+    const sx2=((s.x-cam.x*0.05)%MW+MW)%MW*(GW/MW);
+    cx.globalAlpha=s.b;cx.fillStyle='#c0d4ff';
+    cx.beginPath();cx.arc(sx2,s.y,s.s,0,Math.PI*2);cx.fill();
   }
   cx.globalAlpha=1;
-  // moon
-  const mx=GW*0.82,my=52;
-  cx.fillStyle='#e8f0ff';cx.beginPath();cx.arc(mx,my,22,0,Math.PI*2);cx.fill();
-  cx.fillStyle='#c8d4ee';cx.beginPath();cx.arc(mx-5,my-4,8,0,Math.PI*2);cx.fill();
-  cx.fillStyle='#0a1520';cx.beginPath();cx.arc(mx+8,my-7,18,0,Math.PI*2);cx.fill();
-  // mountains
+
+  // Moon with glow
+  const mx=GW*0.82,my=48;
+  cx.shadowColor='rgba(200,220,255,0.3)';cx.shadowBlur=30;
+  cx.fillStyle='#e8f2ff';cx.beginPath();cx.arc(mx,my,20,0,Math.PI*2);cx.fill();
+  cx.shadowBlur=0;
+  cx.fillStyle='#c8d8ee';cx.beginPath();cx.arc(mx-5,my-4,7,0,Math.PI*2);cx.fill();
+  cx.fillStyle='#060d1a';cx.beginPath();cx.arc(mx+7,my-6,16,0,Math.PI*2);cx.fill();
+
+  // Far mountains (parallax 0.08)
+  cx.fillStyle='#0a1828';
   for(const m of MTN){
-    const px=((m.x-cam.x*0.12)%MW+MW)%MW*(GW/MW);
-    const py=GH-m.h*0.62;
-    cx.fillStyle='#0c1c2c';
-    cx.beginPath();cx.moveTo(px,GH*0.85);cx.lineTo(px+m.w/2,py);cx.lineTo(px+m.w,GH*0.85);cx.fill();
-    if(m.sn){cx.fillStyle='#d8e8f8';cx.beginPath();cx.moveTo(px+m.w/2,py);cx.lineTo(px+m.w/2-22,py+36);cx.lineTo(px+m.w/2+22,py+36);cx.fill();}
-  }
-  // buildings
-  for(const b of BLD){
-    const px=((b.x-cam.x*0.28)%MW+MW)%MW*(GW/MW);
-    const py=GH-b.h;
-    cx.fillStyle='#080e18';cx.fillRect(px,py,b.w,b.h);
-    const ww=Math.max(6,Math.floor((b.w-8)/b.cols));
-    for(let r=0;r<b.rows;r++)for(let c=0;c<b.cols;c++){
-      cx.fillStyle=b.lit[r*5+c]>0.45?'rgba(255,220,80,0.5)':'rgba(14,28,58,0.75)';
-      cx.fillRect(px+4+c*(ww+2),py+8+r*22,ww,14);
+    const px2=((m.x-cam.x*0.08)%MW+MW)%MW*(GW/MW);
+    const py2=GH*0.72-m.h*0.55;
+    cx.beginPath();cx.moveTo(px2,GH*0.72);cx.lineTo(px2+m.w/2,py2);cx.lineTo(px2+m.w,GH*0.72);cx.fill();
+    if(m.sn){
+      const sg=cx.createLinearGradient(0,py2,0,py2+30);
+      sg.addColorStop(0,'rgba(220,235,255,0.9)');sg.addColorStop(1,'rgba(220,235,255,0)');
+      cx.fillStyle=sg;
+      cx.beginPath();cx.moveTo(px2+m.w/2,py2);cx.lineTo(px2+m.w/2-18,py2+28);cx.lineTo(px2+m.w/2+18,py2+28);cx.fill();
     }
-    cx.strokeStyle='#1a2840';cx.lineWidth=1;
-    cx.beginPath();cx.moveTo(px+b.w/2,py);cx.lineTo(px+b.w/2,py-16);cx.stroke();
-    cx.fillStyle='rgba(255,48,48,0.7)';cx.beginPath();cx.arc(px+b.w/2,py-16,2,0,Math.PI*2);cx.fill();
   }
+
+  // Mid buildings (parallax 0.22)
+  for(const b of BLD){
+    const px2=((b.x-cam.x*0.22)%MW+MW)%MW*(GW/MW);
+    const py2=GH*0.72-b.h;
+    // building body with gradient
+    const bg2=cx.createLinearGradient(px2,py2,px2+b.w,py2);
+    bg2.addColorStop(0,'#0c1420');bg2.addColorStop(0.5,'#101a28');bg2.addColorStop(1,'#0c1420');
+    cx.fillStyle=bg2;cx.fillRect(px2,py2,b.w,b.h);
+    // windows
+    const ww=Math.max(5,Math.floor((b.w-8)/b.cols));
+    for(let r=0;r<b.rows;r++) for(let col=0;col<b.cols;col++){
+      const lit=b.lit[r*5+col]>0.42;
+      cx.fillStyle=lit?'rgba(255,215,70,0.55)':'rgba(12,24,50,0.8)';
+      cx.fillRect(px2+4+col*(ww+2),py2+8+r*20,ww,12);
+      if(lit){cx.fillStyle='rgba(255,200,50,0.15)';cx.fillRect(px2+2+col*(ww+2),py2+6+r*20,ww+4,16);}
+    }
+    // roof edge
+    cx.fillStyle='#1a2a3c';cx.fillRect(px2,py2,b.w,2);
+    // antenna
+    if(b.w>55){
+      cx.strokeStyle='#1e2e42';cx.lineWidth=1.5;
+      cx.beginPath();cx.moveTo(px2+b.w/2,py2);cx.lineTo(px2+b.w/2,py2-14);cx.stroke();
+      cx.fillStyle='rgba(255,40,40,0.7)';cx.beginPath();cx.arc(px2+b.w/2,py2-14,2,0,Math.PI*2);cx.fill();
+    }
+  }
+
+  // Depth fog at bottom
+  const dfog=cx.createLinearGradient(0,GH-80,0,GH);
+  dfog.addColorStop(0,'rgba(8,16,8,0)');
+  dfog.addColorStop(1,'rgba(4,10,4,0.6)');
+  cx.fillStyle=dfog;cx.fillRect(0,GH-80,GW,80);
 }
 
 function drawPlats(){
@@ -446,18 +511,72 @@ function drawPlats(){
     const sx=p.x-cam.x,sy=p.y-cam.y;
     if(sx>GW+40||sx+p.w<-40)continue;
     if(p.t==='g'){
-      cx.fillStyle='#181e12';cx.fillRect(sx,sy,p.w,p.h);
-      for(let bx=0;bx<p.w;bx+=36){cx.fillStyle='#1e2a16';cx.fillRect(sx+bx,sy+3,Math.min(34,p.w-bx),p.h-3);}
-      cx.fillStyle='#385a22';cx.fillRect(sx,sy,p.w,4);
-      cx.fillStyle='#4a7a2c';
-      for(let gx=(sx%14+14)%14;gx<sx+p.w&&gx<GW;gx+=11){cx.fillRect(gx,sy-5,2.5,6);cx.fillRect(gx+3,sy-3.5,2,4.5);}
+      // Main ground — layered dirt/rock
+      cx.fillStyle='#141a0e';cx.fillRect(sx,sy,p.w,p.h);
+      // Rock layer bands
+      for(let bx=0;bx<p.w;bx+=44){
+        const ww=Math.min(42,p.w-bx);
+        cx.fillStyle=(bx/44)%2===0?'#1a2214':'#161c10';
+        cx.fillRect(sx+bx,sy+5,ww,p.h-5);
+        // crack lines
+        cx.strokeStyle='rgba(0,0,0,0.25)';cx.lineWidth=0.5;
+        cx.beginPath();cx.moveTo(sx+bx,sy+5);cx.lineTo(sx+bx,sy+p.h);cx.stroke();
+      }
+      // Grass top
+      const gg=cx.createLinearGradient(0,sy-2,0,sy+6);
+      gg.addColorStop(0,'#4a8028');gg.addColorStop(1,'#2e5018');
+      cx.fillStyle=gg;cx.fillRect(sx,sy,p.w,5);
+      // Grass tufts
+      cx.fillStyle='#5a9030';
+      for(let gx=(sx%11+11)%11;gx<sx+p.w&&gx<GW+4;gx+=11){
+        cx.fillRect(gx,sy-6,2,7);cx.fillRect(gx+3,sy-4,1.5,5);cx.fillRect(gx-2,sy-5,1.5,6);
+      }
+      // Darker tufts
+      cx.fillStyle='#3a6820';
+      for(let gx=(sx%17+17)%17;gx<sx+p.w&&gx<GW+4;gx+=17){
+        cx.fillRect(gx,sy-8,1.5,9);
+      }
+      // Ground shadow below grass
+      const gs=cx.createLinearGradient(0,sy+5,0,sy+14);
+      gs.addColorStop(0,'rgba(0,0,0,0.3)');gs.addColorStop(1,'rgba(0,0,0,0)');
+      cx.fillStyle=gs;cx.fillRect(sx,sy+5,p.w,9);
     }else if(p.t==='p'){
-      for(let bx=0;bx<p.w;bx+=24){cx.fillStyle=(bx/24)%2===0?'#2c3818':'#243014';cx.fillRect(sx+bx,sy,Math.min(22,p.w-bx),p.h);}
-      cx.fillStyle='#3c5020';cx.fillRect(sx,sy,p.w,3);
-      cx.fillStyle='#4e6a2a';
-      for(let gx=(sx%9+9)%9;gx<sx+p.w&&gx<GW;gx+=8)cx.fillRect(gx,sy-3.5,2,4.5);
-      cx.fillStyle='rgba(0,0,0,0.18)';cx.fillRect(sx,sy+p.h,p.w,3);
-    }else{cx.fillStyle='#060810';cx.fillRect(sx,sy,p.w,p.h);}
+      // Platform — steel/concrete look
+      // Base concrete
+      const pg=cx.createLinearGradient(0,sy,0,sy+p.h);
+      pg.addColorStop(0,'#28322a');pg.addColorStop(1,'#1e2620');
+      cx.fillStyle=pg;cx.fillRect(sx,sy,p.w,p.h);
+      // Metal rivets / panel lines
+      for(let bx=0;bx<p.w;bx+=32){
+        cx.strokeStyle='rgba(0,0,0,0.35)';cx.lineWidth=1;
+        cx.beginPath();cx.moveTo(sx+bx,sy);cx.lineTo(sx+bx,sy+p.h);cx.stroke();
+        // rivet dots
+        if(bx+16<p.w){
+          cx.fillStyle='rgba(80,110,70,0.6)';
+          cx.beginPath();cx.arc(sx+bx+4,sy+p.h/2,1.5,0,Math.PI*2);cx.fill();
+          cx.beginPath();cx.arc(sx+bx+28,sy+p.h/2,1.5,0,Math.PI*2);cx.fill();
+        }
+      }
+      // Top edge highlight
+      const tg=cx.createLinearGradient(0,sy,0,sy+4);
+      tg.addColorStop(0,'#506848');tg.addColorStop(1,'#3a5030');
+      cx.fillStyle=tg;cx.fillRect(sx,sy,p.w,4);
+      // Grass/moss on top
+      cx.fillStyle='rgba(60,100,30,0.5)';
+      for(let gx=(sx%8+8)%8;gx<sx+p.w&&gx<GW+4;gx+=8){
+        cx.fillRect(gx,sy-3,1.5,4);
+      }
+      // Underside shadow
+      cx.fillStyle='rgba(0,0,0,0.4)';cx.fillRect(sx,sy+p.h,p.w,4);
+    }else{
+      // Walls/ceiling — dark stone
+      cx.fillStyle='#080c08';cx.fillRect(sx,sy,p.w,p.h);
+      // Stone texture
+      for(let gy=0;gy<p.h;gy+=16)for(let bx=0;bx<p.w;bx+=20){
+        cx.fillStyle='rgba(255,255,255,0.02)';
+        cx.fillRect(sx+bx+(gy%20===0?0:8),sy+gy,18,14);
+      }
+    }
   }
 }
 
@@ -583,22 +702,35 @@ function updBL(dt){
     const b=BL[i];
     b.tr.push({x:b.x,y:b.y});if(b.tr.length>b.trl)b.tr.shift();
     if(b.gren){b.vy+=0.4*dt;b.vx*=0.997;}
-    b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
+    // Move bullet in sub-steps to prevent tunneling through thin entities
+    const steps=Math.ceil(Math.max(Math.abs(b.vx),Math.abs(b.vy))*dt/8)||1;
+    const sdx=b.vx*dt/steps, sdy=b.vy*dt/steps;
     let hit=false;
-    for(const p of PLATS){
-      if(b.x>p.x&&b.x<p.x+p.w&&b.y>p.y&&b.y<p.y+p.h){
-        if(b.gren&&b.bn>0){b.bn--;(Math.abs(b.vy)>Math.abs(b.vx)?b.vy*=-0.52:b.vx*=-0.52);b.vy*=0.72;}
-        else if(b.gren){expl(b.x,b.y,95,b.dmg,b.own);hit=true;}
-        else{for(let k=0;k<4;k++)PA.push({x:b.x,y:b.y,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3,lf:7,col:'#c0a030',sz:1.8,k:'s'});hit=true;}
-        break;
+    for(let s=0;s<steps&&!hit;s++){
+      b.x+=sdx; b.y+=sdy;
+      b.life-=dt/steps;
+      // platform collision
+      for(const p of PLATS){
+        if(b.x>p.x&&b.x<p.x+p.w&&b.y>p.y&&b.y<p.y+p.h){
+          if(b.gren&&b.bn>0){b.bn--;(Math.abs(b.vy)>Math.abs(b.vx)?b.vy*=-0.52:b.vx*=-0.52);b.vy*=0.72;}
+          else if(b.gren){expl(b.x,b.y,95,b.dmg,b.own);hit=true;}
+          else{for(let k=0;k<4;k++)PA.push({x:b.x,y:b.y,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3,lf:7,col:'#c0a030',sz:1.8,k:'s'});hit=true;}
+          break;
+        }
       }
-    }
-    if(!hit){
-      for(const tg of [p1,p2,...bots].filter(e=>e&&!e.dead&&e!==b.own)){
-        if(b.x>tg.x&&b.x<tg.x+tg.w&&b.y>tg.y&&b.y<tg.y+tg.h){
+      if(hit)break;
+      // entity collision — use expanded hitbox (+8px each side) so bullets don't tunnel
+      const tgts=[p1,p2,...bots].filter(e=>e&&!e.dead&&e!==b.own);
+      for(const tg of tgts){
+        const pad=6;
+        if(b.x>tg.x-pad&&b.x<tg.x+tg.w+pad&&b.y>tg.y-pad&&b.y<tg.y+tg.h+pad){
           if(b.gren){expl(b.x,b.y,95,b.dmg,b.own);}
-          else{tg.hp-=b.dmg;tg.vx+=b.vx*0.1;tg.vy+=b.vy*0.07;tg.fl=6;
-            for(let k=0;k<7;k++)PA.push({x:b.x,y:b.y,vx:(Math.random()-0.5)*5.5,vy:(Math.random()-0.5)*5-1,lf:14,col:'#cc1818',sz:2.2,k:'b'});}
+          else{
+            tg.hp-=b.dmg;
+            tg.vx+=b.vx*0.08;tg.vy+=b.vy*0.06;tg.fl=6;
+            for(let k=0;k<7;k++)PA.push({x:tg.x+tg.w/2,y:tg.y+tg.h/2,
+              vx:(Math.random()-0.5)*5.5,vy:(Math.random()-0.5)*5-1,lf:14,col:'#cc1818',sz:2.2,k:'b'});
+          }
           if(tg.hp<=0&&!tg.dead)die(tg,b.own);
           hit=true;break;
         }
@@ -612,14 +744,23 @@ function updBL(dt){
 function inp1(dt,t){
   if(!p1||p1.dead)return;
   let mv=false;
-  if(keys['KeyA']){p1.vx-=0.44*dt;p1.fr=false;mv=true;}
-  if(keys['KeyD']){p1.vx+=0.44*dt;p1.fr=true; mv=true;}
+  if(keys['KeyA']){p1.vx-=0.44*dt;mv=true;}
+  if(keys['KeyD']){p1.vx+=0.44*dt;mv=true;}
   if((keys['KeyW']||keys['Space'])&&p1.onG)p1.vy=-11;
   p1.mv=mv;p1.vx=Math.max(-5,Math.min(5,p1.vx));
-  p1.aim=p1.fr?0.05:-Math.PI+0.05;
-  if(p1.fr&&keys['KeyS'])p1.aim=0.55;
-  if(!p1.fr&&keys['KeyS'])p1.aim=-Math.PI+0.55;
-  const sh=keys['KeyZ']||keys['KeyF'];
+  // AIM FOLLOWS MOUSE — calculate from gun shoulder position (matches dSoldier)
+  const sxm2=p1.fr?1:-1;
+  const feetSX=p1.x+p1.w/2-cam.x;
+  const feetSY=p1.y+p1.h-cam.y;
+  const psx=feetSX+sxm2*6;   // shoulder screen X
+  const psy=feetSY-33;        // shoulder screen Y
+  p1.aim=Math.atan2(mouse.y-psy, mouse.x-psx);
+  // Flip with dead-zone so character doesn't jitter when cursor is near center
+  const dx=mouse.x-feetSX;
+  if(dx>12) p1.fr=true;
+  else if(dx<-12) p1.fr=false;
+  // SHOOT: left click or Z/F
+  const sh=s1mouse||keys['KeyZ']||keys['KeyF'];
   if(sh&&(p1.w0.auto||!s1h))p1.shoot([p2,...bots].filter(e=>e&&!e.dead),t);
   s1h=sh;
   if(keys['Digit1'])p1.wi=0;if(keys['Digit2'])p1.wi=1;if(keys['Digit3'])p1.wi=2;if(keys['Digit4'])p1.wi=3;
@@ -647,25 +788,55 @@ function inp2(dt,t){
 
 /* ==================== BOT ==================== */
 class Bot extends Ent{
-  constructor(x,y,si){super(x,y,false,false);this.si=si;this.jcd=0;this.mdir=Math.random()>0.5?1:-1;this.dt2=0;}
+  constructor(x,y,si){
+    super(x,y,false,false);
+    this.si=si;this.jcd=0;this.mdir=Math.random()>0.5?1:-1;this.dt2=0;
+    // reaction timer: bot won't react instantly (adds delay based on difficulty)
+    this.reactTimer=Math.random()*DIFF.reactionFrames;
+    this.targetX=0;this.targetY=0; // last "seen" position of target
+  }
   ai(tgts,t,dt){
-    this.uRld(t);this.dt2-=dt;
+    this.uRld(t);this.dt2-=dt;this.reactTimer-=dt;
     let best=null,bd=9999;
     for(const tg of tgts)if(!tg.dead){const d=Math.hypot(tg.x-this.x,tg.y-this.y);if(d<bd){bd=d;best=tg;}}
     if(!best){this.phys(dt);return;}
-    const dx=best.x+best.w/2-(this.x+this.w/2);
-    const dy=best.y+best.h/2-(this.y+this.h/2);
+    // Update "seen" target position only when reaction timer fires
+    if(this.reactTimer<=0){
+      this.reactTimer=DIFF.reactionFrames*(0.6+Math.random()*0.8);
+      this.targetX=best.x+best.w/2;
+      this.targetY=best.y+best.h/2;
+    }
+    const tx=this.targetX,ty=this.targetY;
+    const dx=tx-(this.x+this.w/2);
+    const dy=ty-(this.y+this.h/2);
     const dist=Math.sqrt(dx*dx+dy*dy);
-    this.aim=Math.atan2(dy,dx);this.fr=dx>0;
-    if(dist>280){this.vx+=(dx>0?1:-1)*0.42*dt;this.mv=true;}
-    else if(dist<100){this.vx-=(dx>0?1:-1)*0.32*dt;this.mv=true;}
+    // Aim with error proportional to difficulty
+    const err=(Math.random()-0.5)*DIFF.aimErr;
+    this.aim=Math.atan2(dy,dx)+err;
+    this.fr=dx>0;
+    // Movement — calmer on easy
+    if(dist>DIFF.shootDist*0.9){this.vx+=(dx>0?1:-1)*DIFF.moveSpeed*dt;this.mv=true;}
+    else if(dist<120){this.vx-=(dx>0?1:-1)*DIFF.moveSpeed*0.7*dt;this.mv=true;}
     else this.mv=false;
-    if(this.dt2<=0){this.dt2=55+Math.random()*65;if(Math.random()<0.38)this.mdir*=-1;}
-    this.vx+=this.mdir*0.14*dt;this.vx=Math.max(-4,Math.min(4,this.vx));
+    if(this.dt2<=0){this.dt2=60+Math.random()*80;if(Math.random()<0.3)this.mdir*=-1;}
+    this.vx+=this.mdir*0.08*dt;this.vx=Math.max(-3.5,Math.min(3.5,this.vx));
     this.jcd-=dt;
-    if(this.onG&&this.jcd<=0&&Math.random()<0.013){this.vy=-11;this.jcd=50;}
-    if(Math.random()<0.038&&dist<500)this.shoot(tgts,t);
+    if(this.onG&&this.jcd<=0&&Math.random()<DIFF.jumpChance){this.vy=-11;this.jcd=60;}
+    // Shoot only when target is in range and aim error is acceptable
+    if(Math.random()<DIFF.shootChance&&dist<DIFF.shootDist)this.shoot(tgts,t);
     this.phys(dt);
+  }
+}
+
+// Difficulty presets — called before game starts
+function setDiff(level){
+  // level: 0=usor, 1=normal, 2=greu
+  if(level===0){
+    DIFF={shootChance:0.010,shootDist:280,moveSpeed:0.20,jumpChance:0.005,aimErr:0.55,reactionFrames:120};
+  }else if(level===1){
+    DIFF={shootChance:0.016,shootDist:360,moveSpeed:0.24,jumpChance:0.008,aimErr:0.40,reactionFrames:80};
+  }else{
+    DIFF={shootChance:0.040,shootDist:560,moveSpeed:0.42,jumpChance:0.016,aimErr:0.10,reactionFrames:25};
   }
 }
 
@@ -760,7 +931,10 @@ function hideMenu(){document.getElementById('ov').style.display='none';}
 
 // SOLO: tu vs boti, fara P2 al doilea personaj
 function startSolo(){
-  const bc=parseInt(document.getElementById('diff').value);
+  const lvl=parseInt(document.getElementById('diff').value);
+  setDiff(lvl);
+  const botCounts=[2,4,6];
+  const bc=botCounts[lvl];
   gMode='solo';resetG(bc,false);
   document.getElementById('ml').textContent=L[lang].ml;
   // hide P2 HUD panel
@@ -827,6 +1001,7 @@ function loop(ts){
     if(!p1.dead)p1.draw();
     if(p2&&!p2.dead)p2.draw();
     drawMM();updHUD();
+    drawCrosshair();
   }
 }
 
@@ -841,17 +1016,66 @@ function drawMenuBg(){
   for(let i=0;i<55;i++){bx.globalAlpha=0.28+Math.random()*0.38;bx.fillStyle='#aaccff';bx.beginPath();bx.arc((i*137)%bw,(i*97)%bh*0.65,Math.random()*1.2+0.3,0,Math.PI*2);bx.fill();}
   bx.globalAlpha=1;
   // silhouette soldiers
-  bx.save();bx.translate(bw*0.1,bh*0.85);bx.globalAlpha=0.12;dSoldier(bx,true,true,0.1,0);bx.restore();
-  bx.save();bx.translate(bw*0.9,bh*0.85);bx.scale(-1,1);bx.globalAlpha=0.12;dSoldier(bx,false,true,-0.1,0);bx.restore();
+  bx.save();bx.translate(bw*0.1,bh*0.85);bx.globalAlpha=0.12;dSoldier(bx,true,true,0.1,0,true);bx.restore();
+  bx.save();bx.translate(bw*0.9,bh*0.85);bx.globalAlpha=0.12;dSoldier(bx,false,true,-0.1+Math.PI,0,false);bx.restore();
   bx.globalAlpha=1;
+}
+
+/* ==================== MOUSE ==================== */
+let s1mouse=false; // left click = shoot for p1
+
+// Use window-level mouse tracking so events always fire even if canvas is scaled
+window.addEventListener('mousemove',e=>{
+  const r=cv.getBoundingClientRect();
+  // Map from CSS pixels → logical canvas coordinates (GW x GH)
+  const scaleX=GW/r.width, scaleY=GH/r.height;
+  mouse.x=(e.clientX-r.left)*scaleX;
+  mouse.y=(e.clientY-r.top)*scaleY;
+});
+window.addEventListener('mousedown',e=>{
+  if(e.button===0) s1mouse=true;
+});
+window.addEventListener('mouseup',e=>{
+  if(e.button===0) s1mouse=false;
+});
+document.getElementById('gc').addEventListener('contextmenu',e=>e.preventDefault());
+
+// Draw crosshair at mouse position (in canvas logical coords)
+function drawCrosshair(){
+  if(!p1||p1.dead)return;
+  const x=mouse.x, y=mouse.y;
+  // Aim line starts from gun barrel tip (same calc as shoot muzzle)
+  const feetX = p1.x+p1.w/2-cam.x;
+  const feetY = p1.y+p1.h-cam.y;
+  const sxm = p1.fr?1:-1;
+  const bx2 = feetX + sxm*6 + Math.cos(p1.aim)*33;
+  const by2 = feetY - 33    + Math.sin(p1.aim)*33;
+  cx.save();
+  cx.strokeStyle='rgba(255,255,255,0.12)';cx.lineWidth=1;cx.setLineDash([4,8]);
+  cx.beginPath();cx.moveTo(bx2,by2);cx.lineTo(x,y);cx.stroke();
+  cx.setLineDash([]);
+  // crosshair reticle
+  cx.strokeStyle='rgba(255,255,255,0.82)';cx.lineWidth=1.5;
+  cx.beginPath();cx.moveTo(x-10,y);cx.lineTo(x-3,y);cx.stroke();
+  cx.beginPath();cx.moveTo(x+3, y);cx.lineTo(x+10,y);cx.stroke();
+  cx.beginPath();cx.moveTo(x,y-10);cx.lineTo(x,y-3);cx.stroke();
+  cx.beginPath();cx.moveTo(x,y+3); cx.lineTo(x,y+10);cx.stroke();
+  cx.fillStyle='rgba(255,80,80,0.9)';
+  cx.beginPath();cx.arc(x,y,2,0,Math.PI*2);cx.fill();
+  cx.restore();
 }
 
 /* ==================== KEYBOARD ==================== */
 document.addEventListener('keydown',e=>{
   keys[e.code]=true;
-  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+  // Prevent browser scroll/zoom on game keys
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight',
+      'KeyW','KeyA','KeyS','KeyD'].includes(e.code)) e.preventDefault();
 });
 document.addEventListener('keyup',e=>{keys[e.code]=false;});
+// Keep keyboard focus on the game container
+document.getElementById('gc').setAttribute('tabindex','0');
+document.getElementById('gc').addEventListener('click',()=>document.getElementById('gc').focus());
 
 /* ==================== INIT ==================== */
 requestAnimationFrame(loop);
