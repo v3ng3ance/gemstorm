@@ -31,6 +31,34 @@ html,body{width:100%;height:100%;background:#06080f;overflow:hidden;font-family:
 #ks .kss{font-size:11px;color:#888;margin-top:2px}
 /* Bullet holes */
 .bhole{position:absolute;border-radius:50%;background:rgba(0,0,0,0.6);pointer-events:none}
+
+/* Hit marker */
+#hitmark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:13;pointer-events:none;font-size:18px;color:#ff4040;font-weight:bold;opacity:0;transition:opacity 0.05s}
+/* Damage direction indicator */
+.dmgdir{position:absolute;z-index:13;pointer-events:none;animation:dmgfade 0.8s forwards}
+@keyframes dmgfade{0%{opacity:0.9}100%{opacity:0}}
+/* Scoreboard */
+#sb{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:22;display:none;background:rgba(2,5,14,0.96);border:1px solid rgba(50,100,200,0.3);border-radius:8px;padding:18px 24px;min-width:320px;font-family:'Courier New',monospace}
+#sb h2{color:#60a0ff;font-size:14px;letter-spacing:3px;margin-bottom:12px;text-align:center}
+#sb table{width:100%;border-collapse:collapse;font-size:11px;color:#a0b8d0}
+#sb th{color:#506888;font-size:9px;letter-spacing:1px;padding:3px 6px;border-bottom:1px solid rgba(50,100,200,0.2);text-align:left}
+#sb td{padding:4px 6px;border-bottom:1px solid rgba(50,100,200,0.08)}
+#sb tr.me td{color:#60d0ff}
+/* Spectator */
+#specLabel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:13;display:none;color:rgba(255,255,255,0.4);font-size:12px;font-family:'Courier New',monospace;pointer-events:none;text-align:center}
+/* Round end */
+#rend{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:22;display:none;text-align:center;background:rgba(2,5,14,0.95);border:1px solid rgba(60,120,255,0.3);border-radius:8px;padding:22px 32px;font-family:'Courier New',monospace}
+#rend h2{color:#60d0ff;font-size:20px;letter-spacing:4px;margin-bottom:8px}
+#rend .rsub{color:#506878;font-size:11px;margin-bottom:16px}
+#rend .rbtn{background:rgba(24,55,125,0.9);border:1px solid rgba(60,115,225,0.35);color:#a0cafe;padding:8px 20px;font-size:11px;border-radius:4px;cursor:pointer;font-family:'Courier New',monospace;margin:4px}
+/* Killstreak reward popup */
+#kreward{position:absolute;top:35%;left:50%;transform:translateX(-50%);z-index:13;display:none;text-align:center;pointer-events:none}
+#kreward .kt{font-size:13px;color:#ffc040;font-family:'Courier New',monospace;letter-spacing:1px}
+/* Dash cooldown indicator */
+#dashcd{position:absolute;bottom:50px;left:50%;transform:translateX(-50%);z-index:11;pointer-events:none;display:none}
+#dashcd .dc{width:60px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px}
+#dashcd .df{height:100%;background:#60a0ff;border-radius:2px;transition:width 0.1s}
+
 /* MENU */
 #ov{position:absolute;top:0;left:0;right:0;bottom:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;padding:8px 0}
 #bgcv{position:absolute;top:0;left:0;width:100%;height:100%}
@@ -105,6 +133,32 @@ html,body{width:100%;height:100%;background:#06080f;overflow:hidden;font-family:
 <div id="rsp"><h2 id="rtxt">ELIMINAT</h2><div class="rsub" id="rsub2">Respawn in</div><div class="rtimer" id="rtimer">3</div></div>
 <!-- Death overlay (unused now, using rsp instead) -->
 <div id="dov" style="display:none"></div>
+
+<!-- Hit marker -->
+<div id="hitmark">+</div>
+<!-- Scoreboard (Tab) -->
+<div id="sb">
+  <h2 id="sbTitle">SCOREBOARD</h2>
+  <table id="sbTable">
+    <tr><th>Jucator</th><th>K</th><th>D</th><th>HS</th><th>HP</th></tr>
+  </table>
+  <div style="color:#304860;font-size:9px;margin-top:10px;text-align:center">Tab pentru a inchide</div>
+</div>
+<!-- Round end -->
+<div id="rend">
+  <h2 id="rendTitle">RUNDA S-A INCHEIAT</h2>
+  <div class="rsub" id="rendSub">Statistici</div>
+  <div id="rendStats" style="color:#a0b8d0;font-size:11px;margin-bottom:14px;line-height:1.8"></div>
+  <button class="rbtn" onclick="startSolo()">JOACA DIN NOU</button>
+  <button class="rbtn" onclick="goMenu()">MENIU</button>
+</div>
+<!-- Spectator label -->
+<div id="specLabel">SPECTATOR<br><span style="font-size:10px;color:rgba(255,255,255,0.3)">urmaresti botul</span></div>
+<!-- Killstreak reward -->
+<div id="kreward"><div class="kt" id="krewardTxt"></div></div>
+<!-- Dash cooldown -->
+<div id="dashcd"><div class="dc"><div class="df" id="dashfill" style="width:100%"></div></div></div>
+
 <!-- Mobile controls -->
 <div id="mc">
   <div class="mjoy" id="joy"><div class="mjstick" id="jstick"></div></div>
@@ -327,6 +381,13 @@ let DIFF={sc:0.016,sd:360,ms:0.24,jc:0.008,ae:0.40,rf:80};
 let slowMo=0; // slow motion timer (headshot)
 let botCount=0;
 let respawnTimer=0,isDead=false;
+let deaths=0,headshots=0,totalShots=0,totalHits=0;
+let dashCd=0,dashMax=120; // dash cooldown frames
+let specTarget=null; // spectator follow target
+let roundKillTarget=20; // kills to win round
+let hitMarkerTimer=0;
+let dmgDirs=[]; // damage direction indicators
+let lastHitFrom={x:0,y:0}; // position of last attacker
 // Background parallax objects (generated per map)
 let STA=[],MTN=[],BLD=[];
 function genBgObjects(){
@@ -350,7 +411,8 @@ class Ent{
     this.lsh=0;this.dead=false;this.aim=0;
     this.rld=false;this.re=0;
     this.si=0;this.frm=0;this.mv=false;this.fl=0;this.nm='';this.armor=0;this._prevY=0;
-    this.burstLeft=0; // remaining shots in burst
+    this.burstLeft=0;
+    this.shootTimer=0; // muzzle flash countdown
     // For bot cover system
     this.coverX=0;this.coverMode=false;this.coverT=0;
   }
@@ -383,18 +445,22 @@ class Ent{
       if(this.burstLeft<=0) this.burstLeft=3;
     }
     this.lsh=t; w.ammo--;
+    this.shootTimer=8;
+    totalShots++;
+    playShot(w.gren?300:700+Math.random()*200); // muzzle flash frames
     if(w.ammo===0&&w.res>0) this.sRld(t);
     const fX=this.x+this.w/2,fY=this.y+this.h;
     const sxm=this.fr?1:-1;
     const shX=fX+sxm*6,shY=fY-33;
-    const ox=shX+Math.cos(this.aim)*30;
-    const oy=shY+Math.sin(this.aim)*30;
+    // Barrel tip: 14px from shoulder (was 30 — caused misses at close range)
+    const ox=shX+Math.cos(this.aim)*14;
+    const oy=shY+Math.sin(this.aim)*14;
     const n=w.pel||1;
     for(let i=0;i<n;i++){
       const a=this.aim+(Math.random()-0.5)*w.spr*2;
       BL.push({x:ox,y:oy,vx:Math.cos(a)*w.spd,vy:Math.sin(a)*w.spd,
         dmg:w.dmg,col:w.col,sz:w.sz,own:this,
-        gren:w.gren||false,life:w.gren?140:65,bn:w.gren?3:0,trl:w.trl||3,tr:[],minDist:20});
+        gren:w.gren||false,life:w.gren?140:65,bn:w.gren?3:0,trl:w.trl||3,tr:[],minDist:5});
     }
     for(let i=0;i<5;i++){
       const a2=this.aim+(Math.random()-0.5)*0.4;
@@ -444,6 +510,7 @@ class Ent{
     if(this.y<=14){ this.vy=0; }
     if(this.mv&&this.onG) this.frm+=dtc; else this.frm=0;
     if(this.fl>0) this.fl-=dtc;
+    if(this.shootTimer>0) this.shootTimer-=dtc;
   }
 
   draw(){
@@ -452,7 +519,7 @@ class Ent{
     cx.save();
     cx.translate(sx+this.w/2,sy+this.h);
     if(this.fl>0)cx.globalAlpha=0.38+Math.abs(Math.sin(this.fl*.8))*.5;
-    drawSoldier(cx,this.isP,this.aim,this.frm,this.fr);
+    drawSoldier(cx,this.isP,this.aim,this.frm,this.fr,this.vy,this.rld,this.shootTimer);
     cx.restore();cx.globalAlpha=1;
     // HP bar
     const bx2=sx-1,by2=sy-10,bw=this.w+2,hp=Math.max(0,this.hp);
@@ -469,41 +536,94 @@ class Ent{
 }
 
 // ── Soldier drawing ──────────────────────────────────────────────
-function drawSoldier(c,isP,aim,frm,fr){
+// vy = entity vertical velocity (for jump/fall pose)
+// shooting = muzzle flash countdown timer
+function drawSoldier(c,isP,aim,frm,fr,vy,rld,shooting){
   const bc=isP?'#2a6040':'#702020';
   const ac=isP?'#1e4830':'#501818';
   const hc=isP?'#1a3828':'#3a1010';
   const s=fr?1:-1;
-  // Legs only swing — no vertical bob anywhere
-  const sw=Math.sin(frm*0.2)*9;
+
+  const rising  = (vy||0) < -0.5;
+  const falling  = (vy||0) >  1.5;
+  const walking  = frm > 0;
+
+  // Walk cycle — smooth sine
+  const wp = frm * 0.25;
+  const legSwing = walking ? Math.sin(wp)*14 : 0;
+  const armSwing = walking ? Math.sin(wp+Math.PI)*10 : 0;
+
+  // Jump/fall poses
+  const legTuck   = rising  ?  8 : 0;
+  const legSpread = falling  ? -4 : 0;
+
+  // Torso lean forward when running
+  const lean = walking ? s*2 : 0;
+
+  // ── LEGS ─────────────────────────────────
   c.fillStyle=ac;
-  c.save();c.rotate( sw*s*Math.PI/180);
-  c.fillRect(s*-7,-22,s*6,14);c.fillStyle='#181620';c.fillRect(s*-8,-10,s*7,5);
+  c.save();c.rotate((legSwing+legTuck+legSpread)*s*Math.PI/180);
+  c.fillRect(s*-7,-22,s*6,15);
+  c.fillStyle='#181620';c.fillRect(s*-8,-10,s*7,6);
   c.restore();
-  c.save();c.rotate(-sw*s*Math.PI/180);
-  c.fillRect(s*1,-22,s*6,14);c.fillStyle='#181620';c.fillRect(s*1,-10,s*7,5);
+  c.fillStyle=ac;
+  c.save();c.rotate((-legSwing+legTuck+legSpread)*s*Math.PI/180);
+  c.fillRect(s*1,-22,s*6,15);
+  c.fillStyle='#181620';c.fillRect(s*1,-10,s*7,6);
   c.restore();
-  // Torso — static
+
+  // ── TORSO ────────────────────────────────
+  c.save();c.translate(lean,0);
   c.fillStyle=bc;c.fillRect(s*-9,-42,s*18,22);
   c.fillStyle=ac;c.fillRect(s*-9,-42,s*18,7);c.fillRect(s*-9,-26,s*18,5);
-  c.fillStyle='rgba(0,0,0,.2)';c.fillRect(s*-7,-40,s*4,5);c.fillRect(s*3,-40,s*4,5);
-  // Head — static
-  c.fillStyle='#c49060';c.beginPath();c.arc(0,-50,6.5,0,Math.PI*2);c.fill();
-  c.fillStyle=hc;c.beginPath();c.arc(0,-52,7,Math.PI,0);c.fill();
-  c.fillRect(-7,-54,14,5);
-  c.fillStyle='rgba(0,0,0,.44)';c.fillRect(-4,-52,8,3);
-  c.strokeStyle='rgba(80,160,255,.5)';c.lineWidth=1;
-  c.beginPath();c.arc(-2,-51,1.8,0,Math.PI*2);c.stroke();
-  c.beginPath();c.arc( 2,-51,1.8,0,Math.PI*2);c.stroke();
-  // Weapon arm — rotates with aim, no bob
-  c.save();c.translate(s*6,-33);c.rotate(aim);
-  c.fillStyle=bc;      c.fillRect(-2,-2,9,5);
+  c.fillStyle='rgba(0,0,0,.22)';c.fillRect(s*-7,-40,s*4,5);c.fillRect(s*3,-40,s*4,5);
+  // Backpack
+  c.fillStyle=dC(bc,0.6);c.fillRect(s*-11,-40,s*3,12);
+
+  // ── FREE ARM (swings opposite to legs) ───
+  const freeAng = walking ? armSwing*Math.PI/180 : (rising?-0.4:falling?0.3:0);
+  c.save();c.translate(s*-6,-34);c.rotate(freeAng*s);
+  c.fillStyle=bc;c.fillRect(s*-2,-2,s*8,5);
+  c.fillStyle='#c49060';c.fillRect(s*4,-3,s*4,5);
+  c.restore();
+  c.restore(); // end torso lean
+
+  // ── HEAD ─────────────────────────────────
+  const headTilt = rising?s*5*Math.PI/180:falling?s*-4*Math.PI/180:0;
+  c.save();c.translate(lean,0);c.translate(0,-42);c.rotate(headTilt);
+  c.fillStyle='#c49060';c.fillRect(-3,0,6,4); // neck
+  c.beginPath();c.arc(0,-4,6.5,0,Math.PI*2);c.fill();
+  c.fillStyle=hc;c.beginPath();c.arc(0,-6,7,Math.PI,0);c.fill();
+  c.fillRect(-7,-8,14,4);
+  c.fillStyle='rgba(0,0,0,.45)';c.fillRect(-4,-6,8,3);
+  c.strokeStyle='rgba(80,180,255,.6)';c.lineWidth=1;
+  c.beginPath();c.arc(-2,-5,1.8,0,Math.PI*2);c.stroke();
+  c.beginPath();c.arc( 2,-5,1.8,0,Math.PI*2);c.stroke();
+  c.restore();
+
+  // ── GUN ARM ──────────────────────────────
+  const rldOff = rld ? Math.sin(Date.now()*0.007)*3 : 0;
+  c.save();c.translate(s*6,-33+rldOff);c.rotate(aim);
+  c.fillStyle=bc;c.fillRect(-2,-2,9,5);
   c.fillStyle='#484f5e';c.fillRect(7,-4,20,6);
   c.fillStyle='#30363c';c.fillRect(5,-5,13,8);
   c.fillStyle='#5c6370';c.fillRect(26,-3,7,3);
   c.fillStyle='#38302a';c.fillRect(2,-5,6,8);
   c.fillStyle='#28303e';c.fillRect(12,-7,8,3);
+  // Muzzle flash
+  if((shooting||0)>0){
+    const f=(shooting||0)/8;
+    c.globalAlpha=f;
+    c.fillStyle='#ffee60';c.beginPath();c.arc(33,0,6+Math.random()*3,0,Math.PI*2);c.fill();
+    c.fillStyle='#ffffff';c.beginPath();c.arc(33,0,2,0,Math.PI*2);c.fill();
+    c.globalAlpha=1;
+  }
   c.restore();
+}
+
+function dC(hex,f){
+  const r=parseInt(hex.slice(1,3),16)||0,g=parseInt(hex.slice(3,5),16)||0,b=parseInt(hex.slice(5,7),16)||0;
+  return'rgb('+Math.round(r*f)+','+Math.round(g*f)+','+Math.round(b*f)+')';
 }
 
 // ── Background drawing ───────────────────────────────────────────
@@ -730,8 +850,8 @@ function drawCrosshair(){
   const fX=p1.x+p1.w/2-cam.x+cam.shakeX;
   const fY=p1.y+p1.h-cam.y+cam.shakeY;
   const sxm=p1.fr?1:-1;
-  const bx2=fX+sxm*6+Math.cos(p1.aim)*30;
-  const by2=fY-33+Math.sin(p1.aim)*30;
+  const bx2=fX+sxm*6+Math.cos(p1.aim)*14;
+  const by2=fY-33+Math.sin(p1.aim)*14;
   const x=mouse.x,y=mouse.y;
   cx.save();
   // Aim line — dashed, very subtle
@@ -815,13 +935,17 @@ function expl(x,y,radius,dmg,own){
   for(const e of all){
     const tx=e.x+e.w/2,ty=e.y+e.h/2;
     const d=Math.hypot(tx-x,ty-y);
-    if(d<radius){e.hp-=dmg*(1-d/radius);e.vx+=(tx-x)/d*8;e.vy+=(ty-y)/d*8-3;e.fl=10;}
+    if(d<radius){
+      e.hp-=dmg*(1-d/radius);e.vx+=(tx-x)/d*8;e.vy+=(ty-y)/d*8-3;e.fl=10;
+      if(e.hp<=0&&!e.dead) handleDeath(e,own,'torso');
+    }
   }
   for(let i=0;i<24;i++){const a=Math.random()*Math.PI*2,sp=2+Math.random()*9;
     PA.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2,lf:22+Math.random()*16,col:Math.random()<.55?'#ff5010':'#ffbb20',sz:3+Math.random()*4,k:'s'});}
   for(let i=0;i<8;i++) PA.push({x:x+(Math.random()-.5)*radius*.4,y:y+(Math.random()-.5)*radius*.4,
     vx:(Math.random()-.5)*2,vy:-Math.random()*3,lf:38,col:'rgba(110,110,110,.65)',sz:10+Math.random()*10,k:'m'});
   EX.push({x,y,r:0,mr:radius,lf:20,ml:20});
+  playExpl();
   shake(radius*.18);
 }
 
@@ -858,10 +982,16 @@ function handleDeath(v,k,zone){
   if(k&&k.isP){
     kills++;streak++;bestStreak=Math.max(bestStreak,streak);
     showStreak(streak);
-    const col=zone==='head'?'#ff4040':zone==='legs'?'#a0a040':'#c03030';
-    addK((zone==='head'?'[HEAD] ':zone==='legs'?'[LEGS] ':'')+kn+' '+TX[lang].killed+' '+vn,col);
+    const zn=zone||'torso';
+    const col=zn==='head'?'#ff4040':zn==='legs'?'#a0a040':'#c03030';
+    addK((zn==='head'?'[HEAD] ':zn==='legs'?'[LEGS] ':'')+kn+' '+TX[lang].killed+' '+vn,col);
+    if(streak===3){giveReward('3 KILLS: +ARMURA');p1.armor=Math.min(100,(p1.armor||0)+50);}
+    if(streak===5){giveReward('5 KILLS: RPG GRATUIT!');p1.wp[3].ammo=3;p1.wp[3].res=6;selW(3);}
+    if(streak===10){giveReward('10 KILLS: HP FULL!');p1.hp=100;}
+    if(kills>=roundKillTarget) showRoundEnd();
   }else{
     addK(kn+' '+TX[lang].killed+' '+vn,'#803030');
+    if(k&&!k.isP&&v.isP)deaths++;
   }
 }
 
@@ -949,10 +1079,10 @@ function updBL(dt){
           else if(zone==='legs') dmg*=0.65;
           dmg=applyDamage(tg,dmg); tg.vx+=b.vx*.06; tg.vy+=b.vy*.04; tg.fl=6;
           if(zone==='head' && b.own && b.own.isP){
-              shake(5);
-              addK(TX[lang].headshot+' +'+Math.round(dmg)+'dmg','#ff3030');
-            }
-            // no shake on regular hits - keeps game smooth
+            shake(5);
+            headshots++;
+            addK(TX[lang].headshot+' +'+Math.round(dmg)+'dmg','#ff3030');
+          }
           for(let k=0;k<6;k++) PA.push({
             x:cx2, y:hitY,
             vx:(Math.random()-.5)*5, vy:(Math.random()-.5)*5-1,
@@ -961,8 +1091,9 @@ function updBL(dt){
           PA.push({x:hitX,y:hitY-12,vx:0,vy:-1.2,
             lf:28,col:zone==='head'?'#ff4040':'#ffcc30',sz:0,k:'txt',
             val:Math.round(dmg),big:zone==='head'});
+          if(tg.hp<=0&&!tg.dead) handleDeath(tg,b.own,zone);
+          else playHit();
         }
-        if(tg.hp<=0&&!tg.dead) handleDeath(tg,b.own,'torso');
         hit=true; break;
       }
     }
@@ -983,14 +1114,32 @@ class Bot extends Ent{
   }
   ai(t,dt){
     this.uRld(t);this.dt2-=dt;this.reactT-=dt;this.coverT-=dt;
-    // pick up weapon drops nearby
+    // Pick up nearby drops and pickups
     for(let i=drops.length-1;i>=0;i--){
       const d=drops[i];
       if(Math.hypot(this.x-d.x,this.y-d.y)<30&&d.wi>this.wi){
         this.wp[d.wi]={...d.wp};this.wi=d.wi;drops.splice(i,1);break;
       }
     }
+    // Bot seeks health pickups when low HP
+    if(this.hp<35){
+      let closest=null,cd=9999;
+      for(const pk of pickups){
+        if(!pk.active)continue;
+        if(pk.type!=='health'&&pk.type!=='armor')continue;
+        const d=Math.hypot(this.x-pk.x,this.y-pk.y);
+        if(d<cd){cd=d;closest=pk;}
+      }
+      if(closest&&cd<300){
+        const hdx=closest.x-(this.x+this.w/2);
+        this.vx+=Math.sign(hdx)*DIFF.ms*dt;
+        this.mv=true;
+        this.phys(dt);
+        return;
+      }
+    }
     if(!p1||p1.dead){this.phys(dt);return;}
+    // React timer — update last seen position
     if(this.reactT<=0){
       this.reactT=DIFF.rf*(.6+Math.random()*.8);
       this.tX=p1.x+p1.w/2;this.tY=p1.y+p1.h/2;
@@ -998,43 +1147,50 @@ class Bot extends Ent{
     const dx=this.tX-(this.x+this.w/2);
     const dy=this.tY-(this.y+this.h/2);
     const dist=Math.sqrt(dx*dx+dy*dy);
-    // Bot aim: smooth lerp using sin/cos to avoid angle-wrap oscillation
-    const targetAim=Math.atan2(dy,dx);
-    const ta_sin=Math.sin(targetAim), ta_cos=Math.cos(targetAim);
-    const ca_sin=Math.sin(this.aim),   ca_cos=Math.cos(this.aim);
-    const spd=Math.min(0.06, 0.018*dt); // very slow, frame-rate independent
-    const new_sin=ca_sin+(ta_sin-ca_sin)*spd;
-    const new_cos=ca_cos+(ta_cos-ca_cos)*spd;
-    this.aim=Math.atan2(new_sin,new_cos);
-    // Facing direction with hysteresis
-    if(dx>18)       this.fr=true;
-    else if(dx<-18) this.fr=false;
-    // Cover system: if low HP, look for nearby platform to hide behind
+    // Smooth aim via sin/cos lerp
+    const tAim=Math.atan2(dy,dx);
+    const lspd=Math.min(0.06,0.018*dt);
+    const ns=Math.sin(this.aim)+(Math.sin(tAim)-Math.sin(this.aim))*lspd;
+    const nc=Math.cos(this.aim)+(Math.cos(tAim)-Math.cos(this.aim))*lspd;
+    this.aim=Math.atan2(ns,nc);
+    if(dx>18)this.fr=true; else if(dx<-18)this.fr=false;
+    // Cover/retreat when low HP
     if(this.hp<40&&this.coverT<=0){
-      this.onCover=true;this.coverT=120;
-      // move to the side of the player (flank or cover)
-      this.coverX=this.x+(Math.random()>.5?120:-120);
+      this.onCover=true;this.coverT=100;
+      this.coverX=this.x+(Math.random()>.5?150:-150);
     }
+    // Pathfinding: if player is above, try to jump onto a platform
+    const playerAbove=p1.y<this.y-60;
+    const platformAbove=playerAbove&&this.onG;
     if(this.onCover&&this.coverT>0){
       const cdx=this.coverX-(this.x+this.w/2);
-      this.vx+=Math.sign(cdx)*.35*dt;this.mv=true;
+      this.vx+=Math.sign(cdx)*DIFF.ms*dt;this.mv=true;
       if(Math.abs(cdx)<30)this.onCover=false;
     }else{
-      // Normal movement
       if(dist>DIFF.sd*.9){this.vx+=(dx>0?1:-1)*DIFF.ms*dt;this.mv=true;}
-      else if(dist<110){this.vx-=(dx>0?1:-1)*DIFF.ms*.7*dt;this.mv=true;}
+      else if(dist<100){this.vx-=(dx>0?1:-1)*DIFF.ms*.7*dt;this.mv=true;}
       else this.mv=false;
     }
-    if(this.dt2<=0){this.dt2=60+Math.random()*80;if(Math.random()<.3)this.mdir*=-1;}
-    this.vx+=this.mdir*.05*dt;this.vx=Math.max(-2.8,Math.min(2.8,this.vx));
+    // Flanking: occasionally move perpendicular to target
+    if(this.dt2<=0){
+      this.dt2=55+Math.random()*70;
+      if(Math.random()<.35)this.mdir*=-1;
+      // Flank: move to side opposite of where we've been
+      if(Math.random()<.2&&dist<300)this.coverX=this.x+(dx>0?-180:180);
+    }
+    this.vx+=this.mdir*.04*dt;this.vx=Math.max(-2.8,Math.min(2.8,this.vx));
     this.jcd-=dt;
-    if(this.onG&&this.jcd<=0&&Math.random()<DIFF.jc){this.vy=-10;this.jcd=55;}
-    // aim error applied at shoot time, not permanently on aim angle
+    // Jump to reach player above, or random jumps
+    if(this.onG&&this.jcd<=0){
+      if(platformAbove&&Math.random()<0.06){this.vy=-10;this.jcd=40;}
+      else if(Math.random()<DIFF.jc){this.vy=-10;this.jcd=55;}
+    }
+    // Shoot with aim error
     if(Math.random()<DIFF.sc&&dist<DIFF.sd){
-      const savedAim=this.aim;
+      const saved=this.aim;
       this.aim+=((Math.random()-.5)*DIFF.ae);
       this.shoot([p1].filter(e=>!e.dead),t);
-      this.aim=savedAim;
+      this.aim=saved;
     }
     this.phys(dt);
   }
@@ -1050,8 +1206,14 @@ function setDiff(l){
 // ── Camera ───────────────────────────────────────────────────────
 function updCam(){
   if(!p1)return;
-  let tx=p1.x+p1.w/2-GW/2,ty=p1.y+p1.h/2-GH/2;
-  cam.x+=(tx-cam.x)*.1;cam.y+=(ty-cam.y)*.1;
+  // Look-ahead: camera leads slightly in direction of movement
+  const lookX = p1.vx * 18;
+  const lookY = p1.vy < 0 ? -20 : 0; // look up when jumping
+  const tx=p1.x+p1.w/2-GW/2+lookX;
+  const ty=p1.y+p1.h/2-GH/2+lookY;
+  // Faster lerp = more responsive camera
+  cam.x+=(tx-cam.x)*0.14;
+  cam.y+=(ty-cam.y)*0.14;
   cam.x=Math.max(0,Math.min(MW-GW,cam.x));
   cam.y=Math.max(0,Math.min(MH-GH,cam.y));
 }
@@ -1199,7 +1361,19 @@ function inp1(dt,t){
   // Mobile joystick
   if(Math.abs(joyX)>.15){p1.vx+=joyX*.30*dt;mv=true;}
   // Jump: W, ArrowUp, Space
-  if((keys['KeyW']||keys['ArrowUp']||keys['Space'])&&p1.onG)p1.vy=-10;
+  if((keys['KeyW']||keys['ArrowUp']||keys['Space'])&&p1.onG){p1.vy=-10;playJump();}
+  // Dash — Shift key, cooldown 2s
+  if((keys['ShiftLeft']||keys['ShiftRight'])&&dashCd<=0&&p1.onG&&p1.mv){
+    const dashDir=p1.fr?1:-1;
+    p1.vx=dashDir*7;
+    dashCd=dashMax;
+    for(let i=0;i<8;i++) PA.push({x:p1.x+p1.w/2,y:p1.y+p1.h*.6,
+      vx:(Math.random()-0.5)*4-dashDir*2,vy:(Math.random()-0.5)*3,
+      lf:14,col:'rgba(100,160,255,0.6)',sz:2.5,k:'s'});
+  }
+  if(dashCd>0){dashCd--;document.getElementById('dashcd').style.display='block';}
+  else document.getElementById('dashcd').style.display='none';
+  document.getElementById('dashfill').style.width=((dashMax-dashCd)/dashMax*100)+'%';
   p1.mv=mv;p1.vx=Math.max(-3.2,Math.min(3.2,p1.vx));
   // Aim from mouse
   const sxm=p1.fr?1:-1;
@@ -1353,7 +1527,10 @@ function startSolo(){
   p1.nm=document.getElementById('pn').value.trim().slice(0,10)||'TU';
   bots=[];
   for(let i=0;i<botCount;i++){const sp=SPWN[(i+1)%SPWN.length];const b=new Bot(sp.x,sp.y,i+1);bots.push(b);}
-  kills=0;streak=0;BL=[];PA=[];EX=[];BD=[];holes=[];drops=[];pickups=[];gSec=0;isDead=false;
+  kills=0;streak=0;bestStreak=0;deaths=0;headshots=0;totalShots=0;totalHits=0;
+  dashCd=0;specTarget=null;dmgDirs=[];
+  BL=[];PA=[];EX=[];BD=[];holes=[];drops=[];pickups=[];gSec=0;isDead=false;
+  document.getElementById('rend').style.display='none';
   spawnPickups();
   document.getElementById('ov').style.display='none';
   if(isMobile())document.getElementById('mc').className='show';
@@ -1391,6 +1568,155 @@ function drawMenuBg(){
   bx.globalAlpha=1;
 }
 
+
+// ── Hit marker drawing ────────────────────────────────────────────
+function drawHitMarker(){
+  if(hitMarkerTimer<=0)return;
+  hitMarkerTimer--;
+  const x=mouse.x,y=mouse.y;
+  const a=hitMarkerTimer/8;
+  cx.strokeStyle='rgba(255,50,50,'+a+')';cx.lineWidth=2;
+  const s2=7+((8-hitMarkerTimer)*1.5);
+  cx.beginPath();cx.moveTo(x-s2,y-s2);cx.lineTo(x+s2,y+s2);cx.stroke();
+  cx.beginPath();cx.moveTo(x+s2,y-s2);cx.lineTo(x-s2,y+s2);cx.stroke();
+}
+
+// ── Damage direction indicator ─────────────────────────────────────
+function drawDmgDirs(dt){
+  for(let i=dmgDirs.length-1;i>=0;i--){
+    const d=dmgDirs[i];d.t-=dt;
+    if(d.t<=0){dmgDirs.splice(i,1);continue;}
+    const a2=d.t/40;
+    // Draw arrow at screen edge pointing toward attacker
+    const ang=d.angle;
+    const ex=GW/2+Math.cos(ang)*140;
+    const ey=GH/2+Math.sin(ang)*100;
+    cx.save();cx.translate(ex,ey);cx.rotate(ang);
+    cx.globalAlpha=a2*.8;cx.fillStyle='#ff3030';
+    cx.beginPath();cx.moveTo(12,0);cx.lineTo(-8,-6);cx.lineTo(-8,6);cx.fill();
+    cx.restore();
+    cx.globalAlpha=1;
+  }
+}
+
+// ── Enemy direction arrows (off-screen enemies) ───────────────────
+function drawEnemyDirs(){
+  for(const b of bots){
+    if(b.dead)continue;
+    const sx=b.x-cam.x,sy=b.y-cam.y;
+    if(sx>-20&&sx<GW+20&&sy>-20&&sy<GH+20)continue; // on screen
+    const ang=Math.atan2(sy-GH/2,sx-GW/2);
+    const ex=GW/2+Math.cos(ang)*Math.min(GW/2-30,Math.abs(GW/2/Math.cos(ang)));
+    const ey=GH/2+Math.sin(ang)*Math.min(GH/2-30,Math.abs(GH/2/Math.sin(ang)));
+    const clampX=Math.max(20,Math.min(GW-20,ex));
+    const clampY=Math.max(20,Math.min(GH-20,ey));
+    cx.save();cx.translate(clampX,clampY);cx.rotate(ang);
+    cx.globalAlpha=0.6;cx.fillStyle='#ff5040';
+    cx.beginPath();cx.moveTo(10,0);cx.lineTo(-6,-4);cx.lineTo(-6,4);cx.fill();
+    cx.restore();cx.globalAlpha=1;
+  }
+}
+
+// ── Scoreboard ────────────────────────────────────────────────────
+function showScoreboard(show){
+  const el=document.getElementById('sb');
+  if(!show){el.style.display='none';return;}
+  el.style.display='block';
+  const acc=totalShots>0?Math.round(totalHits/totalShots*100):0;
+  const tbody=document.getElementById('sbTable');
+  let rows='<tr><th>'+(lang==='ro'?'Jucator':'Player')+'</th><th>K</th><th>D</th><th>HS</th><th>ACC</th></tr>';
+  rows+='<tr class="me"><td>'+(p1.nm||'TU')+'</td><td>'+kills+'</td><td>'+deaths+'</td><td>'+headshots+'</td><td>'+acc+'%</td></tr>';
+  bots.forEach((b,i)=>{ rows+='<tr><td>Bot '+(i+1)+'</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>'; });
+  tbody.innerHTML=rows;
+}
+
+// ── Killstreak reward ─────────────────────────────────────────────
+function giveReward(txt){
+  const el=document.getElementById('kreward');
+  document.getElementById('krewardTxt').textContent=txt;
+  el.style.display='block';
+  clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',2500);
+  shake(6);
+}
+
+// ── Round end ─────────────────────────────────────────────────────
+function showRoundEnd(){
+  const el=document.getElementById('rend');
+  const acc=totalShots>0?Math.round(totalHits/totalShots*100):0;
+  document.getElementById('rendTitle').textContent=lang==='ro'?'RUNDA S-A INCHEIAT':'ROUND OVER';
+  document.getElementById('rendStats').innerHTML=
+    (lang==='ro'?'Kills: ':'Kills: ')+kills+'<br>'+
+    (lang==='ro'?'Deaths: ':'Deaths: ')+deaths+'<br>'+
+    (lang==='ro'?'Headshots: ':'Headshots: ')+headshots+'<br>'+
+    (lang==='ro'?'Precizie: ':'Accuracy: ')+acc+'%<br>'+
+    (lang==='ro'?'Best streak: ':'Best streak: ')+bestStreak;
+  el.style.display='block';
+  gMode='';
+}
+function goMenu(){
+  document.getElementById('rend').style.display='none';
+  document.getElementById('ov').style.display='flex';
+}
+
+// ── Spectator mode ────────────────────────────────────────────────
+let specIdx=0;
+function updateSpectator(dt){
+  if(!isDead)return;
+  const alive=bots.filter(b=>!b.dead);
+  if(alive.length===0)return;
+  if(!specTarget||specTarget.dead){specIdx=0;specTarget=alive[0];}
+  // Follow spec target with camera
+  const tx=specTarget.x+specTarget.w/2-GW/2;
+  const ty=specTarget.y+specTarget.h/2-GH/2;
+  cam.x+=(tx-cam.x)*0.1;
+  cam.y+=(ty-cam.y)*0.1;
+  cam.x=Math.max(0,Math.min(MW-GW,cam.x));
+  cam.y=Math.max(0,Math.min(MH-GH,cam.y));
+  document.getElementById('specLabel').style.display='block';
+}
+
+// ── Web Audio sound effects ───────────────────────────────────────
+let AC=null;
+function initAudio(){if(!AC)try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+function playShot(freq=800,dur=0.06){
+  if(!AC)return;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.connect(g);g.connect(AC.destination);
+  o.frequency.setValueAtTime(freq,AC.currentTime);
+  o.frequency.exponentialRampToValueAtTime(freq*0.3,AC.currentTime+dur);
+  g.gain.setValueAtTime(0.12,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+dur);
+  o.start();o.stop(AC.currentTime+dur);
+}
+function playHit(){
+  if(!AC)return;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type='sawtooth';o.connect(g);g.connect(AC.destination);
+  o.frequency.setValueAtTime(300,AC.currentTime);
+  g.gain.setValueAtTime(0.08,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.05);
+  o.start();o.stop(AC.currentTime+0.05);
+}
+function playExpl(){
+  if(!AC)return;
+  const buf=AC.createBuffer(1,AC.sampleRate*0.4,AC.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+  const s=AC.createBufferSource(),g=AC.createGain();
+  s.buffer=buf;s.connect(g);g.connect(AC.destination);
+  g.gain.setValueAtTime(0.3,AC.currentTime);
+  s.start();
+}
+function playJump(){
+  if(!AC)return;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.frequency.setValueAtTime(200,AC.currentTime);
+  o.frequency.exponentialRampToValueAtTime(400,AC.currentTime+0.08);
+  g.gain.setValueAtTime(0.06,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,AC.currentTime+0.1);
+  o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+0.1);
+}
+
 // ── Main loop ────────────────────────────────────────────────────
 function loop(ts){
   requestAnimationFrame(loop);
@@ -1424,6 +1750,8 @@ function loop(ts){
   for(let i=drops.length-1;i>=0;i--){ drops[i].life-=dt; if(drops[i].life<=0) drops.splice(i,1); }
   for(const h of holes) h.a=Math.max(0,h.a-.0003*dt);
   updateShake(dt);
+  if(isDead)updateSpectator(dt);
+  else document.getElementById('specLabel').style.display='none';
   // Timer
   if(p1&&!isDead){gSec+=dt/60;const ms=Math.floor(gSec/60),ss=Math.floor(gSec%60);document.getElementById('ti').textContent=ms+':'+(ss<10?'0':'')+ss;}
   // Draw
@@ -1438,10 +1766,15 @@ function loop(ts){
 
 // ── Keyboard ────────────────────────────────────────────────────
 window.addEventListener('keydown',e=>{
+  if(e.code==='Tab'){e.preventDefault();showScoreboard(true);return;}
+  initAudio();
   keys[e.code]=true;
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyW','KeyA','KeyS','KeyD'].includes(e.code))e.preventDefault();
 });
-window.addEventListener('keyup',e=>{keys[e.code]=false;});
+window.addEventListener('keyup',e=>{
+  keys[e.code]=false;
+  if(e.code==='Tab')showScoreboard(false);
+});
 // Scroll wheel = switch weapon
 window.addEventListener('wheel',e=>{
   if(!p1||!gameRunning())return;
