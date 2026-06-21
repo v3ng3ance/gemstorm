@@ -412,10 +412,8 @@ class Ent{
 
   phys(dt){
     const dtc=Math.min(dt,1.2);
-    // Gravity fixed per frame
-    this.vy+=0.5;
+    this.vy+=0.4*dtc;
     if(this.vy>16) this.vy=16;
-    // Move
     this.x+=this.vx*dtc;
     this.y+=this.vy*dtc;
     this.vx*=this.onG?0.80:0.95;
@@ -435,17 +433,15 @@ class Ent{
           if(this.vx>0&&this.x+this.w>p.x&&this.x<p.x){this.x=p.x-this.w;this.vx=0;}
         }
       } else {
-        // One-way: land only when falling AND crossing top surface
-        if(this.vy>0&&this.y+this.h>p.y&&this.y+this.h<p.y+p.h+this.vy+2&&this.y<p.y){
+        if(this.vy>0&&this.y+this.h>p.y&&this.y+this.h<p.y+p.h+this.vy*dtc+2&&this.y<p.y){
           this.y=p.y-this.h; this.vy=0; this.onG=true;
         }
       }
     }
-    // Hard clamp — never leave the map area
     this.x=Math.max(14,Math.min(MW-this.w-14,this.x));
-    this.y=Math.max(14,Math.min(MH-this.h, this.y)); // clamp Y both top and bottom
-    if(this.y>=MH-this.h){ this.y=MH-this.h; this.vy=0; this.onG=true; }
-    if(this.y<=14){ this.y=14; this.vy=0; } // hit top — bounce down
+    this.y=Math.max(14,Math.min(MH-this.h,this.y));
+    if(this.y>=MH-this.h){ this.vy=0; this.onG=true; }
+    if(this.y<=14){ this.vy=0; }
     if(this.mv&&this.onG) this.frm+=dtc; else this.frm=0;
     if(this.fl>0) this.fl-=dtc;
   }
@@ -1032,7 +1028,7 @@ class Bot extends Ent{
     if(this.dt2<=0){this.dt2=60+Math.random()*80;if(Math.random()<.3)this.mdir*=-1;}
     this.vx+=this.mdir*.05*dt;this.vx=Math.max(-2.8,Math.min(2.8,this.vx));
     this.jcd-=dt;
-    if(this.onG&&this.jcd<=0&&Math.random()<DIFF.jc){this.vy=-12;this.jcd=55;}
+    if(this.onG&&this.jcd<=0&&Math.random()<DIFF.jc){this.vy=-10;this.jcd=55;}
     // aim error applied at shoot time, not permanently on aim angle
     if(Math.random()<DIFF.sc&&dist<DIFF.sd){
       const savedAim=this.aim;
@@ -1203,7 +1199,7 @@ function inp1(dt,t){
   // Mobile joystick
   if(Math.abs(joyX)>.15){p1.vx+=joyX*.30*dt;mv=true;}
   // Jump: W, ArrowUp, Space
-  if((keys['KeyW']||keys['ArrowUp']||keys['Space'])&&p1.onG)p1.vy=-12;
+  if((keys['KeyW']||keys['ArrowUp']||keys['Space'])&&p1.onG)p1.vy=-10;
   p1.mv=mv;p1.vx=Math.max(-3.2,Math.min(3.2,p1.vx));
   // Aim from mouse
   const sxm=p1.fr?1:-1;
