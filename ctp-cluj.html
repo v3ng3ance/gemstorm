@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTP Cluj-Napoca · Live</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --bg:#0f1117;--surface:#161b27;--panel:#1c2333;
+    --border:#2a3348;--accent:#3b82f6;--accent2:#60a5fa;
+    --green:#22c55e;--yellow:#facc15;--red:#ef4444;
+    --text:#e2e8f0;--muted:#64748b;
+  }
+  body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  /* HEADER */
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:9px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;z-index:900;}
+  .logo{font-size:1rem;font-weight:700;color:var(--accent2);white-space:nowrap;letter-spacing:-.01em;}
+  .logo b{color:var(--text);font-weight:400;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s;}
+  .dot.live{background:var(--green);box-shadow:0 0 5px var(--green);animation:blink 2s infinite;}
+  .dot.err{background:var(--red);}
+  .dot.busy{background:var(--yellow);animation:blink 1s infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+  #st{font-size:.72rem;color:var(--muted);}
+  .hright{margin-left:auto;display:flex;align-items:center;gap:8px;}
+  #vcnt{font-size:.72rem;color:var(--muted);background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:2px 10px;white-space:nowrap;}
+  button{cursor:pointer;font-family:inherit;}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:600;transition:opacity .15s;}
+  .btn:hover{opacity:.85;}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--text);}
+  .btn.ghost:hover{border-color:var(--accent);color:var(--accent2);}
+
+  /* LAYOUT */
+  .main{flex:1;display:flex;overflow:hidden;}
+
+  /* SIDEBAR */
+  aside{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;}
+  .block{padding:10px 14px;border-bottom:1px solid var(--border);}
+  .block h3{font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px;}
+  input[type=text],input[type=password],input[type=number],select{
+    background:var(--panel);border:1px solid var(--border);border-radius:6px;
+    color:var(--text);font-size:.75rem;padding:5px 8px;outline:none;
+    font-family:inherit;width:100%;
+  }
+  input:focus,select:focus{border-color:var(--accent);}
+  input::placeholder{color:var(--muted);}
+  .row{display:flex;gap:6px;margin-top:5px;align-items:center;}
+  .row label{font-size:.72rem;color:var(--muted);white-space:nowrap;}
+  .hint{font-size:.65rem;color:var(--muted);margin-top:5px;line-height:1.5;}
+  .hint a{color:var(--accent2);text-decoration:none;}
+
+  /* VEHICLE LIST */
+  #vlist{flex:1;overflow-y:auto;}
+  #vlist::-webkit-scrollbar{width:3px;}
+  #vlist::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+  .vi{display:flex;align-items:center;gap:9px;padding:6px 14px;cursor:pointer;border-left:3px solid transparent;transition:background .1s;}
+  .vi:hover{background:var(--panel);}
+  .vi.on{background:var(--panel);border-left-color:var(--accent);}
+  .vbadge{min-width:34px;height:20px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;color:#fff;flex-shrink:0;padding:0 4px;}
+  .vn{flex:1;min-width:0;}
+  .vn .a{font-size:.75rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .vn .b{font-size:.65rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .vspd{font-size:.68rem;color:var(--muted);flex-shrink:0;}
+  .vspd.go{color:var(--green);}
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:.78rem;text-align:center;padding:20px;gap:8px;line-height:1.6;}
+
+  /* MAP */
+  #map{flex:1;}
+
+  /* POPUP */
+  .leaflet-popup-content-wrapper{background:var(--panel)!important;border:1px solid var(--border)!important;border-radius:8px!important;box-shadow:0 8px 24px rgba(0,0,0,.5)!important;}
+  .leaflet-popup-tip{background:var(--panel)!important;}
+  .leaflet-popup-content{color:var(--text)!important;margin:11px 15px!important;font-size:.78rem!important;}
+  .leaflet-popup-content h4{font-size:.9rem;font-weight:700;margin-bottom:6px;color:var(--accent2);}
+  .pr{display:flex;justify-content:space-between;gap:12px;color:var(--muted);margin-bottom:3px;}
+  .pr span{color:var(--text);font-weight:500;}
+
+  /* ERR BANNER */
+  #err{display:none;padding:6px 14px;font-size:.72rem;color:var(--red);background:rgba(239,68,68,.08);border-bottom:1px solid rgba(239,68,68,.2);}
+
+  /* SETUP MODAL */
+  .modal-bg{position:fixed;inset:0;background:rgba(14,17,23,.95);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:26px 28px;max-width:460px;width:100%;}
+  .modal h2{font-size:1.15rem;font-weight:700;color:var(--accent2);margin-bottom:6px;}
+  .modal p{font-size:.8rem;color:var(--muted);line-height:1.6;margin-bottom:14px;}
+  .steps{counter-reset:s;list-style:none;margin-bottom:16px;}
+  .steps li{counter-increment:s;display:flex;gap:11px;align-items:flex-start;font-size:.8rem;margin-bottom:8px;line-height:1.5;}
+  .steps li::before{content:counter(s);min-width:20px;height:20px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px;}
+  .steps a{color:var(--accent2);text-decoration:none;}
+  .mrow{display:flex;gap:8px;margin-bottom:10px;}
+  .minp{flex:1;background:var(--panel);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.82rem;padding:7px 11px;outline:none;font-family:monospace;}
+  .minp:focus{border-color:var(--accent);}
+  .minp::placeholder{color:var(--muted);}
+  .mnote{font-size:.68rem;color:var(--muted);line-height:1.5;}
+</style>
+</head>
+<body>
+
+<!-- SETUP MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h2>🚌 CTP Cluj · Live Tracker</h2>
+    <p>Ai nevoie de un API key gratuit de la Tranzy (platforma oficială a CTP Cluj).</p>
+    <ol class="steps">
+      <li>Mergi la <a href="https://tranzy.dev/accounts/my-apps" target="_blank">tranzy.dev/accounts/my-apps</a> și creează un cont gratuit.</li>
+      <li>Apasă <strong style="color:var(--text)">„New App"</strong>, selectează <strong style="color:var(--text)">CTP Cluj</strong> ca agenție și salvează.</li>
+      <li>Copiază API Key-ul generat și pastează-l mai jos.</li>
+    </ol>
+    <div class="mrow">
+      <input class="minp" id="mk" type="text" placeholder="Pastează API Key-ul aici…" autocomplete="off" spellcheck="false"/>
+      <button class="btn" onclick="startWithKey()">Start →</button>
+    </div>
+    <p class="mnote">Cheia se salvează în localStorage-ul browserului. Agency ID pentru CTP Cluj = 1 (setat automat). Include liniile din Florești.</p>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">CTP Cluj <b>· Live</b></div>
+  <div class="dot" id="dot"></div>
+  <div id="st">Neconectat</div>
+  <div class="hright">
+    <div id="vcnt" style="display:none"></div>
+    <button class="btn ghost" onclick="showModal()">🔑 API Key</button>
+    <button class="btn ghost" id="tbtn" onclick="toggleRun()">▶ Start</button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main">
+  <aside>
+    <!-- Key -->
+    <div class="block">
+      <h3>Cheie API</h3>
+      <div style="display:flex;gap:6px;">
+        <input id="ki" type="password" placeholder="API Key Tranzy…" autocomplete="off" style="flex:1;"/>
+        <button class="btn" style="flex-shrink:0;" onclick="applyKey()">OK</button>
+      </div>
+      <div class="row">
+        <label>Agency ID:</label>
+        <input id="ai" type="number" value="1" min="1" style="width:56px;"/>
+      </div>
+      <div class="hint"><a href="https://tranzy.dev/accounts/my-apps" target="_blank">Obține key gratuit ↗</a></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="block">
+      <h3>Setări</h3>
+      <div class="row">
+        <label>Refresh:</label>
+        <select id="isel" onchange="changeInterval()" style="flex:1;">
+          <option value="10000">10 sec</option>
+          <option value="20000" selected>20 sec</option>
+          <option value="30000">30 sec</option>
+          <option value="60000">60 sec</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <label>Linie:</label>
+        <select id="rsel" onchange="applyFilter()" style="flex:1;">
+          <option value="">Toate liniile</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="err"></div>
+
+    <!-- Vehicle list -->
+    <div id="vlist">
+      <div class="empty">Introdu API key-ul și apasă <strong>Start</strong> pentru a vedea vehiculele în timp real.</div>
+    </div>
+  </aside>
+
+  <div id="map"></div>
+</div>
+
+<script>
+// ─── CONFIG ────────────────────────────────────────────────────────────────
+const TRANZY = 'https://api.tranzy.dev/v1/opendata/';
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let apiKey   = localStorage.getItem('tranzy_key')    || '';
+let agencyId = localStorage.getItem('tranzy_agency') || '1';
+let interval = 20000;
+let timer    = null;
+let running  = false;
+let markers  = {};
+let vehicles = [];
+let activeId = null;
+let filterR  = '';
+let filtersDone = false;
+
+// ─── MAP ───────────────────────────────────────────────────────────────────
+const map = L.map('map', { center: [46.7712, 23.6236], zoom: 13 });
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://carto.com">CARTO</a>',
+  subdomains: 'abcd', maxZoom: 19
+}).addTo(map);
+
+// ─── MODAL ─────────────────────────────────────────────────────────────────
+function showModal() { document.getElementById('modal').style.display = 'flex'; }
+function hideModal() { document.getElementById('modal').style.display = 'none'; }
+
+function startWithKey() {
+  const k = document.getElementById('mk').value.trim();
+  if (!k) { showErr('Introdu un API key valid.'); return; }
+  saveKey(k, '1');
+  hideModal();
+  if (!running) startRun();
+}
+
+function applyKey() {
+  const k  = document.getElementById('ki').value.trim();
+  const id = document.getElementById('ai').value.trim() || '1';
+  if (!k) { showErr('Introdu un API key valid.'); return; }
+  saveKey(k, id);
+  showErr('');
+  if (running) { stopRun(); startRun(); }
+}
+
+function saveKey(k, id) {
+  apiKey = k; agencyId = id;
+  localStorage.setItem('tranzy_key',    k);
+  localStorage.setItem('tranzy_agency', id);
+  document.getElementById('ki').value = k;
+  document.getElementById('ai').value = id;
+  document.getElementById('mk').value = k;
+}
+
+// ─── TRACKING ──────────────────────────────────────────────────────────────
+function toggleRun() { running ? stopRun() : startRun(); }
+
+function startRun() {
+  const k = document.getElementById('ki').value.trim() || apiKey;
+  if (!k) { showModal(); return; }
+  apiKey  = k;
+  running = true;
+  document.getElementById('tbtn').textContent = '⏹ Stop';
+  setStatus('busy', 'Se conectează…');
+  fetchVehicles();
+  timer = setInterval(fetchVehicles, interval);
+}
+
+function stopRun() {
+  running = false;
+  clearInterval(timer); timer = null;
+  document.getElementById('tbtn').textContent = '▶ Start';
+  setStatus('', 'Oprit');
+}
+
+function changeInterval() {
+  interval = parseInt(document.getElementById('isel').value, 10);
+  if (running) { clearInterval(timer); timer = setInterval(fetchVehicles, interval); }
+}
+
+// ─── API ───────────────────────────────────────────────────────────────────
+function headers() {
+  return {
+    'Content-Type': 'application/json',
+    'X-API-KEY'   : apiKey,
+    'X-Agency-Id' : agencyId,
+  };
+}
+
+async function fetchVehicles() {
+  try {
+    const res  = await fetch(TRANZY + 'vehicles', { headers: headers() });
+    if (!res.ok) throw new Error(httpErr(res.status));
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error('Răspuns neașteptat de la API.');
+    vehicles = data;
+    showErr('');
+    setStatus('live', 'Actualizat ' + new Date().toLocaleTimeString('ro-RO'));
+    const cnt = document.getElementById('vcnt');
+    cnt.style.display = 'block';
+    cnt.textContent = data.length + ' vehicule';
+    populateFilter(data);
+    renderList();
+    updateMarkers();
+  } catch (e) {
+    setStatus('err', 'Eroare');
+    showErr(e.message);
+  }
+}
+
+function httpErr(code) {
+  if (code === 403) return 'API Key invalid sau Agency ID greșit (403 Forbidden).';
+  if (code === 429) return 'Prea multe cereri — așteaptă puțin (429 Too Many Requests).';
+  if (code === 401) return 'Neautorizat — verifică API key-ul (401).';
+  return 'Eroare HTTP ' + code;
+}
+
+// ─── FILTER ────────────────────────────────────────────────────────────────
+function populateFilter(data) {
+  if (filtersDone) return;
+  filtersDone = true;
+  const sel    = document.getElementById('rsel');
+  const labels = [...new Set(data.map(v => v.label || v.route_short_name).filter(Boolean))];
+  labels.sort((a, b) => a.localeCompare(b, 'ro', { numeric: true }));
+  labels.forEach(l => {
+    const o = document.createElement('option');
+    o.value = l; o.textContent = l;
+    sel.appendChild(o);
+  });
+}
+
+function applyFilter() {
+  filterR = document.getElementById('rsel').value;
+  renderList();
+  updateMarkers();
+}
+
+// ─── LIST ──────────────────────────────────────────────────────────────────
+function renderList() {
+  const el  = document.getElementById('vlist');
+  const filtered = filterR
+    ? vehicles.filter(v => v.label === filterR || String(v.route_id) === filterR)
+    : vehicles;
+
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty">Niciun vehicul activ.</div>';
+    return;
+  }
+
+  const sorted = [...filtered].sort((a, b) =>
+    (a.label || '').localeCompare(b.label || '', 'ro', { numeric: true })
+  );
+
+  el.innerHTML = sorted.map(v => {
+    const color = rcolor(v.route_id || v.label);
+    const label = (v.label || v.route_short_name || 'L' + v.route_id).slice(0, 6);
+    const park  = v.vehicle_label || v.id || '—';
+    const next  = v.next_stop_name || v.stop_name || '';
+    const spd   = v.speed != null ? Math.round(v.speed) : null;
+    const act   = activeId === v.id ? 'on' : '';
+    return `<div class="vi ${act}" onclick="selectV(${JSON.stringify(v.id)})">
+      <div class="vbadge" style="background:${color}">${label}</div>
+      <div class="vn">
+        <div class="a">Parc #${park}</div>
+        <div class="b">${next || 'Poziție GPS'}</div>
+      </div>
+      <div class="vspd ${spd > 25 ? 'go' : ''}">${spd != null ? spd + ' km/h' : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── MARKERS ───────────────────────────────────────────────────────────────
+function updateMarkers() {
+  const visible = new Set();
+
+  vehicles.forEach(v => {
+    const lat = v.latitude  || v.lat;
+    const lng = v.longitude || v.lng;
+    if (!lat || !lng) return;
+
+    const show = !filterR || v.label === filterR || String(v.route_id) === filterR;
+    if (!show) {
+      if (markers[v.id]) { map.removeLayer(markers[v.id]); delete markers[v.id]; }
+      return;
+    }
+
+    visible.add(v.id);
+    const color = rcolor(v.route_id || v.label);
+    const label = (v.label || v.route_short_name || String(v.route_id)).slice(0, 6);
+    const icon  = busIcon(label, color, v.bearing || 0);
+
+    if (markers[v.id]) {
+      markers[v.id].setLatLng([lat, lng]);
+      markers[v.id].setIcon(icon);
+    } else {
+      markers[v.id] = L.marker([lat, lng], { icon })
+        .addTo(map)
+        .on('click', () => selectV(v.id));
+    }
+    if (markers[v.id].isPopupOpen()) {
+      markers[v.id].setPopupContent(popup(v));
+    }
+  });
+
+  // Remove stale
+  Object.keys(markers).forEach(id => {
+    if (!visible.has(id)) { map.removeLayer(markers[id]); delete markers[id]; }
+  });
+}
+
+function busIcon(label, color, bearing) {
+  const r = bearing || 0;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="42" height="50" viewBox="0 0 42 50">
+    <g transform="rotate(${r},21,21)">
+      <polygon points="21,3 29,17 21,13 13,17" fill="${color}" opacity=".95"/>
+    </g>
+    <rect x="7" y="17" width="28" height="21" rx="5" fill="${color}" stroke="rgba(0,0,0,.35)" stroke-width="1.2"/>
+    <text x="21" y="31.5" text-anchor="middle" font-size="8.5" font-family="system-ui,sans-serif" font-weight="700" fill="#fff">${label}</text>
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '',
+    iconSize: [42, 50], iconAnchor: [21, 44], popupAnchor: [0, -44]
+  });
+}
+
+function popup(v) {
+  const label = v.label || v.route_short_name || 'Ruta ' + v.route_id;
+  const park  = v.vehicle_label || v.id || '—';
+  const spd   = v.speed != null ? Math.round(v.speed) + ' km/h' : 'N/A';
+  const next  = v.next_stop_name || v.stop_name || 'N/A';
+  const upd   = v.timestamp || v.last_update || '—';
+  return `<h4>Linia ${label}</h4>
+    <div class="pr">Număr parc <span>#${park}</span></div>
+    <div class="pr">Viteză <span>${spd}</span></div>
+    <div class="pr">Stație următoare <span>${next}</span></div>
+    <div class="pr">Actualizat <span>${upd}</span></div>`;
+}
+
+function selectV(vid) {
+  activeId = vid;
+  renderList();
+  const v = vehicles.find(x => x.id === vid);
+  if (!v) return;
+  const lat = v.latitude || v.lat;
+  const lng = v.longitude || v.lng;
+  if (!lat || !lng) return;
+  map.flyTo([lat, lng], Math.max(map.getZoom(), 15), { duration: .7 });
+  if (markers[vid]) markers[vid].bindPopup(popup(v)).openPopup();
+}
+
+// ─── HELPERS ───────────────────────────────────────────────────────────────
+const PALETTE = [
+  '#3b82f6','#22c55e','#f59e0b','#ef4444','#a855f7',
+  '#06b6d4','#f97316','#ec4899','#14b8a6','#84cc16',
+  '#8b5cf6','#eab308','#10b981','#f43f5e','#0ea5e9',
+];
+const _cc = {};
+function rcolor(k) {
+  if (!_cc[k]) {
+    let h = 0;
+    for (const c of String(k)) h = (h * 31 + c.charCodeAt(0)) & 0xfffff;
+    _cc[k] = PALETTE[h % PALETTE.length];
+  }
+  return _cc[k];
+}
+
+function setStatus(cls, txt) {
+  document.getElementById('dot').className = 'dot ' + cls;
+  document.getElementById('st').textContent = txt;
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+(function init() {
+  if (apiKey) {
+    document.getElementById('ki').value = apiKey;
+    document.getElementById('ai').value = agencyId;
+    document.getElementById('mk').value = apiKey;
+    hideModal();
+    startRun();
+  }
+})();
+</script>
+</body>
+</html>
