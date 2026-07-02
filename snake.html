@@ -205,18 +205,21 @@
   /* Touch controls */
   .touch-pad {
     display: none;
-    grid-template-columns: repeat(3, 104px);
-    grid-template-rows: repeat(3, 104px);
-    gap: 22px;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: min(430px, 94vw);
+    gap: 4vw;
     margin-top: 10px;
   }
 
   .touch-pad button {
+    aspect-ratio: 1 / 1;
+    width: 100%;
     background: rgba(77, 216, 196, 0.08);
     border: 1px solid rgba(77, 216, 196, 0.25);
-    border-radius: 20px;
+    border-radius: 22%;
     color: var(--bio-teal-bright);
-    font-size: 34px;
+    font-size: clamp(26px, 9vw, 42px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -240,11 +243,10 @@
 
   @media (hover: none) and (pointer: coarse) and (max-height: 600px) {
     .touch-pad {
-      grid-template-columns: repeat(3, 78px);
-      grid-template-rows: repeat(3, 78px);
-      gap: 14px;
+      width: min(300px, 80vw);
+      gap: 3vw;
     }
-    .touch-pad button { font-size: 26px; border-radius: 16px; }
+    .touch-pad button { font-size: clamp(20px, 7vw, 30px); }
   }
 
   body.is-touch .stage {
