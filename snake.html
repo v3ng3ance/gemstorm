@@ -443,10 +443,10 @@
   var BONUS_LIFETIME = 5000;
   var BONUS_MIN_GAP = 9000;
   var BONUS_MAX_GAP = 16000;
-  var BASE_INTERVAL = 160;
-  var MIN_INTERVAL = 95;
+  var BASE_INTERVAL = 210;
+  var MIN_INTERVAL = 140;
   var SPEEDUP_PER_FOOD = 2;
-  var SPEEDUP_EVERY_N_FOODS = 2; // only ramp up every couple of pellets, not every single one
+  var SPEEDUP_EVERY_N_FOODS = 4; // ramp up rarely, so the pace stays comfortable much longer
 
   function randRange(min, max) { return min + Math.random() * (max - min); }
 
