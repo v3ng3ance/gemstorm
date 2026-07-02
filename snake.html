@@ -263,7 +263,7 @@
 
     <div class="overlay visible" id="start-overlay">
       <h2>Wake the deep</h2>
-      <p>Guide your eel through the dark. Eat the plankton, grow longer, don't bite yourself or the trench walls.</p>
+      <p>Guide your eel through the dark. Eat plankton to grow — watch for golden clusters (bonus points) and drifting jellyfish (slows the current for a few seconds). Don't bite yourself or the trench walls.</p>
       <button class="play-btn" id="start-btn">Begin dive</button>
       <p class="controls-hint desktop-only">Move with <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>Space</kbd> to pause</p>
     </div>
@@ -436,7 +436,19 @@
   bestEl.textContent = best;
 
   var state = 'idle'; // idle | running | paused | gameover
-  var snake, dir, nextDir, food, score, stepInterval, lastStep, trailPulse;
+  var snake, dir, nextDir, food, score, stepInterval, lastStep, trailPulse, foodEaten;
+  var bonusFood = null;
+  var nextBonusAt = 0;
+  var slowBoostUntil = 0;
+  var BONUS_LIFETIME = 5000;
+  var BONUS_MIN_GAP = 9000;
+  var BONUS_MAX_GAP = 16000;
+  var BASE_INTERVAL = 160;
+  var MIN_INTERVAL = 95;
+  var SPEEDUP_PER_FOOD = 2;
+  var SPEEDUP_EVERY_N_FOODS = 2; // only ramp up every couple of pellets, not every single one
+
+  function randRange(min, max) { return min + Math.random() * (max - min); }
 
   function resetGame() {
     var mid = Math.floor(GRID / 2);
@@ -448,8 +460,12 @@
     dir = { x: 1, y: 0 };
     nextDir = { x: 1, y: 0 };
     score = 0;
-    stepInterval = 130;
+    foodEaten = 0;
+    stepInterval = BASE_INTERVAL;
     trailPulse = 0;
+    bonusFood = null;
+    slowBoostUntil = 0;
+    nextBonusAt = performance.now() + randRange(BONUS_MIN_GAP, BONUS_MAX_GAP);
     placeFood();
     scoreEl.textContent = score;
     speedLevelEl.textContent = 1;
@@ -465,6 +481,22 @@
       attempts++;
     }
     food = { x: 0, y: 0, phase: 0 };
+  }
+
+  function placeBonus(now) {
+    var attempts = 0;
+    var type = Math.random() < 0.65 ? 'gold' : 'jelly';
+    while (attempts < 500) {
+      var bx = Math.floor(Math.random() * GRID);
+      var by = Math.floor(Math.random() * GRID);
+      var onSnake = snake.some(function (s) { return s.x === bx && s.y === by; });
+      var onFood = food && food.x === bx && food.y === by;
+      if (!onSnake && !onFood) {
+        bonusFood = { x: bx, y: by, type: type, phase: Math.random() * Math.PI * 2, spawnedAt: now, expiresAt: now + BONUS_LIFETIME };
+        return;
+      }
+      attempts++;
+    }
   }
 
   function setDirection(x, y) {
@@ -557,20 +589,40 @@
     }
 
     snake.unshift(newHead);
+    var ate = false;
 
     if (newHead.x === food.x && newHead.y === food.y) {
+      ate = true;
       score += 10;
-      scoreEl.textContent = score;
+      foodEaten += 1;
       trailPulse = 1;
       beep(660, 0.12, 'triangle', 0.06);
       placeFood();
-      if (stepInterval > 60) {
-        stepInterval = Math.max(60, stepInterval - 3);
+
+      if (foodEaten % SPEEDUP_EVERY_N_FOODS === 0 && stepInterval > MIN_INTERVAL) {
+        stepInterval = Math.max(MIN_INTERVAL, stepInterval - SPEEDUP_PER_FOOD);
       }
-      speedLevelEl.textContent = Math.max(1, Math.floor((130 - stepInterval) / 8) + 1);
-    } else {
-      snake.pop();
+      speedLevelEl.textContent = Math.max(1, Math.floor((BASE_INTERVAL - stepInterval) / 10) + 1);
     }
+
+    if (bonusFood && newHead.x === bonusFood.x && newHead.y === bonusFood.y) {
+      ate = true;
+      if (bonusFood.type === 'gold') {
+        score += 30;
+        trailPulse = 1;
+        beep(880, 0.16, 'triangle', 0.07);
+      } else {
+        score += 15;
+        slowBoostUntil = performance.now() + 4500;
+        beep(320, 0.2, 'sine', 0.06);
+      }
+      bonusFood = null;
+      nextBonusAt = performance.now() + randRange(BONUS_MIN_GAP, BONUS_MAX_GAP);
+    }
+
+    scoreEl.textContent = score;
+
+    if (!ate) snake.pop();
   }
 
   function endGame() {
@@ -632,6 +684,27 @@
       drawRoundedCell(food.x, food.y, size, size / 2, 'rgba(255, 141, 107, 0.95)', 'rgba(255, 141, 107, 0.9)');
     }
 
+    // bonus food (golden cluster or slow-current jellyfish) with countdown ring
+    if (bonusFood) {
+      var bcx = bonusFood.x * cell + cell / 2;
+      var bcy = bonusFood.y * cell + cell / 2;
+      var life = Math.max(0, Math.min(1, (bonusFood.expiresAt - now) / BONUS_LIFETIME));
+      var bPulse = 0.7 + 0.3 * Math.sin(now / 160 + bonusFood.phase);
+      var bColor = bonusFood.type === 'gold' ? '255, 214, 107' : '156, 140, 240';
+      var bSize = cell * (0.5 + 0.14 * bPulse);
+
+      // countdown ring
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(bcx, bcy, cell * 0.42, -Math.PI / 2, -Math.PI / 2 + life * Math.PI * 2);
+      ctx.strokeStyle = 'rgba(' + bColor + ', 0.85)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      drawRoundedCell(bonusFood.x, bonusFood.y, bSize, bSize / 2, 'rgba(' + bColor + ', 0.95)', 'rgba(' + bColor + ', 0.9)');
+    }
+
     // snake body with fading glow trail
     for (var i = snake.length - 1; i >= 0; i--) {
       var seg = snake[i];
@@ -660,8 +733,17 @@
   function loop(now) {
     if (state !== 'running') return;
     if (!lastStep) lastStep = now;
+
+    if (!bonusFood && now >= nextBonusAt) {
+      placeBonus(now);
+    } else if (bonusFood && now >= bonusFood.expiresAt) {
+      bonusFood = null;
+      nextBonusAt = now + randRange(BONUS_MIN_GAP, BONUS_MAX_GAP);
+    }
+
+    var effectiveInterval = now < slowBoostUntil ? stepInterval + 70 : stepInterval;
     var delta = now - lastStep;
-    if (delta >= stepInterval) {
+    if (delta >= effectiveInterval) {
       step();
       lastStep = now;
     }
