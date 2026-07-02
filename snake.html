@@ -263,7 +263,7 @@
 
     <div class="overlay visible" id="start-overlay">
       <h2>Wake the deep</h2>
-      <p>Guide your eel through the dark. Eat plankton to grow — watch for golden clusters (bonus points) and drifting jellyfish (slows the current for a few seconds). Don't bite yourself or the trench walls.</p>
+      <p>Guide your eel through the dark. Eat plankton to grow — watch for golden clusters (bonus points) and drifting jellyfish (slows the current for a few seconds). Swim off one edge and you'll reappear on the other — just don't bite yourself.</p>
       <button class="play-btn" id="start-btn">Begin dive</button>
       <p class="controls-hint desktop-only">Move with <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> · <kbd>Space</kbd> to pause</p>
     </div>
@@ -443,10 +443,10 @@
   var BONUS_LIFETIME = 5000;
   var BONUS_MIN_GAP = 9000;
   var BONUS_MAX_GAP = 16000;
-  var BASE_INTERVAL = 210;
-  var MIN_INTERVAL = 140;
+  var BASE_INTERVAL = 230;
+  var MIN_INTERVAL = 160;
   var SPEEDUP_PER_FOOD = 2;
-  var SPEEDUP_EVERY_N_FOODS = 4; // ramp up rarely, so the pace stays comfortable much longer
+  var SPEEDUP_EVERY_N_FOODS = 5; // ramp up rarely, so the pace stays comfortable much longer
 
   function randRange(min, max) { return min + Math.random() * (max - min); }
 
@@ -581,9 +581,12 @@
     var head = snake[0];
     var newHead = { x: head.x + dir.x, y: head.y + dir.y };
 
-    if (newHead.x < 0 || newHead.x >= GRID || newHead.y < 0 || newHead.y >= GRID) {
-      return endGame();
-    }
+    // wrap around the edges instead of dying on the wall
+    if (newHead.x < 0) newHead.x = GRID - 1;
+    if (newHead.x >= GRID) newHead.x = 0;
+    if (newHead.y < 0) newHead.y = GRID - 1;
+    if (newHead.y >= GRID) newHead.y = 0;
+
     for (var i = 0; i < snake.length; i++) {
       if (snake[i].x === newHead.x && snake[i].y === newHead.y) return endGame();
     }
