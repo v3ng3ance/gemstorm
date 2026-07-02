@@ -205,23 +205,24 @@
   /* Touch controls */
   .touch-pad {
     display: none;
-    grid-template-columns: repeat(3, 56px);
-    grid-template-rows: repeat(3, 56px);
-    gap: 6px;
-    margin-top: 6px;
+    grid-template-columns: repeat(3, 76px);
+    grid-template-rows: repeat(3, 76px);
+    gap: 16px;
+    margin-top: 8px;
   }
 
   .touch-pad button {
     background: rgba(77, 216, 196, 0.08);
     border: 1px solid rgba(77, 216, 196, 0.25);
-    border-radius: 12px;
+    border-radius: 16px;
     color: var(--bio-teal-bright);
-    font-size: 20px;
+    font-size: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
     -webkit-user-select: none;
     user-select: none;
+    touch-action: none;
   }
 
   .touch-pad button:active {
@@ -236,6 +237,15 @@
   body.is-touch .touch-pad { display: grid; }
   body.is-touch .controls-hint.desktop-only { display: none; }
   body:not(.is-touch) .touch-pad { display: none; }
+
+  @media (hover: none) and (pointer: coarse) and (max-height: 600px) {
+    .touch-pad {
+      grid-template-columns: repeat(3, 60px);
+      grid-template-rows: repeat(3, 60px);
+      gap: 10px;
+    }
+    .touch-pad button { font-size: 20px; border-radius: 13px; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
