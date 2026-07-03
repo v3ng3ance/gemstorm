@@ -129,6 +129,40 @@
     font-weight: 700;
   }
 
+  .menu-toggle-btn {
+    display: none;
+  }
+
+  .menu-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+  }
+
+  @media (max-width: 700px) {
+    .menu-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+    }
+    .menu-panel {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(4, 18, 13, 0.92);
+      border: 1px solid rgba(216, 180, 99, 0.3);
+      border-radius: 12px;
+      padding: 10px;
+      margin-top: -2px;
+    }
+    .menu-panel.open {
+      display: flex;
+    }
+  }
+
   .tool-btn:hover { background: rgba(216, 180, 99, 0.2); transform: translateY(-1px); }
   .tool-btn:active { transform: translateY(0); }
   .tool-btn:disabled { opacity: 0.35; cursor: default; transform: none; }
@@ -174,6 +208,7 @@
       0 5px 8px rgba(0,0,0,0.35);
     border: 1px solid #b9ac86;
     cursor: pointer;
+    touch-action: manipulation;
     transition: box-shadow 0.15s ease, transform 0.15s ease, filter 0.2s ease, opacity 0.35s ease;
     display: flex;
     align-items: center;
@@ -477,6 +512,10 @@
       <div class="stat"><span class="value" id="moves">0</span>moves</div>
     </div>
 
+    <button class="tool-btn menu-toggle-btn" id="menu-toggle-btn">☰ Menu</button>
+  </div>
+
+  <div class="menu-panel" id="menu-panel">
     <div class="toolbar" id="difficulty-toolbar">
       <button class="tool-btn diff-btn" data-diff="easy">Easy</button>
       <button class="tool-btn diff-btn" data-diff="normal">Normal</button>
@@ -895,7 +934,9 @@
     var vh = window.innerHeight;
     var helpEl = document.getElementById('help-popover');
     var helpHeight = helpEl.classList.contains('visible') ? helpEl.offsetHeight : 0;
+    var menuHeight = document.getElementById('menu-panel').offsetHeight;
     var reserved = document.querySelector('.topbar').offsetHeight
+      + menuHeight
       + helpHeight
       + 40; // paddings/gaps
     var availH = Math.max(240, vh - reserved);
@@ -1102,8 +1143,18 @@
     startTimer();
   }
 
+  var hintTimeouts = [];
+  function clearHintTimeouts() {
+    hintTimeouts.forEach(function (id) { clearTimeout(id); });
+    hintTimeouts = [];
+  }
+
   hintBtn.addEventListener('click', function () {
     if (!gameRunning) return;
+    clearHintTimeouts();
+    // in case any previous hint glow is still lingering, clear it immediately
+    document.querySelectorAll('.tile.hint').forEach(function (el) { el.classList.remove('hint'); });
+
     var pair = findHintPair();
     if (!pair) {
       showToast('No moves left — try Shuffle');
@@ -1112,12 +1163,17 @@
     [pair[0], pair[1]].forEach(function (pos) {
       var el = elementsById[pos.id];
       el.classList.add('hint');
-      setTimeout(function () { el.classList.remove('hint'); }, 1300);
+      var id = setTimeout(function () { el.classList.remove('hint'); }, 1300);
+      hintTimeouts.push(id);
     });
   });
 
   shuffleBtn.addEventListener('click', function () {
     if (!gameRunning) return;
+    clearHintTimeouts();
+    document.querySelectorAll('.tile.hint, .tile.shake').forEach(function (el) {
+      el.classList.remove('hint', 'shake');
+    });
     var remaining = [];
     activeMap.forEach(function (pos) { remaining.push(pos); });
     if (remaining.length < 2) return;
@@ -1175,11 +1231,20 @@
   diffButtons.forEach(function (btn) {
     btn.addEventListener('click', function () {
       var name = btn.getAttribute('data-diff');
-      if (name === currentDifficulty && gameRunning) return;
+      if (name === currentDifficulty && gameRunning) { menuPanel.classList.remove('open'); applySize(); return; }
       localStorage.setItem(DIFFICULTY_STORAGE_KEY, name);
       applyDifficultyLayout(name);
       newGame();
+      menuPanel.classList.remove('open');
+      applySize();
     });
+  });
+
+  var menuToggleBtn = document.getElementById('menu-toggle-btn');
+  var menuPanel = document.getElementById('menu-panel');
+  menuToggleBtn.addEventListener('click', function () {
+    menuPanel.classList.toggle('open');
+    applySize();
   });
 
   var helpBtn = document.getElementById('help-btn');
@@ -1189,7 +1254,11 @@
     applySize();
   });
 
-  newBtn.addEventListener('click', newGame);
+  newBtn.addEventListener('click', function () {
+    newGame();
+    menuPanel.classList.remove('open');
+    applySize();
+  });
   startBtn.addEventListener('click', newGame);
   winRestartBtn.addEventListener('click', newGame);
 
