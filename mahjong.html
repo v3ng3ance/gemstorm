@@ -57,44 +57,40 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px 10px 12px;
+    padding: 8px 10px 10px;
     gap: 6px;
   }
 
-  .title-row {
+  .topbar {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 2px;
-    margin-top: 2px;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    width: 100%;
+    max-width: 900px;
+    padding: 4px 4px 6px;
   }
 
   h1 {
     margin: 0;
     font-family: 'Cinzel', serif;
-    font-size: clamp(22px, 5vw, 32px);
+    font-size: 17px;
     font-weight: 700;
     letter-spacing: 0.03em;
     color: var(--gold-bright);
-    text-shadow: 0 0 18px rgba(216, 180, 99, 0.35);
-  }
-
-  .subtitle {
-    font-family: 'Marcellus', serif;
-    font-size: 12px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--ivory-dim);
+    text-shadow: 0 0 14px rgba(216, 180, 99, 0.35);
+    white-space: nowrap;
   }
 
   .hud {
     display: flex;
-    gap: 18px;
+    gap: 12px;
     flex-wrap: wrap;
     justify-content: center;
-    font-size: 12px;
+    font-size: 10.5px;
     color: var(--ivory-dim);
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
   }
 
   .hud .stat { text-align: center; }
@@ -103,13 +99,13 @@
     display: block;
     color: var(--gold-bright);
     font-weight: 700;
-    font-size: 17px;
+    font-size: 14px;
     font-family: 'Marcellus', serif;
   }
 
   .toolbar {
     display: flex;
-    gap: 10px;
+    gap: 6px;
     flex-wrap: wrap;
     justify-content: center;
   }
@@ -117,15 +113,20 @@
   .tool-btn {
     font-family: 'Inter', sans-serif;
     font-weight: 600;
-    font-size: 12.5px;
+    font-size: 11.5px;
     letter-spacing: 0.02em;
     color: var(--ivory);
     background: linear-gradient(160deg, rgba(216,180,99,0.14), rgba(216,180,99,0.04));
     border: 1px solid rgba(216, 180, 99, 0.4);
     border-radius: 999px;
-    padding: 7px 16px;
+    padding: 5px 12px;
     cursor: pointer;
     transition: transform 0.15s ease, background 0.15s ease;
+  }
+
+  .help-btn {
+    padding: 5px 11px;
+    font-weight: 700;
   }
 
   .tool-btn:hover { background: rgba(216, 180, 99, 0.2); transform: translateY(-1px); }
@@ -440,13 +441,21 @@
     transform: translateX(-50%) translateY(0);
   }
 
-  .legend {
-    font-size: 11px;
-    color: var(--ivory-dim);
+  .help-popover {
     max-width: 480px;
+    width: 92vw;
+    font-size: 12px;
+    color: var(--ivory-dim);
     text-align: center;
     line-height: 1.5;
+    background: rgba(4, 18, 13, 0.92);
+    border: 1px solid rgba(216, 180, 99, 0.35);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin: -2px 0 2px;
+    display: none;
   }
+  .help-popover.visible { display: block; }
 
   @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
@@ -458,28 +467,32 @@
 <canvas id="bg-canvas" aria-hidden="true"></canvas>
 
 <div class="stage">
-  <div class="title-row">
-    <h1>Jade Mahjong</h1>
-    <p class="subtitle">a classic 144-tile solitaire</p>
+  <div class="topbar">
+    <h1 title="Jade Mahjong — a classic 144-tile solitaire">Jade Mahjong</h1>
+
+    <div class="hud">
+      <div class="stat"><span class="value" id="pairs-left">72</span>left</div>
+      <div class="stat"><span class="value" id="timer">00:00</span>time</div>
+      <div class="stat"><span class="value" id="best-time">--:--</span>best</div>
+      <div class="stat"><span class="value" id="moves">0</span>moves</div>
+    </div>
+
+    <div class="toolbar" id="difficulty-toolbar">
+      <button class="tool-btn diff-btn" data-diff="easy">Easy</button>
+      <button class="tool-btn diff-btn" data-diff="normal">Normal</button>
+      <button class="tool-btn diff-btn" data-diff="hard">Hard</button>
+    </div>
+
+    <div class="toolbar">
+      <button class="tool-btn" id="hint-btn">Hint</button>
+      <button class="tool-btn" id="shuffle-btn">Shuffle</button>
+      <button class="tool-btn" id="new-btn">New game</button>
+      <button class="tool-btn help-btn" id="help-btn" aria-label="How to play">?</button>
+    </div>
   </div>
 
-  <div class="hud">
-    <div class="stat"><span class="value" id="pairs-left">72</span>pairs left</div>
-    <div class="stat"><span class="value" id="timer">00:00</span>time</div>
-    <div class="stat"><span class="value" id="best-time">--:--</span>best</div>
-    <div class="stat"><span class="value" id="moves">0</span>moves</div>
-  </div>
-
-  <div class="toolbar" id="difficulty-toolbar">
-    <button class="tool-btn diff-btn" data-diff="easy">Easy</button>
-    <button class="tool-btn diff-btn" data-diff="normal">Normal</button>
-    <button class="tool-btn diff-btn" data-diff="hard">Hard</button>
-  </div>
-
-  <div class="toolbar">
-    <button class="tool-btn" id="hint-btn">Hint</button>
-    <button class="tool-btn" id="shuffle-btn">Shuffle</button>
-    <button class="tool-btn" id="new-btn">New game</button>
+  <div class="help-popover" id="help-popover">
+    <p>Find pairs of identical tiles that are "free" — nothing stacked on top and at least one side (left or right) open. Pink-bordered flower tiles match each other regardless of symbol, and so do green-bordered season tiles — that's the classic rule, not a bug. Use "Shuffle" if no move is left.</p>
   </div>
 
   <div class="board-outer" id="board-outer">
@@ -502,7 +515,7 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <p class="legend">Tap a free tile, then tap its identical match — any flower matches any flower, any season matches any season. Darkened tiles are blocked. Use "Shuffle" if no move is left.</p>
+
 </div>
 
 <script>
@@ -880,14 +893,11 @@
   function computeSize() {
     var vw = window.innerWidth;
     var vh = window.innerHeight;
-    var toolbars = document.querySelectorAll('.toolbar');
-    var toolbarsHeight = 0;
-    toolbars.forEach(function (t) { toolbarsHeight += t.offsetHeight; });
-    var reserved = document.querySelector('.title-row').offsetHeight
-      + document.querySelector('.hud').offsetHeight
-      + toolbarsHeight
-      + document.querySelector('.legend').offsetHeight
-      + 60; // paddings/gaps
+    var helpEl = document.getElementById('help-popover');
+    var helpHeight = helpEl.classList.contains('visible') ? helpEl.offsetHeight : 0;
+    var reserved = document.querySelector('.topbar').offsetHeight
+      + helpHeight
+      + 40; // paddings/gaps
     var availH = Math.max(240, vh - reserved);
     var availW = vw * 0.99;
     var nativeW = BASE_COLS * TILE_W + getPad() * 2;
@@ -1170,6 +1180,13 @@
       applyDifficultyLayout(name);
       newGame();
     });
+  });
+
+  var helpBtn = document.getElementById('help-btn');
+  var helpPopover = document.getElementById('help-popover');
+  helpBtn.addEventListener('click', function () {
+    helpPopover.classList.toggle('visible');
+    applySize();
   });
 
   newBtn.addEventListener('click', newGame);
