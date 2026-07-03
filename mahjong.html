@@ -132,6 +132,12 @@
   .tool-btn:active { transform: translateY(0); }
   .tool-btn:disabled { opacity: 0.35; cursor: default; transform: none; }
 
+  .diff-btn.active {
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+    color: var(--ink);
+    border-color: var(--gold);
+  }
+
   .board-outer {
     position: relative;
     border-radius: 20px;
@@ -185,13 +191,30 @@
   .tile.selected {
     box-shadow:
       0 0 0 2px var(--gold-bright),
-      0 0 16px 3px rgba(240, 211, 140, 0.75),
       0 8px 14px rgba(0,0,0,0.4);
     transform: translateY(-5px);
+    animation: selectedAura 1.1s ease-in-out infinite;
+    z-index: 9999 !important;
+  }
+
+  @keyframes selectedAura {
+    0%, 100% {
+      box-shadow:
+        0 0 0 2px var(--gold-bright),
+        0 0 14px 4px rgba(240, 211, 140, 0.55),
+        0 8px 14px rgba(0,0,0,0.4);
+    }
+    50% {
+      box-shadow:
+        0 0 0 3px var(--gold-bright),
+        0 0 30px 10px rgba(240, 211, 140, 0.95),
+        0 8px 14px rgba(0,0,0,0.4);
+    }
   }
 
   .tile.hint {
     animation: hintPulse 0.6s ease-in-out 2;
+    z-index: 9998 !important;
   }
 
   @keyframes hintPulse {
@@ -201,6 +224,7 @@
 
   .tile.shake {
     animation: shakeTile 0.4s ease;
+    z-index: 9996 !important;
   }
 
   @keyframes shakeTile {
@@ -215,6 +239,7 @@
     transform: scale(1.35) translateY(-18px) rotate(10deg);
     opacity: 0;
     pointer-events: none;
+    z-index: 9997 !important;
   }
 
   .tile-face {
@@ -228,6 +253,22 @@
 
   .tile-bonus {
     background: linear-gradient(160deg, #f7ecd6 0%, #ecdcb8 100%);
+  }
+  .tile-flower {
+    border-color: #c76f93;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -3px 4px rgba(0,0,0,0.12) inset,
+      0 2px 0 #a8577a,
+      0 5px 8px rgba(0,0,0,0.35);
+  }
+  .tile-season {
+    border-color: #4f9c6f;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -3px 4px rgba(0,0,0,0.12) inset,
+      0 2px 0 #367a51,
+      0 5px 8px rgba(0,0,0,0.35);
   }
 
   /* pips (dots / bamboo) */
@@ -425,7 +466,14 @@
   <div class="hud">
     <div class="stat"><span class="value" id="pairs-left">72</span>pairs left</div>
     <div class="stat"><span class="value" id="timer">00:00</span>time</div>
+    <div class="stat"><span class="value" id="best-time">--:--</span>best</div>
     <div class="stat"><span class="value" id="moves">0</span>moves</div>
+  </div>
+
+  <div class="toolbar" id="difficulty-toolbar">
+    <button class="tool-btn diff-btn" data-diff="easy">Easy</button>
+    <button class="tool-btn diff-btn" data-diff="normal">Normal</button>
+    <button class="tool-btn diff-btn" data-diff="hard">Hard</button>
   </div>
 
   <div class="toolbar">
@@ -441,7 +489,7 @@
 
     <div class="overlay visible" id="start-overlay">
       <h2>Wake the jade dragons</h2>
-      <p>Find pairs of identical tiles that are "free" — nothing stacked on top and at least one side (left or right) open. Flowers match any flower, seasons match any season.</p>
+      <p>Find pairs of identical tiles that are "free" — nothing stacked on top and at least one side (left or right) open. Pink-bordered flower tiles match each other regardless of symbol, and so do green-bordered season tiles — that's not a bug, it's the classic rule.</p>
       <button class="play-btn" id="start-btn">Start game</button>
     </div>
 
@@ -454,7 +502,7 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <p class="legend">Tap a free tile, then tap its identical match. Darkened tiles are blocked. Use "Shuffle" if no move is left.</p>
+  <p class="legend">Tap a free tile, then tap its identical match — any flower matches any flower, any season matches any season. Darkened tiles are blocked. Use "Shuffle" if no move is left.</p>
 </div>
 
 <script>
@@ -586,7 +634,27 @@
     ['E', 'S', 'W', 'N'].forEach(function (w) { labels.push('wind_' + w); labels.push('wind_' + w); });
     ['red', 'green', 'white'].forEach(function (d) { labels.push('drag_' + d); labels.push('drag_' + d); });
     labels.push('flower', 'flower', 'season', 'season');
-    return labels; // 72 entries = 72 pairs = 144 tiles
+    return labels; // 72 entries = 72 pairs = 144 tiles (the full authentic set)
+  }
+
+  // Builds exactly targetPairs pair-labels. If targetPairs is below the full 72,
+  // a random subset of the authentic set is used. If above, some number/wind/dragon
+  // types get extra duplicate pairs (common practice in larger mahjong solitaire boards).
+  function buildPairLabelPoolForCount(targetPairs) {
+    var basePool = buildPairLabelPool();
+    if (targetPairs <= basePool.length) {
+      return shuffleArray(basePool.slice()).slice(0, targetPairs);
+    }
+    var quadOnly = [];
+    ['dot', 'bam', 'char'].forEach(function (suit) { for (var n = 1; n <= 9; n++) quadOnly.push(suit + n); });
+    ['wind_E', 'wind_S', 'wind_W', 'wind_N'].forEach(function (w) { quadOnly.push(w); });
+    ['drag_red', 'drag_green', 'drag_white'].forEach(function (d) { quadOnly.push(d); });
+    var pool = basePool.slice();
+    var extra = targetPairs - basePool.length;
+    for (var i = 0; i < extra; i++) {
+      pool.push(quadOnly[Math.floor(Math.random() * quadOnly.length)]);
+    }
+    return shuffleArray(pool);
   }
 
   function shuffleArray(arr) {
@@ -597,16 +665,52 @@
     return arr;
   }
 
-  /* =================== Layout: stepped jade pagoda, 144 tiles =================== */
-  var LAYERS_DEF = [
-    { cols: 10, rows: 8 },
-    { cols: 8, rows: 6 },
-    { cols: 6, rows: 2 },
-    { cols: 2, rows: 2 }
-  ];
-  var BASE_COLS = LAYERS_DEF[0].cols;
-  var BASE_ROWS = LAYERS_DEF[0].rows;
-  var NUM_LAYERS = LAYERS_DEF.length;
+  /* =================== Layout: stepped jade pagoda, size depends on difficulty =================== */
+  var DIFFICULTIES = {
+    easy: {
+      label: 'Easy',
+      layers: [
+        { cols: 8, rows: 6 },
+        { cols: 4, rows: 2 },
+        { cols: 2, rows: 2 }
+      ]
+    },
+    normal: {
+      label: 'Normal',
+      layers: [
+        { cols: 10, rows: 8 },
+        { cols: 8, rows: 6 },
+        { cols: 6, rows: 2 },
+        { cols: 2, rows: 2 }
+      ]
+    },
+    hard: {
+      label: 'Hard',
+      layers: [
+        { cols: 12, rows: 8 },
+        { cols: 10, rows: 6 },
+        { cols: 6, rows: 4 }
+      ]
+    }
+  };
+
+  var DIFFICULTY_STORAGE_KEY = 'jademahjong-difficulty';
+  var currentDifficulty = localStorage.getItem(DIFFICULTY_STORAGE_KEY) || 'normal';
+  if (!DIFFICULTIES[currentDifficulty]) currentDifficulty = 'normal';
+
+  var LAYERS_DEF, BASE_COLS, BASE_ROWS, NUM_LAYERS, totalPairs;
+
+  function applyDifficultyLayout(name) {
+    currentDifficulty = DIFFICULTIES[name] ? name : 'normal';
+    LAYERS_DEF = DIFFICULTIES[currentDifficulty].layers;
+    BASE_COLS = LAYERS_DEF[0].cols;
+    BASE_ROWS = LAYERS_DEF[0].rows;
+    NUM_LAYERS = LAYERS_DEF.length;
+    var totalTiles = 0;
+    LAYERS_DEF.forEach(function (l) { totalTiles += l.cols * l.rows; });
+    totalPairs = totalTiles / 2;
+  }
+  applyDifficultyLayout(currentDifficulty);
 
   function buildPositions() {
     var positions = [];
@@ -684,7 +788,7 @@
       for (var i = 0; i < positions.length; i += 2) order.push([positions[i].id, positions[i + 1].id]);
     }
 
-    var labels = shuffleArray(buildPairLabelPool());
+    var labels = shuffleArray(buildPairLabelPoolForCount(totalPairs));
     var flowerPool = shuffleArray(FLOWER_VARIANTS.slice());
     var seasonPool = shuffleArray(SEASON_VARIANTS.slice());
     var byId = {};
@@ -716,7 +820,9 @@
   var boardViewport = document.getElementById('board-viewport');
   var pairsLeftEl = document.getElementById('pairs-left');
   var timerEl = document.getElementById('timer');
+  var bestTimeEl = document.getElementById('best-time');
   var movesEl = document.getElementById('moves');
+  var diffButtons = document.querySelectorAll('.diff-btn');
   var hintBtn = document.getElementById('hint-btn');
   var shuffleBtn = document.getElementById('shuffle-btn');
   var newBtn = document.getElementById('new-btn');
@@ -729,14 +835,13 @@
 
   var TILE_W = 62, TILE_H = 84;
   var LAYER_SHIFT = 6;
-  var PAD = (NUM_LAYERS - 1) * LAYER_SHIFT + 6;
+  function getPad() { return (NUM_LAYERS - 1) * LAYER_SHIFT + 6; }
 
   var positions = [];
   var activeMap = new Map(); // key -> position (only remaining tiles)
   var elementsById = {};
   var selected = null; // position object
   var matchedPairs = 0;
-  var totalPairs = 72;
   var moveCount = 0;
   var timerInterval = null;
   var elapsedSec = 0;
@@ -775,15 +880,18 @@
   function computeSize() {
     var vw = window.innerWidth;
     var vh = window.innerHeight;
+    var toolbars = document.querySelectorAll('.toolbar');
+    var toolbarsHeight = 0;
+    toolbars.forEach(function (t) { toolbarsHeight += t.offsetHeight; });
     var reserved = document.querySelector('.title-row').offsetHeight
       + document.querySelector('.hud').offsetHeight
-      + document.querySelector('.toolbar').offsetHeight
+      + toolbarsHeight
       + document.querySelector('.legend').offsetHeight
-      + 50; // paddings/gaps
+      + 60; // paddings/gaps
     var availH = Math.max(240, vh - reserved);
     var availW = vw * 0.99;
-    var nativeW = BASE_COLS * TILE_W + PAD * 2;
-    var nativeH = BASE_ROWS * TILE_H + PAD * 2;
+    var nativeW = BASE_COLS * TILE_W + getPad() * 2;
+    var nativeH = BASE_ROWS * TILE_H + getPad() * 2;
     // no artificial ceiling: let it use however much of the screen is actually available
     var scale = Math.min(availW / nativeW, availH / nativeH);
     return { scale: scale, nativeW: nativeW, nativeH: nativeH };
@@ -829,11 +937,12 @@
     positions.forEach(function (pos) {
       var el = document.createElement('div');
       el.className = 'tile';
-      if (pos.tile.category === 'flower' || pos.tile.category === 'season') el.classList.add('tile-bonus');
+      if (pos.tile.category === 'flower') el.classList.add('tile-bonus', 'tile-flower');
+      else if (pos.tile.category === 'season') el.classList.add('tile-bonus', 'tile-season');
       el.style.width = TILE_W + 'px';
       el.style.height = TILE_H + 'px';
-      el.style.left = (PAD + pos.col * TILE_W - pos.layer * LAYER_SHIFT) + 'px';
-      el.style.top = (PAD + pos.row * TILE_H - pos.layer * LAYER_SHIFT) + 'px';
+      el.style.left = (getPad() + pos.col * TILE_W - pos.layer * LAYER_SHIFT) + 'px';
+      el.style.top = (getPad() + pos.row * TILE_H - pos.layer * LAYER_SHIFT) + 'px';
       el.style.zIndex = String(pos.layer * 1000 + pos.row * 20 + pos.col);
       el.innerHTML = tileInnerHTML(pos.tile);
       el.addEventListener('click', function () { onTileClick(pos); });
@@ -873,8 +982,11 @@
     return result;
   }
 
+  var inputLocked = false;
+
   function onTileClick(pos) {
     if (!gameRunning) return;
+    if (inputLocked) return;
     if (!activeMap.has(keyOf(pos))) return;
     var el = elementsById[pos.id];
     if (!isFree(pos)) {
@@ -916,22 +1028,49 @@
     } else {
       moveCount++;
       updateHud();
+      inputLocked = true;
       selEl.classList.add('shake');
       el.classList.add('shake');
-      var toDeselect = selected;
       selected = null;
       setTimeout(function () {
         selEl.classList.remove('shake', 'selected');
         el.classList.remove('shake');
+        inputLocked = false;
       }, 400);
     }
+  }
+
+  function bestTimeKey(diff) { return 'jademahjong-best-' + diff; }
+  function getBestTime(diff) {
+    var v = localStorage.getItem(bestTimeKey(diff));
+    return v ? parseInt(v, 10) : null;
+  }
+  function saveBestTimeIfBetter(diff, seconds) {
+    var cur = getBestTime(diff);
+    if (cur === null || seconds < cur) {
+      localStorage.setItem(bestTimeKey(diff), String(seconds));
+      return true;
+    }
+    return false;
+  }
+  function refreshBestTimeDisplay() {
+    var best = getBestTime(currentDifficulty);
+    bestTimeEl.textContent = best === null ? '--:--' : formatTime(best);
   }
 
   function finishWin() {
     gameRunning = false;
     stopTimer();
-    winStats.textContent = 'Time: ' + formatTime(elapsedSec) + ' · Moves: ' + moveCount;
+    var isNewBest = saveBestTimeIfBetter(currentDifficulty, elapsedSec);
+    refreshBestTimeDisplay();
+    winStats.textContent = 'Time: ' + formatTime(elapsedSec) + ' · Moves: ' + moveCount + (isNewBest ? ' · New best!' : '');
     winOverlay.classList.add('visible');
+  }
+
+  function setActiveDifficultyButton() {
+    diffButtons.forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-diff') === currentDifficulty);
+    });
   }
 
   function newGame() {
@@ -941,9 +1080,12 @@
     matchedPairs = 0;
     moveCount = 0;
     selected = null;
+    inputLocked = false;
     gameRunning = true;
     startOverlay.classList.remove('visible');
     winOverlay.classList.remove('visible');
+    setActiveDifficultyButton();
+    refreshBestTimeDisplay();
     updateHud();
     applySize();
     renderBoard();
@@ -1008,7 +1150,11 @@
     // re-render faces only (positions/DOM elements unchanged)
     remaining.forEach(function (pos) {
       var el = elementsById[pos.id];
-      el.classList.toggle('tile-bonus', pos.tile.category === 'flower' || pos.tile.category === 'season');
+      var isFlower = pos.tile.category === 'flower';
+      var isSeason = pos.tile.category === 'season';
+      el.classList.toggle('tile-bonus', isFlower || isSeason);
+      el.classList.toggle('tile-flower', isFlower);
+      el.classList.toggle('tile-season', isSeason);
       el.innerHTML = tileInnerHTML(pos.tile);
     });
     if (selected) { elementsById[selected.id] && elementsById[selected.id].classList.remove('selected'); selected = null; }
@@ -1016,14 +1162,28 @@
     showToast('Tiles shuffled');
   });
 
+  diffButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var name = btn.getAttribute('data-diff');
+      if (name === currentDifficulty && gameRunning) return;
+      localStorage.setItem(DIFFICULTY_STORAGE_KEY, name);
+      applyDifficultyLayout(name);
+      newGame();
+    });
+  });
+
   newBtn.addEventListener('click', newGame);
   startBtn.addEventListener('click', newGame);
   winRestartBtn.addEventListener('click', newGame);
 
   // initial idle board behind the start overlay, just for visual context
+  setActiveDifficultyButton();
+  refreshBestTimeDisplay();
   positions = buildSolvableBoard();
   activeMap = new Map();
   positions.forEach(function (p) { activeMap.set(keyOf(p), p); });
+  matchedPairs = 0;
+  updateHud();
   applySize();
   renderBoard();
 })();
