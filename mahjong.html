@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Jade Mahjong</title>
+<meta name="description" content="An animated 144-tile mahjong solitaire game for killing time.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Marcellus&family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --felt-0: #04120d;
+    --felt-1: #0a2419;
+    --felt-2: #103524;
+    --gold: #d8b463;
+    --gold-bright: #f0d38c;
+    --ivory: #f6f0e2;
+    --ivory-dim: #d9cfb8;
+    --ink: #14100a;
+    --red-ink: #a83a2e;
+    --green-ink: #2f6b4f;
+    --blue-frame: #3d6b8c;
+    --wood: #5b3a24;
+    --wood-dark: #3a2416;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: var(--felt-0);
+    color: var(--ivory);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .stage {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 10px 12px;
+    gap: 6px;
+  }
+
+  .title-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin-top: 2px;
+  }
+
+  h1 {
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    font-size: clamp(22px, 5vw, 32px);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: var(--gold-bright);
+    text-shadow: 0 0 18px rgba(216, 180, 99, 0.35);
+  }
+
+  .subtitle {
+    font-family: 'Marcellus', serif;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ivory-dim);
+  }
+
+  .hud {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--ivory-dim);
+    letter-spacing: 0.03em;
+  }
+
+  .hud .stat { text-align: center; }
+
+  .hud .value {
+    display: block;
+    color: var(--gold-bright);
+    font-weight: 700;
+    font-size: 17px;
+    font-family: 'Marcellus', serif;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .tool-btn {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    color: var(--ivory);
+    background: linear-gradient(160deg, rgba(216,180,99,0.14), rgba(216,180,99,0.04));
+    border: 1px solid rgba(216, 180, 99, 0.4);
+    border-radius: 999px;
+    padding: 7px 16px;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+
+  .tool-btn:hover { background: rgba(216, 180, 99, 0.2); transform: translateY(-1px); }
+  .tool-btn:active { transform: translateY(0); }
+  .tool-btn:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+  .board-outer {
+    position: relative;
+    border-radius: 20px;
+    background:
+      radial-gradient(120% 100% at 50% 0%, var(--felt-2) 0%, var(--felt-1) 55%, var(--felt-0) 100%);
+    box-shadow:
+      0 0 0 1px rgba(216, 180, 99, 0.18),
+      0 0 0 8px rgba(58, 36, 22, 0.55),
+      0 30px 70px -20px rgba(0,0,0,0.75),
+      inset 0 0 70px rgba(0,0,0,0.5);
+    padding: 10px;
+    overflow: hidden;
+  }
+
+  .board-viewport {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .board {
+    position: relative;
+    transform-origin: top left;
+  }
+
+  .tile {
+    position: absolute;
+    border-radius: 7px;
+    background: linear-gradient(160deg, var(--ivory) 0%, #ece3cd 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -3px 4px rgba(0,0,0,0.12) inset,
+      0 2px 0 #c9bd9e,
+      0 5px 8px rgba(0,0,0,0.35);
+    border: 1px solid #b9ac86;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, transform 0.15s ease, filter 0.2s ease, opacity 0.35s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tile.blocked {
+    filter: brightness(0.6) saturate(0.7);
+    cursor: default;
+  }
+
+  .tile.free:hover {
+    transform: translateY(-2px);
+  }
+
+  .tile.selected {
+    box-shadow:
+      0 0 0 2px var(--gold-bright),
+      0 0 16px 3px rgba(240, 211, 140, 0.75),
+      0 8px 14px rgba(0,0,0,0.4);
+    transform: translateY(-5px);
+  }
+
+  .tile.hint {
+    animation: hintPulse 0.6s ease-in-out 2;
+  }
+
+  @keyframes hintPulse {
+    0%, 100% { box-shadow: 0 0 0 2px var(--gold-bright), 0 5px 8px rgba(0,0,0,0.35); }
+    50% { box-shadow: 0 0 0 3px var(--gold-bright), 0 0 22px 6px rgba(240,211,140,0.9); }
+  }
+
+  .tile.shake {
+    animation: shakeTile 0.4s ease;
+  }
+
+  @keyframes shakeTile {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-5px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  .tile.matched {
+    transform: scale(1.35) translateY(-18px) rotate(10deg);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tile-face {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tile-bonus {
+    background: linear-gradient(160deg, #f7ecd6 0%, #ecdcb8 100%);
+  }
+
+  /* pips (dots / bamboo) */
+  .pip {
+    position: absolute;
+    transform: translate(-50%, -50%);
+  }
+  .pip-dot {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #5a9be0, #16324f 75%);
+    box-shadow: 0 0 0 1.5px rgba(0,0,0,0.25);
+  }
+  .pip-dot.accent {
+    background: radial-gradient(circle at 35% 30%, #ef7362, #7a1f14 75%);
+  }
+  .pip-bam {
+    width: 10px;
+    height: 26px;
+    background: linear-gradient(180deg, #7ac267, #2c5f24);
+    border-radius: 3px;
+    box-shadow: 0 0 0 1.5px rgba(0,0,0,0.25);
+  }
+  .pip-bam::before, .pip-bam::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 1.5px;
+    background: rgba(0,0,0,0.25);
+  }
+  .pip-bam::before { top: 30%; }
+  .pip-bam::after { top: 62%; }
+
+  .char-num {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700;
+    font-size: 38px;
+    color: var(--ink);
+    line-height: 1;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  }
+  .char-wan {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--red-ink);
+    line-height: 1;
+    margin-top: 4px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  }
+  .char-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .wind-glyph {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700;
+    font-size: 44px;
+    color: var(--ink);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  }
+
+  .dragon-glyph {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700;
+    font-size: 46px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+  }
+  .dragon-red { color: var(--red-ink); }
+  .dragon-green { color: var(--green-ink); }
+
+  .dragon-white-frame {
+    border: 4px solid var(--blue-frame);
+    border-radius: 5px;
+    width: 58%;
+    height: 64%;
+    box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.5);
+  }
+
+  .bonus-glyph {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--red-ink);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  }
+  .bonus-glyph.season { color: var(--green-ink); }
+
+  /* Overlays */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    text-align: center;
+    background: rgba(4, 18, 13, 0.82);
+    backdrop-filter: blur(3px);
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    z-index: 50;
+    border-radius: 20px;
+  }
+  .overlay.visible { opacity: 1; pointer-events: auto; }
+  .overlay h2 {
+    margin: 0;
+    font-family: 'Cinzel', serif;
+    font-size: clamp(20px, 5vw, 28px);
+    color: var(--gold-bright);
+    text-shadow: 0 0 18px rgba(216,180,99,0.4);
+  }
+  .overlay p {
+    margin: 0;
+    color: var(--ivory-dim);
+    font-size: 13px;
+    max-width: 340px;
+    line-height: 1.55;
+  }
+  .overlay .stat-line {
+    font-family: 'Marcellus', serif;
+    font-size: 15px;
+    color: var(--ivory);
+  }
+
+  button.play-btn {
+    margin-top: 4px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.03em;
+    color: var(--ink);
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+    border: none;
+    border-radius: 999px;
+    padding: 12px 30px;
+    cursor: pointer;
+    box-shadow: 0 8px 22px -6px rgba(216, 180, 99, 0.6);
+    transition: transform 0.15s ease;
+  }
+  button.play-btn:hover { transform: translateY(-1px); }
+  button.play-btn:active { transform: translateY(0); }
+
+  .toast {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(4, 18, 13, 0.9);
+    border: 1px solid rgba(216,180,99,0.4);
+    color: var(--ivory);
+    font-size: 12.5px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    z-index: 40;
+    white-space: nowrap;
+  }
+  .toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .legend {
+    font-size: 11px;
+    color: var(--ivory-dim);
+    max-width: 480px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+<div class="stage">
+  <div class="title-row">
+    <h1>Jade Mahjong</h1>
+    <p class="subtitle">a classic 144-tile solitaire</p>
+  </div>
+
+  <div class="hud">
+    <div class="stat"><span class="value" id="pairs-left">72</span>pairs left</div>
+    <div class="stat"><span class="value" id="timer">00:00</span>time</div>
+    <div class="stat"><span class="value" id="moves">0</span>moves</div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tool-btn" id="hint-btn">Hint</button>
+    <button class="tool-btn" id="shuffle-btn">Shuffle</button>
+    <button class="tool-btn" id="new-btn">New game</button>
+  </div>
+
+  <div class="board-outer" id="board-outer">
+    <div class="board-viewport" id="board-viewport">
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="overlay visible" id="start-overlay">
+      <h2>Wake the jade dragons</h2>
+      <p>Find pairs of identical tiles that are "free" — nothing stacked on top and at least one side (left or right) open. Flowers match any flower, seasons match any season.</p>
+      <button class="play-btn" id="start-btn">Start game</button>
+    </div>
+
+    <div class="overlay" id="win-overlay">
+      <h2>Board cleared!</h2>
+      <p class="stat-line" id="win-stats">Time: 00:00 · Moves: 0</p>
+      <button class="play-btn" id="win-restart-btn">New game</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <p class="legend">Tap a free tile, then tap its identical match. Darkened tiles are blocked. Use "Shuffle" if no move is left.</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =================== Ambient background (drifting embers) =================== */
+  var bgCanvas = document.getElementById('bg-canvas');
+  var bgCtx = bgCanvas.getContext('2d');
+  var embers = [];
+
+  function resizeBg() {
+    bgCanvas.width = window.innerWidth;
+    bgCanvas.height = window.innerHeight;
+  }
+  function initEmbers() {
+    embers = [];
+    var count = Math.floor((window.innerWidth * window.innerHeight) / 26000);
+    for (var i = 0; i < count; i++) {
+      embers.push({
+        x: Math.random() * bgCanvas.width,
+        y: Math.random() * bgCanvas.height,
+        r: 0.7 + Math.random() * 1.6,
+        speed: 0.12 + Math.random() * 0.3,
+        drift: (Math.random() - 0.5) * 0.25,
+        alpha: 0.12 + Math.random() * 0.3
+      });
+    }
+  }
+  window.addEventListener('resize', function () { resizeBg(); initEmbers(); });
+  resizeBg(); initEmbers();
+
+  function drawBg() {
+    bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+    var grad = bgCtx.createRadialGradient(
+      bgCanvas.width / 2, bgCanvas.height * 0.1, 0,
+      bgCanvas.width / 2, bgCanvas.height * 0.1, bgCanvas.width * 0.95
+    );
+    grad.addColorStop(0, '#103524');
+    grad.addColorStop(1, '#04120d');
+    bgCtx.fillStyle = grad;
+    bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+    for (var i = 0; i < embers.length; i++) {
+      var p = embers[i];
+      p.y -= p.speed;
+      p.x += p.drift;
+      if (p.y < -5) { p.y = bgCanvas.height + 5; p.x = Math.random() * bgCanvas.width; }
+      if (p.x < -5) p.x = bgCanvas.width + 5;
+      if (p.x > bgCanvas.width + 5) p.x = -5;
+      bgCtx.beginPath();
+      bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      bgCtx.fillStyle = 'rgba(216, 180, 99,' + p.alpha + ')';
+      bgCtx.fill();
+    }
+    requestAnimationFrame(drawBg);
+  }
+  requestAnimationFrame(drawBg);
+
+  /* =================== Tile glyph data =================== */
+  var CJK_NUM = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
+  var WIND_GLYPH = { E: '東', S: '南', W: '西', N: '北' };
+  var DRAGON_GLYPH = { red: '中', green: '發' };
+  var PIP_PATTERNS = {
+    1: [[0.5, 0.5]],
+    2: [[0.3, 0.28], [0.7, 0.72]],
+    3: [[0.26, 0.26], [0.5, 0.5], [0.74, 0.74]],
+    4: [[0.3, 0.28], [0.7, 0.28], [0.3, 0.72], [0.7, 0.72]],
+    5: [[0.3, 0.28], [0.7, 0.28], [0.5, 0.5], [0.3, 0.72], [0.7, 0.72]],
+    6: [[0.3, 0.22], [0.7, 0.22], [0.3, 0.5], [0.7, 0.5], [0.3, 0.78], [0.7, 0.78]],
+    7: [[0.3, 0.2], [0.7, 0.2], [0.3, 0.46], [0.5, 0.46], [0.7, 0.46], [0.3, 0.78], [0.7, 0.78]],
+    8: [[0.3, 0.18], [0.7, 0.18], [0.3, 0.39], [0.7, 0.39], [0.3, 0.6], [0.7, 0.6], [0.3, 0.81], [0.7, 0.81]],
+    9: [[0.26, 0.22], [0.5, 0.22], [0.74, 0.22], [0.26, 0.5], [0.5, 0.5], [0.74, 0.5], [0.26, 0.78], [0.5, 0.78], [0.74, 0.78]]
+  };
+  var FLOWER_VARIANTS = ['梅', '蘭', '竹', '菊'];
+  var SEASON_VARIANTS = ['春', '夏', '秋', '冬'];
+
+  function pipsHTML(count, kind) {
+    var pts = PIP_PATTERNS[count] || PIP_PATTERNS[1];
+    var accentEvery = kind === 'dot' ? 3 : -1; // every 3rd dot slightly reddish for variety
+    var html = '';
+    for (var i = 0; i < pts.length; i++) {
+      var cls = kind === 'dot' ? 'pip pip-dot' : 'pip pip-bam';
+      if (kind === 'dot' && accentEvery > 0 && i % accentEvery === 1) cls += ' accent';
+      html += '<span class="' + cls + '" style="left:' + (pts[i][0] * 100) + '%; top:' + (pts[i][1] * 100) + '%;"></span>';
+    }
+    return html;
+  }
+
+  function tileInnerHTML(t) {
+    switch (t.category) {
+      case 'dot':
+        return '<div class="tile-face">' + pipsHTML(t.number, 'dot') + '</div>';
+      case 'bam':
+        return '<div class="tile-face">' + pipsHTML(t.number, 'bam') + '</div>';
+      case 'char':
+        return '<div class="tile-face"><div class="char-stack"><div class="char-num">' + CJK_NUM[t.number - 1] + '</div><div class="char-wan">萬</div></div></div>';
+      case 'wind':
+        return '<div class="tile-face"><div class="wind-glyph">' + WIND_GLYPH[t.wind] + '</div></div>';
+      case 'dragon':
+        if (t.dragon === 'white') return '<div class="tile-face"><div class="dragon-white-frame"></div></div>';
+        return '<div class="tile-face"><div class="dragon-glyph dragon-' + t.dragon + '">' + DRAGON_GLYPH[t.dragon] + '</div></div>';
+      case 'flower':
+        return '<div class="tile-face"><div class="bonus-glyph flower">' + t.face + '</div></div>';
+      case 'season':
+        return '<div class="tile-face"><div class="bonus-glyph season">' + t.face + '</div></div>';
+    }
+    return '';
+  }
+
+  function makeTileFromLabel(label) {
+    if (label === 'flower') return { category: 'flower', matchKey: 'flower' };
+    if (label === 'season') return { category: 'season', matchKey: 'season' };
+    if (label.indexOf('dot') === 0) return { category: 'dot', number: parseInt(label.slice(3), 10), matchKey: label };
+    if (label.indexOf('bam') === 0) return { category: 'bam', number: parseInt(label.slice(3), 10), matchKey: label };
+    if (label.indexOf('char') === 0) return { category: 'char', number: parseInt(label.slice(4), 10), matchKey: label };
+    if (label.indexOf('wind_') === 0) return { category: 'wind', wind: label.slice(5), matchKey: label };
+    if (label.indexOf('drag_') === 0) return { category: 'dragon', dragon: label.slice(5), matchKey: label };
+    return { category: 'dot', number: 1, matchKey: 'dot1' };
+  }
+
+  function buildPairLabelPool() {
+    var labels = [];
+    ['dot', 'bam', 'char'].forEach(function (suit) {
+      for (var n = 1; n <= 9; n++) {
+        labels.push(suit + n); labels.push(suit + n);
+      }
+    });
+    ['E', 'S', 'W', 'N'].forEach(function (w) { labels.push('wind_' + w); labels.push('wind_' + w); });
+    ['red', 'green', 'white'].forEach(function (d) { labels.push('drag_' + d); labels.push('drag_' + d); });
+    labels.push('flower', 'flower', 'season', 'season');
+    return labels; // 72 entries = 72 pairs = 144 tiles
+  }
+
+  function shuffleArray(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  /* =================== Layout: stepped jade pagoda, 144 tiles =================== */
+  var LAYERS_DEF = [
+    { cols: 10, rows: 8 },
+    { cols: 8, rows: 6 },
+    { cols: 6, rows: 2 },
+    { cols: 2, rows: 2 }
+  ];
+  var BASE_COLS = LAYERS_DEF[0].cols;
+  var BASE_ROWS = LAYERS_DEF[0].rows;
+  var NUM_LAYERS = LAYERS_DEF.length;
+
+  function buildPositions() {
+    var positions = [];
+    var id = 0;
+    for (var layer = 0; layer < LAYERS_DEF.length; layer++) {
+      var def = LAYERS_DEF[layer];
+      var offsetX = (BASE_COLS - def.cols) / 2;
+      var offsetY = (BASE_ROWS - def.rows) / 2;
+      for (var r = 0; r < def.rows; r++) {
+        for (var c = 0; c < def.cols; c++) {
+          positions.push({
+            id: id++,
+            layer: layer,
+            col: offsetX + c,
+            row: offsetY + r
+          });
+        }
+      }
+    }
+    return positions;
+  }
+
+  /* =================== Solvable construction via reverse removal simulation =================== */
+  function computeFree(pos, activeMap) {
+    for (var l = pos.layer + 1; l < NUM_LAYERS; l++) {
+      if (activeMap.has(l + '_' + pos.col + '_' + pos.row)) return false;
+    }
+    var leftKey = pos.layer + '_' + (pos.col - 1) + '_' + pos.row;
+    var rightKey = pos.layer + '_' + (pos.col + 1) + '_' + pos.row;
+    var openLeft = !activeMap.has(leftKey);
+    var openRight = !activeMap.has(rightKey);
+    return openLeft || openRight;
+  }
+
+  function simulateRemovalOrder(positions) {
+    var activeMap = new Map(); // key -> pos
+    var activeIds = new Set();
+    positions.forEach(function (p) {
+      activeMap.set(p.layer + '_' + p.col + '_' + p.row, p);
+      activeIds.add(p.id);
+    });
+    var byId = {};
+    positions.forEach(function (p) { byId[p.id] = p; });
+
+    var order = [];
+    var guardIterations = positions.length * 6 + 20;
+
+    while (activeIds.size > 0 && guardIterations-- > 0) {
+      var freeIds = [];
+      activeIds.forEach(function (id) {
+        if (computeFree(byId[id], activeMap)) freeIds.push(id);
+      });
+      if (freeIds.length < 2) return null;
+      shuffleArray(freeIds);
+      var a = freeIds[0], b = freeIds[1];
+      activeIds.delete(a); activeIds.delete(b);
+      var pa = byId[a], pb = byId[b];
+      activeMap.delete(pa.layer + '_' + pa.col + '_' + pa.row);
+      activeMap.delete(pb.layer + '_' + pb.col + '_' + pb.row);
+      order.push([a, b]);
+    }
+    if (activeIds.size > 0) return null;
+    return order;
+  }
+
+  function buildSolvableBoard() {
+    var positions = buildPositions();
+    var order = null;
+    for (var attempt = 0; attempt < 80 && !order; attempt++) {
+      order = simulateRemovalOrder(positions);
+    }
+    if (!order) {
+      // Should not happen for this layout, but fail safe: sequential fallback pairing
+      order = [];
+      for (var i = 0; i < positions.length; i += 2) order.push([positions[i].id, positions[i + 1].id]);
+    }
+
+    var labels = shuffleArray(buildPairLabelPool());
+    var flowerPool = shuffleArray(FLOWER_VARIANTS.slice());
+    var seasonPool = shuffleArray(SEASON_VARIANTS.slice());
+    var byId = {};
+    positions.forEach(function (p) { byId[p.id] = p; });
+
+    for (var i = 0; i < order.length; i++) {
+      var label = labels[i];
+      var idA = order[i][0], idB = order[i][1];
+      var tileA = makeTileFromLabel(label);
+      var tileB = makeTileFromLabel(label);
+      if (label === 'flower') {
+        tileA.face = flowerPool.pop();
+        tileB.face = flowerPool.pop();
+      } else if (label === 'season') {
+        tileA.face = seasonPool.pop();
+        tileB.face = seasonPool.pop();
+      } else {
+        tileA.face = tileB.face = label;
+      }
+      byId[idA].tile = tileA;
+      byId[idB].tile = tileB;
+    }
+    return positions;
+  }
+
+  /* =================== Game state =================== */
+  var boardEl = document.getElementById('board');
+  var boardOuter = document.getElementById('board-outer');
+  var boardViewport = document.getElementById('board-viewport');
+  var pairsLeftEl = document.getElementById('pairs-left');
+  var timerEl = document.getElementById('timer');
+  var movesEl = document.getElementById('moves');
+  var hintBtn = document.getElementById('hint-btn');
+  var shuffleBtn = document.getElementById('shuffle-btn');
+  var newBtn = document.getElementById('new-btn');
+  var startOverlay = document.getElementById('start-overlay');
+  var winOverlay = document.getElementById('win-overlay');
+  var winStats = document.getElementById('win-stats');
+  var startBtn = document.getElementById('start-btn');
+  var winRestartBtn = document.getElementById('win-restart-btn');
+  var toastEl = document.getElementById('toast');
+
+  var TILE_W = 62, TILE_H = 84;
+  var LAYER_SHIFT = 6;
+  var PAD = (NUM_LAYERS - 1) * LAYER_SHIFT + 6;
+
+  var positions = [];
+  var activeMap = new Map(); // key -> position (only remaining tiles)
+  var elementsById = {};
+  var selected = null; // position object
+  var matchedPairs = 0;
+  var totalPairs = 72;
+  var moveCount = 0;
+  var timerInterval = null;
+  var elapsedSec = 0;
+  var gameRunning = false;
+  var toastTimeout = null;
+
+  function keyOf(p) { return p.layer + '_' + p.col + '_' + p.row; }
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('visible');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(function () { toastEl.classList.remove('visible'); }, 2200);
+  }
+
+  function formatTime(sec) {
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function startTimer() {
+    stopTimer();
+    elapsedSec = 0;
+    timerEl.textContent = formatTime(0);
+    timerInterval = setInterval(function () {
+      elapsedSec++;
+      timerEl.textContent = formatTime(elapsedSec);
+    }, 1000);
+  }
+  function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  function computeSize() {
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var reserved = document.querySelector('.title-row').offsetHeight
+      + document.querySelector('.hud').offsetHeight
+      + document.querySelector('.toolbar').offsetHeight
+      + document.querySelector('.legend').offsetHeight
+      + 50; // paddings/gaps
+    var availH = Math.max(240, vh - reserved);
+    var availW = vw * 0.99;
+    var nativeW = BASE_COLS * TILE_W + PAD * 2;
+    var nativeH = BASE_ROWS * TILE_H + PAD * 2;
+    // no artificial ceiling: let it use however much of the screen is actually available
+    var scale = Math.min(availW / nativeW, availH / nativeH);
+    return { scale: scale, nativeW: nativeW, nativeH: nativeH };
+  }
+
+  function applySize() {
+    var s = computeSize();
+    boardEl.style.width = s.nativeW + 'px';
+    boardEl.style.height = s.nativeH + 'px';
+    boardEl.style.transform = 'scale(' + s.scale + ')';
+    boardViewport.style.width = Math.ceil(s.nativeW * s.scale) + 'px';
+    boardViewport.style.height = Math.ceil(s.nativeH * s.scale) + 'px';
+  }
+  window.addEventListener('resize', applySize);
+  window.addEventListener('orientationchange', function () { setTimeout(applySize, 150); });
+
+  function isFree(pos) {
+    for (var l = pos.layer + 1; l < NUM_LAYERS; l++) {
+      if (activeMap.has(l + '_' + pos.col + '_' + pos.row)) return false;
+    }
+    var openLeft = !activeMap.has(pos.layer + '_' + (pos.col - 1) + '_' + pos.row);
+    var openRight = !activeMap.has(pos.layer + '_' + (pos.col + 1) + '_' + pos.row);
+    return openLeft || openRight;
+  }
+
+  function refreshFreedomStates() {
+    activeMap.forEach(function (pos) {
+      var el = elementsById[pos.id];
+      if (!el) return;
+      if (isFree(pos)) {
+        el.classList.add('free');
+        el.classList.remove('blocked');
+      } else {
+        el.classList.remove('free');
+        el.classList.add('blocked');
+      }
+    });
+  }
+
+  function renderBoard() {
+    boardEl.innerHTML = '';
+    elementsById = {};
+    positions.forEach(function (pos) {
+      var el = document.createElement('div');
+      el.className = 'tile';
+      if (pos.tile.category === 'flower' || pos.tile.category === 'season') el.classList.add('tile-bonus');
+      el.style.width = TILE_W + 'px';
+      el.style.height = TILE_H + 'px';
+      el.style.left = (PAD + pos.col * TILE_W - pos.layer * LAYER_SHIFT) + 'px';
+      el.style.top = (PAD + pos.row * TILE_H - pos.layer * LAYER_SHIFT) + 'px';
+      el.style.zIndex = String(pos.layer * 1000 + pos.row * 20 + pos.col);
+      el.innerHTML = tileInnerHTML(pos.tile);
+      el.addEventListener('click', function () { onTileClick(pos); });
+      boardEl.appendChild(el);
+      elementsById[pos.id] = el;
+    });
+    refreshFreedomStates();
+  }
+
+  function updateHud() {
+    pairsLeftEl.textContent = (totalPairs - matchedPairs);
+    movesEl.textContent = moveCount;
+  }
+
+  function hasAnyMove() {
+    var groups = {};
+    var found = false;
+    activeMap.forEach(function (pos) {
+      if (!isFree(pos)) return;
+      var key = pos.tile.matchKey;
+      if (groups[key]) { found = true; }
+      else groups[key] = true;
+    });
+    return found;
+  }
+
+  function findHintPair() {
+    var groups = {};
+    var result = null;
+    activeMap.forEach(function (pos) {
+      if (result) return;
+      if (!isFree(pos)) return;
+      var key = pos.tile.matchKey;
+      if (groups[key]) { result = [groups[key], pos]; }
+      else groups[key] = pos;
+    });
+    return result;
+  }
+
+  function onTileClick(pos) {
+    if (!gameRunning) return;
+    if (!activeMap.has(keyOf(pos))) return;
+    var el = elementsById[pos.id];
+    if (!isFree(pos)) {
+      el.classList.add('shake');
+      setTimeout(function () { el.classList.remove('shake'); }, 400);
+      return;
+    }
+
+    if (!selected) {
+      selected = pos;
+      el.classList.add('selected');
+      return;
+    }
+    if (selected.id === pos.id) {
+      el.classList.remove('selected');
+      selected = null;
+      return;
+    }
+
+    var selEl = elementsById[selected.id];
+    if (selected.tile.matchKey === pos.tile.matchKey) {
+      // match!
+      moveCount++;
+      matchedPairs++;
+      selEl.classList.remove('selected');
+      selEl.classList.add('matched');
+      el.classList.add('matched');
+      activeMap.delete(keyOf(selected));
+      activeMap.delete(keyOf(pos));
+      selected = null;
+      updateHud();
+      refreshFreedomStates();
+
+      if (matchedPairs >= totalPairs) {
+        setTimeout(finishWin, 500);
+      } else if (!hasAnyMove()) {
+        setTimeout(function () { showToast('No moves left — try Shuffle'); }, 500);
+      }
+    } else {
+      moveCount++;
+      updateHud();
+      selEl.classList.add('shake');
+      el.classList.add('shake');
+      var toDeselect = selected;
+      selected = null;
+      setTimeout(function () {
+        selEl.classList.remove('shake', 'selected');
+        el.classList.remove('shake');
+      }, 400);
+    }
+  }
+
+  function finishWin() {
+    gameRunning = false;
+    stopTimer();
+    winStats.textContent = 'Time: ' + formatTime(elapsedSec) + ' · Moves: ' + moveCount;
+    winOverlay.classList.add('visible');
+  }
+
+  function newGame() {
+    positions = buildSolvableBoard();
+    activeMap = new Map();
+    positions.forEach(function (p) { activeMap.set(keyOf(p), p); });
+    matchedPairs = 0;
+    moveCount = 0;
+    selected = null;
+    gameRunning = true;
+    startOverlay.classList.remove('visible');
+    winOverlay.classList.remove('visible');
+    updateHud();
+    applySize();
+    renderBoard();
+    startTimer();
+  }
+
+  hintBtn.addEventListener('click', function () {
+    if (!gameRunning) return;
+    var pair = findHintPair();
+    if (!pair) {
+      showToast('No moves left — try Shuffle');
+      return;
+    }
+    [pair[0], pair[1]].forEach(function (pos) {
+      var el = elementsById[pos.id];
+      el.classList.add('hint');
+      setTimeout(function () { el.classList.remove('hint'); }, 1300);
+    });
+  });
+
+  shuffleBtn.addEventListener('click', function () {
+    if (!gameRunning) return;
+    var remaining = [];
+    activeMap.forEach(function (pos) { remaining.push(pos); });
+    if (remaining.length < 2) return;
+
+    var order = null;
+    for (var attempt = 0; attempt < 80 && !order; attempt++) {
+      order = simulateRemovalOrder(remaining);
+    }
+    if (!order) {
+      showToast('Shuffle failed — try again');
+      return;
+    }
+
+    // group remaining tiles by matchKey into pairs (counts are always even per group)
+    var byKey = {};
+    remaining.forEach(function (pos) {
+      var k = pos.tile.matchKey;
+      if (!byKey[k]) byKey[k] = [];
+      byKey[k].push(pos.tile);
+    });
+    var tilePairPool = [];
+    Object.keys(byKey).forEach(function (k) {
+      var list = byKey[k];
+      for (var i = 0; i < list.length; i += 2) {
+        tilePairPool.push([list[i], list[i + 1]]);
+      }
+    });
+    shuffleArray(tilePairPool);
+
+    var byId = {};
+    remaining.forEach(function (p) { byId[p.id] = p; });
+
+    for (var i = 0; i < order.length; i++) {
+      var idA = order[i][0], idB = order[i][1];
+      var pair = tilePairPool[i];
+      byId[idA].tile = pair[0];
+      byId[idB].tile = pair[1];
+    }
+
+    // re-render faces only (positions/DOM elements unchanged)
+    remaining.forEach(function (pos) {
+      var el = elementsById[pos.id];
+      el.classList.toggle('tile-bonus', pos.tile.category === 'flower' || pos.tile.category === 'season');
+      el.innerHTML = tileInnerHTML(pos.tile);
+    });
+    if (selected) { elementsById[selected.id] && elementsById[selected.id].classList.remove('selected'); selected = null; }
+    refreshFreedomStates();
+    showToast('Tiles shuffled');
+  });
+
+  newBtn.addEventListener('click', newGame);
+  startBtn.addEventListener('click', newGame);
+  winRestartBtn.addEventListener('click', newGame);
+
+  // initial idle board behind the start overlay, just for visual context
+  positions = buildSolvableBoard();
+  activeMap = new Map();
+  positions.forEach(function (p) { activeMap.set(keyOf(p), p); });
+  applySize();
+  renderBoard();
+})();
+</script>
+
+</body>
+</html>
