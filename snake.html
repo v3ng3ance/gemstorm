@@ -375,8 +375,10 @@
       bgCanvas.width / 2, bgCanvas.height * 0.15, 0,
       bgCanvas.width / 2, bgCanvas.height * 0.15, bgCanvas.width * 0.9
     );
-    grad.addColorStop(0, '#0b1d38');
-    grad.addColorStop(1, '#030710');
+    var bg1 = (typeof currentBgColors !== 'undefined' && currentBgColors) ? currentBgColors.a2 : '#0b1d38';
+    var bg0 = (typeof currentBgColors !== 'undefined' && currentBgColors) ? currentBgColors.a0 : '#030710';
+    grad.addColorStop(0, bg1);
+    grad.addColorStop(1, bg0);
     bgCtx.fillStyle = grad;
     bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
 
@@ -403,6 +405,7 @@
   var ctx = canvas.getContext('2d');
   var boardWrap = document.getElementById('board-wrap');
   var cell = 0;
+  var lastRenderTime = 0;
 
   var hudEl = document.querySelector('.hud');
   var titleRow = document.querySelector('.title-row');
@@ -469,7 +472,7 @@
   bestEl.textContent = best;
 
   var state = 'idle'; // idle | running | paused | gameover
-  var snake, dir, nextDir, food, score, stepInterval, lastStep, trailPulse, foodEaten;
+  var snake, prevSnake, dir, food, score, stepInterval, lastStep, trailPulse, foodEaten;
   var bonusFood = null;
   var nextBonusAt = 0;
   var slowBoostUntil = 0;
@@ -481,6 +484,79 @@
   var SPEEDUP_PER_FOOD = 2;
   var SPEEDUP_EVERY_N_FOODS = 5; // ramp up rarely, so the pace stays comfortable much longer
 
+  /* ---------------- Depth zones (visual only: color + name, no obstacles) ---------------- */
+  var ZONES = [
+    { name: 'Sunlit Shallows', short: 'Shallows', threshold: 0, colors: { a0: '#030710', a1: '#061225', a2: '#0b1d38' } },
+    { name: 'Twilight Zone', short: 'Twilight', threshold: 120, colors: { a0: '#02050a', a1: '#040f1e', a2: '#08192e' } },
+    { name: 'Midnight Zone', short: 'Midnight', threshold: 350, colors: { a0: '#010308', a1: '#020a16', a2: '#051224' } },
+    { name: 'Abyssal Plain', short: 'Abyssal', threshold: 700, colors: { a0: '#000103', a1: '#01050c', a2: '#030a17' } },
+    { name: 'Hadal Trench', short: 'Hadal', threshold: 1300, colors: { a0: '#000000', a1: '#000205', a2: '#010609' } }
+  ];
+  var currentZoneIndex = 0;
+  var zoneAnnounceText = '';
+  var zoneAnnounceStart = 0;
+  var ZONE_ANNOUNCE_DURATION = 2600;
+  var currentBgColors = ZONES[0].colors;
+
+  function applyZoneColors(colors) {
+    currentBgColors = colors;
+    var root = document.documentElement;
+    root.style.setProperty('--abyss-0', colors.a0);
+    root.style.setProperty('--abyss-1', colors.a1);
+    root.style.setProperty('--abyss-2', colors.a2);
+  }
+
+  function checkZoneProgress(now) {
+    var targetIndex = 0;
+    for (var i = ZONES.length - 1; i >= 0; i--) {
+      if (score >= ZONES[i].threshold) { targetIndex = i; break; }
+    }
+    if (targetIndex > currentZoneIndex) {
+      currentZoneIndex = targetIndex;
+      var zone = ZONES[currentZoneIndex];
+      applyZoneColors(zone.colors);
+      zoneAnnounceText = zone.name;
+      zoneAnnounceStart = now;
+      speedLevelEl.textContent = zone.short;
+      beep(220, 0.4, 'sine', 0.05);
+    }
+  }
+
+  /* ---------------- Particles (eat bursts) ---------------- */
+  var burstParticles = [];
+  function spawnBurst(cellX, cellY, colorRgb) {
+    var cx = cellX * cell + cell / 2;
+    var cy = cellY * cell + cell / 2;
+    var n = 10;
+    for (var i = 0; i < n; i++) {
+      var angle = (Math.PI * 2 * i) / n + Math.random() * 0.4;
+      var speed = 0.6 + Math.random() * 1.4;
+      burstParticles.push({
+        x: cx, y: cy,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        life: 0,
+        maxLife: 420 + Math.random() * 200,
+        color: colorRgb
+      });
+    }
+  }
+
+  function updateAndDrawParticles(dt) {
+    for (var i = burstParticles.length - 1; i >= 0; i--) {
+      var p = burstParticles[i];
+      p.life += dt;
+      if (p.life >= p.maxLife) { burstParticles.splice(i, 1); continue; }
+      p.x += p.vx * dt * 0.06;
+      p.y += p.vy * dt * 0.06;
+      var t = 1 - p.life / p.maxLife;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, Math.max(0.5, 2.4 * t), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + p.color + ',' + (0.8 * t) + ')';
+      ctx.fill();
+    }
+  }
+
   function randRange(min, max) { return min + Math.random() * (max - min); }
 
   function resetGame() {
@@ -490,18 +566,25 @@
       { x: mid - 2, y: mid },
       { x: mid - 3, y: mid }
     ];
+    prevSnake = snake.map(function (s) { return { x: s.x, y: s.y }; });
     dir = { x: 1, y: 0 };
-    nextDir = { x: 1, y: 0 };
+    dirQueue = [];
     score = 0;
     foodEaten = 0;
     stepInterval = BASE_INTERVAL;
     trailPulse = 0;
     bonusFood = null;
     slowBoostUntil = 0;
+    burstParticles = [];
+    currentZoneIndex = 0;
+    zoneAnnounceText = '';
+    lastStep = null;
+    lastRenderTime = 0;
+    applyZoneColors(ZONES[0].colors);
     nextBonusAt = performance.now() + randRange(BONUS_MIN_GAP, BONUS_MAX_GAP);
     placeFood();
     scoreEl.textContent = score;
-    speedLevelEl.textContent = 1;
+    speedLevelEl.textContent = ZONES[0].short;
   }
 
   function placeFood() {
@@ -532,10 +615,15 @@
     }
   }
 
+  var dirQueue = [];
+
   function setDirection(x, y) {
-    // prevent reversing directly into self
-    if (dir.x === -x && dir.y === -y && snake.length > 1) return;
-    nextDir = { x: x, y: y };
+    var lastQueued = dirQueue.length ? dirQueue[dirQueue.length - 1] : dir;
+    // prevent reversing directly into self (checked against the last queued direction,
+    // not just the current live one, so queued turns can't set up a self-reversal either)
+    if (lastQueued.x === -x && lastQueued.y === -y && snake.length > 1) return;
+    if (lastQueued.x === x && lastQueued.y === y) return; // no real change, skip
+    if (dirQueue.length < 2) dirQueue.push({ x: x, y: y });
   }
 
   window.addEventListener('keydown', function (e) {
@@ -585,6 +673,7 @@
       state = 'running';
       pauseOverlay.classList.remove('visible');
       lastStep = performance.now();
+      lastRenderTime = 0;
       requestAnimationFrame(loop);
     }
   }
@@ -610,7 +699,8 @@
 
   /* ---------------- Game loop ---------------- */
   function step() {
-    dir = nextDir;
+    prevSnake = snake.map(function (s) { return { x: s.x, y: s.y }; });
+    if (dirQueue.length) dir = dirQueue.shift();
     var head = snake[0];
     var newHead = { x: head.x + dir.x, y: head.y + dir.y };
 
@@ -633,12 +723,14 @@
       foodEaten += 1;
       trailPulse = 1;
       beep(660, 0.12, 'triangle', 0.06);
+      spawnBurst(newHead.x, newHead.y, '255, 141, 107');
       placeFood();
 
       if (foodEaten % SPEEDUP_EVERY_N_FOODS === 0 && stepInterval > MIN_INTERVAL) {
         stepInterval = Math.max(MIN_INTERVAL, stepInterval - SPEEDUP_PER_FOOD);
       }
-      speedLevelEl.textContent = Math.max(1, Math.floor((BASE_INTERVAL - stepInterval) / 10) + 1);
+      scoreEl.textContent = score;
+      checkZoneProgress(performance.now());
     }
 
     if (bonusFood && newHead.x === bonusFood.x && newHead.y === bonusFood.y) {
@@ -647,16 +739,18 @@
         score += 30;
         trailPulse = 1;
         beep(880, 0.16, 'triangle', 0.07);
+        spawnBurst(newHead.x, newHead.y, '255, 214, 107');
       } else {
         score += 15;
         slowBoostUntil = performance.now() + 4500;
         beep(320, 0.2, 'sine', 0.06);
+        spawnBurst(newHead.x, newHead.y, '156, 140, 240');
       }
       bonusFood = null;
       nextBonusAt = performance.now() + randRange(BONUS_MIN_GAP, BONUS_MAX_GAP);
+      scoreEl.textContent = score;
+      checkZoneProgress(performance.now());
     }
-
-    scoreEl.textContent = score;
 
     if (!ate) snake.pop();
   }
@@ -692,7 +786,19 @@
     ctx.restore();
   }
 
-  function render(now) {
+  function interpAxis(prev, curr, frac) {
+    var diff = curr - prev;
+    if (Math.abs(diff) > 1) return curr; // edge-wrap: snap instead of sliding across the board
+    return prev + diff * frac;
+  }
+
+  function getPrevSegment(i) {
+    if (prevSnake && prevSnake[i]) return prevSnake[i];
+    return snake[i]; // newly grown segment: no previous spot, just appear in place
+  }
+
+  function render(now, moveT) {
+    if (moveT === undefined) moveT = 1;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // subtle grid
@@ -741,28 +847,65 @@
       drawRoundedCell(bonusFood.x, bonusFood.y, bSize, bSize / 2, 'rgba(' + bColor + ', 0.95)', 'rgba(' + bColor + ', 0.9)');
     }
 
-    // snake body with fading glow trail
-    for (var i = snake.length - 1; i >= 0; i--) {
+    // snake body with fading glow trail, smoothly interpolated between grid steps
+    var smoothPositions = [];
+    for (var i = 0; i < snake.length; i++) {
       var seg = snake[i];
-      var t = 1 - i / snake.length;
+      var prevSeg = getPrevSegment(i);
+      smoothPositions.push({
+        x: interpAxis(prevSeg.x, seg.x, moveT),
+        y: interpAxis(prevSeg.y, seg.y, moveT)
+      });
+    }
+
+    for (var i = snake.length - 1; i >= 0; i--) {
+      var fadeT = 1 - i / snake.length;
       var isHead = i === 0;
-      var size = cell * (isHead ? 0.82 : 0.68 + 0.1 * t);
+      var size = cell * (isHead ? 0.82 : 0.68 + 0.1 * fadeT);
       var color = isHead
         ? 'rgba(143, 245, 227, 1)'
-        : 'rgba(77, 216, 196,' + (0.45 + 0.5 * t) + ')';
+        : 'rgba(77, 216, 196,' + (0.45 + 0.5 * fadeT) + ')';
       var glow = isHead ? 'rgba(143, 245, 227, 0.9)' : 'rgba(77, 216, 196, 0.35)';
-      drawRoundedCell(seg.x, seg.y, size, size * 0.35, color, glow);
+      var sp = smoothPositions[i];
+      drawRoundedCell(sp.x, sp.y, size, size * 0.35, color, glow);
     }
 
     // head eye accent
     if (snake.length) {
-      var h = snake[0];
-      var ex = h.x * cell + cell / 2 + dir.x * cell * 0.18;
-      var ey = h.y * cell + cell / 2 + dir.y * cell * 0.18;
+      var hp = smoothPositions[0];
+      var ex = hp.x * cell + cell / 2 + dir.x * cell * 0.18;
+      var ey = hp.y * cell + cell / 2 + dir.y * cell * 0.18;
       ctx.beginPath();
       ctx.arc(ex, ey, cell * 0.07, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(3, 7, 16, 0.85)';
       ctx.fill();
+    }
+
+    // particle bursts
+    if (!lastRenderTime) lastRenderTime = now;
+    var pdt = now - lastRenderTime;
+    lastRenderTime = now;
+    updateAndDrawParticles(pdt);
+
+    // zone announcement banner
+    if (zoneAnnounceText && now - zoneAnnounceStart < ZONE_ANNOUNCE_DURATION) {
+      var elapsed = now - zoneAnnounceStart;
+      var fadeIn = Math.min(1, elapsed / 300);
+      var fadeOut = Math.min(1, Math.max(0, (ZONE_ANNOUNCE_DURATION - elapsed) / 400));
+      var alpha = Math.min(fadeIn, fadeOut);
+      var boardPx = GRID * cell;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '600 ' + Math.round(cell * 0.9) + 'px "Space Grotesk", sans-serif';
+      ctx.shadowColor = 'rgba(143, 245, 227, 0.8)';
+      ctx.shadowBlur = cell * 0.6;
+      ctx.fillStyle = 'rgba(207, 233, 228, 0.95)';
+      ctx.fillText(zoneAnnounceText, boardPx / 2, boardPx * 0.16);
+      ctx.restore();
+    } else if (zoneAnnounceText && performance.now() - zoneAnnounceStart >= ZONE_ANNOUNCE_DURATION) {
+      zoneAnnounceText = '';
     }
   }
 
@@ -782,8 +925,11 @@
     if (delta >= effectiveInterval) {
       step();
       lastStep = now;
+      delta = 0;
+      if (state !== 'running') { render(now, 1); return; } // step() may have ended the game
     }
-    render(now);
+    var moveT = Math.max(0, Math.min(1, delta / effectiveInterval));
+    render(now, moveT);
     if (state === 'running') requestAnimationFrame(loop);
   }
 
@@ -792,6 +938,7 @@
     resetGame();
     state = 'running';
     lastStep = null;
+    lastRenderTime = 0;
     startOverlay.classList.remove('visible');
     gameoverOverlay.classList.remove('visible');
     pauseOverlay.classList.remove('visible');
