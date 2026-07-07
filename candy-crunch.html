@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sweet Cascade — Match 3</title>
+<style>
+  :root{
+    --bg1:#2a1038; --bg2:#4a1d5e; --panel:#3b1650;
+    --gold:#ffd166; --pink:#ff5d8f; --teal:#3ddad7;
+    --cell: 60px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:
+      radial-gradient(1200px 800px at 20% -10%, #6b2a8a 0%, transparent 55%),
+      radial-gradient(1000px 700px at 110% 110%, #8a2a6b 0%, transparent 50%),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    min-height:100%;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+    user-select:none;
+    color:#fff;
+  }
+  .bokeh{position:fixed;inset:0;pointer-events:none;z-index:0;}
+  .bokeh span{
+    position:absolute;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, rgba(255,255,255,.35), rgba(255,255,255,.05) 60%, transparent 70%);
+    animation:floatUp linear infinite;
+    filter:blur(1px);
+  }
+  @keyframes floatUp{
+    from{transform:translateY(110vh) scale(1);opacity:0;}
+    12%{opacity:.7;}
+    88%{opacity:.6;}
+    to{transform:translateY(-15vh) scale(1.25);opacity:0;}
+  }
+
+  #app{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px;}
+
+  /* ---------- HUD ---------- */
+  .hud{width:calc(var(--cell)*8 + 24px);max-width:96vw;display:flex;align-items:stretch;gap:10px;}
+  .hud .card{
+    flex:1;
+    background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:16px;
+    padding:6px 8px;
+    text-align:center;
+    backdrop-filter:blur(6px);
+    box-shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+    display:flex;flex-direction:column;justify-content:center;gap:2px;
+  }
+  .hud .label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;opacity:.65;font-weight:700;}
+  .hud .value{font-size:clamp(16px,4vw,24px);font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.4);}
+  #movesVal.low{color:#ff7b7b;animation:pulseWarn 1s ease-in-out infinite;}
+  @keyframes pulseWarn{50%{transform:scale(1.12);}}
+  .collectRow{display:flex;gap:8px;justify-content:center;align-items:center;font-size:14px;font-weight:800;}
+  .collectRow .goalItem{display:flex;align-items:center;gap:3px;}
+  .collectRow .goalItem.done{opacity:.55;}
+  .collectRow .goalItem.done .cnt::after{content:' ✓';color:#7dff9b;}
+  .dot{
+    width:16px;height:16px;border-radius:50%;display:inline-block;
+    border:1.5px solid rgba(255,255,255,.7);
+    box-shadow:inset -2px -3px 4px rgba(0,0,0,.4), inset 2px 3px 4px rgba(255,255,255,.5);
+  }
+
+  .progress-wrap{width:calc(var(--cell)*8 + 24px);max-width:96vw;}
+  .progress{
+    position:relative;height:18px;border-radius:999px;overflow:hidden;
+    background:rgba(0,0,0,.45);
+    border:1px solid rgba(255,255,255,.15);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.5);
+  }
+  .progress .fill{
+    height:100%;width:0%;
+    background:linear-gradient(90deg,#ff5d8f,#ffd166);
+    border-radius:999px;
+    transition:width .6s cubic-bezier(.22,1,.36,1);
+    box-shadow:0 0 14px rgba(255,120,160,.8);
+    position:relative;
+  }
+  .progress .fill::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(255,255,255,.45),transparent 55%);
+    border-radius:999px;
+  }
+  .stars{position:absolute;inset:0;pointer-events:none;}
+  .stars i{
+    --p: 0;
+    position:absolute;top:50%;left:var(--p);transform:translate(-50%,-50%);
+    font-style:normal;font-size:15px;filter:grayscale(1) opacity(.5);transition:.4s;
+  }
+  .stars i.lit{filter:none;transform:translate(-50%,-50%) scale(1.35);text-shadow:0 0 10px #ffd166;}
+
+  /* ---------- Board ---------- */
+  #boardShell{
+    position:relative;
+    padding:12px;
+    border-radius:24px;
+    background:linear-gradient(180deg,#5a2378,#3a1355);
+    border:1px solid rgba(255,255,255,.18);
+    box-shadow:
+      0 24px 60px rgba(0,0,0,.55),
+      inset 0 2px 0 rgba(255,255,255,.22),
+      inset 0 -10px 24px rgba(0,0,0,.35);
+  }
+  #board{
+    position:relative;
+    width:calc(var(--cell)*8);
+    height:calc(var(--cell)*8);
+    border-radius:14px;
+    background:transparent;
+    touch-action:none;
+  }
+  .cellbg{
+    position:absolute;width:var(--cell);height:var(--cell);
+    background:rgba(20,6,32,.55);
+    box-shadow:inset 0 1px 4px rgba(0,0,0,.4);
+  }
+  .cellbg.alt{background:rgba(38,14,58,.65);}
+
+  .jelly{
+    position:absolute;width:var(--cell);height:var(--cell);
+    z-index:1;pointer-events:none;
+    border-radius:6px;
+    transition:opacity .3s, transform .3s;
+  }
+  .jelly.j1{
+    background:
+      radial-gradient(circle at 30% 25%, rgba(255,255,255,.5), transparent 40%),
+      linear-gradient(160deg, rgba(120,255,170,.42), rgba(20,180,110,.45));
+    border:2px solid rgba(180,255,210,.55);
+    box-shadow:inset 0 -6px 10px rgba(0,90,50,.4), inset 0 4px 8px rgba(255,255,255,.35);
+  }
+  .jelly.j2{
+    background:
+      radial-gradient(circle at 30% 25%, rgba(255,255,255,.6), transparent 40%),
+      linear-gradient(160deg, rgba(120,255,170,.65), rgba(10,150,90,.7));
+    border:3px solid rgba(210,255,230,.8);
+    box-shadow:inset 0 -8px 12px rgba(0,90,50,.55), inset 0 5px 10px rgba(255,255,255,.5), 0 0 10px rgba(90,255,170,.35);
+  }
+  .jelly.gone{opacity:0;transform:scale(1.35);}
+
+  .candy{
+    position:absolute;left:0;top:0;
+    width:var(--cell);height:var(--cell);
+    display:flex;align-items:center;justify-content:center;
+    will-change:transform;
+    transition:transform .22s cubic-bezier(.25,.8,.35,1);
+    cursor:pointer;
+    z-index:2;
+  }
+  .candy svg{
+    width:86%;height:86%;
+    filter:drop-shadow(0 5px 6px rgba(0,0,0,.45));
+    transition:transform .15s ease;
+    pointer-events:none;
+  }
+  .candy:hover svg{transform:scale(1.07);}
+  .candy.selected{z-index:5;}
+  .candy.selected svg{animation:selPulse .55s ease-in-out infinite alternate;}
+  @keyframes selPulse{
+    from{transform:scale(1.02) rotate(-4deg);filter:drop-shadow(0 5px 6px rgba(0,0,0,.45)) drop-shadow(0 0 10px rgba(255,255,255,.9));}
+    to{transform:scale(1.16) rotate(4deg);filter:drop-shadow(0 5px 6px rgba(0,0,0,.45)) drop-shadow(0 0 16px rgba(255,255,255,1));}
+  }
+  .candy.hint svg{animation:hintWiggle .8s ease-in-out 3;}
+  @keyframes hintWiggle{
+    0%,100%{transform:scale(1);}
+    25%{transform:scale(1.14) rotate(-7deg);}
+    75%{transform:scale(1.14) rotate(7deg);}
+  }
+  .candy.pop{transition:transform .3s ease, opacity .3s ease;transform:scale(0) rotate(120deg) !important;opacity:0;z-index:4;}
+  .candy.shake{animation:shakeNo .35s ease;}
+  @keyframes shakeNo{
+    0%,100%{margin-left:0;}
+    25%{margin-left:-6px;}
+    75%{margin-left:6px;}
+  }
+  .candy.fall{transition:transform .5s cubic-bezier(.3,1.4,.5,1);}
+  .candy.spawn{animation:spawnIn .35s cubic-bezier(.3,1.5,.5,1);}
+  @keyframes spawnIn{from{opacity:0;}to{opacity:1;}}
+
+  /* frost cap over a candy */
+  .frostcap{
+    position:absolute;inset:6%;
+    border-radius:26%;
+    background:
+      linear-gradient(135deg, rgba(230,248,255,.75), rgba(160,215,255,.45) 55%, rgba(220,245,255,.7));
+    border:2px solid rgba(255,255,255,.85);
+    box-shadow:inset 0 0 14px rgba(255,255,255,.8), 0 3px 8px rgba(40,90,140,.4);
+    display:flex;align-items:center;justify-content:center;
+    font-size:calc(var(--cell)*.34);
+    color:rgba(255,255,255,.9);
+    text-shadow:0 0 6px #9fd8ff;
+    z-index:3;
+    pointer-events:none;
+  }
+
+  /* particles + fx */
+  .particle{
+    position:absolute;width:9px;height:9px;border-radius:50%;
+    pointer-events:none;z-index:9;
+    animation:partFly .65s cubic-bezier(.15,.6,.4,1) forwards;
+  }
+  @keyframes partFly{
+    from{transform:translate(0,0) scale(1);opacity:1;}
+    to{transform:translate(var(--dx),var(--dy)) scale(.15);opacity:0;}
+  }
+  .scorePop{
+    position:absolute;pointer-events:none;z-index:10;
+    font-weight:900;font-size:20px;color:#fff;
+    text-shadow:0 0 8px rgba(255,180,220,.95), 0 2px 3px rgba(0,0,0,.6);
+    animation:scoreFloat .85s ease-out forwards;
+    transform:translate(-50%,-50%);
+  }
+  @keyframes scoreFloat{
+    from{opacity:1;margin-top:0;}
+    to{opacity:0;margin-top:-52px;}
+  }
+  .beam{
+    position:absolute;z-index:8;pointer-events:none;border-radius:8px;
+    background:linear-gradient(90deg,transparent,#fff,transparent);
+    box-shadow:0 0 24px 6px rgba(255,255,255,.85);
+    animation:beamFade .45s ease-out forwards;
+  }
+  @keyframes beamFade{from{opacity:1;}to{opacity:0;}}
+  .shockwave{
+    position:absolute;z-index:8;pointer-events:none;border-radius:50%;
+    border:4px solid rgba(255,255,255,.9);
+    animation:shock .5s ease-out forwards;
+    transform:translate(-50%,-50%);
+  }
+  @keyframes shock{
+    from{width:10px;height:10px;opacity:1;}
+    to{width:260px;height:260px;opacity:0;border-width:1px;}
+  }
+  .shockwave.small{animation-name:shockS;}
+  @keyframes shockS{
+    from{width:8px;height:8px;opacity:1;}
+    to{width:140px;height:140px;opacity:0;border-width:1px;}
+  }
+  #board.quake{animation:quake .35s ease;}
+  @keyframes quake{
+    0%,100%{transform:translate(0,0);}
+    20%{transform:translate(-5px,3px);}
+    40%{transform:translate(5px,-3px);}
+    60%{transform:translate(-4px,-3px);}
+    80%{transform:translate(4px,3px);}
+  }
+  .comboBanner{
+    position:absolute;left:50%;top:42%;transform:translate(-50%,-50%) scale(.4);
+    z-index:11;pointer-events:none;
+    font-size:34px;font-weight:900;letter-spacing:.04em;white-space:nowrap;
+    background:linear-gradient(180deg,#fff,#ffd166);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 3px 0 #b0304f) drop-shadow(0 6px 18px rgba(0,0,0,.6));
+    animation:comboIn 1.1s cubic-bezier(.2,1.6,.4,1) forwards;
+  }
+  @keyframes comboIn{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.4) rotate(-8deg);}
+    30%{opacity:1;transform:translate(-50%,-50%) scale(1.12) rotate(2deg);}
+    70%{opacity:1;transform:translate(-50%,-50%) scale(1);}
+    100%{opacity:0;transform:translate(-50%,-65%) scale(1.05);}
+  }
+
+  /* ---------- Overlays ---------- */
+  .overlay{
+    position:fixed;inset:0;z-index:50;
+    display:flex;align-items:center;justify-content:center;
+    background:rgba(15,4,26,.72);
+    backdrop-filter:blur(8px);
+    opacity:0;pointer-events:none;transition:opacity .4s;
+  }
+  .overlay.show{opacity:1;pointer-events:auto;}
+  .modal{
+    width:min(88vw,380px);
+    background:linear-gradient(180deg,#5e2580,#38124f);
+    border:1px solid rgba(255,255,255,.22);
+    border-radius:26px;
+    padding:30px 26px 26px;
+    text-align:center;
+    box-shadow:0 30px 80px rgba(0,0,0,.6), inset 0 2px 0 rgba(255,255,255,.25);
+    transform:scale(.8) translateY(24px);
+    transition:transform .45s cubic-bezier(.2,1.4,.4,1);
+  }
+  .overlay.show .modal{transform:scale(1) translateY(0);}
+  .modal h1{
+    font-size:30px;font-weight:900;letter-spacing:.02em;margin-bottom:6px;
+    background:linear-gradient(180deg,#fff,#ffd166);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 2px 0 rgba(160,40,90,.8));
+  }
+  .modal p{opacity:.85;font-size:15px;margin-bottom:18px;line-height:1.5;}
+  .modal .bigStars{font-size:44px;margin:6px 0 14px;letter-spacing:6px;}
+  .modal .bigStars span{display:inline-block;filter:grayscale(1) opacity(.35);}
+  .modal .bigStars span.lit{filter:none;animation:starPop .5s cubic-bezier(.2,1.8,.4,1) backwards;}
+  .modal .bigStars span:nth-child(1).lit{animation-delay:.15s;}
+  .modal .bigStars span:nth-child(2).lit{animation-delay:.4s;}
+  .modal .bigStars span:nth-child(3).lit{animation-delay:.65s;}
+  @keyframes starPop{from{transform:scale(0) rotate(-120deg);}to{transform:scale(1) rotate(0);}}
+  .objBadge{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(0,0,0,.3);
+    border:1px solid rgba(255,255,255,.25);
+    border-radius:14px;
+    padding:10px 16px;margin-bottom:16px;
+    font-weight:800;font-size:16px;
+  }
+  .btn{
+    display:inline-block;
+    font:inherit;font-weight:800;font-size:17px;color:#5a1030;
+    background:linear-gradient(180deg,#ffe29a,#ffb84d);
+    border:none;border-radius:999px;
+    padding:13px 34px;cursor:pointer;
+    box-shadow:0 6px 0 #c77b1f, 0 12px 24px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.7);
+    transition:transform .12s, box-shadow .12s;
+  }
+  .btn:hover{transform:translateY(-2px);}
+  .btn:active{transform:translateY(3px);box-shadow:0 2px 0 #c77b1f, 0 6px 14px rgba(0,0,0,.4);}
+
+  .toolbar{display:flex;gap:10px;align-items:center;}
+  .iconBtn{
+    width:42px;height:42px;border-radius:50%;
+    border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.1);
+    color:#fff;font-size:18px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:.15s;
+  }
+  .iconBtn:hover{background:rgba(255,255,255,.22);transform:scale(1.08);}
+  .title{
+    font-size:clamp(20px,5vw,28px);font-weight:900;letter-spacing:.04em;
+    background:linear-gradient(180deg,#fff 20%,#ffb3d1 70%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 2px 0 rgba(140,30,80,.9)) drop-shadow(0 6px 14px rgba(0,0,0,.4));
+  }
+  .topRow{width:calc(var(--cell)*8 + 24px);max-width:96vw;display:flex;justify-content:space-between;align-items:center;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="bokeh" id="bokeh"></div>
+
+<div id="app">
+  <div class="topRow">
+    <div class="title">🍬 Sweet Cascade</div>
+    <div class="toolbar">
+      <button class="iconBtn" id="soundBtn" title="Toggle sound">🔊</button>
+      <button class="iconBtn" id="hintBtn" title="Show a hint">💡</button>
+    </div>
+  </div>
+
+  <div class="hud">
+    <div class="card"><div class="label">Level</div><div class="value" id="levelVal">1</div></div>
+    <div class="card"><div class="label">Score</div><div class="value" id="scoreVal">0</div></div>
+    <div class="card" style="flex:1.4"><div class="label" id="objLabel">Target</div><div class="value" id="objVal">1000</div></div>
+    <div class="card"><div class="label">Moves</div><div class="value" id="movesVal">20</div></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress">
+      <div class="fill" id="progFill"></div>
+      <div class="stars">
+        <i style="--p:50%">⭐</i><i style="--p:75%">⭐</i><i style="--p:98%">⭐</i>
+      </div>
+    </div>
+  </div>
+
+  <div id="boardShell">
+    <div id="board"></div>
+  </div>
+</div>
+
+<!-- Level intro -->
+<div class="overlay" id="introOverlay">
+  <div class="modal">
+    <h1 id="introTitle">Level 1</h1>
+    <div class="objBadge" id="introObj">🎯 Reach 1,500 points</div>
+    <p id="introTips" style="font-size:13px;opacity:.7;"></p>
+    <button class="btn" id="introBtn">Let's go!</button>
+  </div>
+</div>
+
+<!-- Level complete -->
+<div class="overlay" id="winOverlay">
+  <div class="modal">
+    <h1>Level Complete!</h1>
+    <div class="bigStars" id="winStars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+    <p id="winText">Sweet! You crushed it.</p>
+    <button class="btn" id="nextBtn">Next Level ➜</button>
+  </div>
+</div>
+
+<!-- Game over -->
+<div class="overlay" id="loseOverlay">
+  <div class="modal">
+    <h1 style="background:linear-gradient(180deg,#fff,#ff8fb1);-webkit-background-clip:text;background-clip:text;">Out of Moves</h1>
+    <p id="loseText">So close! Give it another go.</p>
+    <button class="btn" id="retryBtn">Retry Level</button>
+  </div>
+</div>
+
+<!-- Start screen -->
+<div class="overlay show" id="startOverlay">
+  <div class="modal">
+    <h1>Sweet Cascade</h1>
+    <p>Swap adjacent candies to match 3 or more.<br><br>
+       🍭 Match <b>4</b> → striped candy (clears a line)<br>
+       🎁 Match in an <b>L/T</b> → wrapped candy (3×3 blast)<br>
+       🌈 Match <b>5</b> → rainbow bomb (clears a color)<br>💥 Swap <b>two specials</b> together → combo blast!<br><br>
+       Levels bring new goals: jelly to clear, candies to collect, frosted candies and tricky board shapes!</p>
+    <button class="btn" id="startBtn">Play</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   SWEET CASCADE — match-3 with objectives, jelly, frost & shapes
+   ============================================================ */
+
+const COLS = 8, ROWS = 8;
+const board = document.getElementById('board');
+
+/* ---------- Candy artwork (glossy SVG) ---------- */
+const CANDY_COLORS = [
+  {name:'cherry',  main:'#e8283f', dark:'#8f0f22', light:'#ff8fa0'},
+  {name:'orange',  main:'#ff8c1a', dark:'#b35400', light:'#ffd199'},
+  {name:'lemon',   main:'#ffd21f', dark:'#b98d00', light:'#fff3b0'},
+  {name:'apple',   main:'#3ecf4a', dark:'#157a24', light:'#a8f0af'},
+  {name:'berry',   main:'#2f7bff', dark:'#123f9e', light:'#a8c8ff'},
+  {name:'grape',   main:'#a44df0', dark:'#5c1f9e', light:'#ddb3ff'},
+];
+
+let uid = 0;
+function candySVG(type, special){
+  const c = CANDY_COLORS[type];
+  const id = 'g' + (++uid);
+  const gloss = `
+    <ellipse cx="35" cy="26" rx="16" ry="10" fill="url(#${id}hl)" transform="rotate(-20 35 26)"/>
+    <ellipse cx="66" cy="70" rx="10" ry="5"  fill="rgba(255,255,255,.18)" transform="rotate(-20 66 70)"/>`;
+  const defs = `
+    <defs>
+      <radialGradient id="${id}b" cx="35%" cy="30%" r="80%">
+        <stop offset="0%" stop-color="${c.light}"/>
+        <stop offset="45%" stop-color="${c.main}"/>
+        <stop offset="100%" stop-color="${c.dark}"/>
+      </radialGradient>
+      <linearGradient id="${id}hl" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,.95)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </linearGradient>
+      <linearGradient id="${id}st" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,.95)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,.55)"/>
+      </linearGradient>
+    </defs>`;
+
+  if (special === 'bomb'){
+    return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="${id}core" cx="38%" cy="32%" r="75%">
+          <stop offset="0%" stop-color="#fff"/>
+          <stop offset="35%" stop-color="#6a2a8a"/>
+          <stop offset="100%" stop-color="#23063a"/>
+        </radialGradient>
+      </defs>
+      <circle cx="50" cy="52" r="38" fill="url(#${id}core)"/>
+      ${[0,60,120,180,240,300].map((a,i)=>`
+        <circle cx="${50+26*Math.cos(a*Math.PI/180)}" cy="${52+26*Math.sin(a*Math.PI/180)}" r="7.5"
+          fill="${CANDY_COLORS[i].main}" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>`).join('')}
+      <ellipse cx="36" cy="34" rx="13" ry="8" fill="rgba(255,255,255,.55)" transform="rotate(-22 36 34)"/>
+      <circle cx="50" cy="52" r="38" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="2"/>
+    </svg>`;
+  }
+
+  let shape;
+  switch(type % 6){
+    case 0:
+      shape = `<circle cx="50" cy="52" r="37" fill="url(#${id}b)"/>
+               <circle cx="50" cy="52" r="37" fill="none" stroke="${c.dark}" stroke-width="2" opacity=".6"/>`;
+      break;
+    case 1:
+      shape = `<path d="M14 52 Q6 40 16 42 L 22 46 Q20 52 22 58 L16 62 Q6 64 14 52Z" fill="${c.dark}"/>
+               <path d="M86 52 Q94 40 84 42 L 78 46 Q80 52 78 58 L84 62 Q94 64 86 52Z" fill="${c.dark}"/>
+               <ellipse cx="50" cy="52" rx="31" ry="26" fill="url(#${id}b)"/>
+               <path d="M34 32 Q50 26 66 32" stroke="rgba(255,255,255,.5)" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+      break;
+    case 2:
+      shape = `<path d="M50 12 C72 34 82 48 82 62 A32 32 0 1 1 18 62 C18 48 28 34 50 12Z" fill="url(#${id}b)"/>
+               <path d="M50 12 C72 34 82 48 82 62 A32 32 0 1 1 18 62 C18 48 28 34 50 12Z" fill="none" stroke="${c.dark}" stroke-width="2" opacity=".55"/>`;
+      break;
+    case 3:
+      shape = `<rect x="15" y="17" width="70" height="70" rx="22" fill="url(#${id}b)"/>
+               <rect x="15" y="17" width="70" height="70" rx="22" fill="none" stroke="${c.dark}" stroke-width="2" opacity=".55"/>`;
+      break;
+    case 4:
+      shape = `<ellipse cx="50" cy="52" rx="38" ry="28" fill="url(#${id}b)" transform="rotate(-18 50 52)"/>
+               <ellipse cx="50" cy="52" rx="38" ry="28" fill="none" stroke="${c.dark}" stroke-width="2" opacity=".5" transform="rotate(-18 50 52)"/>`;
+      break;
+    case 5:
+      shape = `<circle cx="50" cy="52" r="37" fill="url(#${id}b)"/>
+               <path d="M50 52 m0 -26 a26 26 0 0 1 0 52 a19 19 0 0 1 0 -38 a12 12 0 0 1 0 24 a6 6 0 0 1 0 -12"
+                 fill="none" stroke="rgba(255,255,255,.55)" stroke-width="6" stroke-linecap="round"/>`;
+      break;
+  }
+
+  let overlay = '';
+  const clipShape = shape.replace(/fill="[^"]*"/g,'').replace(/stroke="[^"]*"/g,'');
+  if (special === 'stripeH'){
+    overlay = `<g clip-path="url(#${id}cl)">
+      ${[38,52,66].map(y=>`<rect x="8" y="${y-4}" width="84" height="8" rx="4" fill="url(#${id}st)"/>`).join('')}
+    </g>`;
+  } else if (special === 'stripeV'){
+    overlay = `<g clip-path="url(#${id}cl)">
+      ${[38,52,66].map(x=>`<rect x="${x-4}" y="8" width="8" height="84" rx="4" fill="url(#${id}st)"/>`).join('')}
+    </g>`;
+  } else if (special === 'wrap'){
+    overlay = `<g clip-path="url(#${id}cl)">
+      <rect x="41" y="4" width="18" height="92" fill="url(#${id}st)" opacity=".9"/>
+      <rect x="4" y="43" width="92" height="18" fill="url(#${id}st)" opacity=".9"/>
+    </g>
+    <circle cx="50" cy="52" r="9" fill="${c.light}" stroke="#fff" stroke-width="3"/>
+    <circle cx="50" cy="52" r="3.5" fill="#fff"/>`;
+  }
+  const clip = special ? `<clipPath id="${id}cl">${clipShape}</clipPath>` : '';
+
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${defs}${clip}${shape}${overlay}${gloss}</svg>`;
+}
+
+/* ---------- Sound (tiny WebAudio synth) ---------- */
+let audioCtx = null, soundOn = true;
+function beep(freq, dur=0.12, type='sine', vol=0.15, slide=0){
+  if(!soundOn) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40,freq+slide), audioCtx.currentTime+dur);
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime+dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime+dur);
+  }catch(e){}
+}
+const sfx = {
+  swap : ()=>beep(320,.09,'triangle',.12, 140),
+  pop  : (i=0)=>beep(500 + i*70,.14,'sine',.16, 220),
+  bad  : ()=>beep(160,.16,'sawtooth',.08,-60),
+  line : ()=>beep(700,.25,'square',.07,-500),
+  wrapS: ()=>beep(220,.3,'square',.1,-120),
+  bombS: ()=>beep(90,.4,'sawtooth',.16,-40),
+  ice  : ()=>beep(1400,.12,'triangle',.12,-600),
+  jellyS:()=>beep(240,.15,'sine',.14,180),
+  win  : ()=>{[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.22,'triangle',.15),i*130));},
+  lose : ()=>{[392,330,262].forEach((f,i)=>setTimeout(()=>beep(f,.3,'sine',.12),i*180));},
+  select:()=>beep(880,.06,'sine',.08),
+};
+
+/* ============================================================
+   LEVELS — each level has an objective, a board map & tuning
+   Map legend:  .  normal cell      X  hole (no cell)
+                1  jelly ×1         2  jelly ×2
+                F  frosted candy (must be matched twice)
+   ============================================================ */
+const FULL = ['........','........','........','........','........','........','........','........'];
+
+const LEVELS = [
+  { // 1 — warm-up
+    obj:{kind:'score'}, target:1500, moves:20, types:5, map:FULL,
+    tips:'Match 4 or 5 candies to create powerful specials.'
+  },
+  { // 2 — first collect level
+    obj:{kind:'collect', colors:[[0,12],[4,12]]}, target:3000, moves:22, types:5, map:FULL,
+    tips:'Only candies that are actually cleared count toward the goal.'
+  },
+  { // 3 — jelly ring
+    obj:{kind:'jelly'}, target:4000, moves:24, types:5,
+    map:['........',
+         '.111111.',
+         '.1....1.',
+         '.1....1.',
+         '.1....1.',
+         '.1....1.',
+         '.111111.',
+         '........'],
+    tips:'Match candies on top of jelly to dissolve it. Jelly breaks also score points!'
+  },
+  { // 4 — clipped corners
+    obj:{kind:'score'}, target:4500, moves:22, types:6,
+    map:['XX....XX',
+         'X......X',
+         '........',
+         '........',
+         '........',
+         '........',
+         'X......X',
+         'XX....XX'],
+    tips:'A sixth candy color joins the mix. Swap two specials together for combo blasts!'
+  },
+  { // 5 — jelly diamond with holes
+    obj:{kind:'jelly'}, target:6000, moves:26, types:5,
+    map:['XXX11XXX',
+         'XX1111XX',
+         '.111111.',
+         '11111111',
+         '11111111',
+         '.111111.',
+         'XX1111XX',
+         'XXX11XXX'],
+    tips:'Striped and wrapped candies clear jelly everywhere they blast.'
+  },
+  { // 6 — frost introduction
+    obj:{kind:'collect', colors:[[1,10],[3,10],[5,10]]}, target:6500, moves:26, types:5,
+    map:['........',
+         '..F..F..',
+         '........',
+         '.F....F.',
+         '.F....F.',
+         '........',
+         '..F..F..',
+         '........'],
+    tips:'❄ Frosted candies must be matched twice — first to thaw, then to clear.'
+  },
+  { // 7 — jelly core
+    obj:{kind:'jelly'}, target:7500, moves:24, types:5,
+    map:['........',
+         '........',
+         '..1111..',
+         '..1221..',
+         '..1221..',
+         '..1111..',
+         '........',
+         '........'],
+    tips:'Thick jelly takes two matches. Aim wrapped candies at the center!'
+  },
+  { // 8 — hollow diamond, pure score
+    obj:{kind:'score'}, target:7000, moves:20, types:6,
+    map:['........',
+         '...XX...',
+         '..X..X..',
+         '.X....X.',
+         '.X....X.',
+         '..X..X..',
+         '...XX...',
+         '........'],
+    tips:'Candies fall through the gaps — plan for surprise cascades.'
+  },
+  { // 9 — frosted corners
+    obj:{kind:'jelly'}, target:8500, moves:26, types:5,
+    map:['.1....1.',
+         '11....11',
+         '........',
+         '...FF...',
+         '...FF...',
+         '........',
+         '11....11',
+         '.1....1.'],
+    tips:'Corner jelly is stubborn — striped candies reach where swaps can\'t.'
+  },
+  { // 10 — the full glaze
+    obj:{kind:'jelly'}, target:10000, moves:30, types:5,
+    map:['11111111',
+         '11111111',
+         '11111111',
+         '11122111',
+         '11122111',
+         '11111111',
+         '11111111',
+         '11111111'],
+    tips:'Everything is jelly. Cascades and special combos are your best friends.'
+  },
+];
+
+function levelCfg(n){
+  if (n <= LEVELS.length) return LEVELS[n-1];
+  // endless mode: cycle objective kinds with rising difficulty
+  const k = n - LEVELS.length;
+  const kinds = ['score','jelly','collect'];
+  const kind = kinds[k % 3];
+  const cfg = {target: 10000 + k*2500, moves: 24, types: 5, tips:'Endless mode — it only gets sweeter.'};
+  if (kind==='score'){ cfg.obj={kind:'score'}; cfg.map=FULL; cfg.types=6; cfg.moves=22; }
+  else if (kind==='collect'){
+    const a=k%5, b=(k+2)%5, need=12+Math.floor(k/3)*2;
+    cfg.obj={kind:'collect', colors:[[a,need],[b,need]]}; cfg.map=FULL;
+  } else {
+    cfg.obj={kind:'jelly'};
+    cfg.map=['........','.111111.','.111111.','.112211.','.112211.','.111111.','.111111.','........'];
+  }
+  return cfg;
+}
+
+/* ---------- Game state ---------- */
+let grid = [];            // grid[r][c] = {type, special, frost, el} | null
+let hole = [];            // hole[r][c] = bool
+let jelly = [];           // jelly[r][c] = 0|1|2
+let jellyEls = [];        // DOM overlay per cell
+let jellyLeft = 0;
+let collectGoal = [];     // [{type, need, have}]
+let obj = {kind:'score'};
+let cellSize = 60;
+let level = 1, score = 0, movesLeft = 0, targetScore = 0, numTypes = 6;
+let busy = true;
+let selected = null;
+let starsEarned = 0;
+let targetHit = false;
+
+const $ = id => document.getElementById(id);
+const wait = ms => new Promise(res=>setTimeout(res,ms));
+const key = (r,c)=>r+','+c;
+
+/* ---------- Layout ---------- */
+function layout(){
+  const availW = window.innerWidth * 0.96 - 24;
+  const availH = window.innerHeight - 185;
+  // cells can now grow up to 96px on large screens
+  cellSize = Math.max(34, Math.floor(Math.min(availW, availH, 8*96) / 8));
+  document.documentElement.style.setProperty('--cell', cellSize + 'px');
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+    const cd = grid[r] && grid[r][c];
+    if (cd && cd.el){ cd.el.style.transition='none'; place(cd.el,r,c); void cd.el.offsetWidth; cd.el.style.transition=''; }
+  }
+}
+window.addEventListener('resize', layout);
+
+function place(el,r,c){ el.style.transform = `translate(${c*cellSize}px, ${r*cellSize}px)`; }
+
+/* ---------- Board construction ---------- */
+function parseMap(map){
+  hole = []; jelly = [];
+  const frostCells = [];
+  for (let r=0;r<ROWS;r++){
+    hole.push([]); jelly.push([]);
+    for (let c=0;c<COLS;c++){
+      const ch = (map[r]||'........')[c] || '.';
+      hole[r].push(ch==='X');
+      jelly[r].push(ch==='1'?1:ch==='2'?2:0);
+      if (ch==='F') frostCells.push([r,c]);
+    }
+  }
+  return frostCells;
+}
+
+function buildBoardBackground(){
+  board.querySelectorAll('.cellbg,.jelly').forEach(n=>n.remove());
+  jellyEls = []; jellyLeft = 0;
+  for (let r=0;r<ROWS;r++){
+    jellyEls.push([]);
+    for (let c=0;c<COLS;c++){
+      jellyEls[r].push(null);
+      if (hole[r][c]) continue;
+      const d = document.createElement('div');
+      d.className = 'cellbg' + (((r+c)%2)?' alt':'');
+      d.style.left = `calc(var(--cell)*${c})`;
+      d.style.top  = `calc(var(--cell)*${r})`;
+      board.appendChild(d);
+      if (jelly[r][c]>0){
+        const j = document.createElement('div');
+        j.className = 'jelly ' + (jelly[r][c]===2?'j2':'j1');
+        j.style.left = `calc(var(--cell)*${c})`;
+        j.style.top  = `calc(var(--cell)*${r})`;
+        board.appendChild(j);
+        jellyEls[r][c] = j;
+        jellyLeft += jelly[r][c];
+      }
+    }
+  }
+}
+
+function randType(){ return Math.floor(Math.random()*numTypes); }
+
+function makeCandy(r,c,type,special=null,spawnRow=null,frost=0){
+  const el = document.createElement('div');
+  el.className = 'candy';
+  el.innerHTML = candySVG(type, special);
+  if (frost){
+    const f = document.createElement('div');
+    f.className = 'frostcap'; f.textContent = '❄';
+    el.appendChild(f);
+  }
+  if (spawnRow !== null){
+    el.style.transition='none';
+    place(el, spawnRow, c);
+    void el.offsetWidth;
+    el.style.transition='';
+    el.classList.add('spawn');
+  } else {
+    place(el, r, c);
+  }
+  board.appendChild(el);
+  const cd = {type, special, frost, el};
+  return cd;
+}
+
+function freshGrid(frostCells){
+  grid = [];
+  for (let r=0;r<ROWS;r++){
+    grid.push([]);
+    for (let c=0;c<COLS;c++){
+      if (hole[r][c]){ grid[r].push(null); continue; }
+      let t;
+      do { t = randType(); }
+      while (
+        (c>=2 && grid[r][c-1] && grid[r][c-2] && grid[r][c-1].type===t && grid[r][c-2].type===t) ||
+        (r>=2 && grid[r-1][c] && grid[r-2][c] && grid[r-1][c].type===t && grid[r-2][c].type===t)
+      );
+      grid[r].push(makeCandy(r,c,t));
+    }
+  }
+  for (const [r,c] of frostCells){
+    const cd = grid[r][c];
+    if (cd){
+      cd.frost = 1;
+      const f = document.createElement('div');
+      f.className='frostcap'; f.textContent='❄';
+      cd.el.appendChild(f);
+    }
+  }
+  if (!findAnyMove()) reshuffle(true);
+}
+
+/* ---------- Match detection ---------- */
+function findRuns(){
+  const runs = [];
+  for (let r=0;r<ROWS;r++){
+    let c=0;
+    while (c<COLS){
+      if (!grid[r][c]){ c++; continue; }
+      const t = grid[r][c].type;
+      let len=1;
+      while (c+len<COLS && grid[r][c+len] && grid[r][c+len].type===t) len++;
+      if (len>=3) runs.push({r,c,len,dir:'h',type:t});
+      c += len;
+    }
+  }
+  for (let c=0;c<COLS;c++){
+    let r=0;
+    while (r<ROWS){
+      if (!grid[r][c]){ r++; continue; }
+      const t = grid[r][c].type;
+      let len=1;
+      while (r+len<ROWS && grid[r+len][c] && grid[r+len][c].type===t) len++;
+      if (len>=3) runs.push({r,c,len,dir:'v',type:t});
+      r += len;
+    }
+  }
+  return runs;
+}
+
+function wouldMatchAt(r,c){
+  if (!grid[r][c]) return false;
+  const t = grid[r][c].type;
+  let n=1;
+  for (let i=c-1;i>=0 && grid[r][i] && grid[r][i].type===t;i--) n++;
+  for (let i=c+1;i<COLS && grid[r][i] && grid[r][i].type===t;i++) n++;
+  if (n>=3) return true;
+  n=1;
+  for (let i=r-1;i>=0 && grid[i][c] && grid[i][c].type===t;i--) n++;
+  for (let i=r+1;i<ROWS && grid[i][c] && grid[i][c].type===t;i++) n++;
+  return n>=3;
+}
+
+function findAnyMove(){
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++){
+    if (!grid[r][c]) continue;
+    if (grid[r][c].special==='bomb'){
+      for (const [dr,dc] of [[0,1],[1,0],[0,-1],[-1,0]]){
+        const r2=r+dr,c2=c+dc;
+        if (r2>=0&&r2<ROWS&&c2>=0&&c2<COLS&&grid[r2][c2]) return {a:{r,c},b:{r:r2,c:c2}};
+      }
+    }
+    for (const [dr,dc] of [[0,1],[1,0]]){
+      const r2=r+dr, c2=c+dc;
+      if (r2>=ROWS||c2>=COLS||!grid[r2][c2]) continue;
+      swapCells(r,c,r2,c2);
+      const ok = wouldMatchAt(r,c) || wouldMatchAt(r2,c2);
+      swapCells(r,c,r2,c2);
+      if (ok) return {a:{r,c}, b:{r:r2,c:c2}};
+    }
+  }
+  return null;
+}
+
+function swapCells(r1,c1,r2,c2){
+  const t = grid[r1][c1]; grid[r1][c1] = grid[r2][c2]; grid[r2][c2] = t;
+}
+
+async function reshuffle(silent=false){
+  if (!silent){ toastCombo('Shuffling…'); await wait(500); }
+  let guard = 0;
+  do {
+    const flat = [];
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) if (grid[r][c]) flat.push(grid[r][c]);
+    for (let i=flat.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [flat[i],flat[j]] = [flat[j],flat[i]];
+    }
+    let i=0;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) if (!hole[r][c]) grid[r][c]=flat[i++];
+  } while ((findRuns().length>0 || !findAnyMove()) && ++guard<200);
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) if (grid[r][c]) place(grid[r][c].el,r,c);
+  if (!silent) await wait(350);
+}
+
+/* ---------- FX ---------- */
+function centerOf(r,c){ return {x:(c+0.5)*cellSize, y:(r+0.5)*cellSize}; }
+
+function burst(r,c,color,count=10){
+  const {x,y} = centerOf(r,c);
+  for (let i=0;i<count;i++){
+    const p = document.createElement('div');
+    p.className='particle';
+    const ang = Math.random()*Math.PI*2, dist = 26+Math.random()*46;
+    p.style.setProperty('--dx', Math.cos(ang)*dist+'px');
+    p.style.setProperty('--dy', Math.sin(ang)*dist - 14 +'px');
+    p.style.left = (x-4)+'px'; p.style.top = (y-4)+'px';
+    p.style.background = `radial-gradient(circle at 35% 30%, #fff, ${color})`;
+    board.appendChild(p);
+    setTimeout(()=>p.remove(), 700);
+  }
+}
+function scorePop(r,c,pts){
+  const {x,y} = centerOf(r,c);
+  const s = document.createElement('div');
+  s.className='scorePop'; s.textContent = '+'+pts;
+  s.style.left=x+'px'; s.style.top=y+'px';
+  board.appendChild(s);
+  setTimeout(()=>s.remove(), 900);
+}
+function lineBeam(r,c,dir){
+  const b = document.createElement('div');
+  b.className='beam';
+  if (dir==='h'){ b.style.left='0'; b.style.top=(r*cellSize+cellSize*0.3)+'px'; b.style.width=(COLS*cellSize)+'px'; b.style.height=(cellSize*0.4)+'px'; }
+  else { b.style.top='0'; b.style.left=(c*cellSize+cellSize*0.3)+'px'; b.style.height=(ROWS*cellSize)+'px'; b.style.width=(cellSize*0.4)+'px'; }
+  board.appendChild(b);
+  setTimeout(()=>b.remove(),500);
+}
+function shockwave(r,c,small=false){
+  const {x,y}=centerOf(r,c);
+  const s=document.createElement('div');
+  s.className='shockwave'+(small?' small':''); s.style.left=x+'px'; s.style.top=y+'px';
+  board.appendChild(s);
+  setTimeout(()=>s.remove(),600);
+}
+function toastCombo(text){
+  const b = document.createElement('div');
+  b.className='comboBanner'; b.textContent=text;
+  board.appendChild(b);
+  setTimeout(()=>b.remove(), 1100);
+}
+const COMBO_WORDS = ['','', 'Sweet!','Tasty!','Delicious!','Divine!','LEGENDARY!'];
+
+/* ---------- Objective helpers ---------- */
+function breakJelly(r,c){
+  if (jelly[r][c]>0){
+    jelly[r][c]--;
+    jellyLeft--;
+    addScore(100);
+    sfx.jellyS();
+    burst(r,c,'#6dffb0',6);
+    const el = jellyEls[r][c];
+    if (jelly[r][c]===1){ el.classList.remove('j2'); el.classList.add('j1'); }
+    else if (el){ el.classList.add('gone'); setTimeout(()=>el.remove(),350); jellyEls[r][c]=null; }
+    updateObjHUD();
+  }
+}
+function countCollect(type){
+  for (const g of collectGoal){
+    if (g.type===type && g.have<g.need){ g.have++; }
+  }
+  if (collectGoal.length) updateObjHUD();
+}
+function objectiveComplete(){
+  if (obj.kind==='score')   return score >= targetScore;
+  if (obj.kind==='jelly')   return jellyLeft <= 0;
+  if (obj.kind==='collect') return collectGoal.every(g=>g.have>=g.need);
+  return false;
+}
+function objDescription(){
+  if (obj.kind==='score')   return '🎯 Reach ' + targetScore.toLocaleString() + ' points';
+  if (obj.kind==='jelly')   return '🟩 Clear all the jelly';
+  if (obj.kind==='collect') return '🍬 Collect ' + collectGoal.map(g=>g.need+' '+CANDY_COLORS[g.type].name).join(', ');
+  return '';
+}
+function updateObjHUD(){
+  if (obj.kind==='score'){
+    $('objLabel').textContent = 'Target';
+    $('objVal').textContent = targetScore.toLocaleString();
+  } else if (obj.kind==='jelly'){
+    $('objLabel').textContent = 'Jelly left';
+    $('objVal').textContent = Math.max(0,jellyLeft);
+  } else {
+    $('objLabel').textContent = 'Collect';
+    $('objVal').innerHTML = '<div class="collectRow">' + collectGoal.map(g=>
+      `<span class="goalItem ${g.have>=g.need?'done':''}">
+         <span class="dot" style="background:${CANDY_COLORS[g.type].main}"></span>
+         <span class="cnt">${Math.min(g.have,g.need)}/${g.need}</span>
+       </span>`).join('') + '</div>';
+  }
+}
+
+/* ---------- Cell clearing (shared by all effects) ----------
+   Returns true if the candy was actually removed. */
+function hitCell(r,c){
+  breakJelly(r,c);
+  const cd = grid[r][c];
+  if (!cd) return false;
+  if (cd.frost > 0){
+    cd.frost--;
+    sfx.ice();
+    const cap = cd.el.querySelector('.frostcap');
+    if (cap) cap.remove();
+    addScore(50);
+    burst(r,c,'#d8f2ff',9);
+    return false; // thawed, but survives this match
+  }
+  countCollect(cd.type);
+  burst(r,c, CANDY_COLORS[cd.type].main, 8);
+  cd.el.classList.add('pop');
+  grid[r][c] = null;
+  return true;
+}
+
+/* ---------- Core resolution loop ---------- */
+async function resolveBoard(swapPos){
+  let combo = 0;
+  while (true){
+    const runs = findRuns();
+    if (!runs.length) break;
+    combo++;
+
+    const clear = new Set();
+    const create = [];
+    const usedRun = new Set();
+
+    // map cells to runs to find L/T intersections → wrapped candy
+    const hMap = new Map(), vMap = new Map();
+    runs.forEach((run,idx)=>{
+      for (let i=0;i<run.len;i++){
+        const p = run.dir==='h' ? key(run.r, run.c+i) : key(run.r+i, run.c);
+        (run.dir==='h'?hMap:vMap).set(p, idx);
+      }
+    });
+    for (const [p, hIdx] of hMap){
+      if (vMap.has(p)){
+        const vIdx = vMap.get(p);
+        if (usedRun.has(hIdx)||usedRun.has(vIdx)) continue;
+        const [r,c] = p.split(',').map(Number);
+        create.push({r, c, type:runs[hIdx].type, special:'wrap'});
+        usedRun.add(hIdx); usedRun.add(vIdx);
+      }
+    }
+
+    for (const [idx, run] of runs.entries()){
+      const cells = [];
+      for (let i=0;i<run.len;i++)
+        cells.push(run.dir==='h' ? {r:run.r, c:run.c+i} : {r:run.r+i, c:run.c});
+      cells.forEach(p=>clear.add(key(p.r,p.c)));
+      if (usedRun.has(idx)) continue;
+      if (run.len>=4){
+        let spot = cells.find(p => swapPos && ((p.r===swapPos.a.r&&p.c===swapPos.a.c)||(p.r===swapPos.b.r&&p.c===swapPos.b.c)));
+        if (!spot) spot = cells[Math.floor(cells.length/2)];
+        const special = run.len>=5 ? 'bomb' : (run.dir==='h' ? 'stripeV' : 'stripeH');
+        create.push({r:spot.r, c:spot.c, type:run.type, special});
+      }
+    }
+    swapPos = null;
+
+    // chain reactions through specials caught in the blast
+    let expanded = true;
+    const lineFx = [];
+    while (expanded){
+      expanded = false;
+      for (const k of [...clear]){
+        const [r,c] = k.split(',').map(Number);
+        const cd = grid[r][c];
+        if (!cd || cd._chained || cd.frost>0) continue;
+        if (cd.special==='stripeH'){
+          cd._chained = true; lineFx.push({r,c,dir:'h'});
+          for (let i=0;i<COLS;i++) if(!hole[r][i]&&!clear.has(key(r,i))){clear.add(key(r,i));expanded=true;}
+        } else if (cd.special==='stripeV'){
+          cd._chained = true; lineFx.push({r,c,dir:'v'});
+          for (let i=0;i<ROWS;i++) if(!hole[i][c]&&!clear.has(key(i,c))){clear.add(key(i,c));expanded=true;}
+        } else if (cd.special==='wrap'){
+          cd._chained = true; shockwave(r,c,true); sfx.wrapS();
+          for (let rr=r-1;rr<=r+1;rr++) for (let cc=c-1;cc<=c+1;cc++)
+            if (rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&!hole[rr][cc]&&!clear.has(key(rr,cc))){clear.add(key(rr,cc));expanded=true;}
+        } else if (cd.special==='bomb'){
+          cd._chained = true; shockwave(r,c);
+          const t = randType();
+          for (let rr=0;rr<ROWS;rr++) for (let cc=0;cc<COLS;cc++)
+            if (grid[rr][cc] && grid[rr][cc].type===t && !clear.has(key(rr,cc))){clear.add(key(rr,cc));expanded=true;}
+        }
+      }
+    }
+    create.forEach(s=>clear.delete(key(s.r,s.c)));
+
+    const pts = clear.size * 60 * combo;
+    addScore(pts);
+
+    if (lineFx.length){ sfx.line(); lineFx.forEach(f=>lineBeam(f.r,f.c,f.dir)); }
+    sfx.pop(combo);
+    let popCenter = null;
+    for (const k of clear){
+      const [r,c] = k.split(',').map(Number);
+      if (!popCenter && grid[r][c]) popCenter = {r,c};
+      hitCell(r,c);
+    }
+    if (popCenter) scorePop(popCenter.r, popCenter.c, pts);
+    if (combo>=2) toastCombo((COMBO_WORDS[Math.min(combo,COMBO_WORDS.length-1)]||'INSANE!') + ' x'+combo);
+    if (clear.size>=10) { board.classList.add('quake'); setTimeout(()=>board.classList.remove('quake'),400); }
+
+    await wait(300);
+    document.querySelectorAll('.candy.pop').forEach(n=>n.remove());
+    for (const s of create){
+      const old = grid[s.r][s.c];
+      if (old) old.el.remove();
+      grid[s.r][s.c] = makeCandy(s.r,s.c,s.type,s.special);
+      burst(s.r,s.c,'#ffffff',14);
+    }
+
+    await applyGravity();
+    await wait(120);
+  }
+
+  if (!findAnyMove()) await reshuffle();
+}
+
+async function applyGravity(){
+  let moved = false;
+  for (let c=0;c<COLS;c++){
+    const rowsOpen = [];
+    for (let r=0;r<ROWS;r++) if (!hole[r][c]) rowsOpen.push(r);
+    if (!rowsOpen.length) continue;
+    const existing = [], origRows = [];
+    for (const r of rowsOpen){
+      if (grid[r][c]){ existing.push(grid[r][c]); origRows.push(r); }
+      grid[r][c] = null;
+    }
+    const spawnCount = rowsOpen.length - existing.length;
+    for (let i=0;i<rowsOpen.length;i++){
+      const r = rowsOpen[i];
+      if (i < spawnCount){
+        grid[r][c] = makeCandy(r,c,randType(),null, rowsOpen[0]-(spawnCount-i));
+        const el = grid[r][c].el;
+        el.classList.add('fall');
+        requestAnimationFrame(()=>requestAnimationFrame(()=>place(el,r,c)));
+        moved = true;
+      } else {
+        const idx = i - spawnCount;
+        const cd = existing[idx];
+        grid[r][c] = cd;
+        if (origRows[idx] !== r){
+          cd.el.classList.add('fall');
+          place(cd.el, r, c);
+          moved = true;
+        }
+      }
+    }
+  }
+  if (moved) await wait(520);
+  document.querySelectorAll('.candy.fall').forEach(n=>n.classList.remove('fall'));
+}
+
+/* ---------- Bomb swap ---------- */
+async function activateBomb(bombPos, otherPos){
+  const other = grid[otherPos.r][otherPos.c];
+  const t = other ? other.type : randType();
+  sfx.bombS();
+  shockwave(bombPos.r,bombPos.c);
+  board.classList.add('quake'); setTimeout(()=>board.classList.remove('quake'),400);
+
+  const cells = [{r:bombPos.r,c:bombPos.c}];
+  for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++)
+    if (grid[r][c] && grid[r][c].type===t && grid[r][c].special!=='bomb') cells.push({r,c});
+
+  const pts = cells.length * 90;
+  addScore(pts);
+  scorePop(bombPos.r,bombPos.c,pts);
+  // the bomb itself always clears
+  const bombCd = grid[bombPos.r][bombPos.c];
+  if (bombCd){ bombCd.frost=0; }
+  for (const p of cells) hitCell(p.r,p.c);
+  await wait(320);
+  document.querySelectorAll('.candy.pop').forEach(n=>n.remove());
+  await applyGravity();
+  await resolveBoard(null);
+}
+
+/* ---------- Special + special combos ---------- */
+async function activateCombo(p, q){
+  const A = grid[p.r][p.c], B = grid[q.r][q.c];
+  const sA = A.special, sB = B.special;
+  A.special = null; B.special = null; // consumed — they won't re-chain
+  const clear = new Set();
+  const addCell = (r,c)=>{ if(r>=0&&r<ROWS&&c>=0&&c<COLS&&!hole[r][c]) clear.add(key(r,c)); };
+  const isStripe = s=>s==='stripeH'||s==='stripeV';
+  const has = k=>sA===k||sB===k;
+
+  board.classList.add('quake'); setTimeout(()=>board.classList.remove('quake'),400);
+
+  if (sA==='bomb' && sB==='bomb'){
+    sfx.bombS(); shockwave(p.r,p.c); shockwave(q.r,q.c); toastCombo('KABOOM!');
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) addCell(r,c);
+  } else if (has('bomb')){
+    // bomb + striped/wrapped → wipe the partner's color plus a full cross
+    sfx.bombS(); shockwave(p.r,p.c); toastCombo('Mega blast!');
+    const t = (sA==='bomb'? B : A).type;
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++)
+      if (grid[r][c] && grid[r][c].type===t) addCell(r,c);
+    for (let i=0;i<COLS;i++) addCell(p.r,i);
+    for (let i=0;i<ROWS;i++) addCell(i,p.c);
+    addCell(q.r,q.c);
+  } else if (isStripe(sA) && isStripe(sB)){
+    sfx.line(); toastCombo('Criss-cross!');
+    lineBeam(p.r,p.c,'h'); lineBeam(p.r,p.c,'v');
+    for (let i=0;i<COLS;i++) addCell(p.r,i);
+    for (let i=0;i<ROWS;i++) addCell(i,p.c);
+    addCell(q.r,q.c);
+  } else if (sA==='wrap' && sB==='wrap'){
+    sfx.wrapS(); shockwave(p.r,p.c); toastCombo('Double wrap!');
+    for (let r=p.r-2;r<=p.r+2;r++) for (let c=p.c-2;c<=p.c+2;c++) addCell(r,c);
+    addCell(q.r,q.c);
+  } else {
+    // striped + wrapped → giant three-wide cross
+    sfx.line(); sfx.wrapS(); toastCombo('Giant cross!');
+    for (let dr=-1;dr<=1;dr++){
+      const rr = Math.min(ROWS-1, Math.max(0, p.r+dr));
+      lineBeam(rr, p.c, 'h');
+      for (let i=0;i<COLS;i++) addCell(p.r+dr, i);
+    }
+    for (let dc=-1;dc<=1;dc++){
+      const cc = Math.min(COLS-1, Math.max(0, p.c+dc));
+      lineBeam(p.r, cc, 'v');
+      for (let i=0;i<ROWS;i++) addCell(i, p.c+dc);
+    }
+    addCell(q.r,q.c);
+  }
+  await detonate(clear, 100);
+}
+
+/* Clear an arbitrary set of cells with full chain reactions, then settle the board */
+async function detonate(clear, ptsPer=100){
+  let expanded = true;
+  const lineFx = [];
+  while (expanded){
+    expanded = false;
+    for (const k of [...clear]){
+      const [r,c] = k.split(',').map(Number);
+      const cd = grid[r][c];
+      if (!cd || cd._chained || cd.frost>0) continue;
+      if (cd.special==='stripeH'){
+        cd._chained = true; lineFx.push({r,c,dir:'h'});
+        for (let i=0;i<COLS;i++) if(!hole[r][i]&&!clear.has(key(r,i))){clear.add(key(r,i));expanded=true;}
+      } else if (cd.special==='stripeV'){
+        cd._chained = true; lineFx.push({r,c,dir:'v'});
+        for (let i=0;i<ROWS;i++) if(!hole[i][c]&&!clear.has(key(i,c))){clear.add(key(i,c));expanded=true;}
+      } else if (cd.special==='wrap'){
+        cd._chained = true; shockwave(r,c,true); sfx.wrapS();
+        for (let rr=r-1;rr<=r+1;rr++) for (let cc=c-1;cc<=c+1;cc++)
+          if (rr>=0&&rr<ROWS&&cc>=0&&cc<COLS&&!hole[rr][cc]&&!clear.has(key(rr,cc))){clear.add(key(rr,cc));expanded=true;}
+      } else if (cd.special==='bomb'){
+        cd._chained = true; shockwave(r,c);
+        const t = randType();
+        for (let rr=0;rr<ROWS;rr++) for (let cc=0;cc<COLS;cc++)
+          if (grid[rr][cc] && grid[rr][cc].type===t && !clear.has(key(rr,cc))){clear.add(key(rr,cc));expanded=true;}
+      }
+    }
+  }
+  const pts = clear.size * ptsPer;
+  addScore(pts);
+  if (lineFx.length){ sfx.line(); lineFx.forEach(f=>lineBeam(f.r,f.c,f.dir)); }
+  sfx.pop(2);
+  let popCenter = null;
+  for (const k of clear){
+    const [r,c] = k.split(',').map(Number);
+    if (!popCenter && grid[r][c]) popCenter = {r,c};
+    hitCell(r,c);
+  }
+  if (popCenter) scorePop(popCenter.r, popCenter.c, pts);
+  await wait(320);
+  document.querySelectorAll('.candy.pop').forEach(n=>n.remove());
+  await applyGravity();
+  await resolveBoard(null);
+}
+
+/* ---------- Input & swapping ---------- */
+function cellFromEvent(e){
+  const rect = board.getBoundingClientRect();
+  const x = (e.touches? e.touches[0].clientX : e.clientX) - rect.left;
+  const y = (e.touches? e.touches[0].clientY : e.clientY) - rect.top;
+  const c = Math.floor(x/cellSize), r = Math.floor(y/cellSize);
+  if (r<0||r>=ROWS||c<0||c>=COLS||hole[r][c]) return null;
+  return {r,c};
+}
+
+async function trySwap(a,b){
+  if (busy) return;
+  const A = grid[a.r][a.c], B = grid[b.r][b.c];
+  if (!A||!B) return;
+  busy = true;
+  clearSelection();
+
+  if (A.special && B.special){
+    spendMove();
+    sfx.swap();
+    place(A.el,b.r,b.c); place(B.el,a.r,a.c);
+    swapCells(a.r,a.c,b.r,b.c);
+    await wait(240);
+    await activateCombo(b, a);
+    endTurnCheck();
+    return;
+  }
+
+  if (A.special==='bomb' || B.special==='bomb'){
+    spendMove();
+    sfx.swap();
+    place(A.el,b.r,b.c); place(B.el,a.r,a.c);
+    swapCells(a.r,a.c,b.r,b.c);
+    await wait(240);
+    const bombPos = grid[a.r][a.c] && grid[a.r][a.c].special==='bomb' ? a : b;
+    const otherPos = bombPos===a ? b : a;
+    await activateBomb(bombPos, otherPos);
+    endTurnCheck();
+    return;
+  }
+
+  sfx.swap();
+  place(A.el,b.r,b.c); place(B.el,a.r,a.c);
+  swapCells(a.r,a.c,b.r,b.c);
+  await wait(240);
+
+  if (wouldMatchAt(a.r,a.c) || wouldMatchAt(b.r,b.c)){
+    spendMove();
+    await resolveBoard({a,b});
+    endTurnCheck();
+  } else {
+    sfx.bad();
+    A.el.classList.add('shake'); B.el.classList.add('shake');
+    await wait(240);
+    place(A.el,a.r,a.c); place(B.el,b.r,b.c);
+    swapCells(a.r,a.c,b.r,b.c);
+    await wait(240);
+    A.el.classList.remove('shake'); B.el.classList.remove('shake');
+    busy = false;
+  }
+}
+
+function clearSelection(){
+  if (selected){
+    const cd = grid[selected.r][selected.c];
+    if (cd) cd.el.classList.remove('selected');
+    selected = null;
+  }
+}
+
+function onSelect(p){
+  if (busy || !p) return;
+  const cd = grid[p.r][p.c];
+  if (!cd) return;
+  if (!selected){
+    selected = p;
+    cd.el.classList.add('selected');
+    sfx.select();
+    return;
+  }
+  if (selected.r===p.r && selected.c===p.c){ clearSelection(); return; }
+  const adjacent = Math.abs(selected.r-p.r)+Math.abs(selected.c-p.c)===1;
+  if (adjacent){
+    const from = selected;
+    trySwap(from, p);
+  } else {
+    clearSelection();
+    selected = p;
+    cd.el.classList.add('selected');
+    sfx.select();
+  }
+}
+
+let dragStart = null;
+board.addEventListener('pointerdown', e=>{
+  const p = cellFromEvent(e);
+  dragStart = p;
+  onSelect(p);
+});
+board.addEventListener('pointermove', e=>{
+  if (!dragStart || busy) return;
+  const rect = board.getBoundingClientRect();
+  const dx = e.clientX - rect.left - (dragStart.c+0.5)*cellSize;
+  const dy = e.clientY - rect.top  - (dragStart.r+0.5)*cellSize;
+  if (Math.abs(dx)<cellSize*0.45 && Math.abs(dy)<cellSize*0.45) return;
+  let target;
+  if (Math.abs(dx)>Math.abs(dy)) target = {r:dragStart.r, c:dragStart.c + (dx>0?1:-1)};
+  else target = {r:dragStart.r + (dy>0?1:-1), c:dragStart.c};
+  if (target.r<0||target.r>=ROWS||target.c<0||target.c>=COLS||hole[target.r][target.c]){ dragStart=null; return; }
+  const from = dragStart;
+  dragStart = null;
+  clearSelection();
+  trySwap(from, target);
+});
+window.addEventListener('pointerup', ()=>{ dragStart=null; });
+
+/* ---------- Scoring / HUD ---------- */
+function addScore(pts){
+  score += pts;
+  $('scoreVal').textContent = score.toLocaleString();
+  const pct = Math.min(100, (score/targetScore)*100 * 0.5);
+  $('progFill').style.width = pct + '%';
+  const starEls = document.querySelectorAll('.stars i');
+  [1, 1.5, 2].forEach((m,i)=>{
+    if (score >= targetScore*m && !starEls[i].classList.contains('lit')){
+      starEls[i].classList.add('lit');
+      starsEarned = i+1;
+      beep(1046+i*200,.2,'triangle',.14);
+    }
+  });
+}
+function spendMove(){
+  movesLeft--;
+  $('movesVal').textContent = movesLeft;
+  $('movesVal').classList.toggle('low', movesLeft<=5);
+}
+function endTurnCheck(){
+  const done = objectiveComplete();
+  if (obj.kind!=='score' && done){
+    busy = true;
+    finishWithBonus();
+    return;
+  }
+  if (movesLeft<=0){
+    busy = true;
+    if (done) setTimeout(showWin, 600);
+    else setTimeout(showLose, 600);
+  } else {
+    if (obj.kind==='score' && done && !targetHit){
+      targetHit = true;
+      toastCombo('Target reached! ⭐');
+      beep(880,.2,'triangle',.14,200);
+    }
+    busy = false;
+  }
+}
+async function finishWithBonus(){
+  toastCombo('Objective complete!');
+  sfx.win();
+  await wait(900);
+  // sugar-rush style: remaining moves convert to points
+  while (movesLeft>0){
+    movesLeft--;
+    $('movesVal').textContent = movesLeft;
+    addScore(250);
+    scorePop(Math.floor(Math.random()*ROWS), Math.floor(Math.random()*COLS), 250);
+    beep(600+Math.random()*500,.1,'sine',.1);
+    await wait(110);
+  }
+  await wait(500);
+  showWin();
+}
+
+/* ---------- Level flow ---------- */
+function startLevel(n){
+  level = n;
+  const cfg = levelCfg(n);
+  obj = cfg.obj;
+  targetScore = cfg.target; movesLeft = cfg.moves; numTypes = cfg.types;
+  score = 0; starsEarned = 0; targetHit = false;
+  collectGoal = obj.kind==='collect' ? obj.colors.map(([t,need])=>({type:t, need, have:0})) : [];
+
+  $('levelVal').textContent = n;
+  $('scoreVal').textContent = '0';
+  $('movesVal').textContent = movesLeft;
+  $('movesVal').classList.remove('low');
+  $('progFill').style.width = '0%';
+  document.querySelectorAll('.stars i').forEach(s=>s.classList.remove('lit'));
+  board.querySelectorAll('.candy,.particle,.scorePop,.beam,.shockwave,.comboBanner').forEach(x=>x.remove());
+
+  const frostCells = parseMap(cfg.map);
+  buildBoardBackground();
+  freshGrid(frostCells);
+  updateObjHUD();
+
+  // intro card
+  $('introTitle').textContent = 'Level ' + n;
+  $('introObj').textContent = objDescription() + '  ·  ' + movesLeft + ' moves';
+  $('introTips').textContent = cfg.tips || '';
+  $('introOverlay').classList.add('show');
+  busy = true;
+}
+$('introBtn').addEventListener('click', ()=>{
+  $('introOverlay').classList.remove('show');
+  beep(660,.12,'triangle',.12,200);
+  busy = false;
+});
+
+function showWin(){
+  sfx.win();
+  confettiRain();
+  const spans = document.querySelectorAll('#winStars span');
+  spans.forEach((s,i)=>s.classList.toggle('lit', i<Math.max(1,starsEarned)));
+  $('winText').textContent = `Level ${level} cleared with ${score.toLocaleString()} points!`;
+  $('winOverlay').classList.add('show');
+}
+function showLose(){
+  sfx.lose();
+  let msg;
+  if (obj.kind==='jelly') msg = `${jellyLeft} jelly left to clear. So close!`;
+  else if (obj.kind==='collect'){
+    const left = collectGoal.filter(g=>g.have<g.need).map(g=>(g.need-g.have)+' '+CANDY_COLORS[g.type].name).join(', ');
+    msg = `Still needed: ${left}.`;
+  } else msg = `You scored ${score.toLocaleString()} of ${targetScore.toLocaleString()}.`;
+  $('loseText').textContent = msg + ' Give it another go!';
+  $('loseOverlay').classList.add('show');
+}
+
+$('nextBtn').addEventListener('click', ()=>{
+  $('winOverlay').classList.remove('show');
+  startLevel(level+1);
+});
+$('retryBtn').addEventListener('click', ()=>{
+  $('loseOverlay').classList.remove('show');
+  startLevel(level);
+});
+$('startBtn').addEventListener('click', ()=>{
+  $('startOverlay').classList.remove('show');
+  startLevel(1);
+});
+
+$('soundBtn').addEventListener('click', function(){
+  soundOn = !soundOn;
+  this.textContent = soundOn ? '🔊' : '🔇';
+  if (soundOn) sfx.select();
+});
+$('hintBtn').addEventListener('click', ()=>{
+  if (busy) return;
+  const mv = findAnyMove();
+  if (!mv) return;
+  [mv.a, mv.b].forEach(p=>{
+    const cd = grid[p.r][p.c];
+    if (cd){ cd.el.classList.add('hint'); setTimeout(()=>cd.el.classList.remove('hint'), 2500); }
+  });
+  sfx.select();
+});
+
+/* ---------- Confetti + bokeh ---------- */
+function confettiRain(){
+  const colors = CANDY_COLORS.map(c=>c.main);
+  for (let i=0;i<60;i++){
+    const p = document.createElement('div');
+    p.style.cssText = `position:fixed;z-index:60;width:${6+Math.random()*8}px;height:${8+Math.random()*10}px;
+      left:${Math.random()*100}vw;top:-20px;background:${colors[i%colors.length]};
+      border-radius:${Math.random()>.5?'50%':'3px'};pointer-events:none;
+      transform:rotate(${Math.random()*360}deg);
+      transition:transform ${2+Math.random()*1.5}s linear, top ${2+Math.random()*1.5}s cubic-bezier(.3,.1,.6,1), opacity 2.5s;`;
+    document.body.appendChild(p);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      p.style.top = '110vh';
+      p.style.transform = `rotate(${360+Math.random()*720}deg)`;
+      p.style.opacity = '0.7';
+    }));
+    setTimeout(()=>p.remove(), 4000);
+  }
+}
+(function bokeh(){
+  const host = document.getElementById('bokeh');
+  for (let i=0;i<16;i++){
+    const s = document.createElement('span');
+    const size = 20+Math.random()*90;
+    s.style.width = s.style.height = size+'px';
+    s.style.left = Math.random()*100+'vw';
+    s.style.animationDuration = (14+Math.random()*22)+'s';
+    s.style.animationDelay = (-Math.random()*30)+'s';
+    host.appendChild(s);
+  }
+})();
+
+/* ---------- Boot: show a demo board behind the start screen ---------- */
+parseMap(FULL);
+buildBoardBackground();
+layout();
+numTypes = 6;
+freshGrid([]);
+</script>
+</body>
+</html>
