@@ -618,12 +618,12 @@ const LEVELS = [
     tips:'Striped and wrapped candies clear jelly everywhere they blast.'
   },
   { // 6 — frost introduction
-    obj:{kind:'collect', colors:[[1,10],[2,10],[4,10]]}, target:6500, moves:26, types:5,
+    obj:{kind:'collect', colors:[[1,8],[2,8],[4,8]]}, target:6000, moves:28, types:5,
     map:['........',
          '..F..F..',
          '........',
-         '.F....F.',
-         '.F....F.',
+         '........',
+         '........',
          '........',
          '..F..F..',
          '........'],
@@ -774,7 +774,14 @@ function buildBoardBackground(){
   }
 }
 
-function randType(){ return Math.floor(Math.random()*numTypes); }
+function randType(){
+  // on collect levels, gently bias new candies toward colors still needed
+  if (collectGoal.length && Math.random() < 0.22){
+    const open = collectGoal.filter(g=>g.have < g.need);
+    if (open.length) return open[Math.floor(Math.random()*open.length)].type;
+  }
+  return Math.floor(Math.random()*numTypes);
+}
 
 function makeCandy(r,c,type,special=null,spawnRow=null,frost=0){
   const el = document.createElement('div');
