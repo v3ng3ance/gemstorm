@@ -1393,6 +1393,7 @@ function onSelect(p){
 
 let dragStart = null;
 board.addEventListener('pointerdown', e=>{
+  lastAction = Date.now();
   const p = cellFromEvent(e);
   dragStart = p;
   onSelect(p);
@@ -1544,16 +1545,37 @@ $('soundBtn').addEventListener('click', function(){
   this.textContent = soundOn ? '🔊' : '🔇';
   if (soundOn) sfx.select();
 });
-$('hintBtn').addEventListener('click', ()=>{
-  if (busy) return;
+function showHint(){
   const mv = findAnyMove();
   if (!mv) return;
   [mv.a, mv.b].forEach(p=>{
     const cd = grid[p.r][p.c];
-    if (cd){ cd.el.classList.add('hint'); setTimeout(()=>cd.el.classList.remove('hint'), 2500); }
+    if (cd){
+      cd.el.classList.remove('hint');
+      void cd.el.offsetWidth; // restart the animation if already applied
+      cd.el.classList.add('hint');
+      setTimeout(()=>cd.el.classList.remove('hint'), 2500);
+    }
   });
+}
+$('hintBtn').addEventListener('click', ()=>{
+  if (busy) return;
+  showHint();
   sfx.select();
 });
+
+/* auto-hint: if the player is idle for ~5s, wiggle a valid move */
+let lastAction = Date.now();
+setInterval(()=>{
+  if (busy || document.querySelector('.overlay.show')){
+    lastAction = Date.now(); // don't count animation/menu time as idle
+    return;
+  }
+  if (Date.now() - lastAction > 5000){
+    showHint();
+    lastAction = Date.now() - 1800; // if still idle, remind again in ~3s
+  }
+}, 600);
 
 /* ---------- Confetti + bokeh ---------- */
 function confettiRain(){
