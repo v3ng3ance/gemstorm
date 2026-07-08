@@ -1437,41 +1437,19 @@ function spendMove(){
 }
 function endTurnCheck(){
   const done = objectiveComplete();
-  if (obj.kind!=='score' && done){
-    busy = true;
-    finishWithBonus();
-    return;
-  }
   if (movesLeft<=0){
     busy = true;
     if (done) setTimeout(showWin, 600);
     else setTimeout(showLose, 600);
   } else {
-    if (obj.kind==='score' && done && !targetHit){
+    if (done && !targetHit){
       targetHit = true;
-      toastCombo('Target reached! ⭐');
+      toastCombo(obj.kind==='score' ? 'Target reached! ⭐' : 'Objective complete! ⭐');
       beep(880,.2,'triangle',.14,200);
     }
     busy = false;
   }
 }
-async function finishWithBonus(){
-  toastCombo('Objective complete!');
-  sfx.win();
-  await wait(900);
-  // sugar-rush style: remaining moves convert to points
-  while (movesLeft>0){
-    movesLeft--;
-    $('movesVal').textContent = movesLeft;
-    addScore(250);
-    scorePop(Math.floor(Math.random()*ROWS), Math.floor(Math.random()*COLS), 250);
-    beep(600+Math.random()*500,.1,'sine',.1);
-    await wait(110);
-  }
-  await wait(500);
-  showWin();
-}
-
 /* ---------- Level flow ---------- */
 function startLevel(n){
   level = n;
