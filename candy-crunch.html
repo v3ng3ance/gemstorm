@@ -618,7 +618,7 @@ const LEVELS = [
     tips:'Striped and wrapped candies clear jelly everywhere they blast.'
   },
   { // 6 — frost introduction
-    obj:{kind:'collect', colors:[[1,10],[3,10],[5,10]]}, target:6500, moves:26, types:5,
+    obj:{kind:'collect', colors:[[1,10],[2,10],[4,10]]}, target:6500, moves:26, types:5,
     map:['........',
          '..F..F..',
          '........',
@@ -1471,7 +1471,7 @@ function startLevel(n){
   obj = cfg.obj;
   targetScore = cfg.target; movesLeft = cfg.moves; numTypes = cfg.types;
   score = 0; starsEarned = 0; targetHit = false;
-  collectGoal = obj.kind==='collect' ? obj.colors.map(([t,need])=>({type:t, need, have:0})) : [];
+  collectGoal = obj.kind==='collect' ? obj.colors.map(([t,need])=>({type:t % numTypes, need, have:0})) : [];
 
   $('levelVal').textContent = n;
   $('scoreVal').textContent = '0';
