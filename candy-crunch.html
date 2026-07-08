@@ -578,11 +578,11 @@ const LEVELS = [
     tips:'Match 4 or 5 candies to create powerful specials.'
   },
   { // 2 — first collect level
-    obj:{kind:'collect', colors:[[0,12],[4,12]]}, target:3000, moves:22, types:5, map:FULL,
+    obj:{kind:'collect', colors:[[0,12],[4,12]]}, target:2500, moves:22, types:5, map:FULL,
     tips:'Only candies that are actually cleared count toward the goal.'
   },
   { // 3 — jelly ring
-    obj:{kind:'jelly'}, target:4000, moves:24, types:5,
+    obj:{kind:'jelly'}, target:3000, moves:24, types:5,
     map:['........',
          '.111111.',
          '.1....1.',
@@ -594,7 +594,7 @@ const LEVELS = [
     tips:'Match candies on top of jelly to dissolve it. Jelly breaks also score points!'
   },
   { // 4 — clipped corners
-    obj:{kind:'score'}, target:4500, moves:22, types:6,
+    obj:{kind:'score'}, target:3800, moves:22, types:6,
     map:['XX....XX',
          'X......X',
          '........',
@@ -606,7 +606,7 @@ const LEVELS = [
     tips:'A sixth candy color joins the mix. Swap two specials together for combo blasts!'
   },
   { // 5 — jelly diamond with holes
-    obj:{kind:'jelly'}, target:6000, moves:26, types:5,
+    obj:{kind:'jelly'}, target:4500, moves:26, types:5,
     map:['XXX11XXX',
          'XX1111XX',
          '.111111.',
@@ -618,7 +618,7 @@ const LEVELS = [
     tips:'Striped and wrapped candies clear jelly everywhere they blast.'
   },
   { // 6 — frost introduction
-    obj:{kind:'collect', colors:[[1,8],[2,8],[4,8]]}, target:6000, moves:28, types:5,
+    obj:{kind:'collect', colors:[[1,8],[2,8],[4,8]]}, target:5000, moves:28, types:5,
     map:['........',
          '..F..F..',
          '........',
@@ -630,7 +630,7 @@ const LEVELS = [
     tips:'❄ Frosted candies must be matched twice — first to thaw, then to clear.'
   },
   { // 7 — jelly core
-    obj:{kind:'jelly'}, target:7500, moves:24, types:5,
+    obj:{kind:'jelly'}, target:5500, moves:24, types:5,
     map:['........',
          '........',
          '..1111..',
@@ -642,7 +642,7 @@ const LEVELS = [
     tips:'Thick jelly takes two matches. Aim wrapped candies at the center!'
   },
   { // 8 — the breach, pure score
-    obj:{kind:'score'}, target:6000, moves:22, types:5,
+    obj:{kind:'score'}, target:5500, moves:22, types:5,
     map:['X......X',
          '........',
          '........',
@@ -654,7 +654,7 @@ const LEVELS = [
     tips:'Candies fall through the central breach — plan for surprise cascades.'
   },
   { // 9 — frosted corners
-    obj:{kind:'jelly'}, target:8500, moves:26, types:5,
+    obj:{kind:'jelly'}, target:6000, moves:26, types:5,
     map:['.1....1.',
          '11....11',
          '........',
@@ -666,12 +666,12 @@ const LEVELS = [
     tips:'Corner jelly is stubborn — striped candies reach where swaps can\'t.'
   },
   { // 10 — the full glaze
-    obj:{kind:'jelly'}, target:10000, moves:30, types:5,
+    obj:{kind:'jelly'}, target:7000, moves:32, types:5,
     map:['11111111',
          '11111111',
          '11111111',
-         '11122111',
-         '11122111',
+         '11111111',
+         '11111111',
          '11111111',
          '11111111',
          '11111111'],
@@ -685,7 +685,7 @@ function levelCfg(n){
   const k = n - LEVELS.length;
   const kinds = ['score','jelly','collect'];
   const kind = kinds[k % 3];
-  const cfg = {target: 10000 + k*2500, moves: 24, types: 5, tips:'Endless mode — it only gets sweeter.'};
+  const cfg = {target: 7500 + k*1500, moves: 24, types: 5, tips:'Endless mode — it only gets sweeter.'};
   if (kind==='score'){ cfg.obj={kind:'score'}; cfg.map=FULL; cfg.types=6; cfg.moves=22; }
   else if (kind==='collect'){
     const a=k%5, b=(k+2)%5, need=12+Math.floor(k/3)*2;
