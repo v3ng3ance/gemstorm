@@ -681,14 +681,18 @@ const LEVELS = [
 
 function levelCfg(n){
   if (n <= LEVELS.length) return LEVELS[n-1];
-  // endless mode: cycle objective kinds with rising difficulty
+  // endless mode: cycle objective kinds; difficulty rises gently and CAPS
   const k = n - LEVELS.length;
   const kinds = ['score','jelly','collect'];
   const kind = kinds[k % 3];
-  const cfg = {target: 7500 + k*1500, moves: 24, types: 5, tips:'Endless mode — it only gets sweeter.'};
-  if (kind==='score'){ cfg.obj={kind:'score'}; cfg.map=FULL; cfg.types=6; cfg.moves=22; }
+  const cfg = {target: Math.min(6000 + k*300, 8500), moves: 24, types: 5, tips:'Endless mode — it only gets sweeter.'};
+  if (kind==='score'){
+    cfg.obj={kind:'score'}; cfg.map=FULL;
+    cfg.target = Math.min(4500 + k*250, 7000);   // ~205→max 318 pts/move, always beatable
+    cfg.moves = 22;
+  }
   else if (kind==='collect'){
-    const a=k%5, b=(k+2)%5, need=12+Math.floor(k/3)*2;
+    const a=k%5, b=(k+2)%5, need=Math.min(12 + Math.floor(k/4)*2, 16);
     cfg.obj={kind:'collect', colors:[[a,need],[b,need]]}; cfg.map=FULL;
   } else {
     cfg.obj={kind:'jelly'};
