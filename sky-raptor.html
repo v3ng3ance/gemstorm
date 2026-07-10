@@ -1,0 +1,1600 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>SKY RAPTOR — Operațiunea Fulger</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#000; touch-action:none;
+    -webkit-user-select:none; user-select:none; font-family:'Courier New', monospace; }
+  #game { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  #scan { position:fixed; inset:0; pointer-events:none; z-index:5; opacity:.07;
+    background:repeating-linear-gradient(0deg, #000 0 1px, transparent 1px 3px); }
+  .btn { position:fixed; z-index:10; border:2px solid rgba(255,255,255,.55); color:#fff;
+    background:rgba(0,0,0,.35); font-family:inherit; font-weight:bold; border-radius:10px;
+    padding:6px 12px; font-size:15px; letter-spacing:1px; }
+  .btn:active { background:rgba(255,255,255,.25); }
+  #btnPause { top:calc(env(safe-area-inset-top,0px) + 8px); right:8px; }
+  #btnMute  { top:calc(env(safe-area-inset-top,0px) + 8px); right:74px; }
+  #btnBomb { bottom:calc(env(safe-area-inset-bottom,0px) + 18px); right:16px;
+    width:84px; height:84px; border-radius:50%; font-size:17px;
+    border:3px solid #ffb400; color:#ffd75e; background:rgba(60,20,0,.45);
+    box-shadow:0 0 18px rgba(255,140,0,.35); display:none; }
+  #btnBomb:active { background:rgba(255,140,0,.4); }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="scan"></div>
+<button class="btn" id="btnMute">♪</button>
+<button class="btn" id="btnPause">II</button>
+<button class="btn" id="btnBomb">BOMBĂ</button>
+<script>
+'use strict';
+/* ================= SKY RAPTOR — shooter vertical stil arcade =================
+   Un singur fișier. Grafică 100% procedurală (canvas), sunet WebAudio.
+   Controale: telefon = tragi cu degetul oriunde pe ecran (mișcare relativă),
+   buton rotund pentru bombă. Desktop = săgeți/WASD, Space/B = bombă, P = pauză.
+============================================================================= */
+
+// ---------- Bază canvas ----------
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1, S = 1;           // S = factor de scalare global
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR);
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  S = Math.max(0.7, Math.min(1.35, H / 800));
+  terrainCache = {};                         // regenerează terenul la redimensionare
+  buildVignette();
+}
+window.addEventListener('resize', resize);
+
+// ---------- Utilitare ----------
+const TAU = Math.PI * 2;
+const rnd = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+const dist2 = (ax, ay, bx, by) => { const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; };
+function mulberry32(seed) {
+  let t = seed >>> 0;
+  return function () {
+    t += 0x6D2B79F5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// ---------- Sunet (WebAudio, generat) ----------
+const AudioSys = {
+  ctx: null, muted: false, lastShot: 0,
+  init() { if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); },
+  tone(f0, f1, dur, type, vol, when) {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime + (when || 0);
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(this.ctx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+  noise(dur, vol, low) {
+    if (!this.ctx || this.muted) return;
+    const t = this.ctx.currentTime, n = Math.floor(this.ctx.sampleRate * dur);
+    const buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+    const src = this.ctx.createBufferSource(); src.buffer = buf;
+    const g = this.ctx.createGain(); g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    const f = this.ctx.createBiquadFilter(); f.type = 'lowpass';
+    f.frequency.setValueAtTime(low ? 900 : 4000, t);
+    src.connect(f).connect(g).connect(this.ctx.destination); src.start(t);
+  },
+  shoot() { const now = performance.now(); if (now - this.lastShot < 95) return; this.lastShot = now; this.tone(880, 220, 0.08, 'square', 0.05); },
+  hit() { this.tone(300, 80, 0.1, 'sawtooth', 0.08); },
+  boomS() { this.noise(0.25, 0.22); this.tone(220, 40, 0.25, 'triangle', 0.15); },
+  boomB() { this.noise(0.7, 0.4, true); this.tone(120, 25, 0.7, 'sine', 0.3); },
+  power() { [523, 659, 784, 1046].forEach((f, i) => this.tone(f, f, 0.09, 'square', 0.07, i * 0.07)); },
+  hurt() { this.tone(200, 60, 0.25, 'sawtooth', 0.12); },
+  bomb() { this.noise(1.0, 0.5, true); this.tone(80, 20, 1.0, 'sine', 0.35); },
+  bossWarn() { [0, 0.3, 0.6].forEach(w => this.tone(440, 220, 0.25, 'square', 0.1, w)); }
+};
+
+// ---------- Fabrica de sprite-uri (pre-randate, contur gros stil NeoGeo) ----------
+function makeSprite(w, h, fn) {
+  const c = document.createElement('canvas');
+  c.width = Math.ceil(w * 2); c.height = Math.ceil(h * 2);   // 2x pentru claritate
+  const g = c.getContext('2d');
+  g.scale(2, 2); g.lineJoin = 'round';
+  fn(g, w, h);
+  return c;
+}
+const SHD = {};
+function makeShadow(spr) {
+  const c = document.createElement('canvas');
+  c.width = spr.width; c.height = spr.height;
+  const g = c.getContext('2d');
+  g.drawImage(spr, 0, 0);
+  g.globalCompositeOperation = 'source-in';
+  g.fillStyle = '#03101c';
+  g.fillRect(0, 0, c.width, c.height);
+  return c;
+}
+function poly(g, pts, fill, stroke, lw) {
+  g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]);
+  g.closePath();
+  if (fill) { g.fillStyle = fill; g.fill(); }
+  if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 2; g.stroke(); }
+}
+
+const SPR = {};
+function buildSprites() {
+  // --- Raptorul jucătorului: metal cu gradient, panouri, cozi duble, rachete, cabină cu reflexie ---
+  SPR.player = makeSprite(56, 66, (g, w, h) => {
+    const cx = w / 2;
+    // rachete sub aripi
+    for (const dx of [-20, 20]) {
+      g.fillStyle = '#dfe6ec'; g.strokeStyle = '#39444d'; g.lineWidth = 1.2;
+      g.fillRect(cx + dx - 1.5, 28, 3, 13); g.strokeRect(cx + dx - 1.5, 28, 3, 13);
+      g.fillStyle = '#c94b4b'; g.fillRect(cx + dx - 1.5, 28, 3, 3);
+    }
+    // aripi delta cu gradient
+    let gr = g.createLinearGradient(cx - 26, 0, cx + 26, 0);
+    gr.addColorStop(0, '#6d8598'); gr.addColorStop(0.5, '#9ab4c9'); gr.addColorStop(1, '#6d8598');
+    poly(g, [[cx - 5, 20], [cx - 26, 42], [cx - 25, 49], [cx - 6, 44]], gr, '#1d2b3a', 2.2);
+    poly(g, [[cx + 5, 20], [cx + 26, 42], [cx + 25, 49], [cx + 6, 44]], gr, '#1d2b3a', 2.2);
+    // cozi verticale duble
+    poly(g, [[cx - 4, 48], [cx - 13, 62], [cx - 9, 63], [cx - 3, 56]], '#7d97ad', '#1d2b3a', 2);
+    poly(g, [[cx + 4, 48], [cx + 13, 62], [cx + 9, 63], [cx + 3, 56]], '#7d97ad', '#1d2b3a', 2);
+    // fuzelaj metalic
+    gr = g.createLinearGradient(cx - 8, 0, cx + 8, 0);
+    gr.addColorStop(0, '#7e94a8'); gr.addColorStop(0.5, '#c2d2e0'); gr.addColorStop(1, '#7e94a8');
+    poly(g, [[cx, 2], [cx + 4, 10], [cx + 7, 22], [cx + 7.5, 44], [cx + 5, 60], [cx - 5, 60], [cx - 7.5, 44], [cx - 7, 22], [cx - 4, 10]], gr, '#1d2b3a', 2.4);
+    // prize de aer
+    g.fillStyle = '#3a4a58'; g.fillRect(cx - 8, 26, 3, 9); g.fillRect(cx + 5, 26, 3, 9);
+    // linii de panou
+    g.strokeStyle = 'rgba(30,45,60,.5)'; g.lineWidth = 0.8;
+    g.beginPath(); g.moveTo(cx, 12); g.lineTo(cx, 56);
+    g.moveTo(cx - 6, 24); g.lineTo(cx + 6, 24);
+    g.moveTo(cx - 7, 42); g.lineTo(cx + 7, 42); g.stroke();
+    // duze de motor gemene
+    g.fillStyle = '#2a333c'; g.strokeStyle = '#11181f'; g.lineWidth = 1.5;
+    g.beginPath(); g.arc(cx - 3.2, 60, 3, 0, TAU); g.arc(cx + 3.2, 60, 3, 0, TAU); g.fill(); g.stroke();
+    // cabină cu sticlă gradient + reflexie
+    gr = g.createLinearGradient(cx, 9, cx, 25);
+    gr.addColorStop(0, '#bff1ff'); gr.addColorStop(0.5, '#40b7de'); gr.addColorStop(1, '#0e5a78');
+    poly(g, [[cx, 9], [cx + 3.8, 16], [cx + 3.2, 25], [cx - 3.2, 25], [cx - 3.8, 16]], gr, '#0a3a4a', 1.8);
+    g.fillStyle = 'rgba(255,255,255,.8)';
+    g.beginPath(); g.ellipse(cx - 1.2, 13.5, 1, 2.6, -0.4, 0, TAU); g.fill();
+    // marcaje: vârfuri de aripă + cocardă
+    g.fillStyle = '#ffd23f'; g.fillRect(cx - 25, 44, 5, 3); g.fillRect(cx + 20, 44, 5, 3);
+    g.fillStyle = '#c94b4b'; g.beginPath(); g.arc(cx - 16, 38, 3, 0, TAU); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(cx - 16, 38, 1.4, 0, TAU); g.fill();
+  });
+  // --- Vânător inamic: gradient roșu, panouri, sticlă cu reflexie, motor incandescent ---
+  SPR.fighter = makeSprite(44, 48, (g, w) => {
+    const cx = w / 2;
+    let gr = g.createLinearGradient(cx - 6, 0, cx + 6, 0);
+    gr.addColorStop(0, '#a83232'); gr.addColorStop(0.5, '#ea6060'); gr.addColorStop(1, '#a83232');
+    poly(g, [[cx, 46], [cx + 4, 36], [cx + 5.5, 12], [cx + 2.5, 3], [cx - 2.5, 3], [cx - 5.5, 12], [cx - 4, 36]], gr, '#4a0d0d', 2.2);
+    gr = g.createLinearGradient(0, 3, 0, 18);
+    gr.addColorStop(0, '#8f2626'); gr.addColorStop(1, '#cc4a4a');
+    poly(g, [[cx - 4, 18], [cx - 21, 9], [cx - 20, 3], [cx - 4, 9]], gr, '#4a0d0d', 2.2);
+    poly(g, [[cx + 4, 18], [cx + 21, 9], [cx + 20, 3], [cx + 4, 9]], gr, '#4a0d0d', 2.2);
+    // stabilizatoare
+    poly(g, [[cx - 3, 8], [cx - 9, 2], [cx - 3, 4]], '#8f2626', '#4a0d0d', 1.6);
+    poly(g, [[cx + 3, 8], [cx + 9, 2], [cx + 3, 4]], '#8f2626', '#4a0d0d', 1.6);
+    // cabină de sticlă
+    gr = g.createLinearGradient(0, 28, 0, 40);
+    gr.addColorStop(0, '#8fd6e8'); gr.addColorStop(1, '#1e4a5c');
+    poly(g, [[cx, 28], [cx + 2.8, 33], [cx, 40], [cx - 2.8, 33]], gr, '#111', 1.6);
+    g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(cx - 0.8, 30, 1.4, 3);
+    // linie de panou + motor incandescent (evacuarea e în spate, sus)
+    g.strokeStyle = 'rgba(60,10,10,.6)'; g.lineWidth = 0.8;
+    g.beginPath(); g.moveTo(cx, 6); g.lineTo(cx, 26); g.stroke();
+    g.fillStyle = '#2a1010'; g.beginPath(); g.arc(cx, 4.5, 2.4, 0, TAU); g.fill();
+    g.fillStyle = '#ff9a40'; g.beginPath(); g.arc(cx, 4.5, 1.2, 0, TAU); g.fill();
+    g.fillStyle = '#ffd23f'; g.fillRect(cx - 21, 4, 4, 3); g.fillRect(cx + 17, 4, 4, 3);
+  });
+  // --- Săgeată-plonjor (mov, rapidă) ---
+  SPR.diver = makeSprite(30, 42, (g, w) => {
+    const cx = w / 2;
+    poly(g, [[cx, 40], [cx + 7, 20], [cx + 4, 4], [cx - 4, 4], [cx - 7, 20]], '#9b5bd6', '#2c0f4a', 2.5);
+    poly(g, [[cx - 6, 14], [cx - 13, 6], [cx - 6, 8]], '#7a3fb0', '#2c0f4a', 2);
+    poly(g, [[cx + 6, 14], [cx + 13, 6], [cx + 6, 8]], '#7a3fb0', '#2c0f4a', 2);
+    g.fillStyle = '#ff7ae0'; g.beginPath(); g.arc(cx, 30, 3, 0, TAU); g.fill();
+  });
+  // --- Elicopter (verde militar; rotorul e desenat animat separat) ---
+  SPR.heli = makeSprite(56, 44, (g, w) => {
+    const cx = w / 2;
+    g.fillStyle = '#5c7a3e'; g.strokeStyle = '#1c2a10'; g.lineWidth = 2.5;
+    g.beginPath(); g.ellipse(cx, 22, 13, 17, 0, 0, TAU); g.fill(); g.stroke();
+    poly(g, [[cx - 3, 36], [cx - 3, 43], [cx + 3, 43], [cx + 3, 36]], '#48602f', '#1c2a10', 2); // coadă
+    g.fillStyle = '#2f4a5e'; g.beginPath(); g.ellipse(cx, 14, 6, 8, 0, 0, TAU); g.fill(); g.stroke(); // parbriz
+    g.fillStyle = '#3b512a'; g.fillRect(cx - 20, 16, 8, 14); g.fillRect(cx + 12, 16, 8, 14); // flotoare
+    g.strokeRect(cx - 20, 16, 8, 14); g.strokeRect(cx + 12, 16, 8, 14);
+  });
+  // --- Bombardier (mare, oliv — scapă power-up) ---
+  SPR.bomber = makeSprite(88, 64, (g, w) => {
+    const cx = w / 2;
+    poly(g, [[cx, 60], [cx + 8, 44], [cx + 9, 18], [cx + 5, 4], [cx - 5, 4], [cx - 9, 18], [cx - 8, 44]], '#8a7a4a', '#2e2812', 3);
+    poly(g, [[cx - 7, 22], [cx - 42, 12], [cx - 41, 4], [cx - 7, 12]], '#6f6238', '#2e2812', 3);
+    poly(g, [[cx + 7, 22], [cx + 42, 12], [cx + 41, 4], [cx + 7, 12]], '#6f6238', '#2e2812', 3);
+    g.fillStyle = '#4a4222'; g.beginPath(); g.arc(cx - 26, 12, 5, 0, TAU); g.arc(cx + 26, 12, 5, 0, TAU); g.fill();
+    poly(g, [[cx, 40], [cx + 3, 48], [cx, 54], [cx - 3, 48]], '#2f3b2a', '#111', 2);
+    g.fillStyle = '#ffd23f'; g.beginPath(); g.arc(cx, 30, 5, 0, TAU); g.fill();
+    g.strokeStyle = '#7a4a00'; g.lineWidth = 2; g.stroke();
+  });
+  // --- Bază turelă la sol (țeava desenată animat) ---
+  SPR.turret = makeSprite(40, 40, (g, w) => {
+    const cx = w / 2, cy = w / 2;
+    g.fillStyle = '#55606b'; g.strokeStyle = '#15191d'; g.lineWidth = 2.5;
+    g.beginPath(); g.arc(cx, cy, 16, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = '#39424a'; g.beginPath(); g.arc(cx, cy, 9, 0, TAU); g.fill(); g.stroke();
+    g.fillStyle = '#ffd23f';
+    for (let i = 0; i < 4; i++) { const a = i * TAU / 4 + 0.4; g.fillRect(cx + Math.cos(a) * 12 - 1.5, cy + Math.sin(a) * 12 - 1.5, 3, 3); }
+  });
+  // --- Tanc la sol (șenile cu zale, corp cu gradient; țeava e desenată animat) ---
+  SPR.tank = makeSprite(40, 48, (g, w) => {
+    const cx = w / 2;
+    g.fillStyle = 'rgba(0,10,0,.3)'; g.beginPath(); g.ellipse(cx + 3, 27, 16, 21, 0, 0, TAU); g.fill();
+    g.fillStyle = '#2a3320'; g.strokeStyle = '#10160a'; g.lineWidth = 2;
+    g.fillRect(cx - 15, 6, 8, 38); g.strokeRect(cx - 15, 6, 8, 38);
+    g.fillRect(cx + 7, 6, 8, 38); g.strokeRect(cx + 7, 6, 8, 38);
+    g.strokeStyle = 'rgba(0,0,0,.5)'; g.lineWidth = 1;
+    for (let ty = 9; ty < 44; ty += 5) { g.beginPath(); g.moveTo(cx - 15, ty); g.lineTo(cx - 7, ty); g.moveTo(cx + 7, ty); g.lineTo(cx + 15, ty); g.stroke(); }
+    const gr = g.createLinearGradient(cx - 8, 0, cx + 8, 0);
+    gr.addColorStop(0, '#46552f'); gr.addColorStop(0.5, '#6a7c4c'); gr.addColorStop(1, '#46552f');
+    g.fillStyle = gr; g.strokeStyle = '#141a10'; g.lineWidth = 2;
+    g.fillRect(cx - 9, 8, 18, 34); g.strokeRect(cx - 9, 8, 18, 34);
+    g.fillStyle = '#ffd23f'; g.fillRect(cx - 7, 10, 3, 3); g.fillRect(cx + 4, 10, 3, 3);
+  });
+  // --- Glonț inamic (orb roșu cu miez alb) ---
+  SPR.ebullet = makeSprite(14, 14, (g) => {
+    g.fillStyle = '#ff3b3b'; g.beginPath(); g.arc(7, 7, 6, 0, TAU); g.fill();
+    g.fillStyle = '#ffd7a0'; g.beginPath(); g.arc(7, 7, 3, 0, TAU); g.fill();
+  });
+  // --- Glonț jucător ---
+  SPR.pbullet = makeSprite(8, 18, (g) => {
+    g.fillStyle = '#fff2b0'; g.fillRect(2.5, 0, 3, 14);
+    g.fillStyle = '#ffb400'; g.fillRect(1.5, 8, 5, 8);
+  });
+  // --- Rachetă ---
+  SPR.missile = makeSprite(10, 22, (g) => {
+    poly(g, [[5, 0], [8, 6], [8, 16], [5, 14], [2, 16], [2, 6]], '#d8dee6', '#333', 1.5);
+    g.fillStyle = '#ff5722'; g.fillRect(3, 16, 4, 5);
+  });
+  // --- Boss-i: câte o fortăreață în culorile fiecărui biom ---
+  THEMES.forEach((t, i) => {
+    SPR['boss_' + i] = makeSprite(210, 150, (g, w) => bossBody(g, w, t.pal[0], t.pal[1], t.pal[2]));
+  });
+  // --- Minge de foc pentru explozii aditive ---
+  SPR.fire = makeSprite(64, 64, (g) => {
+    const gr = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+    gr.addColorStop(0, 'rgba(255,255,230,1)'); gr.addColorStop(0.3, 'rgba(255,200,80,.95)');
+    gr.addColorStop(0.7, 'rgba(255,90,20,.55)'); gr.addColorStop(1, 'rgba(255,60,0,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+  });
+  // --- Nori (parallax) ---
+  SPR.clouds = [0, 1, 2].map(i => makeSprite(160, 70, (g) => {
+    const r = mulberry32(77 + i * 13);
+    g.fillStyle = 'rgba(255,255,255,.85)';
+    for (let k = 0; k < 9; k++) {
+      g.beginPath();
+      g.arc(20 + r() * 120, 25 + r() * 25, 12 + r() * 16, 0, TAU); g.fill();
+    }
+  }));
+  // umbre proiectate pe teren (siluete întunecate)
+  ['player', 'fighter', 'diver', 'heli', 'bomber'].forEach(k => SHD[k] = makeShadow(SPR[k]));
+  THEMES.forEach((t, i) => SHD['boss_' + i] = makeShadow(SPR['boss_' + i]));
+}
+function bossBody(g, w, main, dark, glow) {
+  const cx = w / 2;
+  poly(g, [[cx, 145], [cx + 22, 120], [cx + 26, 50], [cx + 14, 10], [cx - 14, 10], [cx - 26, 50], [cx - 22, 120]], main, dark, 4); // corp
+  poly(g, [[cx - 22, 60], [cx - 100, 34], [cx - 98, 16], [cx - 20, 30]], shade(main, -20), dark, 4);   // aripă st
+  poly(g, [[cx + 22, 60], [cx + 100, 34], [cx + 98, 16], [cx + 20, 30]], shade(main, -20), dark, 4);   // aripă dr
+  poly(g, [[cx - 12, 118], [cx - 40, 145], [cx - 8, 138]], shade(main, -20), dark, 3);
+  poly(g, [[cx + 12, 118], [cx + 40, 145], [cx + 8, 138]], shade(main, -20), dark, 3);
+  // motoare
+  g.fillStyle = dark;
+  [-60, -34, 34, 60].forEach(dx => { g.beginPath(); g.arc(cx + dx, 30, 9, 0, TAU); g.fill(); });
+  g.fillStyle = glow;
+  [-60, -34, 34, 60].forEach(dx => { g.beginPath(); g.arc(cx + dx, 30, 4.5, 0, TAU); g.fill(); });
+  // turele
+  g.fillStyle = shade(main, -35); g.strokeStyle = dark; g.lineWidth = 3;
+  [[-16, 92], [16, 92], [0, 62]].forEach(p => { g.beginPath(); g.arc(cx + p[0], p[1], 10, 0, TAU); g.fill(); g.stroke(); });
+  // miez (punct slab)
+  g.fillStyle = glow; g.beginPath(); g.arc(cx, 110, 12, 0, TAU); g.fill();
+  g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke();
+}
+function shade(hex, amt) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = clamp((n >> 16) + amt, 0, 255), g2 = clamp(((n >> 8) & 255) + amt, 0, 255), b = clamp((n & 255) + amt, 0, 255);
+  return 'rgb(' + r + ',' + g2 + ',' + b + ')';
+}
+
+// ---------- Teren procedural (bucăți pre-randate, reciclate) ----------
+const CHUNK = 512;
+let terrainCache = {};
+let vignette = null;
+function buildVignette() {
+  vignette = document.createElement('canvas');
+  vignette.width = Math.max(2, W); vignette.height = Math.max(2, H);
+  const g = vignette.getContext('2d');
+  const gr = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.45, W / 2, H / 2, Math.max(W, H) * 0.75);
+  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,25,.32)');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+}
+function detailPass(g, r, light, dark) {
+  const w = g.canvas.width;
+  for (let i = 0; i < 520; i++) {                 // granulație fină, ca o textură de sol
+    g.fillStyle = (i & 1) ? light : dark;
+    g.fillRect(r() * w, r() * CHUNK, 1.7, 1.7);
+  }
+  g.strokeStyle = dark; g.lineWidth = 1;          // zgârieturi discrete de relief
+  for (let i = 0; i < 12; i++) {
+    const x = r() * w, y = r() * CHUNK, len = 10 + r() * 26, a = r() * TAU;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+  }
+}
+function chunkCanvas(level, idx) {
+  const key = level + '_' + idx;
+  if (terrainCache[key]) return terrainCache[key];
+  const c = document.createElement('canvas');
+  c.width = Math.max(2, Math.round(W)); c.height = CHUNK;
+  const g = c.getContext('2d');
+  const r = mulberry32(level * 10007 + idx * 97 + 13);   // seed = misiunea → fiecare hartă e unică
+  MISSIONS[level].th.draw(g, r, idx);
+  detailPass(g, r, MISSIONS[level].th.det[0], MISSIONS[level].th.det[1]);
+  // păstrează cache-ul mic
+  const keys = Object.keys(terrainCache);
+  if (keys.length > 8) delete terrainCache[keys[0]];
+  terrainCache[key] = c;
+  return c;
+}
+function drawOcean(g, r, idx) {
+  const w = g.canvas.width;
+  const grad = g.createLinearGradient(0, 0, 0, CHUNK);
+  grad.addColorStop(0, '#1560a8'); grad.addColorStop(1, '#0d4f8f');
+  g.fillStyle = grad; g.fillRect(0, 0, w, CHUNK);
+  // valuri
+  g.strokeStyle = 'rgba(255,255,255,.14)'; g.lineWidth = 2;
+  for (let i = 0; i < 46; i++) {
+    const x = r() * w, y = r() * CHUNK, len = 12 + r() * 30;
+    g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + len / 2, y - 3, x + len, y); g.stroke();
+  }
+  // pete de adâncime
+  g.fillStyle = 'rgba(6,50,95,.5)';
+  for (let i = 0; i < 6; i++) { g.beginPath(); g.ellipse(r() * w, r() * CHUNK, 40 + r() * 90, 25 + r() * 60, r() * 3, 0, TAU); g.fill(); }
+  // insule
+  const nIsl = 1 + Math.floor(r() * 3);
+  for (let i = 0; i < nIsl; i++) {
+    const ix = 60 + r() * (w - 120), iy = 70 + r() * (CHUNK - 140), R = 34 + r() * 46;
+    blob(g, ix, iy, R + 20, 'rgba(255,255,255,.32)', r);       // spumă de valuri
+    blob(g, ix, iy, R + 12, '#e8d9a8', r);                     // plajă
+    blob(g, ix, iy, R, '#4a9944', r);                          // vegetație
+    blob(g, ix + R * 0.15, iy - R * 0.15, R * 0.55, '#2f7a33', r);
+    g.fillStyle = '#1c5a22';                                    // palmieri (puncte)
+    for (let p = 0; p < 6; p++) { g.beginPath(); g.arc(ix + (r() - 0.5) * R, iy + (r() - 0.5) * R, 3 + r() * 3, 0, TAU); g.fill(); }
+    if (r() < 0.5) { g.fillStyle = '#d9cfa0'; g.fillRect(ix - 3, iy - R - 14, 6, 10); } // debarcader
+  }
+  // siaj de vapor
+  if (r() < 0.6) {
+    const sx = 40 + r() * (w - 80), sy = r() * CHUNK;
+    g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(sx - 6, sy + 60); g.lineTo(sx, sy); g.lineTo(sx + 6, sy + 60); g.stroke();
+    g.fillStyle = '#8a8f98'; g.fillRect(sx - 5, sy - 14, 10, 26);
+    g.fillStyle = '#c94b4b'; g.fillRect(sx - 3, sy - 8, 6, 8);
+  }
+}
+function drawDesert(g, r, idx) {
+  const w = g.canvas.width;
+  const grad = g.createLinearGradient(0, 0, 0, CHUNK);
+  grad.addColorStop(0, '#d8a95c'); grad.addColorStop(1, '#c99348');
+  g.fillStyle = grad; g.fillRect(0, 0, w, CHUNK);
+  // dune (arce)
+  g.strokeStyle = 'rgba(120,75,20,.25)'; g.lineWidth = 3;
+  for (let i = 0; i < 26; i++) {
+    const x = r() * w, y = r() * CHUNK, R = 25 + r() * 70;
+    g.beginPath(); g.arc(x, y, R, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+  }
+  g.fillStyle = 'rgba(255,235,180,.25)';
+  for (let i = 0; i < 8; i++) { g.beginPath(); g.ellipse(r() * w, r() * CHUNK, 50 + r() * 80, 20 + r() * 40, r(), 0, TAU); g.fill(); }
+  // canion / râu secat
+  if (r() < 0.75) {
+    g.strokeStyle = '#7a4f22'; g.lineWidth = 26 + r() * 20; g.lineCap = 'round';
+    g.beginPath(); let x = r() * w; g.moveTo(x, -10);
+    for (let y = 60; y <= CHUNK + 10; y += 70) { x += (r() - 0.5) * 120; x = clamp(x, 30, w - 30); g.lineTo(x, y); }
+    g.stroke();
+    g.strokeStyle = '#5e3a15'; g.lineWidth = 10; g.stroke();
+    g.lineCap = 'butt';
+  }
+  // drum
+  if (r() < 0.5) {
+    const rx = 40 + r() * (w - 80);
+    g.fillStyle = '#8f8f8f'; g.fillRect(rx - 9, 0, 18, CHUNK);
+    g.strokeStyle = '#f0e6c0'; g.lineWidth = 2; g.setLineDash([14, 12]);
+    g.beginPath(); g.moveTo(rx, 0); g.lineTo(rx, CHUNK); g.stroke(); g.setLineDash([]);
+  }
+  // stânci + ruine
+  for (let i = 0; i < 7; i++) {
+    const x = r() * w, y = r() * CHUNK;
+    g.fillStyle = '#9c6b30'; g.strokeStyle = '#4a2f10'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x, y - 10 - r() * 8); g.lineTo(x + 10 + r() * 8, y + 8); g.lineTo(x - 10 - r() * 8, y + 8);
+    g.closePath(); g.fill(); g.stroke();
+  }
+  if (r() < 0.4) { const x = 60 + r() * (w - 120), y = 60 + r() * (CHUNK - 120);
+    g.fillStyle = '#e0cda0'; g.strokeStyle = '#6b5426'; g.lineWidth = 2;
+    g.fillRect(x, y, 46, 34); g.strokeRect(x, y, 46, 34);
+    g.fillStyle = '#6b5426'; g.fillRect(x + 18, y + 14, 10, 20);
+  }
+}
+function drawVolcano(g, r, idx) {
+  const w = g.canvas.width;
+  const grad = g.createLinearGradient(0, 0, 0, CHUNK);
+  grad.addColorStop(0, '#2b2430'); grad.addColorStop(1, '#241d28');
+  g.fillStyle = grad; g.fillRect(0, 0, w, CHUNK);
+  // plăci de bazalt
+  g.fillStyle = 'rgba(70,58,74,.6)';
+  for (let i = 0; i < 12; i++) { g.beginPath(); g.ellipse(r() * w, r() * CHUNK, 40 + r() * 70, 24 + r() * 46, r(), 0, TAU); g.fill(); }
+  // râu de lavă șerpuit
+  const lavaX0 = r() * w;
+  g.strokeStyle = '#ff7a1a'; g.lineWidth = 22 + r() * 14; g.lineCap = 'round';
+  g.shadowColor = '#ff5722'; g.shadowBlur = 18;
+  g.beginPath(); let x = lavaX0; g.moveTo(x, -10);
+  const pts = [];
+  for (let y = 50; y <= CHUNK + 10; y += 60) { x += (r() - 0.5) * 110; x = clamp(x, 26, w - 26); g.lineTo(x, y); pts.push([x, y]); }
+  g.stroke();
+  g.shadowBlur = 0;
+  g.strokeStyle = '#ffd75e'; g.lineWidth = 7; g.stroke();
+  g.lineCap = 'butt';
+  // crăpături incandescente
+  g.strokeStyle = 'rgba(255,110,30,.8)'; g.lineWidth = 2.5;
+  for (let i = 0; i < 10; i++) {
+    let cx2 = r() * w, cy2 = r() * CHUNK;
+    g.beginPath(); g.moveTo(cx2, cy2);
+    for (let k = 0; k < 4; k++) { cx2 += (r() - 0.5) * 40; cy2 += (r() - 0.5) * 40; g.lineTo(cx2, cy2); }
+    g.stroke();
+  }
+  // cratere
+  for (let i = 0; i < 4; i++) {
+    const cx2 = 50 + r() * (w - 100), cy2 = 50 + r() * (CHUNK - 100), R = 18 + r() * 26;
+    g.fillStyle = '#171219'; g.beginPath(); g.arc(cx2, cy2, R, 0, TAU); g.fill();
+    g.strokeStyle = '#4d4152'; g.lineWidth = 4; g.stroke();
+    g.fillStyle = '#ff5722'; g.beginPath(); g.arc(cx2, cy2, R * 0.35, 0, TAU); g.fill();
+    g.fillStyle = '#ffd75e'; g.beginPath(); g.arc(cx2, cy2, R * 0.15, 0, TAU); g.fill();
+  }
+}
+function drawForest(g, r, idx) {
+  const w = g.canvas.width;
+  const grad = g.createLinearGradient(0, 0, 0, CHUNK);
+  grad.addColorStop(0, '#2f6b28'); grad.addColorStop(1, '#265a20');
+  g.fillStyle = grad; g.fillRect(0, 0, w, CHUNK);
+  g.fillStyle = 'rgba(20,60,16,.5)';
+  for (let i = 0; i < 10; i++) { g.beginPath(); g.ellipse(r() * w, r() * CHUNK, 40 + r() * 80, 24 + r() * 50, r(), 0, TAU); g.fill(); }
+  // râu de junglă
+  if (r() < 0.8) {
+    g.strokeStyle = '#2e7fb8'; g.lineWidth = 22 + r() * 14; g.lineCap = 'round';
+    g.beginPath(); let x = r() * w; g.moveTo(x, -10);
+    for (let y = 60; y <= CHUNK + 10; y += 70) { x += (r() - 0.5) * 130; x = clamp(x, 26, w - 26); g.lineTo(x, y); }
+    g.stroke();
+    g.strokeStyle = '#5db2e0'; g.lineWidth = 6; g.stroke();
+    g.lineCap = 'butt';
+  }
+  for (let i = 0; i < 3; i++) blob(g, 50 + r() * (w - 100), 50 + r() * (CHUNK - 100), 24 + r() * 30, '#7aa04a', r);
+  // copaci cu umbră și lumină
+  for (let i = 0; i < 60; i++) {
+    const x = r() * w, y = r() * CHUNK, R = 4 + r() * 7;
+    g.fillStyle = 'rgba(10,30,8,.5)'; g.beginPath(); g.arc(x + 2, y + 2, R, 0, TAU); g.fill();
+    g.fillStyle = r() < 0.5 ? '#3f8a34' : '#357a2c'; g.beginPath(); g.arc(x, y, R, 0, TAU); g.fill();
+    g.fillStyle = 'rgba(150,220,120,.5)'; g.beginPath(); g.arc(x - R * 0.3, y - R * 0.3, R * 0.4, 0, TAU); g.fill();
+  }
+  if (r() < 0.35) { const x = 40 + r() * (w - 80), y = 40 + r() * (CHUNK - 80);
+    g.fillStyle = '#8a6a3a'; g.strokeStyle = '#3a2a10'; g.lineWidth = 2;
+    g.fillRect(x, y, 26, 20); g.strokeRect(x, y, 26, 20); }
+}
+function drawSnow(g, r, idx) {
+  const w = g.canvas.width;
+  const grad = g.createLinearGradient(0, 0, 0, CHUNK);
+  grad.addColorStop(0, '#e3ecf5'); grad.addColorStop(1, '#d2dfec');
+  g.fillStyle = grad; g.fillRect(0, 0, w, CHUNK);
+  g.fillStyle = 'rgba(180,205,230,.5)';
+  for (let i = 0; i < 10; i++) { g.beginPath(); g.ellipse(r() * w, r() * CHUNK, 40 + r() * 90, 20 + r() * 44, r(), 0, TAU); g.fill(); }
+  // lacuri înghețate
+  for (let i = 0; i < 2 + Math.floor(r() * 2); i++) {
+    const x = 60 + r() * (w - 120), y = 60 + r() * (CHUNK - 120), R = 30 + r() * 40;
+    blob(g, x, y, R, '#a8cfe8', r);
+    blob(g, x, y, R * 0.75, '#bfe0f2', r);
+    g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(x - R * 0.5, y); g.lineTo(x + R * 0.4, y - R * 0.3); g.stroke();
+  }
+  // brazi înzăpeziți
+  for (let i = 0; i < 34; i++) {
+    const x = r() * w, y = r() * CHUNK, hgt = 10 + r() * 12;
+    g.fillStyle = 'rgba(120,150,180,.4)'; g.beginPath();
+    g.moveTo(x + 2, y + 2); g.lineTo(x + 2 + hgt * 0.5, y + 2 + hgt); g.lineTo(x + 2 - hgt * 0.5, y + 2 + hgt); g.closePath(); g.fill();
+    g.fillStyle = '#2e5a3e'; g.beginPath();
+    g.moveTo(x, y); g.lineTo(x + hgt * 0.5, y + hgt); g.lineTo(x - hgt * 0.5, y + hgt); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath();
+    g.moveTo(x, y); g.lineTo(x + hgt * 0.25, y + hgt * 0.5); g.lineTo(x - hgt * 0.25, y + hgt * 0.5); g.closePath(); g.fill();
+  }
+  for (let i = 0; i < 5; i++) { g.fillStyle = '#8a94a2';
+    g.beginPath(); g.arc(r() * w, r() * CHUNK, 5 + r() * 8, 0, TAU); g.fill(); }
+}
+function drawCity(g, r, idx) {
+  const w = g.canvas.width;
+  g.fillStyle = '#4e545c'; g.fillRect(0, 0, w, CHUNK);   // asfalt
+  const cell = 86;
+  for (let gy = 0; gy < CHUNK; gy += cell) {
+    for (let gx = 0; gx < w + cell; gx += cell) {
+      if (r() < 0.14) { blob(g, gx + cell / 2, gy + cell / 2, 26, '#4a7a3e', r); continue; }  // parc
+      const bw = 46 + r() * 22, bh = 46 + r() * 22;
+      const bx = gx + 10 + r() * 8, by = gy + 10 + r() * 8;
+      const tone = 90 + Math.floor(r() * 70);
+      g.fillStyle = 'rgba(20,22,26,.5)'; g.fillRect(bx + 4, by + 4, bw, bh);      // umbră
+      g.fillStyle = 'rgb(' + tone + ',' + (tone + 4) + ',' + (tone + 10) + ')';
+      g.fillRect(bx, by, bw, bh);
+      g.strokeStyle = '#1e2228'; g.lineWidth = 2; g.strokeRect(bx, by, bw, bh);
+      g.fillStyle = r() < 0.5 ? '#ffd75e' : '#9fb6c9';                            // ferestre
+      for (let fy = by + 6; fy < by + bh - 6; fy += 9)
+        for (let fx = bx + 6; fx < bx + bw - 6; fx += 9)
+          if (r() < 0.4) g.fillRect(fx, fy, 3.5, 3.5);
+    }
+  }
+  g.strokeStyle = '#f0e6c0'; g.lineWidth = 2; g.setLineDash([12, 10]);
+  for (let gy = 0; gy < CHUNK; gy += cell) { g.beginPath(); g.moveTo(0, gy + 2); g.lineTo(w, gy + 2); g.stroke(); }
+  g.setLineDash([]);
+}
+function drawMountains(g, r, idx) {
+  const w = g.canvas.width;
+  const grad = g.createLinearGradient(0, 0, 0, CHUNK);
+  grad.addColorStop(0, '#6a6272'); grad.addColorStop(1, '#5a5362');
+  g.fillStyle = grad; g.fillRect(0, 0, w, CHUNK);
+  g.fillStyle = 'rgba(30,26,38,.45)';
+  for (let i = 0; i < 8; i++) { g.beginPath(); g.ellipse(r() * w, r() * CHUNK, 50 + r() * 90, 26 + r() * 50, r(), 0, TAU); g.fill(); }
+  // creste zimțate cu lumină și umbră
+  for (let i = 0; i < 6; i++) {
+    let x = -20, y = r() * CHUNK;
+    const ridge = [[x, y]];
+    g.beginPath(); g.moveTo(x, y);
+    while (x < w + 20) { x += 26 + r() * 34; y += (r() - 0.5) * 60; y = clamp(y, 20, CHUNK - 20); ridge.push([x, y]); g.lineTo(x, y); }
+    g.strokeStyle = 'rgba(230,225,240,.55)'; g.lineWidth = 3; g.stroke();
+    g.strokeStyle = 'rgba(20,16,28,.55)';
+    g.beginPath(); g.moveTo(ridge[0][0], ridge[0][1] + 4);
+    for (const p of ridge) g.lineTo(p[0], p[1] + 4);
+    g.stroke();
+    for (const p of ridge) if (r() < 0.3) {                 // vârfuri cu zăpadă
+      g.fillStyle = '#eef2f8'; g.beginPath();
+      g.moveTo(p[0], p[1] - 8); g.lineTo(p[0] + 7, p[1] + 4); g.lineTo(p[0] - 7, p[1] + 4); g.closePath(); g.fill();
+    }
+  }
+  if (r() < 0.4) {                                          // canion
+    g.strokeStyle = '#241c2e'; g.lineWidth = 18; g.lineCap = 'round';
+    g.beginPath(); let x = r() * w; g.moveTo(x, -10);
+    for (let y = 70; y <= CHUNK + 10; y += 80) { x += (r() - 0.5) * 100; x = clamp(x, 26, w - 26); g.lineTo(x, y); }
+    g.stroke(); g.lineCap = 'butt';
+  }
+}
+function drawSwamp(g, r, idx) {
+  const w = g.canvas.width;
+  const grad = g.createLinearGradient(0, 0, 0, CHUNK);
+  grad.addColorStop(0, '#3c4a2c'); grad.addColorStop(1, '#333f25');
+  g.fillStyle = grad; g.fillRect(0, 0, w, CHUNK);
+  // ape stătute cu stuf
+  for (let i = 0; i < 6; i++) {
+    const x = 50 + r() * (w - 100), y = 50 + r() * (CHUNK - 100), R = 34 + r() * 50;
+    blob(g, x, y, R, '#26382f', r);
+    blob(g, x, y, R * 0.7, '#2e4438', r);
+    g.strokeStyle = '#8aa050'; g.lineWidth = 1.5;
+    for (let s2 = 0; s2 < 10; s2++) {
+      const sx = x + (r() - 0.5) * R * 2, sy = y + (r() - 0.5) * R * 2;
+      g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (r() - 0.5) * 4, sy - 8 - r() * 6); g.stroke();
+    }
+  }
+  for (let i = 0; i < 5; i++) blob(g, r() * w, r() * CHUNK, 14 + r() * 22, '#50642f', r);
+  // copaci uscați
+  for (let i = 0; i < 8; i++) {
+    const x = r() * w, y = r() * CHUNK;
+    g.strokeStyle = '#5e4a30'; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(x, y + 12); g.lineTo(x, y - 6);
+    g.moveTo(x, y); g.lineTo(x + 6, y - 8); g.moveTo(x, y - 2); g.lineTo(x - 6, y - 9);
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(200,220,190,.08)';                    // ceață
+  for (let i = 0; i < 5; i++) { g.beginPath(); g.ellipse(r() * w, r() * CHUNK, 60 + r() * 90, 20 + r() * 30, 0, 0, TAU); g.fill(); }
+}
+function blob(g, x, y, R, color, r) {
+  g.fillStyle = color; g.beginPath();
+  for (let a = 0; a <= 12; a++) {
+    const ang = a / 12 * TAU, rr = R * (0.8 + r() * 0.35);
+    const px = x + Math.cos(ang) * rr, py = y + Math.sin(ang) * rr;
+    if (a === 0) g.moveTo(px, py); else g.lineTo(px, py);
+  }
+  g.closePath(); g.fill();
+}
+
+// ---------- Definirea nivelurilor ----------
+const THEMES = [
+  { name: 'COASTA DE SMARALD', draw: drawOcean,     tint: null,                    pal: ['#3e6e9e', '#152a3e', '#7fd4ff'], bossName: 'AMIRALUL FURTUNII', det: ['rgba(255,255,255,.07)', 'rgba(0,20,60,.09)'],   fx: 'glint' },
+  { name: 'JUNGLA VERDE',      draw: drawForest,    tint: 'rgba(40,140,40,.05)',   pal: ['#3f7a3a', '#10260e', '#a0ff7f'], bossName: 'GHEARA JUNGLEI', det: ['rgba(180,255,140,.06)', 'rgba(0,20,0,.13)'],    fx: null },
+  { name: 'DEȘERTUL ROȘU',     draw: drawDesert,    tint: 'rgba(255,180,80,.06)',  pal: ['#b0703a', '#3e2410', '#ffd75e'], bossName: 'ȘARPELE DE NISIP', det: ['rgba(255,240,200,.10)', 'rgba(90,50,10,.09)'],  fx: null },
+  { name: 'ORAȘUL DE OȚEL',    draw: drawCity,      tint: null,                    pal: ['#5a6a7a', '#141a20', '#7fd4ff'], bossName: 'COLOSUL DE OȚEL', det: ['rgba(255,255,255,.05)', 'rgba(0,0,0,.13)'],     fx: null },
+  { name: 'PUSTIUL ARCTIC',    draw: drawSnow,      tint: 'rgba(160,200,255,.07)', pal: ['#7fa7c9', '#1a2c3e', '#ffffff'], bossName: 'VULTURUL POLAR', det: ['rgba(255,255,255,.30)', 'rgba(120,150,190,.11)'], fx: 'glint' },
+  { name: 'CRESTELE FURTUNII', draw: drawMountains, tint: null,                    pal: ['#6b5a7a', '#1c1424', '#d0a0ff'], bossName: 'DOMNUL CRESTELOR', det: ['rgba(240,235,255,.07)', 'rgba(0,0,10,.13)'],    fx: null },
+  { name: 'MLAȘTINA UMBRELOR', draw: drawSwamp,     tint: 'rgba(60,90,40,.07)',    pal: ['#5a6a3a', '#161c0e', '#c9ff5e'], bossName: 'UMBRA MLAȘTINII', det: ['rgba(180,220,150,.06)', 'rgba(0,10,0,.15)'],    fx: 'glint' },
+  { name: 'INIMA VULCANULUI',  draw: drawVolcano,   tint: 'rgba(255,60,0,.05)',    pal: ['#4a4048', '#141014', '#ff5722'], bossName: 'INIMA DE MAGMĂ', det: ['rgba(255,120,40,.06)', 'rgba(0,0,0,.17)'],      fx: 'ember' }
+];
+const MISSION_COUNT = 32;                       // 4 tururi prin cele 8 zone, fiecare hartă unică
+const MISSIONS = [];
+for (let mi = 0; mi < MISSION_COUNT; mi++) {
+  const th = THEMES[mi % THEMES.length];
+  const df = mi / (MISSION_COUNT - 1);          // 0..1 — curba de dificultate
+  MISSIONS.push({
+    name: 'MISIUNEA ' + (mi + 1), sub: th.name, th, diff: df,
+    dur: Math.round(55 + df * 25),
+    scroll: Math.round(112 + df * 60),
+    bossHp: Math.round(280 + df * 620)
+  });
+}
+
+// ---------- Starea jocului ----------
+const G = {
+  state: 'menu',           // menu | intro | play | bosswarn | levelclear | gameover | victory | pause
+  level: 0, time: 0, dist: 0, stateT: 0,
+  score: 0, hiscore: 0, shake: 0, flash: 0, slow: 0,
+  enemies: [], pbullets: [], ebullets: [], powerups: [], parts: [], texts: [], clouds: [],
+  boss: null, spawnT: 0, carrierT: 0, cloudT: 0, prevState: 'menu', menuSel: 0, bonus: 0
+};
+const P = {   // jucătorul
+  x: 0, y: 0, hp: 100, lives: 3, bombs: 3, weapon: 1,
+  fireT: 0, missT: 0, inv: 0, shield: 0, alive: true, deadT: 0, bank: 0
+};
+
+function resetPlayer(full) {
+  P.x = W / 2; P.y = H - 34 * S; P.slide = 0.9;            // intră glisând de jos
+  P.hp = 100; P.inv = 2.5; P.alive = true; P.fireT = 0; P.missT = 0;
+  if (full) { P.lives = 3; P.bombs = 3; P.weapon = 2; P.shield = 0; }
+  else { P.bombs = Math.max(P.bombs, 1); P.weapon = Math.max(1, P.weapon - 1); }
+}
+function startLevel(idx) {
+  G.level = idx; G.time = 0; G.dist = 0; G.spawnT = 1.5; G.carrierT = 7; G.cloudT = 2;
+  G.enemies.length = 0; G.pbullets.length = 0; G.ebullets.length = 0;
+  G.powerups.length = 0; G.parts.length = 0; G.texts.length = 0; G.clouds.length = 0;
+  G.boss = null; G.combo = 0; G.comboT = 0; terrainCache = {};
+  setState('intro');
+}
+function setState(s) { G.prevState = G.state; G.state = s; G.stateT = 0; }
+
+// ---------- Particule & efecte ----------
+function boomAt(x, y, big) {
+  const n = big ? 40 : 16;
+  for (let i = 0; i < n; i++) {
+    const a = rnd(0, TAU), sp = rnd(30, big ? 260 : 150) * S;
+    G.parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      life: rnd(0.3, big ? 0.9 : 0.6), t: 0, r: rnd(2, big ? 7 : 4) * S,
+      col: Math.random() < 0.5 ? '#ffb400' : (Math.random() < 0.5 ? '#ff5722' : '#ffe9a0') });
+  }
+  for (let i = 0; i < (big ? 10 : 4); i++)
+    G.parts.push({ x: x + rnd(-14, 14) * S, y: y + rnd(-14, 14) * S, vx: rnd(-20, 20), vy: rnd(-40, 10),
+      life: rnd(0.5, 1.1), t: 0, r: rnd(6, big ? 16 : 10) * S, col: 'smoke' });
+  const nf = big ? 5 : 3;
+  for (let i = 0; i < nf; i++)
+    G.parts.push({ x: x + rnd(-12, 12) * S, y: y + rnd(-12, 12) * S, vx: rnd(-24, 24), vy: rnd(-36, 8),
+      life: rnd(0.28, big ? 0.55 : 0.4), t: 0, r: rnd(big ? 24 : 12, big ? 44 : 22) * S, col: 'fire' });
+  if (big) for (let i = 0; i < 9; i++) {
+    const a2 = rnd(0, TAU), sp2 = rnd(90, 260) * S;
+    G.parts.push({ x, y, vx: Math.cos(a2) * sp2, vy: Math.sin(a2) * sp2, life: rnd(0.5, 0.9), t: 0,
+      r: rnd(3, 6) * S, col: 'debris', rot: rnd(0, TAU), vr: rnd(-8, 8) });
+  }
+  G.parts.push({ x, y, vx: 0, vy: 0, life: big ? 0.5 : 0.32, t: 0,
+    r: (big ? 95 : 48) * S, col: 'ring' });
+  G.shake = Math.min(14, G.shake + (big ? 9 : 3));
+  if (big) AudioSys.boomB(); else AudioSys.boomS();
+}
+function addText(x, y, str, col) { G.texts.push({ x, y, str, col: col || '#fff', t: 0 }); }
+
+// ---------- Power-up-uri ----------
+const PU_TYPES = [
+  { k: 'P', col: '#ff8a00', w: 34 },   // armă +1
+  { k: 'H', col: '#42d66a', w: 20 },   // viață
+  { k: 'B', col: '#ffd23f', w: 15 },   // bombă
+  { k: 'S', col: '#40b4ff', w: 15 },   // scut
+  { k: '★', col: '#ff5ecb', w: 16 }    // puncte
+];
+function dropPowerup(x, y, forceP) {
+  let type;
+  if (forceP) type = PU_TYPES[0];
+  else {
+    let t = rnd(0, 100), acc = 0;
+    for (const p of PU_TYPES) { acc += p.w; if (t <= acc) { type = p; break; } }
+    type = type || PU_TYPES[0];
+  }
+  G.powerups.push({ x, y, vy: 55 * S, type, t: rnd(0, TAU) });
+}
+
+// ---------- Inamici ----------
+function fireEB(x, y, vx, vy) {
+  if (G.ebullets.length >= 24) return;           // plafon: niciodată perdea de gloanțe
+  G.ebullets.push({ x, y, vx, vy });
+}
+function spawnEnemy(type, x, opts) {
+  const e = Object.assign({
+    type, x, y: -40 * S, vx: 0, vy: 100 * S, hp: 2, t: 0, fireT: rnd(1.5, 3),
+    r: 16 * S, score: 100, drop: false, phase: rnd(0, TAU), rot: 0
+  }, opts || {});
+  if (type === 'fighter') { e.hp = 1; e.vy = rnd(105, 145) * S; e.score = 100; e.canFire = Math.random() < 0.7; }
+  if (type === 'diver')   { e.hp = 1; e.vy = rnd(210, 280) * S; e.score = 150; e.r = 12 * S; }
+  if (type === 'heli')    { e.hp = 4; e.vy = 42 * S; e.score = 300; e.r = 20 * S; e.fireT = rnd(1.6, 2.6); }
+  if (type === 'bomber')  { e.hp = 9; e.vy = 36 * S; e.score = 500; e.r = 30 * S; e.drop = true; }
+  if (type === 'turret')  { e.hp = 3; e.vy = MISSIONS[G.level].scroll * S; e.score = 200; e.r = 15 * S; e.ang = Math.PI / 2; }
+  if (type === 'tank')    { e.hp = 4; e.vy = MISSIONS[G.level].scroll * S * 1.12; e.score = 250; e.r = 16 * S; e.ang = Math.PI / 2; e.fireT = rnd(2, 3); }
+  if (MISSIONS[G.level].diff > 0.5 && (type === 'heli' || type === 'bomber' || type === 'turret')) e.hp += 2;
+  e.maxHp = e.hp;
+  G.enemies.push(e);
+  return e;
+}
+// formații
+const PATTERNS = [
+  function vFormation() { const cx2 = rnd(W * 0.3, W * 0.7);
+    for (let i = 0; i < 5; i++) { const k = i - 2;
+      spawnEnemy('fighter', cx2 + k * 42 * S, { y: -40 * S - Math.abs(k) * 46 * S, sway: true }); } },
+  function column() { const x = rnd(60, W - 60);
+    for (let i = 0; i < 4; i++) spawnEnemy('fighter', x, { y: -40 * S - i * 60 * S, aimed: true }); },
+  function divers() { const n = 2 + Math.floor(rnd(0, 2 + G.level));
+    for (let i = 0; i < n; i++) setTimeout(() => { if (G.state === 'play') spawnEnemy('diver', rnd(40, W - 40)); }, i * 260); },
+  function helis() { const n = 1 + (Math.random() < 0.4 + G.level * 0.2 ? 1 : 0);
+    for (let i = 0; i < n; i++) { const left = Math.random() < 0.5;
+      spawnEnemy('heli', left ? -30 : W + 30, { y: rnd(H * 0.12, H * 0.3), vx: (left ? 1 : -1) * 70 * S, vy: 18 * S, side: true }); } },
+  function turrets() { const n = 1 + Math.floor(rnd(0, 2));
+    for (let i = 0; i < n; i++) spawnEnemy('turret', rnd(50, W - 50), { y: -30 * S - i * 90 * S }); },
+  function pincer() { for (const sgn of [-1, 1])
+    for (let i = 0; i < 3; i++) spawnEnemy('fighter', W / 2 + sgn * (60 + i * 46) * S, { y: -40 * S - i * 50 * S, curve: sgn }); },
+  function tanks() { const x = rnd(60, W - 60);
+    for (let i = 0; i < 3; i++) spawnEnemy('tank', x + rnd(-14, 14) * S, { y: -30 * S - i * 70 * S }); }
+];
+
+// ---------- Tragere jucător ----------
+function firingHeld() {
+  return touch.active || keys[' '] || keys.z || keys.Z || keys.j || keys.J;
+}
+function playerFire(dt) {
+  P.fireT -= dt;
+  if (!firingHeld() || P.fireT > 0) return;
+  P.fireT = 0.11;                                          // cadență rapidă, arcade
+  const bs = -780 * S, x = P.x, y = P.y - 26 * S;
+  const w = P.weapon;
+  const push = (dx, vx, dmg) => G.pbullets.push({ x: x + dx * S, y, vx: vx * S, vy: bs, dmg: dmg || 1, missile: false });
+  if (w === 1) { push(-6, 0); push(6, 0); }                // dublu chiar de la început
+  else if (w === 2) { push(-8, 0); push(8, 0); push(0, 0, 2); }
+  else { push(-9, 0); push(9, 0); push(0, 0, 2); }
+  if (w >= 3) { push(-15, -45); push(15, 45); }            // evantai lat
+  if (w >= 5) { push(-21, -95); push(21, 95); }
+  // flamă la gura țevii
+  G.parts.push({ x, y: y - 4 * S, vx: 0, vy: -80, life: 0.07, t: 0, r: 7 * S, col: 'fire' });
+  AudioSys.shoot();
+}
+function missileFire(dt) {
+  P.missT -= dt;
+  if (P.weapon < 4 || !firingHeld()) return;
+  if (P.missT > 0) return;
+  P.missT = 0.7;
+  for (const sgn of [-1, 1])
+    G.pbullets.push({ x: P.x + sgn * 20 * S, y: P.y, vx: sgn * 60 * S, vy: -260 * S, dmg: 3, missile: true, t: 0 });
+}
+function nearestEnemy(x, y) {
+  let best = null, bd = 1e12;
+  for (const e of G.enemies) { const d = dist2(x, y, e.x, e.y); if (d < bd) { bd = d; best = e; } }
+  if (G.boss) { const d = dist2(x, y, G.boss.x, G.boss.y); if (d < bd) best = G.boss; }
+  return best;
+}
+
+// ---------- Bombă ----------
+function useBomb() {
+  if (G.state !== 'play' || !P.alive || P.bombs <= 0 || G.flash > 0) return;
+  P.bombs--; G.flash = 0.9; G.shake = 16; G.slow = 0.35;
+  G.parts.push({ x: P.x, y: P.y, vx: 0, vy: 0, life: 0.6, t: 0, r: Math.max(W, H) * 0.8, col: 'ring' });
+  G.parts.push({ x: P.x, y: P.y, vx: 0, vy: 0, life: 0.9, t: 0, r: Math.max(W, H) * 1.1, col: 'ring' });
+  AudioSys.bomb();
+  G.ebullets.length = 0;
+  for (const e of G.enemies) { e.hp -= 12; boomAt(e.x, e.y, false); }
+  if (G.boss) { G.boss.hp -= 45; boomAt(G.boss.x + rnd(-60, 60) * S, G.boss.y + rnd(-30, 30) * S, true); }
+  cleanupDead();
+}
+function cleanupDead() {
+  for (let i = G.enemies.length - 1; i >= 0; i--) {
+    const e = G.enemies[i];
+    if (e.hp <= 0) { killEnemy(e); G.enemies.splice(i, 1); }
+  }
+}
+function killEnemy(e) {
+  boomAt(e.x, e.y, e.type === 'bomber');
+  G.combo = (G.combo || 0) + 1; G.comboT = 2.2;            // doborâri în lanț → multiplicator
+  const mult = Math.min(8, 1 + Math.floor(G.combo / 4));
+  const pts = e.score * mult;
+  G.score += pts;
+  addText(e.x, e.y, '+' + pts + (mult > 1 ? ' x' + mult : ''), mult > 1 ? '#ff8a00' : '#ffe9a0');
+  if (e.drop) dropPowerup(e.x, e.y, e.forceP);
+  else if (Math.random() < 0.11) dropPowerup(e.x, e.y, false);
+}
+
+// ---------- Daune jucător ----------
+function hurtPlayer(dmg) {
+  if (!P.alive || P.inv > 0) return;
+  if (P.shield > 0) { AudioSys.hit(); P.inv = 0.35; return; }
+  P.hp -= dmg; P.inv = 1.4; G.shake = Math.min(14, G.shake + 6);
+  G.combo = 0; G.comboT = 0;                               // lovitura rupe lanțul
+  AudioSys.hurt();
+  if (P.hp <= 0) {
+    P.alive = false; P.deadT = 0; P.lives--;
+    boomAt(P.x, P.y, true);
+  }
+}
+
+// ---------- Boss ----------
+function spawnBoss() {
+  const L = MISSIONS[G.level];
+  G.boss = { x: W / 2, y: -140 * S, hp: L.bossHp, maxHp: L.bossHp, t: 0, fireT: 2,
+    ringT: 4, minionT: 6, spr: 'boss_' + (G.level % THEMES.length), r: 78 * S, hitT: 0, entering: true,
+    name: THEMES[G.level % THEMES.length].bossName };
+  AudioSys.bossWarn();
+}
+function updateBoss(dt) {
+  const b = G.boss; if (!b) return;
+  b.t += dt; b.hitT = Math.max(0, b.hitT - dt);
+  if (b.entering) {
+    b.y += 70 * S * dt;
+    if (b.y >= H * 0.2) { b.y = H * 0.2; b.entering = false; b.t = 0; }   // FIX: reset ceas → sin(0)=0, pendularea pornește din centru, fără salt
+    return;
+  }
+  const DF = MISSIONS[G.level].diff;
+  const spd = 0.5 + DF * 0.45;
+  b.x = W / 2 + Math.sin(b.t * spd) * (W * 0.3);
+  b.y = H * 0.2 + Math.sin(b.t * 0.7) * 20 * S;
+  const frenzy = b.hp < b.maxHp * 0.45;
+  // evantai țintit — cadență mai lentă, dar precisă
+  b.fireT -= dt;
+  if (b.fireT <= 0) {
+    b.fireT = (frenzy ? 1.7 : 2.3) - DF * 0.6;
+    const ang = Math.atan2(P.y - b.y, P.x - b.x);
+    const n = frenzy ? 4 : 3, spread = 0.45;
+    for (let i = 0; i < n; i++) {
+      const a = ang + (i - (n - 1) / 2) * spread / (n - 1) * 2;
+      const sp = (130 + DF * 45) * S;
+      fireEB(b.x, b.y + 60 * S, Math.cos(a) * sp, Math.sin(a) * sp);
+    }
+    AudioSys.hit();
+  }
+  // inel (doar în frenzy) — lent, ușor de evitat
+  b.ringT -= dt;
+  if (frenzy && b.ringT <= 0) {
+    b.ringT = 5.2 - DF * 1.3;
+    const n = 8 + Math.round(DF * 6), off = rnd(0, TAU);
+    for (let i = 0; i < n; i++) {
+      const a = off + i / n * TAU, sp = 90 * S;
+      fireEB(b.x, b.y + 30 * S, Math.cos(a) * sp, Math.sin(a) * sp);
+    }
+  }
+  // trimite vânători
+  b.minionT -= dt;
+  if (b.minionT <= 0) { b.minionT = 6.5; spawnEnemy('fighter', rnd(60, W - 60), { aimed: true }); }
+  if (b.hp <= 0) {
+    // moartea boss-ului
+    for (let i = 0; i < 7; i++)
+      setTimeout(() => boomAt(b.x + rnd(-80, 80) * S, b.y + rnd(-50, 50) * S, true), i * 130);
+    const rew = 5000 + G.level * 500;
+    G.bonus = P.lives * 1000 + P.bombs * 500;              // bonus de final: vieți + bombe rămase
+    G.score += rew + G.bonus;
+    addText(b.x, b.y, '+' + rew, '#ffd23f');
+    G.boss = null; G.flash = 0.6; G.slow = 0.6;
+    setState('levelclear');
+  }
+}
+
+// ---------- Actualizare principală ----------
+function update(dt) {
+  G.stateT += dt;
+  if (G.state !== 'play') {
+    // efectele continuă în fundal (explozii pe ecranele de tranziție)
+    updateFX(dt);
+    touch.dx = 0; touch.dy = 0;
+    if (G.state === 'intro' || G.state === 'bosswarn' || G.state === 'levelclear')
+      G.dist += MISSIONS[G.level].scroll * S * dt * 0.6;   // terenul continuă să curgă lin
+    if (G.state === 'intro' && G.stateT > 2.4) setState('play');
+    if (G.state === 'bosswarn' && G.stateT > 2.2) { setState('play'); spawnBoss(); }
+    if (G.state === 'levelclear' && G.stateT > 3.4) {
+      if (G.level < MISSIONS.length - 1) startLevel(G.level + 1);
+      else setState('victory');
+    }
+    if (G.state === 'victory' || G.state === 'gameover') {
+      G.hiscore = Math.max(G.hiscore, G.score);
+    }
+    return;
+  }
+  const L = MISSIONS[G.level], DF = L.diff;
+  const tdt = dt * (G.slow > 0 ? 0.45 : 1);
+  G.slow = Math.max(0, G.slow - dt);
+  G.time += tdt; G.dist += L.scroll * S * tdt;
+
+  // --- jucătorul ---
+  if (P.alive) {
+    if (P.slide > 0) { P.slide -= dt; P.y += (H * 0.8 - P.y) * Math.min(1, 6 * dt); }
+    const px0 = P.x;
+    let dx = 0, dy = 0;
+    if (keys.ArrowLeft || keys.a) dx -= 1;
+    if (keys.ArrowRight || keys.d) dx += 1;
+    if (keys.ArrowUp || keys.w) dy -= 1;
+    if (keys.ArrowDown || keys.s) dy += 1;
+    if (dx || dy) { const m = Math.hypot(dx, dy); P.x += dx / m * 330 * S * dt; P.y += dy / m * 330 * S * dt; }
+    P.x += touch.dx; P.y += touch.dy; touch.dx = 0; touch.dy = 0;
+    P.x = clamp(P.x, 20 * S, W - 20 * S); P.y = clamp(P.y, 30 * S, H - 30 * S);
+    // înclinare pe viraj
+    P.bank += (clamp((P.x - px0) / (330 * S * dt || 1), -1, 1) - P.bank) * Math.min(1, 9 * dt);
+    // dâre de condensare de la vârfurile aripilor
+    if (Math.random() < 0.7)
+      for (const sgn of [-1, 1])
+        G.parts.push({ x: P.x + sgn * 22 * S, y: P.y + 12 * S, vx: 0, vy: 150 * S,
+          life: 0.4, t: 0, r: 1.6 * S, col: 'trail' });
+    P.inv = Math.max(0, P.inv - dt); P.shield = Math.max(0, P.shield - dt);
+    playerFire(dt); missileFire(dt);
+  } else {
+    P.deadT += dt;
+    if (P.deadT > 1.6) {
+      if (P.lives > 0) resetPlayer(false);
+      else { setState('gameover'); }
+    }
+  }
+  // linii de viteză (senzația de zbor rapid)
+  G.streakT = (G.streakT || 0) - tdt;
+  if (G.streakT <= 0) {
+    G.streakT = 0.14;
+    G.parts.push({ x: rnd(0, W), y: -30, vx: 0, vy: L.scroll * 6.5 * S,
+      life: (H + 140) / (L.scroll * 6.5 * S), t: 0, r: rnd(30, 80) * S, col: 'streak' });
+  }
+
+  // --- valuri de inamici ---
+  if (!G.boss && G.time < L.dur) {
+    G.spawnT -= tdt;
+    if (G.spawnT <= 0) {
+      G.spawnT = clamp(2.5 - G.time * 0.02 - DF * 1.0, 1.05, 2.6);
+      PATTERNS[Math.floor(Math.random() * PATTERNS.length)]();
+    }
+    G.carrierT -= tdt;
+    if (G.carrierT <= 0) { G.carrierT = 12;
+      const e = spawnEnemy('bomber', rnd(W * 0.25, W * 0.75)); e.forceP = Math.random() < 0.75; }
+  }
+  if (!G.boss && G.time >= L.dur && G.enemies.length === 0 && G.state === 'play' && G.prevState !== 'bosswarn') {
+    setState('bosswarn'); return;
+  }
+
+  // --- nori parallax ---
+  G.cloudT -= tdt;
+  if (G.cloudT <= 0) { G.cloudT = rnd(2, 4.5);
+    G.clouds.push({ x: rnd(-40, W), y: -90 * S, spr: SPR.clouds[Math.floor(rnd(0, 3))],
+      v: L.scroll * 1.9 * S, sc: rnd(0.7, 1.5) * S, al: rnd(0.25, 0.5) }); }
+  for (let i = G.clouds.length - 1; i >= 0; i--) { const c = G.clouds[i]; c.y += c.v * tdt; if (c.y > H + 100 * S) G.clouds.splice(i, 1); }
+
+  // efecte ambientale pe temă: sclipiri de apă/gheață ancorate de teren, jar care urcă din lavă
+  G.fxT = (G.fxT || 0) - tdt;
+  if (G.fxT <= 0) {
+    G.fxT = 0.09;
+    if (L.th.fx === 'glint')
+      G.parts.push({ x: rnd(0, W), y: rnd(0, H * 0.95), vx: 0, vy: L.scroll * S,
+        life: rnd(0.4, 0.7), t: 0, r: rnd(1.2, 2.4) * S, col: 'glint' });
+    else if (L.th.fx === 'ember')
+      G.parts.push({ x: rnd(0, W), y: H + 10, vx: rnd(-16, 16), vy: -rnd(40, 90) * S,
+        life: rnd(1.2, 2.2), t: 0, r: rnd(1.4, 2.6) * S, col: 'ember' });
+  }
+
+  // --- inamici ---
+  for (let i = G.enemies.length - 1; i >= 0; i--) {
+    const e = G.enemies[i]; e.t += tdt;
+    const px0 = e.x;
+    if (e.type === 'fighter') {
+      e.y += e.vy * tdt;
+      if (e.sway) e.x += Math.sin(e.t * 3 + e.phase) * 60 * S * tdt;
+      if (e.curve) e.x += e.curve * 40 * S * tdt * Math.sin(e.t * 2);
+      e.fireT -= tdt;
+      if (e.fireT <= 0 && e.canFire && e.y > 0 && e.y < H * 0.7) {
+        e.fireT = rnd(3.4, 5) * (1 - DF * 0.3);
+        const a = e.aimed ? Math.atan2(P.y - e.y, P.x - e.x) : Math.PI / 2;
+        const sp = (140 + DF * 40) * S;
+        fireEB(e.x, e.y + 16 * S, Math.cos(a) * sp, Math.sin(a) * sp);
+      }
+    } else if (e.type === 'diver') {
+      e.y += e.vy * tdt;
+      if (e.y < H * 0.5) e.x += clamp(P.x - e.x, -140 * S, 140 * S) * tdt * 1.2;
+    } else if (e.type === 'heli') {
+      e.x += (e.vx || 0) * tdt; e.y += e.vy * tdt;
+      e.y += Math.sin(e.t * 2.4) * 14 * S * tdt;
+      if (e.side && (e.x < -60 || e.x > W + 60) && e.t > 2) e.hp = -999; // a ieșit
+      e.fireT -= tdt;
+      if (e.fireT <= 0 && e.x > 20 && e.x < W - 20) {
+        e.fireT = rnd(2.8, 3.8) * (1 - DF * 0.25);
+        const a = Math.atan2(P.y - e.y, P.x - e.x);
+        for (const k of [-0.13, 0.13]) {
+          const sp = (125 + DF * 35) * S;
+          fireEB(e.x, e.y, Math.cos(a + k) * sp, Math.sin(a + k) * sp);
+        }
+      }
+    } else if (e.type === 'bomber') {
+      e.y += e.vy * tdt;
+      e.fireT -= tdt;
+      if (e.fireT <= 0) { e.fireT = 3.6 * (1 - DF * 0.2);
+        const a = Math.atan2(P.y - e.y, P.x - e.x), bsp = (115 + DF * 30) * S;
+        fireEB(e.x, e.y + 24 * S, Math.cos(a) * bsp, Math.sin(a) * bsp); }
+    } else if (e.type === 'turret' || e.type === 'tank') {
+      e.y += e.vy * tdt;
+      const ta = Math.atan2(P.y - e.y, P.x - e.x);
+      e.ang += clamp(((ta - e.ang + Math.PI * 3) % TAU) - Math.PI, -2 * tdt, 2 * tdt);
+      e.fireT -= tdt;
+      if (e.fireT <= 0 && e.y > 30 * S && e.y < H * 0.85) {
+        e.fireT = rnd(2.6, 3.6) * (1 - DF * 0.25);
+        const sp = (145 + DF * 40) * S;
+        fireEB(e.x + Math.cos(e.ang) * 18 * S, e.y + Math.sin(e.ang) * 18 * S,
+          Math.cos(e.ang) * sp, Math.sin(e.ang) * sp);
+      }
+    }
+    // înclinare pe viraj (bank) — pentru avioanele mici
+    if (e.type === 'fighter' || e.type === 'diver')
+      e.rot += (clamp((e.x - px0) * 0.1, -0.45, 0.45) - e.rot) * Math.min(1, 8 * tdt);
+    // fum când e avariat
+    if (e.hp <= e.maxHp * 0.45 && Math.random() < 0.35)
+      G.parts.push({ x: e.x + rnd(-6, 6) * S, y: e.y, vx: rnd(-12, 12), vy: rnd(-34, -10),
+        life: rnd(0.4, 0.7), t: 0, r: rnd(3, 6) * S, col: 'smoke' });
+    // coliziune cu jucătorul
+    if (P.alive && e.type !== 'turret' && e.type !== 'tank' && dist2(e.x, e.y, P.x, P.y) < Math.pow(e.r + 10 * S, 2)) {
+      hurtPlayer(25); e.hp -= 4;
+    }
+    if (e.y > H + 60 * S || e.hp <= 0) {
+      if (e.hp <= 0 && e.hp > -900) killEnemy(e);
+      G.enemies.splice(i, 1);
+    }
+  }
+  updateBoss(tdt);
+
+  // --- gloanțele jucătorului ---
+  for (let i = G.pbullets.length - 1; i >= 0; i--) {
+    const b = G.pbullets[i];
+    if (b.missile) {
+      b.t += tdt;
+      const tgt = nearestEnemy(b.x, b.y);
+      if (tgt) {
+        const a = Math.atan2(tgt.y - b.y, tgt.x - b.x), sp = 420 * S;
+        b.vx += (Math.cos(a) * sp - b.vx) * 3 * tdt;
+        b.vy += (Math.sin(a) * sp - b.vy) * 3 * tdt;
+      }
+      if (Math.random() < 0.5) G.parts.push({ x: b.x, y: b.y, vx: 0, vy: 40, life: 0.3, t: 0, r: 2.5 * S, col: 'smoke' });
+    }
+    b.x += b.vx * tdt; b.y += b.vy * tdt;
+    let dead = b.y < -30 || b.y > H + 30 || b.x < -30 || b.x > W + 30;
+    if (!dead) {
+      for (const e of G.enemies) {
+        if (dist2(b.x, b.y, e.x, e.y) < Math.pow(e.r + 11 * S, 2)) {   // impact generos — ținta cade ușor
+          e.hp -= b.dmg; dead = true;
+          G.parts.push({ x: b.x, y: b.y, vx: rnd(-30, 30), vy: rnd(-60, 0), life: 0.2, t: 0, r: 3 * S, col: '#ffe9a0' });
+          if (e.hp <= 0) { killEnemy(e); G.enemies.splice(G.enemies.indexOf(e), 1); }
+          break;
+        }
+      }
+      if (!dead && G.boss && !G.boss.entering &&
+          dist2(b.x, b.y, G.boss.x, G.boss.y + 20 * S) < Math.pow(G.boss.r, 2)) {
+        G.boss.hp -= b.dmg; G.boss.hitT = 0.08; dead = true; G.score += 10;
+        G.parts.push({ x: b.x, y: b.y, vx: rnd(-40, 40), vy: rnd(-60, 0), life: 0.25, t: 0, r: 3.5 * S, col: '#fff' });
+      }
+    }
+    if (dead) G.pbullets.splice(i, 1);
+  }
+
+  // --- gloanțele inamice ---
+  for (let i = G.ebullets.length - 1; i >= 0; i--) {
+    const b = G.ebullets[i];
+    b.x += b.vx * tdt; b.y += b.vy * tdt;
+    if (b.y > H + 20 || b.y < -20 || b.x < -20 || b.x > W + 20) { G.ebullets.splice(i, 1); continue; }
+    if (P.alive && dist2(b.x, b.y, P.x, P.y) < Math.pow(7 * S + 6 * S, 2)) {   // hitbox mic = joc prietenos
+      hurtPlayer(12); G.ebullets.splice(i, 1);
+    }
+  }
+
+  // --- power-up-uri ---
+  for (let i = G.powerups.length - 1; i >= 0; i--) {
+    const p = G.powerups[i];
+    p.t += tdt; p.y += p.vy * tdt; p.x += Math.sin(p.t * 2) * 24 * S * tdt;
+    if (P.alive && dist2(p.x, p.y, P.x, P.y) < Math.pow(120 * S, 2)) {   // magnet
+      const a = Math.atan2(P.y - p.y, P.x - p.x);
+      p.x += Math.cos(a) * 260 * S * tdt; p.y += Math.sin(a) * 260 * S * tdt;
+    }
+    if (p.y > H + 30) { G.powerups.splice(i, 1); continue; }
+    if (P.alive && dist2(p.x, p.y, P.x, P.y) < Math.pow(30 * S, 2)) {
+      applyPowerup(p.type); G.powerups.splice(i, 1);
+    }
+  }
+  updateFX(dt);
+}
+function applyPowerup(t) {
+  AudioSys.power();
+  if (t.k === 'P') { if (P.weapon < 5) { P.weapon++; addText(P.x, P.y - 30 * S, 'ARMĂ +1', '#ff8a00'); }
+                     else { G.score += 1000; addText(P.x, P.y - 30 * S, '+1000', '#ff8a00'); } }
+  if (t.k === 'H') { P.hp = Math.min(100, P.hp + 40); addText(P.x, P.y - 30 * S, 'REPARAT', '#42d66a'); }
+  if (t.k === 'B') { P.bombs = Math.min(6, P.bombs + 1); addText(P.x, P.y - 30 * S, 'BOMBĂ +1', '#ffd23f'); }
+  if (t.k === 'S') { P.shield = 8; addText(P.x, P.y - 30 * S, 'SCUT!', '#40b4ff'); }
+  if (t.k === '★') { G.score += 500; addText(P.x, P.y - 30 * S, '+500', '#ff5ecb'); }
+}
+function updateFX(dt) {
+  G.comboT = Math.max(0, (G.comboT || 0) - dt);
+  if (G.comboT === 0) G.combo = 0;
+  G.shake = Math.max(0, G.shake - dt * 26);
+  G.flash = Math.max(0, G.flash - dt * 1.4);
+  for (let i = G.parts.length - 1; i >= 0; i--) {
+    const p = G.parts[i]; p.t += dt;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += (p.col === 'smoke' ? -30 : 60) * dt;
+    if (p.t >= p.life) G.parts.splice(i, 1);
+  }
+  for (let i = G.texts.length - 1; i >= 0; i--) {
+    const t = G.texts[i]; t.t += dt; t.y -= 34 * S * dt;
+    if (t.t > 1) G.texts.splice(i, 1);
+  }
+}
+
+// ---------- Desenare ----------
+function drawSprite(spr, x, y, sc, rot) {
+  const w = spr.width / 2 * (sc || 1) * S, h = spr.height / 2 * (sc || 1) * S;
+  ctx.save(); ctx.translate(x, y);
+  if (rot) ctx.rotate(rot);
+  ctx.drawImage(spr, -w / 2, -h / 2, w, h);
+  ctx.restore();
+}
+function drawTerrain() {
+  const L = G.level;
+  const first = Math.floor(G.dist / CHUNK);
+  const count = Math.ceil(H / CHUNK) + 1;
+  for (let i = first; i <= first + count; i++) {
+    const c = chunkCanvas(L, i);
+    const y = H - (i * CHUNK + CHUNK - G.dist);
+    ctx.drawImage(c, 0, y);
+  }
+  const tint = MISSIONS[L].th.tint;
+  if (tint) { ctx.fillStyle = tint; ctx.fillRect(0, 0, W, H); }
+  // lumină de sus + umbrire spre bază — dă adâncime scenei
+  const lg = ctx.createLinearGradient(0, 0, 0, H);
+  lg.addColorStop(0, 'rgba(255,255,235,.07)');
+  lg.addColorStop(0.45, 'rgba(255,255,255,0)');
+  lg.addColorStop(1, 'rgba(0,0,35,.10)');
+  ctx.fillStyle = lg; ctx.fillRect(0, 0, W, H);
+}
+function drawPlayer(now) {
+  if (!P.alive) return;
+  if (P.inv > 0 && Math.floor(now / 80) % 2 === 0) return;   // clipire la invulnerabilitate
+  // umbra proiectată pe teren
+  ctx.globalAlpha = 0.26;
+  drawSprite(SHD.player, P.x + 13 * S, P.y + 20 * S, 0.9, P.bank * 0.2);
+  ctx.globalAlpha = 1;
+  ctx.save();
+  ctx.translate(P.x, P.y);
+  ctx.rotate(P.bank * 0.2);                       // înclinare pe viraj
+  ctx.scale(1 - Math.abs(P.bank) * 0.22, 1);      // aripile se "strâng" în perspectivă
+  // flăcări gemene de motor
+  const fl = 7 + Math.sin(now / 30) * 3;
+  for (const dx of [-3.2 * S, 3.2 * S]) {
+    ctx.fillStyle = '#ffb400';
+    ctx.beginPath(); ctx.moveTo(dx - 2.6 * S, 27 * S);
+    ctx.lineTo(dx, (27 + fl) * S); ctx.lineTo(dx + 2.6 * S, 27 * S); ctx.fill();
+    ctx.fillStyle = '#fff2b0';
+    ctx.beginPath(); ctx.moveTo(dx - 1.3 * S, 27 * S);
+    ctx.lineTo(dx, (27 + fl * 0.55) * S); ctx.lineTo(dx + 1.3 * S, 27 * S); ctx.fill();
+  }
+  // postcombustie aditivă
+  ctx.globalCompositeOperation = 'lighter';
+  const ab = (9 + Math.sin(now / 40) * 3) * S;
+  ctx.drawImage(SPR.fire, -ab, 26 * S - ab * 0.4, ab * 2, ab * 2);
+  ctx.globalCompositeOperation = 'source-over';
+  const pw = SPR.player.width / 2 * S, ph = SPR.player.height / 2 * S;
+  ctx.drawImage(SPR.player, -pw / 2, -ph / 2, pw, ph);
+  ctx.restore();
+  if (P.shield > 0) {
+    const a = P.shield < 2 ? (Math.floor(now / 120) % 2 === 0 ? 0.5 : 0.15) : 0.45;
+    ctx.strokeStyle = 'rgba(80,200,255,' + a + ')'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(P.x, P.y, 34 * S + Math.sin(now / 90) * 2, 0, TAU); ctx.stroke();
+  }
+}
+function drawEnemies(now) {
+  // trecerea 1: umbrele tuturor aeronavelor (turelele sunt la sol — fără umbră)
+  ctx.globalAlpha = 0.26;
+  for (const e of G.enemies) {
+    const sh = SHD[e.type];
+    if (sh) drawSprite(sh, e.x + 13 * S, e.y + 20 * S, 0.92, e.rot);
+  }
+  ctx.globalAlpha = 1;
+  // trecerea 2: corpurile
+  for (const e of G.enemies) {
+    if (e.type === 'fighter') drawSprite(SPR.fighter, e.x, e.y, 1, e.rot);
+    else if (e.type === 'diver') drawSprite(SPR.diver, e.x, e.y, 1, e.rot);
+    else if (e.type === 'bomber') {
+      drawSprite(SPR.bomber, e.x, e.y, 1);
+      // elice care se învârt + disc translucid
+      for (const dx of [-26, 26]) {
+        ctx.save(); ctx.translate(e.x + dx * S, e.y - 20 * S); ctx.rotate(now / 25 % TAU);
+        ctx.fillStyle = 'rgba(210,210,200,.14)';
+        ctx.beginPath(); ctx.arc(0, 0, 9 * S, 0, TAU); ctx.fill();
+        ctx.strokeStyle = 'rgba(30,25,10,.75)'; ctx.lineWidth = 2.5 * S;
+        ctx.beginPath(); ctx.moveTo(-9 * S, 0); ctx.lineTo(9 * S, 0); ctx.stroke();
+        ctx.restore();
+      }
+    }
+    else if (e.type === 'heli') {
+      drawSprite(SPR.heli, e.x, e.y, 1);
+      ctx.save(); ctx.translate(e.x, e.y - 6 * S); ctx.rotate(now / 40 % TAU);
+      ctx.strokeStyle = 'rgba(30,40,20,.8)'; ctx.lineWidth = 3 * S;
+      ctx.beginPath(); ctx.moveTo(-26 * S, 0); ctx.lineTo(26 * S, 0);
+      ctx.moveTo(0, -26 * S); ctx.lineTo(0, 26 * S); ctx.stroke(); ctx.restore();
+      // rotor de coadă
+      ctx.save(); ctx.translate(e.x, e.y + 21 * S); ctx.rotate(now / 18 % TAU);
+      ctx.strokeStyle = 'rgba(30,40,20,.8)'; ctx.lineWidth = 2 * S;
+      ctx.beginPath(); ctx.moveTo(-7 * S, 0); ctx.lineTo(7 * S, 0); ctx.stroke(); ctx.restore();
+    } else if (e.type === 'tank') {
+      drawSprite(SPR.tank, e.x, e.y, 1);
+      ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.ang);
+      ctx.fillStyle = '#33402a'; ctx.fillRect(0, -3 * S, 24 * S, 6 * S);
+      ctx.fillStyle = '#1c2416'; ctx.fillRect(20 * S, -3.5 * S, 5 * S, 7 * S);
+      ctx.restore();
+      ctx.fillStyle = '#55683c'; ctx.beginPath(); ctx.arc(e.x, e.y, 8 * S, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#141a10'; ctx.lineWidth = 2; ctx.stroke();
+    } else if (e.type === 'turret') {
+      drawSprite(SPR.turret, e.x, e.y, 1);
+      ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.ang);
+      ctx.fillStyle = '#2b3138'; ctx.fillRect(0, -3.5 * S, 22 * S, 7 * S);
+      ctx.fillStyle = '#ffd23f'; ctx.fillRect(18 * S, -2 * S, 4 * S, 4 * S);
+      ctx.restore();
+    }
+  }
+}
+function drawBoss(now) {
+  const b = G.boss; if (!b) return;
+  ctx.globalAlpha = 0.26;
+  drawSprite(SHD[b.spr], b.x + 20 * S, b.y + 32 * S, 0.95);
+  ctx.globalAlpha = 1;
+  drawSprite(SPR[b.spr], b.x, b.y, 1);
+  // jeturi de motor incandescente (pulsante, aditive)
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  const eg = (10 + Math.sin(now / 70) * 3) * S;
+  for (const dx of [-60, -34, 34, 60])
+    ctx.drawImage(SPR.fire, b.x + dx * S - eg, b.y - 45 * S - eg, eg * 2, eg * 2);
+  ctx.restore();
+  if (b.hitT > 0) { ctx.globalAlpha = 0.5; ctx.globalCompositeOperation = 'lighter';
+    drawSprite(SPR[b.spr], b.x, b.y, 1); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; }
+  // bară de viață boss
+  const bw = Math.min(W - 40, 420), bx = (W - bw) / 2, by = 54 * S + 8;
+  ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(bx - 2, by - 2, bw + 4, 14);
+  ctx.fillStyle = '#5a1010'; ctx.fillRect(bx, by, bw, 10);
+  ctx.fillStyle = b.hp < b.maxHp * 0.45 ? '#ff8a00' : '#e14b4b';
+  ctx.fillRect(bx, by, bw * clamp(b.hp / b.maxHp, 0, 1), 10);
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(bx, by, bw, 10);
+  arcadeText(b.name, W / 2, by - 12, 11 * S + 2, '#ff9a9a');
+}
+function drawBullets(now) {
+  // gloanțe-trasor (linii luminoase în direcția vitezei)
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineCap = 'round';
+  for (const b of G.pbullets) {
+    if (b.missile) { ctx.globalCompositeOperation = 'source-over';
+      drawSprite(SPR.missile, b.x, b.y, 1, Math.atan2(b.vy, b.vx) + Math.PI / 2);
+      ctx.globalCompositeOperation = 'lighter'; continue; }
+    const tx = b.x - b.vx * 0.035, ty = b.y - b.vy * 0.035;
+    ctx.strokeStyle = 'rgba(255,180,60,.85)'; ctx.lineWidth = 4 * S;
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.6 * S;
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  ctx.restore();
+  const pulse = 0.85 + Math.sin(now / 90) * 0.12;
+  for (const b of G.ebullets) drawSprite(SPR.ebullet, b.x, b.y, pulse);
+}
+function drawPowerups(now) {
+  for (const p of G.powerups) {
+    const bob = Math.sin(p.t * 4) * 3 * S, sz = 15 * S;
+    ctx.fillStyle = 'rgba(0,10,20,.22)';
+    ctx.beginPath(); ctx.ellipse(p.x + 9 * S, p.y + bob + 14 * S, sz * 0.8, sz * 0.45, 0, 0, TAU); ctx.fill();
+    ctx.save(); ctx.translate(p.x, p.y + bob);
+    ctx.shadowColor = p.type.col; ctx.shadowBlur = 12;
+    ctx.fillStyle = p.type.col;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(-sz, -sz, sz * 2, sz * 2, 6);
+    else ctx.rect(-sz, -sz, sz * 2, sz * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold ' + Math.round(17 * S) + 'px Courier New';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(p.type.k, 0, 1);
+    ctx.restore();
+  }
+}
+function drawParts() {
+  for (const p of G.parts) {
+    const k = 1 - p.t / p.life;
+    if (p.col === 'ring') {                        // undă de șoc
+      ctx.strokeStyle = 'rgba(255,220,160,' + (0.6 * k) + ')';
+      ctx.lineWidth = 3 * S;
+      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1, p.r * (1 - k)), 0, TAU); ctx.stroke();
+      continue;
+    }
+    if (p.col === 'glint') {                      // sclipire în cruce pe apă/gheață
+      const a = Math.sin((p.t / p.life) * Math.PI);
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.85 * a) + ')'; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(p.x - p.r * 2, p.y); ctx.lineTo(p.x + p.r * 2, p.y);
+      ctx.moveTo(p.x, p.y - p.r * 2); ctx.lineTo(p.x, p.y + p.r * 2); ctx.stroke();
+      ctx.restore(); continue;
+    }
+    if (p.col === 'ember') {                      // jar vulcanic pâlpâitor
+      const a = 0.5 + 0.5 * Math.sin(p.t * 20 + p.x);
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(255,140,50,' + (0.8 * a * k) + ')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill();
+      ctx.restore(); continue;
+    }
+    if (p.col === 'fire') {                       // minge de foc aditivă
+      ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = k;
+      const rr = p.r * (0.5 + (p.t / p.life) * 0.9);
+      ctx.drawImage(SPR.fire, p.x - rr, p.y - rr, rr * 2, rr * 2);
+      ctx.restore(); continue;
+    }
+    if (p.col === 'debris') {                      // resturi rotitoare
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot + p.t * p.vr);
+      ctx.fillStyle = 'rgba(40,44,50,' + (0.9 * k) + ')';
+      ctx.fillRect(-p.r, -p.r * 0.6, p.r * 2, p.r * 1.2);
+      ctx.restore(); continue;
+    }
+    if (p.col === 'streak') {                      // linii de viteză
+      ctx.strokeStyle = 'rgba(255,255,255,.07)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y - p.r); ctx.stroke();
+      continue;
+    }
+    if (p.col === 'trail') {                       // dâre de condensare
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.3 * k) + ')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, TAU); ctx.fill();
+      continue;
+    }
+    if (p.col === 'smoke') { ctx.fillStyle = 'rgba(60,60,66,' + (0.45 * k) + ')'; }
+    else ctx.fillStyle = p.col;
+    ctx.globalAlpha = p.col === 'smoke' ? 1 : k;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (p.col === 'smoke' ? (1 + p.t) : k + 0.2), 0, TAU); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  ctx.globalAlpha = 1;
+}
+function drawTexts() {
+  ctx.font = 'bold ' + Math.round(15 * S) + 'px Courier New';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const t of G.texts) {
+    ctx.globalAlpha = 1 - t.t;
+    ctx.fillStyle = '#000'; ctx.fillText(t.str, t.x + 1, t.y + 1);
+    ctx.fillStyle = t.col; ctx.fillText(t.str, t.x, t.y);
+  }
+  ctx.globalAlpha = 1;
+}
+function arcadeText(str, x, y, size, col, align) {
+  ctx.font = 'bold ' + Math.round(size) + 'px Courier New';
+  ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#000'; ctx.fillText(str, x + 2, y + 2);
+  ctx.fillStyle = col; ctx.fillText(str, x, y);
+}
+function drawHUD(now) {
+  const top = 10;
+  arcadeText('SCOR ' + G.score, 12, top + 10, 16 * S + 2, '#ffe9a0', 'left');
+  if ((G.combo || 0) >= 4)
+    arcadeText('LANȚ x' + Math.min(8, 1 + Math.floor(G.combo / 4)), W / 2, top + 14, 15 * S + 2, '#ff8a00');
+  arcadeText('REC ' + Math.max(G.hiscore, G.score), 12, top + 30 + 6 * S, 12 * S + 2, '#9fb6c9', 'left');
+  arcadeText('M ' + (G.level + 1) + '/' + MISSION_COUNT + ' · ' + MISSIONS[G.level].sub, 12, top + 48 + 10 * S, 11 * S + 2, '#ffd23f', 'left');
+  // vieți
+  for (let i = 0; i < P.lives; i++) drawSprite(SPR.player, 22 + i * 26 * S, top + 74 + 16 * S, 0.42);
+  // bombe
+  for (let i = 0; i < P.bombs; i++) {
+    const bx = 16 + i * 20 * S, by = top + 100 + 22 * S;
+    ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(bx, by, 7 * S, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#7a4a00'; ctx.lineWidth = 2; ctx.stroke();
+  }
+  // bară viață
+  const hw = 120 * S, hx = 12, hy = top + 120 + 36 * S;
+  ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(hx - 2, hy - 2, hw + 4, 12);
+  ctx.fillStyle = '#4a1010'; ctx.fillRect(hx, hy, hw, 8);
+  ctx.fillStyle = P.hp > 35 ? '#42d66a' : '#e14b4b';
+  ctx.fillRect(hx, hy, hw * clamp(P.hp / 100, 0, 1), 8);
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(hx, hy, hw, 8);
+  // progres nivel (dreapta)
+  if (G.state === 'play' && !G.boss) {
+    const L = MISSIONS[G.level], ph = H * 0.4, px = W - 10, py = H * 0.3;
+    ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(px - 3, py, 6, ph);
+    const pr = clamp(G.time / L.dur, 0, 1);
+    ctx.fillStyle = '#ffe9a0'; ctx.fillRect(px - 3, py + ph * (1 - pr), 6, ph * pr);
+    arcadeText('B', px - 1, py - 12, 12 * S, '#e14b4b');
+  }
+}
+// fundal animat pentru meniuri
+let menuDist = 0;
+function drawMenuBg(dt) {
+  menuDist += 60 * S * dt;
+  const save = G.dist, sl = G.level;
+  G.dist = menuDist; G.level = G.menuSel;   // previzualizezi live harta misiunii alese
+  drawTerrain();
+  G.dist = save; G.level = sl;
+  ctx.fillStyle = 'rgba(0,10,25,.45)'; ctx.fillRect(0, 0, W, H);
+}
+function drawOverlays(now, dt) {
+  const cx2 = W / 2, cy2 = H / 2;
+  if (G.state === 'menu') {
+    drawMenuBg(dt);
+    const bob = Math.sin(now / 400) * 6;
+    arcadeText('SKY RAPTOR', cx2, cy2 - 120 * S + bob, 46 * S, '#ffd23f');
+    arcadeText('OPERAȚIUNEA FULGER', cx2, cy2 - 78 * S + bob, 16 * S, '#9fb6c9');
+    drawSprite(SPR.player, cx2, cy2 - 16 * S, 1.5);
+    // selector de misiune
+    const ml = menuLayout(), m = MISSIONS[G.menuSel];
+    arcadeText('◀', cx2 - ml.ax, ml.ySel, 30 * S, '#ffd23f');
+    arcadeText('▶', cx2 + ml.ax, ml.ySel, 30 * S, '#ffd23f');
+    arcadeText(m.name, cx2, ml.ySel - 11 * S, 16 * S, '#fff');
+    arcadeText(m.sub, cx2, ml.ySel + 13 * S, 12 * S, '#9fb6c9');
+    if (Math.floor(now / 500) % 2 === 0)
+      arcadeText(isTouch ? 'ATINGE CENTRUL PENTRU START' : 'ENTER = START', cx2, cy2 + 110 * S, 16 * S, '#fff');
+    arcadeText(isTouch ? 'Ține degetul pe ecran: zbori și tragi' : '◀▶ = misiunea · Space = foc · B = bombă', cx2, cy2 + 140 * S, 12 * S, '#9fb6c9');
+    arcadeText(MISSION_COUNT + ' misiuni · 8 zone · boss la final · P, S, B, H, ★', cx2, cy2 + 160 * S, 12 * S, '#9fb6c9');
+  }
+  if (G.state === 'intro') {
+    const L = MISSIONS[G.level];
+    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, cy2 - 70 * S, W, 140 * S);
+    arcadeText(L.name, cx2, cy2 - 22 * S, 30 * S, '#ffd23f');
+    arcadeText(L.sub, cx2, cy2 + 18 * S, 20 * S, '#fff');
+  }
+  if (G.state === 'bosswarn') {
+    if (Math.floor(now / 300) % 2 === 0) {
+      ctx.fillStyle = 'rgba(255,0,0,.12)'; ctx.fillRect(0, 0, W, H);
+      arcadeText('⚠ AVERTISMENT ⚠', cx2, cy2 - 20 * S, 32 * S, '#ff3b3b');
+      arcadeText('INAMIC URIAȘ DETECTAT', cx2, cy2 + 20 * S, 16 * S, '#fff');
+      arcadeText(THEMES[G.level % THEMES.length].bossName, cx2, cy2 + 52 * S, 18 * S, '#ffd23f');
+    }
+  }
+  if (G.state === 'levelclear') {
+    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, cy2 - 90 * S, W, 180 * S);
+    arcadeText('MISIUNE ÎNDEPLINITĂ!', cx2, cy2 - 40 * S, 26 * S, '#42d66a');
+    arcadeText('BONUS VIEȚI + BOMBE: +' + G.bonus, cx2, cy2 - 4 * S, 14 * S, '#40b4ff');
+    arcadeText('SCOR: ' + G.score, cx2, cy2 + 24 * S, 18 * S, '#ffe9a0');
+    if (G.level < MISSIONS.length - 1) arcadeText('Se pregătește misiunea următoare…', cx2, cy2 + 54 * S, 13 * S, '#9fb6c9');
+  }
+  if (G.state === 'gameover') {
+    ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(0, 0, W, H);
+    arcadeText('JOC TERMINAT', cx2, cy2 - 50 * S, 36 * S, '#e14b4b');
+    arcadeText('SCOR: ' + G.score + '   REC: ' + G.hiscore, cx2, cy2, 17 * S, '#ffe9a0');
+    if (Math.floor(now / 500) % 2 === 0)
+      arcadeText(isTouch ? 'ATINGE PENTRU A REÎNCERCA MISIUNEA' : 'ENTER = reîncearcă misiunea', cx2, cy2 + 52 * S, 15 * S, '#fff');
+  }
+  if (G.state === 'victory') {
+    ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, 0, W, H);
+    const bob = Math.sin(now / 300) * 4;
+    arcadeText('VICTORIE!', cx2, cy2 - 90 * S + bob, 40 * S, '#ffd23f');
+    arcadeText('Toate cele ' + MISSION_COUNT + ' de misiuni au fost îndeplinite.', cx2, cy2 - 40 * S, 15 * S, '#fff');
+    arcadeText('Cerul e din nou liber, pilotule!', cx2, cy2 - 16 * S, 15 * S, '#fff');
+    arcadeText('SCOR FINAL: ' + G.score, cx2, cy2 + 26 * S, 22 * S, '#ffe9a0');
+    arcadeText('REC: ' + G.hiscore, cx2, cy2 + 54 * S, 14 * S, '#9fb6c9');
+    if (Math.floor(now / 500) % 2 === 0)
+      arcadeText(isTouch ? 'ATINGE PENTRU MENIU' : 'ENTER = meniu', cx2, cy2 + 100 * S, 15 * S, '#fff');
+  }
+  if (G.state === 'pause') {
+    ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(0, 0, W, H);
+    arcadeText('PAUZĂ', cx2, cy2 - 10 * S, 34 * S, '#fff');
+    arcadeText(isTouch ? 'Atinge II pentru a continua' : 'P = continuă', cx2, cy2 + 34 * S, 14 * S, '#9fb6c9');
+  }
+}
+function draw(now, dt) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  if (G.shake > 0) ctx.translate(rnd(-G.shake, G.shake), rnd(-G.shake, G.shake));
+  if (G.state === 'menu') { drawOverlays(now, dt); ctx.restore(); return; }
+  drawTerrain();
+  drawEnemies(now);
+  drawBoss(now);
+  drawPowerups(now);
+  for (const c of G.clouds) { ctx.globalAlpha = c.al; drawSprite(c.spr, c.x, c.y, c.sc / S); ctx.globalAlpha = 1; }
+  drawBullets(now);
+  drawPlayer(now);
+  drawParts();
+  drawTexts();
+  if (G.flash > 0) { ctx.fillStyle = 'rgba(255,240,200,' + Math.min(0.85, G.flash) + ')'; ctx.fillRect(-20, -20, W + 40, H + 40); }
+  if (vignette) ctx.drawImage(vignette, 0, 0);
+  drawHUD(now);
+  drawOverlays(now, dt);
+  ctx.restore();
+}
+
+// ---------- Intrări ----------
+const keys = {};
+const touch = { dx: 0, dy: 0, active: false, lx: 0, ly: 0 };
+let isTouch = false;
+window.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (G.state === 'menu') {
+    if (e.key === 'ArrowLeft') G.menuSel = (G.menuSel + MISSION_COUNT - 1) % MISSION_COUNT;
+    if (e.key === 'ArrowRight') G.menuSel = (G.menuSel + 1) % MISSION_COUNT;
+  }
+  if (e.key === ' ') e.preventDefault();                       // Space = foc (ținut apăsat)
+  if (e.key === 'b' || e.key === 'B' || e.key === 'x' || e.key === 'X') useBomb();
+  if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') togglePause();
+  if (e.key === 'Enter') advance();
+  AudioSys.init();
+});
+window.addEventListener('keyup', e => { keys[e.key] = false; });
+cv.addEventListener('touchstart', e => {
+  e.preventDefault(); isTouch = true; AudioSys.init();
+  const t = e.changedTouches[0];
+  touch.active = true; touch.lx = t.clientX; touch.ly = t.clientY;
+  advance(t.clientX, t.clientY);
+}, { passive: false });
+cv.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  if (touch.active) {
+    touch.dx += (t.clientX - touch.lx) * 1.15;
+    touch.dy += (t.clientY - touch.ly) * 1.15;
+    touch.lx = t.clientX; touch.ly = t.clientY;
+  }
+}, { passive: false });
+cv.addEventListener('touchend', e => { e.preventDefault(); touch.active = false; }, { passive: false });
+cv.addEventListener('mousedown', e => { AudioSys.init(); advance(e.clientX, e.clientY); });
+
+function menuLayout() {
+  return { ySel: H / 2 + 58 * S, ax: Math.min(150 * S, W / 2 - 36) };
+}
+function menuArrowHit(x, y) {
+  const ml = menuLayout(), cx2 = W / 2;
+  if (Math.abs(y - ml.ySel) < 42 * S) {
+    if (Math.abs(x - (cx2 - ml.ax)) < 46 * S) { G.menuSel = (G.menuSel + MISSION_COUNT - 1) % MISSION_COUNT; return true; }
+    if (Math.abs(x - (cx2 + ml.ax)) < 46 * S) { G.menuSel = (G.menuSel + 1) % MISSION_COUNT; return true; }
+  }
+  return false;
+}
+function advance(x, y) {
+  if (G.state === 'menu') {
+    if (x !== undefined && menuArrowHit(x, y)) return;     // atingerea săgeților doar schimbă misiunea
+    G.score = 0; resetPlayer(true); startLevel(G.menuSel);
+  }
+  else if (G.state === 'gameover' && G.stateT > 0.8) { G.score = 0; resetPlayer(true); startLevel(G.level); }
+  else if (G.state === 'victory' && G.stateT > 0.8) { G.menuSel = 0; setState('menu'); }
+}
+function togglePause() {
+  if (G.state === 'play') setState('pause');
+  else if (G.state === 'pause') setState('play');
+}
+document.getElementById('btnPause').addEventListener('click', () => { AudioSys.init(); togglePause(); });
+document.getElementById('btnMute').addEventListener('click', function () {
+  AudioSys.init(); AudioSys.muted = !AudioSys.muted;
+  this.textContent = AudioSys.muted ? '✕' : '♪';
+});
+const btnBomb = document.getElementById('btnBomb');
+btnBomb.addEventListener('touchstart', e => { e.preventDefault(); e.stopPropagation(); useBomb(); }, { passive: false });
+btnBomb.addEventListener('click', e => { e.stopPropagation(); useBomb(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && G.state === 'play') setState('pause'); });
+
+// ---------- Bucla principală ----------
+let last = 0;
+function loop(now) {
+  const dt = Math.min(0.033, (now - last) / 1000 || 0.016);
+  last = now;
+  // afișează butonul de bombă doar pe touch, în joc
+  btnBomb.style.display = (isTouch && (G.state === 'play' || G.state === 'pause')) ? 'block' : 'none';
+  if (G.state !== 'pause') update(dt);
+  draw(now, dt);
+  requestAnimationFrame(loop);
+}
+resize();
+buildSprites();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
