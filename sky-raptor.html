@@ -583,11 +583,18 @@ function chunkCanvas(level, idx) {
   const c = document.createElement('canvas');
   c.width = Math.max(2, Math.round(W)); c.height = CHUNK;
   const g = c.getContext('2d');
-  const r = mulberry32(level * 10007 + idx * 97 + 13);
+  const rr = mulberry32(level * 10007 + idx * 97 + 13);
+  const tv = MISSIONS[level].tv || { bias: 1, tint: null };
+  const r = () => Math.pow(rr(), tv.bias);                       // bias-ul remixează mărimi și densități
   MISSIONS[level].th.draw(g, r, idx);
   detailPass(g, r, MISSIONS[level].th.det[0], MISSIONS[level].th.det[1]);
   const keys = Object.keys(terrainCache);
   if (keys.length > 14) delete terrainCache[keys[0]];
+  if (tv.tint) {                                 // lumina misiunii: zori/amurg/furtună/lună
+    g.globalCompositeOperation = 'overlay';
+    g.fillStyle = tv.tint; g.fillRect(0, 0, c.width, CHUNK);
+    g.globalCompositeOperation = 'source-over';
+  }
   terrainCache[key] = c;
   return c;
 }
@@ -845,24 +852,34 @@ const THEMES = [
   { name: 'INIMA VULCANULUI',  draw: drawVolcano,   tint: 'rgba(255,60,0,.05)',    pal: ['#4a4048', '#141014', '#ff5722'], bossName: 'INIMA DE MAGMĂ', en: 'VOLCANO HEART', bossEn: 'MAGMA HEART', weather: null, det: ['rgba(255,120,40,.06)', 'rgba(0,0,0,.17)'],      fx: 'ember' }
 ];
 const MISSION_COUNT = 56;
-const MISSIONS = [];
-for (let mi = 0; mi < MISSION_COUNT; mi++) {
-  const th = THEMES[mi % THEMES.length];
-  const df = mi / (MISSION_COUNT - 1);
-  MISSIONS.push({
+const TINTS = [null, null,                                     // lumini de misiune: zi normală...
+  'rgba(255,170,60,.16)',                                       // ...zori de aur
+  'rgba(130,90,210,.15)',                                       // ...amurg violet
+  'rgba(40,90,170,.15)',                                        // ...furtună rece
+  'rgba(255,240,200,.10)',                                      // ...soare alb de amiază
+  'rgba(15,25,55,.20)'];                                        // ...clar de lună
+function makeMission(mi) {
+  const rT = mulberry32(mi * 4051 + 7);                         // ADN-ul misiunii (determinist)
+  const th = THEMES[mi < MISSION_COUNT ? mi % THEMES.length : Math.floor(rT() * THEMES.length)];
+  const df = Math.min(1.35, mi / (MISSION_COUNT - 1));          // în endless urcă până la +35% peste final
+  return {
     name: 'MISIUNEA ' + (mi + 1), sub: th.name, th, diff: df,
-    dur: Math.round(70 + df * 35),
+    dur: Math.round(70 + Math.min(df, 1) * 35),
     scroll: Math.round(112 + df * 60),
-    bossHp: Math.round(280 + df * 620)
-  });
+    bossHp: Math.round(280 + df * 620),
+    tv: { bias: 0.72 + rT() * 0.66, tint: TINTS[Math.floor(rT() * TINTS.length)] }
+  };
 }
+const MISSIONS = [];
+for (let mi = 0; mi < MISSION_COUNT; mi++) MISSIONS.push(makeMission(mi));
+function ensureMission(idx) { while (MISSIONS.length <= idx) MISSIONS.push(makeMission(MISSIONS.length)); }
 
 // ---------- Starea jocului ----------
 const G = {
   state: 'menu', level: 0, time: 0, dist: 0, stateT: 0,
   score: 0, hiscore: 0, shake: 0, flash: 0, slow: 0,
   enemies: [], pbullets: [], ebullets: [], powerups: [], parts: [], texts: [], clouds: [], clouds2: [],
-  boss: null, spawnT: 0, carrierT: 0, cloudT: 0, prevState: 'menu', menuSel: 0, bonus: 0,
+  boss: null, spawnT: 0, carrierT: 0, cloudT: 0, prevState: 'menu', menuSel: 0, bonus: 0, endless: false,
   combo: 0, comboT: 0, streakT: 0, fxT: 0, wxT: 0, boltT: 0,
   bossDelay: 0,
   redFlash: 0
@@ -881,6 +898,7 @@ function resetPlayer(full) {
   else { P.bombs = Math.max(P.bombs, 1); P.weapon = Math.max(1, P.weapon - 1); }
 }
 function startLevel(idx) {
+  ensureMission(idx);                              // în endless, misiunile se generează la nesfârșit
   G.level = idx; G.time = 0; G.dist = 0; G.spawnT = 1.5; G.carrierT = 7; G.cloudT = 2;
   G.enemies.length = 0; G.pbullets.length = 0; G.ebullets.length = 0;
   G.powerups.length = 0; G.parts.length = 0; G.texts.length = 0; G.clouds.length = 0; G.clouds2.length = 0;
@@ -975,11 +993,14 @@ function addText(x, y, str, col) { G.texts.push({ x, y, str, col: col || '#fff',
 
 // ---------- Power-up-uri ----------
 const PU_TYPES = [
-  { k: 'P', col: '#ff8a00', w: 34 },
-  { k: 'H', col: '#42d66a', w: 20 },
-  { k: 'B', col: '#ffd23f', w: 15 },
-  { k: 'S', col: '#40b4ff', w: 15 },
-  { k: '★', col: '#ff5ecb', w: 16 }
+  { k: 'P', col: '#ff8a00', w: 30 },
+  { k: 'H', col: '#42d66a', w: 18 },
+  { k: 'B', col: '#ffd23f', w: 13 },
+  { k: 'S', col: '#40b4ff', w: 13 },
+  { k: '★', col: '#ff5ecb', w: 10 },
+  { k: 'D', col: '#5cf0ff', w: 6 },
+  { k: 'R', col: '#ff5050', w: 6 },
+  { k: '$', col: '#c0ff50', w: 4 }
 ];
 function dropPowerup(x, y, forceP) {
   let type;
@@ -1087,8 +1108,10 @@ function firingHeld() {
 }
 function playerFire(dt) {
   P.fireT -= dt;
+  P.droneT = Math.max(0, (P.droneT || 0) - dt);
+  P.rapidT = Math.max(0, (P.rapidT || 0) - dt);
   if (!firingHeld() || P.fireT > 0) return;
-  P.fireT = 0.11;
+  P.fireT = P.rapidT > 0 ? 0.07 : 0.11;            // foc rapid: cadență +57%
   const bs = -780 * S, x = P.x, y = P.y - 26 * S;
   const w = P.weapon;
   const push = (dx, vx, dmg) => {
@@ -1100,6 +1123,7 @@ function playerFire(dt) {
   else if (w === 2) { push(-8, 0); push(8, 0); push(0, 0, 2); }
   else { push(-9, 0); push(9, 0); push(0, 0, 2); }
   if (w >= 3) { push(-15, -45); push(15, 45); }
+  if (P.droneT > 0) { push(-34, -10); push(34, 10); }            // dronele de flanc trag cu tine
   if (w >= 5) { push(-21, -95); push(21, 95); }
   if (G.parts.length < MAX_PARTS)
     G.parts.push({ x, y: y - 4 * S, vx: 0, vy: -150, life: 0.12, t: 0, r: 10 * S, col: 'fire' });
@@ -1412,7 +1436,7 @@ function update(dt) {
     if (G.state === 'intro' && G.stateT > 2.4) setState('play');
     if (G.state === 'levelclear' && G.stateT > 3.4) {
       if (G.level < MISSIONS.length - 1) startLevel(G.level + 1);
-      else setState('victory');
+      else if (G.endless) startLevel(G.level + 1); else setState('victory');
     }
     if (G.state === 'victory' || G.state === 'gameover') {
       G.hiscore = Math.max(G.hiscore, G.score);
@@ -1764,6 +1788,9 @@ function applyPowerup(t) {
   if (t.k === 'B') { P.bombs = Math.min(6, P.bombs + 1); addText(P.x, P.y - 30 * S, T('bmb'), '#ffd23f'); }
   if (t.k === 'S') { P.shield = 8; addText(P.x, P.y - 30 * S, T('shd'), '#40b4ff'); }
   if (t.k === '★') { G.score += 500; addText(P.x, P.y - 30 * S, '+500', '#ff5ecb'); }
+  if (t.k === 'D') { P.droneT = 20; addText(P.x, P.y - 30 * S, LANG === 'en' ? 'DRONES' : 'DRONE', '#5cf0ff'); }
+  if (t.k === 'R') { P.rapidT = 12; addText(P.x, P.y - 30 * S, LANG === 'en' ? 'RAPID FIRE' : 'FOC RAPID', '#ff5050'); }
+  if (t.k === '$') { G.score += 2000; addText(P.x, P.y - 30 * S, '+2000', '#c0ff50'); }
 }
 function updateFX(dt) {
   G.comboT = Math.max(0, (G.comboT || 0) - dt);
@@ -1813,6 +1840,19 @@ function drawTerrain() {
   }
 }
 function drawPlayer(now) {
+  if (P.alive && P.droneT > 0) {
+    for (const sgn of [-1, 1]) {
+      const ox = sgn * 34 * S, oy = Math.sin(now / 240 + sgn * 2) * 6 * S + 8 * S;
+      ctx.save(); ctx.translate(P.x + ox, P.y + oy);
+      ctx.fillStyle = '#5cf0ff'; ctx.strokeStyle = '#0a3a48'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(0, -7 * S); ctx.lineTo(5 * S, 6 * S); ctx.lineTo(-5 * S, 6 * S);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.globalCompositeOperation = 'lighter';
+      const df2 = (2.5 + Math.sin(now / 40 + sgn) * 1) * S;
+      ctx.drawImage(SPR.fire, -df2, 6 * S - df2, df2 * 2, df2 * 2);
+      ctx.restore();
+    }
+  }
   if (!P.alive) return;
   if (P.inv > 0 && Math.floor(now / 80) % 2 === 0) return;
   ctx.globalAlpha = 0.26;
@@ -2168,7 +2208,7 @@ function drawHUD(now) {
     arcadeText(T('chain') + Math.min(10, 1 + Math.floor(G.combo / 3)), W / 2, top + 14, csize * S + 2, '#ffd700');
   }
   arcadeText(T('best') + ' ' + Math.max(G.hiscore, G.score), 12, top + 30 + 6 * S, 12 * S + 2, '#9fb6c9', 'left');
-  arcadeText('M ' + (G.level + 1) + '/' + MISSION_COUNT + ' · ' + thName(MISSIONS[G.level].th), 12, top + 48 + 10 * S, 11 * S + 2, '#ffd23f', 'left');
+  arcadeText('M ' + (G.level + 1) + '/' + (G.endless ? '∞' : MISSION_COUNT) + ' · ' + thName(MISSIONS[G.level].th), 12, top + 48 + 10 * S, 11 * S + 2, '#ffd23f', 'left');
   // Indicator armă + rachete
   let wpnStr = 'WPN ' + P.weapon;
   if (P.weapon >= 4) wpnStr += ' 🚀';
@@ -2197,7 +2237,7 @@ let menuDist = 0;
 function drawMenuBg(dt) {
   menuDist += 60 * S * dt;
   const save = G.dist, sl = G.level;
-  G.dist = menuDist; G.level = G.menuSel;
+  G.dist = menuDist; G.level = Math.min(G.menuSel, MISSION_COUNT - 1);
   drawTerrain();
   G.dist = save; G.level = sl;
   ctx.fillStyle = 'rgba(0,10,25,.45)'; ctx.fillRect(0, 0, W, H);
@@ -2210,10 +2250,10 @@ function drawOverlays(now, dt) {
     arcadeText('SKY RAPTOR', cx2, cy2 - 120 * S + bob, 46 * S, '#ffd23f');
     arcadeText(T('sub'), cx2, cy2 - 78 * S + bob, 16 * S, '#9fb6c9');
     drawSprite(SPR.player, cx2, cy2 - 16 * S, 1.5);
-    const ml = menuLayout(), m = MISSIONS[G.menuSel];
+    const ml = menuLayout(), m = MISSIONS[G.menuSel % MISSION_COUNT];
     arcadeText('◀', cx2 - ml.ax, ml.ySel, 30 * S, '#ffd23f');
     arcadeText('▶', cx2 + ml.ax, ml.ySel, 30 * S, '#ffd23f');
-    arcadeText(missionName(G.menuSel), cx2, ml.ySel - 11 * S, 16 * S, '#fff');
+    arcadeText(G.menuSel >= MISSION_COUNT ? (LANG === 'en' ? '∞ ENDLESS' : '∞ NESFÂRȘIT') : missionName(G.menuSel), cx2, ml.ySel - 11 * S, 16 * S, '#fff');
     arcadeText(thName(m.th), cx2, ml.ySel + 13 * S, 12 * S, '#9fb6c9');
     if (Math.floor(now / 500) % 2 === 0)
       arcadeText(isTouch ? T('start_t') : T('start_k'), cx2, cy2 + 110 * S, 16 * S, '#fff');
@@ -2307,8 +2347,8 @@ let isTouch = false;
 window.addEventListener('keydown', e => {
   keys[e.key] = true;
   if (G.state === 'menu') {
-    if (e.key === 'ArrowLeft') G.menuSel = (G.menuSel + MISSION_COUNT - 1) % MISSION_COUNT;
-    if (e.key === 'ArrowRight') G.menuSel = (G.menuSel + 1) % MISSION_COUNT;
+    if (e.key === 'ArrowLeft') G.menuSel = (G.menuSel + MISSION_COUNT) % (MISSION_COUNT + 1);
+    if (e.key === 'ArrowRight') G.menuSel = (G.menuSel + 1) % (MISSION_COUNT + 1);
   }
   if (e.key === ' ') e.preventDefault();
   if (e.key === 'b' || e.key === 'B' || e.key === 'x' || e.key === 'X') useBomb();
@@ -2341,15 +2381,15 @@ function menuLayout() {
 function menuArrowHit(x, y) {
   const ml = menuLayout(), cx2 = W / 2;
   if (Math.abs(y - ml.ySel) < 42 * S) {
-    if (Math.abs(x - (cx2 - ml.ax)) < 46 * S) { G.menuSel = (G.menuSel + MISSION_COUNT - 1) % MISSION_COUNT; return true; }
-    if (Math.abs(x - (cx2 + ml.ax)) < 46 * S) { G.menuSel = (G.menuSel + 1) % MISSION_COUNT; return true; }
+    if (Math.abs(x - (cx2 - ml.ax)) < 46 * S) { G.menuSel = (G.menuSel + MISSION_COUNT) % (MISSION_COUNT + 1); return true; }
+    if (Math.abs(x - (cx2 + ml.ax)) < 46 * S) { G.menuSel = (G.menuSel + 1) % (MISSION_COUNT + 1); return true; }
   }
   return false;
 }
 function advance(x, y) {
   if (G.state === 'menu') {
     if (x !== undefined && menuArrowHit(x, y)) return;
-    G.score = 0; resetPlayer(true); startLevel(G.menuSel);
+    G.endless = G.menuSel >= MISSION_COUNT; G.score = 0; resetPlayer(true); startLevel(G.endless ? 0 : G.menuSel);
   }
   else if (G.state === 'gameover' && G.stateT > 0.8) { G.score = 0; resetPlayer(true); startLevel(G.level); }
   else if (G.state === 'victory' && G.stateT > 0.8) { G.menuSel = 0; setState('menu'); }
