@@ -289,6 +289,35 @@ function buildSprites() {
     g.fillStyle = '#ffd23f';
     for (let i = 0; i < 4; i++) { const a = i * TAU / 4 + 0.4; g.fillRect(cx + Math.cos(a) * 12 - 1.5, cy + Math.sin(a) * 12 - 1.5, 3, 3); }
   });
+  SPR.platform = makeSprite(38, 38, (g, w) => {   // fort marin: platformă hexagonală ancorată
+    const cx = w / 2, cy = 19;
+    g.fillStyle = 'rgba(200,240,255,.2)';
+    g.beginPath(); g.arc(cx, cy, 17, 0, TAU); g.fill();           // inel de spumă
+    const hex = [];
+    for (let i = 0; i < 6; i++) hex.push([cx + Math.cos(i / 6 * TAU) * 14, cy + Math.sin(i / 6 * TAU) * 14]);
+    poly(g, hex, '#5a6a76', '#232e38', 2.5);
+    g.fillStyle = '#42525f'; g.beginPath(); g.arc(cx, cy, 8, 0, TAU); g.fill();
+    g.strokeStyle = '#232e38'; g.stroke();
+    g.fillStyle = '#ffd23f';                                       // geamanduri de marcaj
+    for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + 0.5;
+      g.beginPath(); g.arc(cx + Math.cos(a) * 15, cy + Math.sin(a) * 15, 2, 0, TAU); g.fill(); }
+  });
+  SPR.destroyer = makeSprite(40, 96, (g, w) => {  // distrugător — prova în jos, spre jucător
+    const cx = w / 2;
+    g.fillStyle = 'rgba(200,240,255,.22)';
+    g.beginPath(); g.ellipse(cx, 90, 11, 5, 0, 0, TAU); g.fill();
+    const gr = g.createLinearGradient(cx - 13, 0, cx + 13, 0);
+    gr.addColorStop(0, '#55636f'); gr.addColorStop(0.5, '#8494a2'); gr.addColorStop(1, '#55636f');
+    poly(g, [[cx, 92], [cx + 9, 74], [cx + 12, 26], [cx + 9, 8], [cx - 9, 8], [cx - 12, 26], [cx - 9, 74]], gr, '#1e2830', 2.8);
+    g.fillStyle = '#3a4a58'; g.fillRect(cx - 7, 34, 14, 26);       // castel central
+    g.strokeStyle = '#1e2830'; g.lineWidth = 1.6; g.strokeRect(cx - 7, 34, 14, 26);
+    g.fillStyle = '#2b3a46'; g.fillRect(cx - 4, 38, 8, 8);         // coș de fum
+    g.fillStyle = '#151d24'; g.fillRect(cx - 2.5, 40, 5, 4);
+    g.fillStyle = '#9fdcff'; g.fillRect(cx - 5, 56, 10, 3.5);      // punte de comandă
+    g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1;            // linii de punte
+    g.beginPath(); g.moveTo(cx - 8, 14); g.lineTo(cx - 8, 80); g.moveTo(cx + 8, 14); g.lineTo(cx + 8, 80); g.stroke();
+    g.fillStyle = '#d33'; g.fillRect(cx - 1.5, 9, 3, 3);
+  });
   SPR.boat = makeSprite(34, 62, (g, w) => {       // vedetă de patrulare — botul în jos (vine spre jucător)
     const cx = w / 2;
     g.fillStyle = 'rgba(200,240,255,.25)';         // spuma de la prova
@@ -981,9 +1010,12 @@ function spawnEnemy(type, x, opts) {
   if (type === 'bomber')  { e.hp = 9; e.vy = 43 * S; e.score = 500; e.r = 30 * S; e.drop = true; }
   if (type === 'turret')  { e.hp = 3; e.vy = MISSIONS[G.level].scroll * S * 1.2; e.score = 200; e.r = 15 * S; e.ang = Math.PI / 2; }
   const isWaterLvl = [0, 6].includes(G.level % THEMES.length);
-  if (type === 'tank' && isWaterLvl) type = 'boat';               // pe apă nu merg tancuri — merg vedete
+  if (isWaterLvl && type === 'tank')   { type = 'boat'; e.type = type; }       // FIX: schimbăm și pe obiect
+  if (isWaterLvl && type === 'turret') { type = 'platform'; e.type = type; }   // cuiburile devin platforme marine
   if (type === 'tank')    { e.hp = 4; e.vy = MISSIONS[G.level].scroll * S * 1.3; e.score = 250; e.r = 16 * S; e.ang = Math.PI / 2; e.fireT = rnd(2, 3); }
   if (type === 'boat')    { e.hp = 4; e.vy = MISSIONS[G.level].scroll * S * 1.45; e.score = 250; e.r = 17 * S; e.ang = Math.PI / 2; e.fireT = rnd(2, 3); }
+  if (type === 'platform'){ e.hp = 3; e.vy = MISSIONS[G.level].scroll * S * 1.2; e.score = 200; e.r = 15 * S; e.ang = Math.PI / 2; }
+  if (type === 'destroyer'){ e.hp = 12; e.vy = MISSIONS[G.level].scroll * S; e.score = 600; e.r = 26 * S; e.ang = Math.PI / 2; e.fireT = 2; e.turn = false; e.drop = Math.random() < 0.3; }
   if (type === 'gunship') { e.hp = 8; e.vy = 0; e.score = 400; e.r = 26 * S; e.fireT = rnd(1.2, 2); e.drop = Math.random() < 0.25; }
   if (type === 'ace')     { e.hp = 1; e.vy = rnd(360, 430) * S; e.score = 250; e.r = 13 * S; e.shot = false; e.turned = false; }
   if (type === 'miniboss') {
@@ -1030,6 +1062,17 @@ const PATTERNS = [
         { y: -36 * S - i * 30 * S, h0: sgn * 0.4 }); },
   function tanks() { const x = rnd(60, W - 60);
     for (let i = 0; i < 3; i++) spawnEnemy('tank', x + rnd(-14, 14) * S, { y: -30 * S - i * 70 * S }); },
+  function flotilla() {
+    if (![0, 6].includes(G.level % THEMES.length)) {              // pe uscat: coloană de tancuri
+      const x = rnd(60, W - 60);
+      for (let i = 0; i < 3; i++) spawnEnemy('tank', x + rnd(-14, 14) * S, { y: -30 * S - i * 70 * S });
+      return;
+    }
+    const x = rnd(W * 0.28, W * 0.72);
+    spawnEnemy('destroyer', x, { y: -60 * S });
+    spawnEnemy('boat', x - 60 * S, { y: -130 * S });
+    spawnEnemy('boat', x + 60 * S, { y: -130 * S });
+  },
   function gunships() { const left = Math.random() < 0.5;
     spawnEnemy('gunship', left ? -60 : W + 60, { y: rnd(H * 0.15, H * 0.32), vx: (left ? 1 : -1) * rnd(115, 155) * S }); },
   function aces() { const n = 2 + (Math.random() < 0.5 ? 1 : 0);
@@ -1112,10 +1155,10 @@ function cleanupDead() {
   }
 }
 function killEnemy(e) {
-  const isBig = e.type === 'bomber' || e.type === 'heli' || e.type === 'tank' || e.type === 'boat' || e.type === 'miniboss';
+  const isBig = ['bomber', 'heli', 'tank', 'boat', 'destroyer', 'miniboss'].includes(e.type);
   boomAt(e.x, e.y, isBig);
   G.flash = Math.max(G.flash, 0.15);
-  if (e.type !== 'turret' && e.type !== 'tank' && e.type !== 'boat' && G.parts.length < MAX_PARTS - 5) {
+  if (!['turret', 'tank', 'boat', 'platform', 'destroyer'].includes(e.type) && G.parts.length < MAX_PARTS - 5) {
     G.parts.push({
       x: e.x, y: e.y,
       vx: rnd(-40, 40),
@@ -1617,7 +1660,20 @@ function update(dt) {
           fireEB(e.x, e.y + 24 * S, Math.cos(a + k2 * 0.24) * sp, Math.sin(a + k2 * 0.24) * sp);
         }
       }
-    } else if (e.type === 'turret' || e.type === 'tank' || e.type === 'boat') {
+    } else if (e.type === 'destroyer') {
+      e.y += e.vy * tdt;
+      const ta2 = Math.atan2(P.y - e.y, P.x - e.x);
+      e.ang += clamp(((ta2 - e.ang + Math.PI * 3) % TAU) - Math.PI, -1.6 * tdt, 1.6 * tdt);
+      e.fireT -= tdt;
+      if (e.fireT <= 0 && e.y > 40 * S && e.y < H * 0.85) {
+        e.fireT = rnd(1.6, 2.2) * (1 - DF * 0.25);
+        e.turn = !e.turn;                                          // turelele prova/pupa trag alternativ
+        const oy = e.turn ? -24 * S : 18 * S;
+        const sp = (290 + DF * 70) * S;
+        fireEB(e.x + Math.cos(e.ang) * 20 * S, e.y + oy + Math.sin(e.ang) * 20 * S,
+          Math.cos(e.ang) * sp, Math.sin(e.ang) * sp);
+      }
+    } else if (e.type === 'turret' || e.type === 'tank' || e.type === 'boat' || e.type === 'platform') {
       e.y += e.vy * tdt;
       const ta = Math.atan2(P.y - e.y, P.x - e.x);
       e.ang += clamp(((ta - e.ang + Math.PI * 3) % TAU) - Math.PI, -2 * tdt, 2 * tdt);
@@ -1633,7 +1689,7 @@ function update(dt) {
     if (e.hp <= e.maxHp * 0.45 && Math.random() < 0.35 && G.parts.length < MAX_PARTS)
       G.parts.push({ x: e.x + rnd(-6, 6) * S, y: e.y, vx: rnd(-12, 12), vy: rnd(-34, -10),
         life: rnd(0.4, 0.7), t: 0, r: rnd(3, 6) * S, col: 'smoke' });
-    if (P.alive && e.type !== 'turret' && e.type !== 'tank' && e.type !== 'boat' && dist2(e.x, e.y, P.x, P.y) < Math.pow(e.r + 10 * S, 2)) {
+    if (P.alive && !['turret', 'tank', 'boat', 'platform', 'destroyer'].includes(e.type) && dist2(e.x, e.y, P.x, P.y) < Math.pow(e.r + 10 * S, 2)) {
       hurtPlayer(25); e.hp -= 4;
     }
     if ((e.type === 'fighter' || e.type === 'diver' || e.type === 'ace') &&
@@ -1852,6 +1908,27 @@ function drawEnemies(now) {
       const mw = 90 * S;
       ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(e.x - mw / 2, e.y - 58 * S, mw, 5);
       ctx.fillStyle = '#ff8a00'; ctx.fillRect(e.x - mw / 2, e.y - 58 * S, mw * clamp(e.hp / e.maxHp, 0, 1), 5);
+    } else if (e.type === 'platform') {
+      drawSprite(SPR.platform, e.x, e.y, 1);
+      ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(e.ang);
+      ctx.fillStyle = '#3a4a58'; ctx.fillRect(0, -2.5 * S, 18 * S, 5 * S);
+      ctx.fillStyle = '#1c262e'; ctx.fillRect(14 * S, -3 * S, 5 * S, 6 * S);
+      ctx.restore();
+      ctx.fillStyle = '#6d7f8d'; ctx.beginPath(); ctx.arc(e.x, e.y, 6 * S, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#232e38'; ctx.lineWidth = 2; ctx.stroke();
+    } else if (e.type === 'destroyer') {
+      if (Math.random() < 0.5 && G.parts.length < MAX_PARTS)      // siaj lat de navă mare
+        G.parts.push({ x: e.x + rnd(-9, 9) * S, y: e.y + 42 * S, vx: rnd(-8, 8), vy: 24,
+          life: 0.65, t: 0, r: rnd(2.5, 4.5) * S, col: 'smoke' });
+      drawSprite(SPR.destroyer, e.x, e.y, 1);
+      for (const oy of [-24, 18]) {                                // turelele prova și pupa
+        ctx.save(); ctx.translate(e.x, e.y + oy * S); ctx.rotate(e.ang);
+        ctx.fillStyle = '#3a4a58'; ctx.fillRect(0, -3 * S, 22 * S, 6 * S);
+        ctx.fillStyle = '#1c262e'; ctx.fillRect(17 * S, -3.5 * S, 6 * S, 7 * S);
+        ctx.restore();
+        ctx.fillStyle = '#6d7f8d'; ctx.beginPath(); ctx.arc(e.x, e.y + oy * S, 7 * S, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#232e38'; ctx.lineWidth = 2; ctx.stroke();
+      }
     } else if (e.type === 'boat') {
       if (Math.random() < 0.4 && G.parts.length < MAX_PARTS)     // siaj: spuma rămâne în urma provei
         G.parts.push({ x: e.x + rnd(-5, 5) * S, y: e.y + 26 * S, vx: rnd(-6, 6), vy: 26,
