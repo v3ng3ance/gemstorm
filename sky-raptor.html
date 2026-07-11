@@ -1053,7 +1053,7 @@ function missileFire(dt) {
   if (P.missT > 0) return;
   P.missT = 0.7;
   for (const sgn of [-1, 1])
-    G.pbullets.push({ x: P.x + sgn * 20 * S, y: P.y, vx: 0, vy: -300 * S, dmg: 3, missile: true, t: 0, h: 0 });
+    G.pbullets.push({ x: P.x + sgn * 20 * S, y: P.y, vx: sgn * 60 * S, vy: -260 * S, dmg: 3, missile: true, t: 0 });
 }
 function nearestEnemyAhead(x, y, h) {
   let best = null, bd = 1e12;
@@ -1139,7 +1139,7 @@ function hurtPlayer(dmg) {
 
 // ---------- Boss ----------
 function bossAttack(b, kind, DF, frenzy) {
-  const bx = b.x, by = b.y + 56 * S;
+  const bx = b.x, by = b.y + 56 * S * (b.sc || 1);
   const ang = Math.atan2(P.y - by, P.x - bx);
   const sp = (280 + DF * 80) * S;
   if (kind === 'fan') {
@@ -1178,29 +1178,30 @@ function bossAttack(b, kind, DF, frenzy) {
     }
   }
 }
-function spawnBoss() {
+function spawnBoss(mini) {
   const L = MISSIONS[G.level];
   const rB = mulberry32(G.level * 7919 + 101);
   const pickFrom = (arr, n) => { const c = arr.slice(), out = [];
     while (out.length < n && c.length) out.push(c.splice(Math.floor(rB() * c.length), 1)[0]);
     return out; };
-  const moves = pickFrom(['patrol', 'dash', 'advance'], 2);
-  const deck = ['fan'].concat(pickFrom(['burst', 'spiral', 'cross', 'snipe'], 2));
+  const moves = mini ? ['patrol', 'dash'] : pickFrom(['patrol', 'dash', 'advance'], 2);
+  const deck = mini ? ['fan', 'burst'] : ['fan'].concat(pickFrom(['burst', 'spiral', 'cross', 'snipe'], 2));
   G.boss = {
     x: W * (0.3 + rB() * 0.4),
     y: -160 * S,
     moves, move: moves[0], moveT: 5 + rB() * 4,
     m1: 0.34 + rB() * 0.38, amp: 0.2 + rB() * 0.13, ph: rB() * TAU,
     vx: 0, vy: 0, rot: 0,
+    mini: !!mini, sc: mini ? 0.62 : 1,
     deck, tx: W / 2, ty: H * 0.18, dashP: 0, frenzyAdded: false,
-    hp: L.bossHp,
-    maxHp: L.bossHp,
+    hp: mini ? Math.round(90 + L.diff * 160) : L.bossHp,
+    maxHp: mini ? Math.round(90 + L.diff * 160) : L.bossHp,
     t: 0,
-    fireT: 2.2,
+    fireT: mini ? 2.4 : 2.2,
     ringT: 4,
     minionT: 6,
     spr: 'boss_' + (G.level % THEMES.length),
-    r: 78 * S,
+    r: (mini ? 50 : 78) * S,
     hitT: 0,
     entering: true,
     name: THEMES[G.level % THEMES.length].bossName
@@ -1232,7 +1233,7 @@ function updateBoss(dt) {
   const DF = MISSIONS[G.level].diff;
   const frenzy = b.hp < b.maxHp * 0.45;
   if (frenzy && !b.frenzyAdded) {
-    b.frenzyAdded = true; b.deck.push('ring'); b.moveT = 0;
+    b.frenzyAdded = true; if (!b.mini) b.deck.push('ring'); b.moveT = 0;
   }
   b.moveT -= dt;
   if (b.moveT <= 0) {
@@ -1268,7 +1269,7 @@ function updateBoss(dt) {
   b.vy = 0;
   b.rot = (b.rot || 0) + (clamp(b.vx * 0.0012, -0.10, 0.10) - b.rot) * Math.min(1, 5 * dt);
   if (Math.hypot(b.vx, b.vy) > 150 * S && Math.random() < 0.6 && G.parts.length < MAX_PARTS)
-    G.parts.push({ x: b.x + rnd(-70, 70) * S, y: b.y - 44 * S, vx: rnd(-8, 8), vy: -rnd(60, 100) * S,
+    G.parts.push({ x: b.x + rnd(-70, 70) * S * (b.sc || 1), y: b.y - 44 * S * (b.sc || 1), vx: rnd(-8, 8), vy: -rnd(60, 100) * S,
       life: 0.35, t: 0, r: rnd(2, 3.5) * S, col: 'trail' });
   if (b.hp < b.maxHp * 0.66 && Math.random() < 0.35)
     G.parts.push({ x: b.x + rnd(-50, 50) * S, y: b.y + rnd(-20, 30) * S, vx: rnd(-12, 12), vy: rnd(-36, -12),
@@ -1283,14 +1284,24 @@ function updateBoss(dt) {
     if (kind === 'ring' && !frenzy) kind = 'fan';
     bossAttack(b, kind, DF, frenzy);
   }
-  b.minionT -= dt;
-  if (b.minionT <= 0) {
-    b.minionT = rnd(5, 8);
-    const mtype = Math.random() < 0.6 ? 'fighter' : 'diver';
-    spawnEnemy(mtype, rnd(60, W - 60), { aimed: true });
-    if (frenzy && Math.random() < 0.4) spawnEnemy(mtype, rnd(60, W - 60), { aimed: true });
+  if (!b.mini) {
+    b.minionT -= dt;
+    if (b.minionT <= 0) {
+      b.minionT = rnd(5, 8);
+      const mtype = Math.random() < 0.6 ? 'fighter' : 'diver';
+      spawnEnemy(mtype, rnd(60, W - 60), { aimed: true });
+      if (frenzy && Math.random() < 0.4) spawnEnemy(mtype, rnd(60, W - 60), { aimed: true });
+    }
   }
   if (b.hp <= 0) {
+    if (b.mini) {                                  // avangarda cade: explozii, pradă, misiunea continuă
+      for (let i = 0; i < 4; i++)
+        setTimeout(() => boomAt(b.x + rnd(-50, 50) * S, b.y + rnd(-32, 32) * S, true), i * 110);
+      G.score += 1500; addText(b.x, b.y, '+1500', '#ffd23f');
+      dropPowerup(b.x - 22 * S, b.y, true); dropPowerup(b.x + 22 * S, b.y, false);
+      G.boss = null; G.flash = 0.35; G.slow = 0.3;
+      return;
+    }
     for (let i = 0; i < 7; i++)
       setTimeout(() => boomAt(b.x + rnd(-80, 80) * S, b.y + rnd(-50, 50) * S, true), i * 120);
     const rew = 5000 + G.level * 500;
@@ -1396,9 +1407,9 @@ function update(dt) {
     G.carrierT -= tdt;
     if (G.carrierT <= 0) { G.carrierT = 12;
       const e = spawnEnemy('bomber', rnd(W * 0.25, W * 0.75)); e.forceP = Math.random() < 0.75; }
-    if (!G.midSpawned && G.time >= L.dur * 0.5) {
+    if (!G.midSpawned && !G.boss && G.time >= L.dur * 0.5) {
       G.midSpawned = true;
-      spawnEnemy('miniboss', W / 2, { y: -80 * S });
+      spawnBoss(true);                             // avangarda: aceeași mașinărie ca boss-ul final
     }
   }
   G.cloudT -= tdt;
@@ -1621,22 +1632,15 @@ function update(dt) {
     const b = G.pbullets[i];
     if (b.missile) {
       b.t += tdt;
-      if (b.h === undefined) { b.h = Math.atan2(b.vx, -b.vy); b.sp = 300 * S; }
-      b.sp = Math.min(560 * S, b.sp + 700 * S * tdt);
-      const tgt = nearestEnemyAhead(b.x, b.y, b.h);
+      // rachetele clasice (v2): urmăresc agresiv cel mai apropiat inamic, oriunde ar fi
+      const tgt = nearestEnemy(b.x, b.y);
       if (tgt) {
-        const want = Math.atan2(tgt.x - b.x, -(tgt.y - b.y));
-        const dH = ((want - b.h + Math.PI * 3) % TAU) - Math.PI;
-        b.h += clamp(dH, -2.2 * tdt, 2.2 * tdt);
-      } else {
-        b.h += (0 - b.h) * Math.min(1, 3 * tdt);
+        const a = Math.atan2(tgt.y - b.y, tgt.x - b.x), sp = 420 * S;
+        b.vx += (Math.cos(a) * sp - b.vx) * 3 * tdt;
+        b.vy += (Math.sin(a) * sp - b.vy) * 3 * tdt;
       }
-      b.h = clamp(b.h, -0.42, 0.42);
-      b.vx = Math.sin(b.h) * b.sp;
-      b.vy = -Math.cos(b.h) * b.sp;
       if (Math.random() < 0.5 && G.parts.length < MAX_PARTS)
-        G.parts.push({ x: b.x - Math.sin(b.h) * 10 * S, y: b.y + Math.cos(b.h) * 10 * S,
-          vx: 0, vy: 30, life: 0.3, t: 0, r: 2.5 * S, col: 'smoke' });
+        G.parts.push({ x: b.x, y: b.y, vx: 0, vy: 40, life: 0.3, t: 0, r: 2.5 * S, col: 'smoke' });
     }
     b.x += b.vx * tdt; b.y += b.vy * tdt;
     let dead = b.y < -30 || b.y > H + 30 || b.x < -30 || b.x > W + 30;
@@ -1857,28 +1861,28 @@ function drawEnemies(now) {
 function drawBoss(now) {
   const b = G.boss; if (!b) return;
   const bob = Math.sin(now / 340) * 2.5 * S;
-  const by2 = b.y + bob, rot = b.rot || 0;
+  const by2 = b.y + bob, rot = b.rot || 0, sc = b.sc || 1;
   ctx.globalAlpha = 0.26;
-  drawSprite(SHD[b.spr], b.x + 20 * S, by2 + 32 * S, 0.95, rot);
+  drawSprite(SHD[b.spr], b.x + 20 * S * sc, by2 + 32 * S * sc, 0.95 * sc, rot);
   ctx.globalAlpha = 1;
   if (b.hp < b.maxHp * 0.45) {
     ctx.shadowColor = '#ff3020';
     ctx.shadowBlur = (18 + Math.sin(now / 110) * 9) * S;
   }
-  drawSprite(SPR[b.spr], b.x, by2, 1, rot);
+  drawSprite(SPR[b.spr], b.x, by2, sc, rot);
   ctx.shadowBlur = 0;
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   const thrust = Math.min(1, Math.hypot(b.vx || 0, b.vy || 0) / (220 * S));
   const eg = (9 + thrust * 7 + Math.sin(now / 70) * 3) * S;
   const BV = BOSS_VARIANTS[(G.level % THEMES.length) % 4];
-  ctx.translate(b.x, by2); ctx.rotate(rot);
+  ctx.translate(b.x, by2); ctx.rotate(rot); ctx.scale(sc, sc);
   for (const dx of BV.eng)
     ctx.drawImage(SPR.fire, dx * S - eg, BV.engY * S - eg, eg * 2, eg * 2);
   ctx.restore();
   if (b.hitT > 0) { ctx.globalAlpha = 0.5; ctx.globalCompositeOperation = 'lighter';
-    drawSprite(SPR[b.spr], b.x, by2, 1, rot); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; }
+    drawSprite(SPR[b.spr], b.x, by2, sc, rot); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1; }
   const fz = b.hp < b.maxHp * 0.45;
-  ctx.save(); ctx.translate(b.x, by2); ctx.rotate(rot);
+  ctx.save(); ctx.translate(b.x, by2); ctx.rotate(rot); ctx.scale(sc, sc);
   const ta = Math.atan2(P.y - by2, P.x - b.x) - rot;
   for (const tp of [[-16, 17], [16, 17]]) {
     ctx.save(); ctx.translate(tp[0] * S, tp[1] * S); ctx.rotate(ta);
@@ -1917,7 +1921,7 @@ function drawBullets(now) {
   ctx.lineCap = 'round';
   for (const b of G.pbullets) {
     if (b.missile) { ctx.globalCompositeOperation = 'source-over';
-      drawSprite(SPR.missile, b.x, b.y, 1, b.h !== undefined ? b.h : Math.atan2(b.vx, -b.vy));
+      drawSprite(SPR.missile, b.x, b.y, 1, Math.atan2(b.vy, b.vx) + Math.PI / 2);
       ctx.globalCompositeOperation = 'lighter'; continue; }
     const tx = b.x - b.vx * 0.035, ty = b.y - b.vy * 0.035;
     ctx.strokeStyle = 'rgba(255,180,60,.85)'; ctx.lineWidth = 4 * S;
