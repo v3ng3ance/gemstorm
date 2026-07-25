@@ -55,12 +55,28 @@ main{max-width:980px; margin:0 auto; padding:1.6rem 1.2rem 4rem;}
 .instbtn.active{background:rgba(124,106,247,.18); border-color:var(--accent); color:var(--accent2);}
 
 /* chordify view */
-#chordifyScroll{overflow-x:auto; background:var(--surf); border-radius:12px; padding:1rem;}
-.beatrow{display:flex; gap:3px; margin-bottom:6px;}
-.beatblock{min-width:52px; border-radius:6px; padding:8px 4px; text-align:center; font-family:'Space Mono',monospace; font-size:.78rem; font-weight:700; cursor:pointer; border:1px solid transparent; transition:transform .1s;}
-.beatblock:hover{transform:translateY(-2px);}
-.beatblock.cur{border-color:#fff; box-shadow:0 0 0 1px #fff inset;}
-.measurelbl{font-size:.6rem; color:var(--text3); text-align:center; margin-top:2px;}
+#chordifyScroll{background:var(--surf); border-radius:12px; padding:1.4rem 1.6rem; display:flex; flex-wrap:wrap; align-items:baseline; gap:.15rem 0;}
+.measure-sep{color:var(--border2); font-size:1.1rem; margin:0 .55rem; user-select:none;}
+.chordword{font-family:'Space Mono',monospace; font-size:1.25rem; font-weight:700; padding:3px 7px; border-radius:6px; cursor:pointer; line-height:1.9;}
+.chordword:hover{background:rgba(255,255,255,.06);}
+.chordword.cur{background:#2a2060; box-shadow:0 0 0 1px #fff inset;}
+
+#chordPopup{position:fixed; z-index:200; background:var(--surf2); border:1px solid var(--border2); border-radius:12px; padding:14px 16px; box-shadow:0 12px 32px rgba(0,0,0,.5); display:none;}
+#chordPopup.show{display:block;}
+#chordPopup .cp-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;}
+#chordPopup .cp-name{font-family:'Space Mono',monospace; font-weight:700; font-size:1.05rem;}
+#chordPopup .cp-close{background:none; border:none; color:var(--text3); font-size:1rem; cursor:pointer; line-height:1;}
+#chordPopup .cp-close:hover{color:var(--text);}
+#chordPopup .cp-diagrams{display:flex; gap:16px; align-items:flex-start;}
+#chordPopup .cp-col{display:flex; flex-direction:column; align-items:center; gap:4px;}
+#chordPopup .cp-col span{font-size:.62rem; color:var(--text3); text-transform:uppercase; letter-spacing:.04em;}
+#cpOverlay{position:fixed; inset:0; z-index:199; display:none;}
+#cpOverlay.show{display:block;}
+.simpletoggle{display:flex; align-items:center; gap:8px; font-size:.78rem; color:var(--text2);}
+.switch{position:relative; width:38px; height:21px; background:var(--surf3); border-radius:20px; cursor:pointer; border:1px solid var(--border2); flex:none;}
+.switch .knob{position:absolute; top:1px; left:1px; width:17px; height:17px; border-radius:50%; background:var(--text2); transition:transform .15s, background .15s;}
+.switch.on{background:rgba(124,106,247,.35); border-color:var(--accent);}
+.switch.on .knob{transform:translateX(17px); background:var(--accent2);}
 
 /* tab view */
 #tabScroll{display:flex; flex-wrap:wrap; gap:10px;}
@@ -104,6 +120,10 @@ main{max-width:980px; margin:0 auto; padding:1.6rem 1.2rem 4rem;}
         <span class="timelbl" id="timeLbl">0:00 / 0:00</span>
       </div>
     </div>
+    <div class="simpletoggle" style="margin:0 0 .9rem;">
+      <div class="switch on" id="simpleSwitch"><div class="knob"></div></div>
+      <span id="simpleLbl">Acorduri simple (fără 7, sus, bas/acord) — apasă pentru complete</span>
+    </div>
 
     <div class="tabbar">
       <button class="tabbtn active" data-view="chordify">Acorduri</button>
@@ -121,6 +141,9 @@ main{max-width:980px; margin:0 auto; padding:1.6rem 1.2rem 4rem;}
       <div id="tabScroll"></div>
     </div>
   </div>
+
+  <div id="cpOverlay"></div>
+  <div id="chordPopup"></div>
 
   <div class="footer-note">
     Motor de analiză propriu (FFT + potrivire de acorduri prin similaritate cosinus,
@@ -386,7 +409,11 @@ async function analyzeBuffer(buffer, onProgress){
   const beatEnd=(i)=> i+1<beatTimes.length? beatTimes[i+1] : (beatTimes[i]+periodFrames*hopSec1);
   const rawEnergy=[], normChroma=[], bassPcArr=[];
   for(let i=0;i<nBeats;i++){
-    const t0=beatTimes[i], t1=beatEnd(i);
+    const t0f=beatTimes[i], t1f=beatEnd(i);
+    const dur=t1f-t0f;
+    // fereastra "trunchiata" din mijlocul bataii -- evita tranzitia exacta a
+    // schimbarii de acord (unde inca suna coada acordului vechi / atacul e instabil)
+    const t0=t0f+0.15*dur, t1=t0f+0.85*dur;
     const c=medianAgg(frameChroma, t0, t1);
     const bc=medianAgg(frameBass, t0, t1);
     const mx=Math.max(...c);
@@ -511,10 +538,11 @@ function rootPcFromName(n){
   return 0;
 }
 function getTab(name, inst){
+  if(name==='N.C.') return new Array(inst==='Guitar'?6:4).fill(null);
   const voi = inst==='Guitar'? GVOI : BVOI;
   if(voi[name]) return voi[name];
   let root=name;
-  for(const s of ['maj7','m7','7','m','dim','aug','sus4','sus2']) if(name.endsWith(s)){ root=name.slice(0,-s.length); break; }
+  for(const s of ['m7b5','dim7','maj7','m7','7','dim','aug','sus4','sus2','m']) if(name.endsWith(s)){ root=name.slice(0,-s.length); break; }
   if(voi[root]) return voi[root];
   const pc=rootPcFromName(root); const f=(pc-5+12)%12; const im=name.toLowerCase().replace('maj','').includes('m');
   if(inst==='Guitar'){
@@ -541,33 +569,61 @@ function pianoPcsForChord(rootPc,suf){
 
 /* ---------- SVG diagram builders ---------- */
 function svgFret(frets, snames, col){
-  const W=54, rowH=18, H=snames.length*rowH+10;
+  const nS=frets.length;
+  const W=nS<=4? 90:112, topPad=16, leftPad=24, rightPad=8;
+  const gridW=W-leftPad-rightPad, fretsShown=4, rowH=17, H=topPad+fretsShown*rowH+8;
+  const sx=i=> leftPad + i*(gridW/(nS-1));
   const real=frets.filter(f=>f!==null && f>0);
-  const mn = real.length? Math.min(...real):0;
-  const nr = Math.max(real.length? (Math.max(...real)-mn+1):0, 3);
-  const fw=(W-16)/nr;
+  const maxF=real.length? Math.max(...real):0;
+  const baseFret = maxF<=4 ? 1 : Math.min(...real);
   let s=`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
-  if(mn>0) s+=`<text x="${W-2}" y="9" font-size="7" fill="var(--text3)" text-anchor="end" font-family="monospace">${mn}</text>`;
+  // X/O deasupra fiecarei corzi
   frets.forEach((f,i)=>{
-    const y=10+i*rowH;
-    s+=`<line x1="10" y1="${y}" x2="${W-4}" y2="${y}" stroke="var(--border2)" stroke-width="1"/>`;
-    s+=`<text x="7" y="${y+3}" font-size="7" fill="var(--text3)" text-anchor="end" font-family="monospace">${snames[i]}</text>`;
-    if(f===null) s+=`<text x="${W-8}" y="${y+3}" font-size="8" fill="var(--red)" text-anchor="middle" font-weight="bold">×</text>`;
-    else if(f===0) s+=`<circle cx="${W-11}" cy="${y}" r="4" fill="none" stroke="var(--green)" stroke-width="1.2"/>`;
-    else { const rel=f-mn, x=12+rel*fw+fw/2; s+=`<circle cx="${x}" cy="${y}" r="4.5" fill="${col}"/>`; }
+    const x=sx(i);
+    if(f===null) s+=`<text x="${x}" y="9" font-size="9" fill="var(--red)" text-anchor="middle" font-weight="bold">✕</text>`;
+    else if(f===0) s+=`<text x="${x}" y="9" font-size="9" fill="var(--green)" text-anchor="middle" font-weight="bold">○</text>`;
+  });
+  // corzi (verticale)
+  for(let i=0;i<nS;i++){
+    s+=`<line x1="${sx(i)}" y1="${topPad}" x2="${sx(i)}" y2="${topPad+fretsShown*rowH}" stroke="var(--border2)" stroke-width="1.2"/>`;
+  }
+  // taste (orizontale) + capul instrumentului (gros) daca baseFret==1, + numerotarea fiecarei taste
+  for(let r=0;r<=fretsShown;r++){
+    const y=topPad+r*rowH;
+    if(r===0) s+=`<line x1="${sx(0)}" y1="${y}" x2="${sx(nS-1)}" y2="${y}" stroke="var(--text2)" stroke-width="${baseFret===1?4:1.2}"/>`;
+    else s+=`<line x1="${sx(0)}" y1="${y}" x2="${sx(nS-1)}" y2="${y}" stroke="var(--border2)" stroke-width="1"/>`;
+    if(r<fretsShown){
+      s+=`<text x="${leftPad-6}" y="${y+rowH/2+3}" font-size="7.5" fill="var(--text3)" text-anchor="end" font-family="monospace">${baseFret+r}</text>`;
+    }
+  }
+  // detectie barre: 2+ corzi cantate exact pe cea mai joasa treapta reala (nu neaparat baseFret afisat)
+  const minFret = real.length? Math.min(...real):0;
+  const barreStrings=[]; frets.forEach((f,i)=>{ if(f===minFret) barreStrings.push(i); });
+  const hasBarre = barreStrings.length>=2 && minFret>0;
+  if(hasBarre){
+    const row=minFret-baseFret+1, y=topPad+(row-0.5)*rowH;
+    s+=`<line x1="${sx(barreStrings[0])}" y1="${y}" x2="${sx(barreStrings[barreStrings.length-1])}" y2="${y}" stroke="${col}" stroke-width="9" stroke-linecap="round"/>`;
+  }
+  // puncte individuale (sar peste corzile deja acoperite de bara de barre)
+  frets.forEach((f,i)=>{
+    if(f===null || f===0) return;
+    if(hasBarre && f===minFret) return; // acoperit de bara
+    const row=f-baseFret+1, y=topPad+(row-0.5)*rowH;
+    s+=`<circle cx="${sx(i)}" cy="${y}" r="5" fill="${col}"/>`;
   });
   s+='</svg>';
   return s;
 }
 function svgPiano(pcs, rootPc, col){
-  const W=100, H=60, n=7, ww=W/n;
+  const W=112, H=70, n=7, ww=W/n;
   let s=`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
   const whiteX={};
   PIANO_WHITE_PC.forEach((pc,i)=>{
     const x0=i*ww; whiteX[pc]=x0;
     const on=pcs.includes(pc);
     s+=`<rect x="${x0+1}" y="1" width="${ww-2}" height="${H-2}" fill="${on?col:'var(--surf3)'}" stroke="var(--border2)" stroke-width="1"/>`;
-    if(pc===rootPc) s+=`<circle cx="${x0+ww/2}" cy="${H-10}" r="3.5" fill="#fff"/>`;
+    if(on) s+=`<text x="${x0+ww/2}" y="${H-16}" font-size="7.5" fill="${pc===rootPc?'#fff':'#0d0d12'}" text-anchor="middle" font-weight="bold" font-family="monospace">${NOTE[pc]}</text>`;
+    if(pc===rootPc) s+=`<circle cx="${x0+ww/2}" cy="${H-7}" r="3.2" fill="#fff"/>`;
   });
   const bw=ww*0.6, bh=H*0.62;
   PIANO_BLACK.forEach((pc,i)=>{
@@ -575,7 +631,8 @@ function svgPiano(pcs, rootPc, col){
     const x0=whiteX[PIANO_WHITE_PC[i]]+ww-bw/2;
     const on=pcs.includes(pc);
     s+=`<rect x="${x0}" y="1" width="${bw}" height="${bh}" fill="${on?col:'var(--surf)'}" stroke="var(--border)" stroke-width="1"/>`;
-    if(pc===rootPc) s+=`<circle cx="${x0+bw/2}" cy="${bh-8}" r="3" fill="#fff"/>`;
+    if(on) s+=`<text x="${x0+bw/2}" y="${bh-14}" font-size="6" fill="#fff" text-anchor="middle" font-weight="bold" font-family="monospace">${NOTE[pc]}</text>`;
+    if(pc===rootPc) s+=`<circle cx="${x0+bw/2}" cy="${bh-6}" r="2.6" fill="#fff"/>`;
   });
   s+='</svg>';
   return s;
@@ -596,7 +653,15 @@ const chordifyScroll=document.getElementById('chordifyScroll');
 const tabScroll=document.getElementById('tabScroll');
 
 let audioCtx, audioEl=new Audio(), analysis=null, activeView='chordify', activeInst='Guitar';
-let curBeat=-1, beatCells={};
+let curBeat=-1, beatCells={}, simpleMode=true;
+
+function displayName(b){
+  if(b.root_pc===null || b.root_pc===undefined) return 'N.C.';
+  const root = b.root!==undefined? b.root : NOTE[b.root_pc];
+  if(!simpleMode) return b.name_full || b.name;
+  const minorish = ['minor','minor7','m7b5','dim7','dim'].includes(b.quality);
+  return root + (minorish? 'm' : '');
+}
 
 dropzone.addEventListener('click',()=>fileInput.click());
 dropzone.addEventListener('dragover',e=>{e.preventDefault(); dropzone.classList.add('drag');});
@@ -623,9 +688,19 @@ async function handleFile(file){
 }
 
 /* --- transport --- */
-playBtn.addEventListener('click',()=>{
-  if(audioEl.paused){ audioEl.play(); playBtn.textContent='⏸'; }
-  else { audioEl.pause(); playBtn.textContent='▶'; }
+function togglePlay(){
+  if(!analysis) return;
+  if(audioEl.paused) audioEl.play(); else audioEl.pause();
+}
+playBtn.addEventListener('click',togglePlay);
+audioEl.addEventListener('play',()=>{ playBtn.textContent='⏸'; });
+audioEl.addEventListener('pause',()=>{ playBtn.textContent='▶'; });
+document.addEventListener('keydown',(e)=>{
+  if(e.code!=='Space') return;
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea') return;
+  e.preventDefault();
+  togglePlay();
 });
 seekEl.addEventListener('input',()=>{
   if(!analysis) return;
@@ -638,7 +713,8 @@ function tick(){
     seekEl.value = Math.min(1000, (audioEl.currentTime/analysis.duration)*1000);
     timeLbl.textContent = fmtTime(audioEl.currentTime)+' / '+fmtTime(analysis.duration);
     let idx=0;
-    for(let i=0;i<analysis.beats.length;i++){ if(analysis.beats[i].time<=audioEl.currentTime) idx=i; else break; }
+    const SEEK_EPS=0.08; // toleranta pt rotunjiri de seek (in special MP3, aliniat la cadre)
+    for(let i=0;i<analysis.beats.length;i++){ if(analysis.beats[i].time-SEEK_EPS<=audioEl.currentTime) idx=i; else break; }
     if(idx!==curBeat){ curBeat=idx; highlightChordify(idx); highlightTab(idx); }
   }
   requestAnimationFrame(tick);
@@ -663,33 +739,73 @@ document.querySelectorAll('.instbtn').forEach(btn=>{
 });
 
 /* --- chordify view --- */
+const simpleSwitch=document.getElementById('simpleSwitch');
+simpleSwitch.addEventListener('click',()=>{
+  simpleMode=!simpleMode;
+  simpleSwitch.classList.toggle('on', simpleMode);
+  document.getElementById('simpleLbl').textContent = simpleMode
+    ? 'Acorduri simple (fără 7, sus, bas/acord) — apasă pentru complete'
+    : 'Acorduri complete (7, sus, maj7, bas/acord) — apasă pentru simple';
+  if(analysis){ buildChordify(); buildTab(); }
+});
+
 function buildChordify(){
   chordifyScroll.innerHTML='';
-  const byM={}; analysis.beats.forEach(b=>{ (byM[b.measure]=byM[b.measure]||[]).push(b); });
-  const nMeas=analysis.n_measures;
-  const PERROW=8;
-  for(let r=0;r<Math.ceil(nMeas/PERROW);r++){
-    const row=document.createElement('div'); row.className='beatrow';
-    for(let mi=r*PERROW; mi<Math.min((r+1)*PERROW,nMeas); mi++){
-      const mbs=byM[mi]||[];
-      mbs.forEach(b=>{
-        const el=document.createElement('div'); el.className='beatblock';
-        const col=QCOL[b.quality]||'var(--accent)';
-        el.style.background=col+'26'; el.style.color=col; el.style.borderColor=col+'55';
-        el.textContent=b.name_full||b.name;
-        el.dataset.beat=b.beat_idx;
-        el.addEventListener('click',()=>{ audioEl.currentTime=b.time; });
-        row.appendChild(el);
-      });
+  let lastMeasure=-1;
+  analysis.beats.forEach(b=>{
+    if(b.measure!==lastMeasure && lastMeasure!==-1){
+      const sep=document.createElement('span'); sep.className='measure-sep'; sep.textContent='|';
+      chordifyScroll.appendChild(sep);
     }
-    chordifyScroll.appendChild(row);
-  }
+    lastMeasure=b.measure;
+    const el=document.createElement('span'); el.className='chordword';
+    const col=QCOL[b.quality]||'var(--accent)';
+    el.style.color=col;
+    el.textContent=displayName(b);
+    el.dataset.beat=b.beat_idx;
+    el.addEventListener('click',(e)=>{ audioEl.currentTime=b.time; curBeat=b.beat_idx; highlightChordify(curBeat); highlightTab(curBeat); showChordPopup(b, el); });
+    chordifyScroll.appendChild(el);
+  });
 }
 function highlightChordify(beatIdx){
-  chordifyScroll.querySelectorAll('.beatblock.cur').forEach(e=>e.classList.remove('cur'));
-  const el=chordifyScroll.querySelector(`.beatblock[data-beat="${beatIdx}"]`);
+  chordifyScroll.querySelectorAll('.chordword.cur').forEach(e=>e.classList.remove('cur'));
+  const el=chordifyScroll.querySelector(`.chordword[data-beat="${beatIdx}"]`);
   if(el){ el.classList.add('cur'); el.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'}); }
 }
+
+/* --- popup cu tabulatura (ca la Ultimate Guitar) --- */
+const cpOverlay=document.getElementById('cpOverlay');
+const chordPopup=document.getElementById('chordPopup');
+function showChordPopup(b, anchorEl){
+  const col=QCOL[b.quality]||'var(--accent)';
+  const guitarSvg=svgFret(getTab(b.name,'Guitar'), STD_NAMES, col);
+  const bassSvg=svgFret(bassNoteFrets(b.bass_pc), BASS_NAMES, col);
+  const pianoSvg=svgPiano(pianoPcsForChord(b.root_pc,b.suffix||''), b.root_pc, col);
+  chordPopup.innerHTML=`
+    <div class="cp-head">
+      <span class="cp-name" style="color:${col}">${b.name_full||b.name}</span>
+      <button class="cp-close" id="cpClose">✕</button>
+    </div>
+    <div class="cp-diagrams">
+      <div class="cp-col"><span>Chitară</span>${guitarSvg}</div>
+      <div class="cp-col"><span>Bas</span>${bassSvg}</div>
+      <div class="cp-col"><span>Pian</span>${pianoSvg}</div>
+    </div>`;
+  chordPopup.classList.add('show'); cpOverlay.classList.add('show');
+  const r=anchorEl.getBoundingClientRect();
+  const pw=280, ph=170; // dimensiuni aproximative pt clamping in viewport
+  let left=r.left + r.width/2 - pw/2;
+  let top=r.bottom + 8;
+  left=Math.max(8, Math.min(left, window.innerWidth-pw-8));
+  if(top+ph>window.innerHeight-8) top=r.top-ph-8;
+  chordPopup.style.left=left+'px'; chordPopup.style.top=Math.max(8,top)+'px';
+  document.getElementById('cpClose').addEventListener('click', hideChordPopup);
+}
+function hideChordPopup(){
+  chordPopup.classList.remove('show'); cpOverlay.classList.remove('show');
+}
+cpOverlay.addEventListener('click', hideChordPopup);
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') hideChordPopup(); });
 
 /* --- tab view --- */
 function buildTab(){
@@ -710,13 +826,13 @@ function buildTab(){
       const cell=document.createElement('div'); cell.className='beatcell'; cell.style.borderColor=col;
       cell.dataset.beat=b.beat_idx;
       const lbl=document.createElement('span'); lbl.className='lbl'; lbl.style.color=col;
-      lbl.textContent=b.name_full||b.name; cell.appendChild(lbl);
+      lbl.textContent=displayName(b); cell.appendChild(lbl);
       const diagWrap=document.createElement('div');
       if(isPiano){ diagWrap.innerHTML=svgPiano(pianoPcsForChord(b.root_pc,b.suffix||''), b.root_pc, col); }
       else if(inst==='Bass'){ diagWrap.innerHTML=svgFret(bassNoteFrets(b.bass_pc), snames, col); }
       else { diagWrap.innerHTML=svgFret(getTab(b.name,inst), snames, col); }
       cell.appendChild(diagWrap);
-      cell.addEventListener('click',()=>{ audioEl.currentTime=b.time; });
+      cell.addEventListener('click',()=>{ audioEl.currentTime=b.time; curBeat=b.beat_idx; highlightChordify(curBeat); highlightTab(curBeat); });
       cellsWrap.appendChild(cell);
       beatCells[b.beat_idx]=cell;
     });
