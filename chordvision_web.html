@@ -392,9 +392,51 @@ async function analyzeBuffer(buffer, onProgress){
   }
   const hopSec2=HOP2/sr;
 
-  /* --- Pasul 4: agregare per bataie (mediana cadrelor din interval) --- */
-  p(0.80,'Agregare acorduri per bătaie...');
-  const nBeats=Math.max(1, beatTimes.length);
+  /* --- Pasul 4: detectie DIRECTA a schimbarilor de acord (novelty pe chroma) ---
+     Grid-ul de bataie e util pentru afisare/masuri, dar acordurile NU se schimba
+     mereu exact pe limita aritmetica bataie->bataie (mai ales daca tempo-ul are
+     mici variatii). In loc sa presupunem ca fiecare bataie e propriul segment,
+     detectam schimbarile REALE de acord direct din chroma (varfuri de distanta
+     intre cadre consecutive), apoi le "prindem" de bataia cea mai apropiata. */
+  p(0.78,'Detectare schimbări reale de acord (novelty)...');
+  function normVec(c){ const mx=Math.max(...c); return mx>1e-9? c.map(v=>v/mx) : c; }
+  const noveltyRaw=new Float64Array(n2frames);
+  for(let f=1;f<n2frames;f++){
+    const a=normVec(frameChroma[f-1]), b=normVec(frameChroma[f]);
+    noveltyRaw[f]=1-cosineSim(a,b);
+  }
+  // netezire usoara + normalizare pt peak-picking stabil
+  const NOV_SMOOTH=3, noveltyEnv=new Float64Array(n2frames);
+  for(let f=0;f<n2frames;f++){
+    let s=0,c=0;
+    for(let k=-NOV_SMOOTH;k<=NOV_SMOOTH;k++){ const idx=f+k; if(idx>=0&&idx<n2frames){s+=noveltyRaw[idx];c++;} }
+    noveltyEnv[f]=s/c;
+  }
+  const novMean=noveltyEnv.reduce((a,b)=>a+b,0)/n2frames;
+  let novVar=0; for(let f=0;f<n2frames;f++) novVar+=(noveltyEnv[f]-novMean)**2; novVar/=n2frames;
+  const novThresh=novMean+0.8*Math.sqrt(novVar);
+  const minGapFrames=Math.max(1, Math.round(0.18/hopSec2)); // min ~180ms intre schimbari
+  const changeFrames=[0];
+  let lastPk=-minGapFrames;
+  for(let f=1;f<n2frames-1;f++){
+    if(noveltyEnv[f]>novThresh && noveltyEnv[f]>=noveltyEnv[f-1] && noveltyEnv[f]>=noveltyEnv[f+1] && f-lastPk>=minGapFrames){
+      changeFrames.push(f); lastPk=f;
+    }
+  }
+  changeFrames.push(n2frames);
+  const changeTimes=changeFrames.map(f=>f*hopSec2);
+  // "prindem" fiecare granita detectata de bataia cea mai apropiata din grid
+  function nearestBeatTime(t){
+    let best=beatTimes[0], bd=Infinity;
+    for(const bt of beatTimes){ const d=Math.abs(bt-t); if(d<bd){bd=d; best=bt;} }
+    return best;
+  }
+  const segBoundariesSet=new Set([0, buffer.duration]);
+  for(let i=1;i<changeTimes.length-1;i++) segBoundariesSet.add(nearestBeatTime(changeTimes[i]));
+  const segBoundaries=Array.from(segBoundariesSet).sort((a,b)=>a-b);
+
+  /* --- Pasul 5: analiza acordului per SEGMENT (nu per bataie izolat) --- */
+  p(0.85,'Analiză acord per segment...');
   function medianAgg(frames, tStart, tEnd){
     const out=new Float64Array(12);
     const fLo=Math.max(0,Math.floor(tStart/hopSec2)), fHi=Math.min(frames.length-1, Math.ceil(tEnd/hopSec2));
@@ -406,69 +448,63 @@ async function analyzeBuffer(buffer, onProgress){
     }
     return out;
   }
-  const beatEnd=(i)=> i+1<beatTimes.length? beatTimes[i+1] : (beatTimes[i]+periodFrames*hopSec1);
-  const rawEnergy=[], normChroma=[], bassPcArr=[];
-  for(let i=0;i<nBeats;i++){
-    const t0f=beatTimes[i], t1f=beatEnd(i);
+  const sortedAllE=(()=>{ const e=[]; for(let f=0;f<n2frames;f++) e.push(Math.max(...frameChroma[f])); return e.sort((a,b)=>b-a); })();
+  const refE=sortedAllE[Math.floor(sortedAllE.length*0.2)] || 1e-6;
+  const NC_THRESH=0.10*refE;
+
+  const segments=[];
+  for(let i=0;i<segBoundaries.length-1;i++){
+    const t0f=segBoundaries[i], t1f=segBoundaries[i+1];
     const dur=t1f-t0f;
-    // fereastra "trunchiata" din mijlocul bataii -- evita tranzitia exacta a
-    // schimbarii de acord (unde inca suna coada acordului vechi / atacul e instabil)
-    const t0=t0f+0.15*dur, t1=t0f+0.85*dur;
+    const t0=t0f+0.10*dur, t1=t0f+0.90*dur; // evita marginile exacte ale tranzitiei
     const c=medianAgg(frameChroma, t0, t1);
     const bc=medianAgg(frameBass, t0, t1);
     const mx=Math.max(...c);
-    rawEnergy.push(mx);
     let cn = mx>1e-9? c.map(v=>v/mx) : c;
     const bmax=Math.max(...bc);
     let bpc=null;
     if(bmax>1e-9){ bpc=0; for(let k=1;k<12;k++) if(bc[k]>bc[bpc]) bpc=k; }
-    bassPcArr.push(bpc);
-    if(bpc!==null){
-      const p3=(bpc+4)%12;
-      cn=cn.slice(); cn[p3]=Math.max(0, cn[p3]-HARMONIC_DECONTAM*cn[bpc]);
-    }
-    normChroma.push(cn);
-  }
-  // prag adaptiv N.C. (relativ, nu absolut ca in varianta desktop, fiindca scara STFT difera)
-  const sortedE=[...rawEnergy].sort((a,b)=>b-a);
-  const refE=sortedE[Math.floor(sortedE.length*0.2)] || 1e-6;
-  const NC_THRESH=0.10*refE;
-
-  /* --- scor + netezire temporala usoara (kernel 3-tap) --- */
-  const scoresSeq=normChroma.map(c=>chordScores(c));
-  function smoothScores(seq){
-    const n=seq.length, L=seq[0].length, kernel=[0.15,0.7,0.15], k=1;
-    const out=seq.map(()=>new Float64Array(L));
-    for(let t=0;t<n;t++){
-      let wsum=0; const acc=new Float64Array(L);
-      for(let j=0;j<kernel.length;j++){
-        const idx=t+j-k;
-        if(idx>=0&&idx<n){ for(let l=0;l<L;l++) acc[l]+=seq[idx][l]*kernel[j]; wsum+=kernel[j]; }
-      }
-      for(let l=0;l<L;l++) out[t][l]=acc[l]/wsum;
-    }
-    return out;
-  }
-  const smoothed = nBeats>=3? smoothScores(scoresSeq) : scoresSeq;
-
-  const beats=[];
-  for(let i=0;i<nBeats;i++){
+    if(bpc!==null){ const p3=(bpc+4)%12; cn=cn.slice(); cn[p3]=Math.max(0, cn[p3]-HARMONIC_DECONTAM*cn[bpc]); }
     let m;
-    if(rawEnergy[i]<NC_THRESH){
-      m={root:null,suffix:'N.C.',name:'N.C.',quality:'none',root_pc:null};
-    } else {
-      let bi=0; for(let k=1;k<smoothed[i].length;k++) if(smoothed[i][k]>smoothed[i][bi]) bi=k;
+    if(mx<NC_THRESH){ m={root:null,suffix:'N.C.',name:'N.C.',quality:'none',root_pc:null}; }
+    else {
+      const scores=chordScores(cn);
+      let bi=0; for(let k=1;k<scores.length;k++) if(scores[k]>scores[bi]) bi=k;
       const [br,bs]=ALL_LABELS[bi];
       m={root:NOTE[br], suffix:bs, name:NOTE[br]+bs, quality:CTMPL[bs].q, root_pc:br};
     }
-    const bpc=bassPcArr[i];
+    segments.push({t0:t0f, t1:t1f, chord:m});
+  }
+
+  /* --- Pasul 6: aplica acordul segmentului pe fiecare bataie din grid (nota de bas ramane per-bataie) --- */
+  p(0.90,'Asamblare bătăi...');
+  const nBeats=Math.max(1, beatTimes.length);
+  const beatEnd=(i)=> i+1<beatTimes.length? beatTimes[i+1] : (beatTimes[i]+periodFrames*hopSec1);
+  let segIdx=0;
+  const beats=[];
+  for(let i=0;i<nBeats;i++){
+    const t0f=beatTimes[i], t1f=beatEnd(i), dur=t1f-t0f;
+    while(segIdx<segments.length-1 && t0f>=segments[segIdx].t1-1e-6) segIdx++;
+    const seg=segments[segIdx];
+    const m={...seg.chord};
+    // nota de bas per-bataie (poate varia in interiorul aceluiasi acord tinut)
+    const bt0=t0f+0.15*dur, bt1=t0f+0.85*dur;
+    const bc=medianAgg(frameBass, bt0, bt1);
+    const bmax=Math.max(...bc);
+    let bpc=null;
+    if(bmax>1e-9){ bpc=0; for(let k=1;k<12;k++) if(bc[k]>bc[bpc]) bpc=k; }
     if(bpc!==null && m.root_pc!==null){
       m.bass_pc=bpc; m.bass_note=NOTE[bpc];
       m.name_full = bpc===m.root_pc? m.name : (m.name+'/'+NOTE[bpc]);
     } else { m.bass_pc=m.root_pc; m.bass_note=m.root; m.name_full=m.name; }
-    m.time=beatTimes[i]; m.duration=beatEnd(i)-beatTimes[i]; m.beat_idx=i;
+    m.time=t0f; m.duration=t1f-t0f; m.beat_idx=i;
     beats.push(m);
   }
+  // energie reala per bataie pt detectia metrului (accent ritmic, din onset envelope fin)
+  const rawEnergy=beats.map(b=>{
+    const f0=Math.max(0,Math.round(b.time/hopSec1)), f1=Math.min(onsetEnv.length-1, Math.round((b.time+b.duration)/hopSec1));
+    let s=0,c=0; for(let f=f0;f<=f1;f++){s+=onsetEnv[f]; c++;} return c? s/c : 0;
+  });
 
   /* --- metru (3/4 vs 4/4) prin autocorelatie a energiei per bataie --- */
   const beatEnergy=beats.map((b,i)=>rawEnergy[i]);
