@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChordVision Web — Acorduri, tonalitate &amp; tabulatură</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d0d12; --surf:#16161f; --surf2:#1e1e2a; --surf3:#252535;
+  --border:#2d2d42; --border2:#3a3a55;
+  --text:#eeeeff; --text2:#8888bb; --text3:#44446a;
+  --accent:#7c6af7; --accent2:#a695ff;
+  --green:#4ade80; --yellow:#fbbf24; --red:#f87171; --cyan:#38bdf8; --orange:#fb923c;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh;}
+header{display:flex; align-items:center; gap:10px; padding:1.1rem 1.6rem; border-bottom:1px solid var(--border); position:sticky; top:0; background:rgba(13,13,18,.95); backdrop-filter:blur(10px); z-index:50;}
+.logo{font-family:'Space Mono',monospace; font-weight:700; font-size:1.05rem; letter-spacing:-.02em; color:var(--accent2);}
+.logo span{color:var(--green);}
+.badge{font-size:.68rem; padding:2px 9px; border-radius:100px; background:rgba(124,106,247,.15); border:1px solid rgba(124,106,247,.3); color:var(--accent2); font-weight:500;}
+main{max-width:980px; margin:0 auto; padding:1.6rem 1.2rem 4rem;}
+
+/* upload */
+#dropzone{border:2px dashed var(--border2); border-radius:14px; padding:3rem 1.5rem; text-align:center; cursor:pointer; transition:border-color .15s, background .15s;}
+#dropzone:hover, #dropzone.drag{border-color:var(--accent); background:rgba(124,106,247,.06);}
+#dropzone h2{font-size:1.05rem; font-weight:600; margin-bottom:.4rem;}
+#dropzone p{color:var(--text2); font-size:.85rem; line-height:1.5;}
+#fileInput{display:none;}
+.limits{margin-top:1rem; font-size:.76rem; color:var(--text3); line-height:1.6;}
+
+/* progress */
+#progressArea{margin-top:1.4rem;}
+.pbar-track{height:8px; border-radius:5px; background:var(--surf2); overflow:hidden;}
+.pbar-fill{height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0%; transition:width .25s;}
+#progressMsg{margin-top:.5rem; font-size:.8rem; color:var(--text2); font-family:'Space Mono',monospace;}
+
+/* player */
+#player{margin-top:1.4rem;}
+.infobar{display:flex; gap:1.4rem; flex-wrap:wrap; align-items:center; background:var(--surf); border-radius:12px; padding:.9rem 1.2rem; margin-bottom:.9rem;}
+.infobar .pill{font-family:'Space Mono',monospace; font-size:.8rem; color:var(--text2);}
+.infobar .pill b{color:var(--accent2); font-size:.92rem;}
+.transport{display:flex; align-items:center; gap:.8rem; margin-left:auto;}
+.playbtn{width:38px;height:38px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.playbtn:hover{background:var(--accent2);}
+#seek{flex:1; min-width:140px; accent-color:var(--accent);}
+.timelbl{font-family:'Space Mono',monospace; font-size:.76rem; color:var(--text2); white-space:nowrap;}
+
+.tabbar{display:flex; gap:6px; margin-bottom:.9rem; flex-wrap:wrap;}
+.tabbtn{background:var(--surf2); color:var(--text2); border:none; border-radius:8px; padding:8px 16px; font-size:.82rem; cursor:pointer; font-weight:500;}
+.tabbtn.active{background:var(--accent); color:#fff;}
+.instbar{display:flex; gap:6px; margin:0 0 .9rem auto;}
+.instbtn{background:var(--surf2); color:var(--text2); border:1px solid var(--border2); border-radius:8px; padding:6px 14px; font-size:.78rem; cursor:pointer;}
+.instbtn.active{background:rgba(124,106,247,.18); border-color:var(--accent); color:var(--accent2);}
+
+/* chordify view */
+#chordifyScroll{overflow-x:auto; background:var(--surf); border-radius:12px; padding:1rem;}
+.beatrow{display:flex; gap:3px; margin-bottom:6px;}
+.beatblock{min-width:52px; border-radius:6px; padding:8px 4px; text-align:center; font-family:'Space Mono',monospace; font-size:.78rem; font-weight:700; cursor:pointer; border:1px solid transparent; transition:transform .1s;}
+.beatblock:hover{transform:translateY(-2px);}
+.beatblock.cur{border-color:#fff; box-shadow:0 0 0 1px #fff inset;}
+.measurelbl{font-size:.6rem; color:var(--text3); text-align:center; margin-top:2px;}
+
+/* tab view */
+#tabScroll{display:flex; flex-wrap:wrap; gap:10px;}
+.measure-group{display:flex; flex-direction:column; gap:2px; background:var(--surf); border-radius:10px; padding:8px;}
+.measure-group .mnum{font-size:.62rem; color:var(--text3); padding-left:2px;}
+.beatcells{display:flex; gap:4px;}
+.beatcell{background:var(--surf2); border-radius:7px; border:1px solid var(--border2); padding:6px; text-align:center; cursor:pointer;}
+.beatcell.cur{background:#2a2060; border-color:#fff; box-shadow:0 0 0 1px #fff;}
+.beatcell .lbl{font-family:'Space Mono',monospace; font-weight:700; font-size:.72rem; display:block; margin-bottom:3px; white-space:nowrap;}
+
+.footer-note{margin-top:2.2rem; font-size:.74rem; color:var(--text3); line-height:1.6; border-top:1px solid var(--border); padding-top:1rem;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Chord<span>Vision</span> Web</div>
+  <div class="badge">acorduri · tonalitate · tabulatură</div>
+</header>
+<main>
+  <div id="dropzone">
+    <h2>Trage un fișier audio aici sau apasă ca să alegi</h2>
+    <p>MP3, WAV, M4A, OGG — analiza rulează complet local, în browser.<br>
+       Fără YouTube direct aici (browserul nu poate descărca video) — descarcă audio-ul separat și încarcă-l.</p>
+    <input type="file" id="fileInput" accept="audio/*">
+    <div class="limits">Rulează integral pe dispozitivul tău — fișierul nu e trimis nicăieri.</div>
+  </div>
+
+  <div id="progressArea" hidden>
+    <div class="pbar-track"><div class="pbar-fill" id="pbarFill"></div></div>
+    <div id="progressMsg">Se pregătește...</div>
+  </div>
+
+  <div id="player" hidden>
+    <div class="infobar">
+      <div class="pill">Tonalitate <b id="infoKey">—</b></div>
+      <div class="pill">BPM <b id="infoBpm">—</b></div>
+      <div class="pill">Măsură <b id="infoSig">—</b></div>
+      <div class="transport">
+        <button class="playbtn" id="playBtn">▶</button>
+        <input type="range" id="seek" min="0" max="1000" value="0">
+        <span class="timelbl" id="timeLbl">0:00 / 0:00</span>
+      </div>
+    </div>
+
+    <div class="tabbar">
+      <button class="tabbtn active" data-view="chordify">Acorduri</button>
+      <button class="tabbtn" data-view="tab">Tabulatură</button>
+    </div>
+
+    <div id="view-chordify"><div id="chordifyScroll"></div></div>
+
+    <div id="view-tab" hidden>
+      <div class="instbar">
+        <button class="instbtn active" data-inst="Guitar">Chitară</button>
+        <button class="instbtn" data-inst="Bass">Bas</button>
+        <button class="instbtn" data-inst="Piano">Pian</button>
+      </div>
+      <div id="tabScroll"></div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Motor de analiză propriu (FFT + potrivire de acorduri prin similaritate cosinus,
+    cu decontaminare armonică pentru bas), rulat integral local în browser — port al
+    aplicației desktop ChordVision Pro. Beat-tracking-ul folosește un estimator de tempo
+    prin autocorelație (mai simplu decât varianta desktop bazată pe librosa), potrivit
+    pentru piese cu tempo relativ constant.
+  </div>
+</main>
+
+<script>
+'use strict';
+/* ============================================================
+   TEORIA MUZICII — oglindește exact motorul din ChordVision Pro
+   ============================================================ */
+const NOTE = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const KS_MAJ = [6.35,2.23,3.48,2.33,4.38,4.09,2.52,5.19,2.39,3.66,2.29,2.88];
+const KS_MIN = [6.33,2.68,3.52,5.38,2.60,3.53,2.54,4.75,3.98,2.69,3.34,3.17];
+
+const CTMPL = {
+  ''    : {ivs:[0,4,7],      w:[1,1,1],           q:'major'},
+  'm'   : {ivs:[0,3,7],      w:[1,1,1],           q:'minor'},
+  'dim' : {ivs:[0,3,6],      w:[1,1,1],           q:'dim'},
+  'aug' : {ivs:[0,4,8],      w:[1,1,1],           q:'aug'},
+  'sus2': {ivs:[0,2,7],      w:[1,0.9,1],         q:'sus'},
+  'sus4': {ivs:[0,5,7],      w:[1,0.9,1],         q:'sus'},
+  '7'   : {ivs:[0,4,7,10],   w:[1,0.9,0.9,0.8],   q:'dom7'},
+  'm7'  : {ivs:[0,3,7,10],   w:[1,0.9,0.9,0.8],   q:'minor7'},
+  'maj7': {ivs:[0,4,7,11],   w:[1,0.9,0.9,0.8],   q:'major7'},
+  'm7b5': {ivs:[0,3,6,10],   w:[1,0.9,0.9,0.8],   q:'m7b5'},
+  'dim7': {ivs:[0,3,6,9],    w:[1,0.9,0.9,0.9],   q:'dim7'},
+};
+const SUFFIXES = Object.keys(CTMPL);
+const ALL_LABELS = []; // (root,suffix) pairs, 12*11
+for (let r=0;r<12;r++) for (const s of SUFFIXES) ALL_LABELS.push([r,s]);
+
+const COMPLEXITY_PENALTY = 0.03;
+const HARMONIC_DECONTAM  = 0.12;
+
+const QCOL = {major:'#7c6af7',minor:'#38bdf8',dom7:'#4ade80',minor7:'#22d3ee',
+              major7:'#a78bfa',dim:'#f87171',aug:'#fb923c',sus:'#fbbf24',
+              m7b5:'#f472b6',dim7:'#f87171',none:'#44446a'};
+
+function templateVec(root,suf){
+  const t=CTMPL[suf]; const v=new Float64Array(12);
+  for(let i=0;i<t.ivs.length;i++) v[(root+t.ivs[i])%12]=t.w[i];
+  return v;
+}
+const TEMPLATES = ALL_LABELS.map(([r,s])=>templateVec(r,s));
+
+function cosineSim(a,b){
+  let na=0,nb=0,dot=0;
+  for(let i=0;i<12;i++){na+=a[i]*a[i]; nb+=b[i]*b[i]; dot+=a[i]*b[i];}
+  na=Math.sqrt(na); nb=Math.sqrt(nb);
+  if(na<1e-9||nb<1e-9) return 0;
+  return dot/(na*nb);
+}
+function chordScores(chroma){
+  const out=new Float64Array(ALL_LABELS.length);
+  for(let i=0;i<ALL_LABELS.length;i++){
+    const suf=ALL_LABELS[i][1];
+    out[i]=cosineSim(chroma,TEMPLATES[i]) - COMPLEXITY_PENALTY*(CTMPL[suf].ivs.length-3);
+  }
+  return out;
+}
+function pearson(a,b){
+  const n=a.length; let ma=0,mb=0;
+  for(let i=0;i<n;i++){ma+=a[i]; mb+=b[i];} ma/=n; mb/=n;
+  let num=0,da=0,db=0;
+  for(let i=0;i<n;i++){const x=a[i]-ma,y=b[i]-mb; num+=x*y; da+=x*x; db+=y*y;}
+  const d=Math.sqrt(da*db);
+  return d>1e-9? num/d : 0;
+}
+function rollArr(arr,k){ // roll left by k (like np.roll(arr,-k))
+  const n=arr.length, out=new Array(n);
+  for(let i=0;i<n;i++) out[i]=arr[(i+k)%n];
+  return out;
+}
+function detectKey(chroma){
+  let best=-Infinity,bk=0,bm='major';
+  for(let k=0;k<12;k++){
+    let s=pearson(chroma, rollArr(KS_MAJ,k));
+    if(s>best){best=s;bk=k;bm='major';}
+    s=pearson(chroma, rollArr(KS_MIN,k));
+    if(s>best){best=s;bk=k;bm='minor';}
+  }
+  return [bk,bm];
+}
+
+/* ============================================================
+   FFT — Cooley-Tukey radix-2, iterativ, in-place
+   ============================================================ */
+function fft(re,im){
+  const n=re.length;
+  for(let i=1,j=0;i<n;i++){
+    let bit=n>>1;
+    for(;j&bit;bit>>=1) j^=bit;
+    j^=bit;
+    if(i<j){ let t=re[i];re[i]=re[j];re[j]=t; t=im[i];im[i]=im[j];im[j]=t; }
+  }
+  for(let len=2;len<=n;len<<=1){
+    const ang=-2*Math.PI/len;
+    const wr=Math.cos(ang), wi=Math.sin(ang);
+    for(let i=0;i<n;i+=len){
+      let curR=1,curI=0;
+      for(let k=0;k<len/2;k++){
+        const ur=re[i+k], ui=im[i+k];
+        const vr=re[i+k+len/2]*curR - im[i+k+len/2]*curI;
+        const vi=re[i+k+len/2]*curI + im[i+k+len/2]*curR;
+        re[i+k]=ur+vr; im[i+k]=ui+vi;
+        re[i+k+len/2]=ur-vr; im[i+k+len/2]=ui-vi;
+        const nr=curR*wr-curI*wi, ni=curR*wi+curI*wr;
+        curR=nr; curI=ni;
+      }
+    }
+  }
+}
+function hannWindow(n){
+  const w=new Float64Array(n);
+  for(let i=0;i<n;i++) w[i]=0.5-0.5*Math.cos(2*Math.PI*i/(n-1));
+  return w;
+}
+// magnitude spectrum (bins 0..N/2) for one frame of samples (already windowed length N)
+function frameMag(samples,win,N){
+  const re=new Float64Array(N), im=new Float64Array(N);
+  for(let i=0;i<N;i++) re[i]=samples[i]*win[i];
+  fft(re,im);
+  const half=N/2, mag=new Float64Array(half);
+  for(let i=0;i<half;i++) mag[i]=Math.hypot(re[i],im[i]);
+  return mag;
+}
+
+/* ============================================================
+   PIPELINE PRINCIPAL DE ANALIZĂ
+   ============================================================ */
+async function yieldUI(){ return new Promise(r=>requestAnimationFrame(()=>r())); }
+
+async function analyzeBuffer(buffer, onProgress){
+  const p=(v,m)=>onProgress&&onProgress(v,m);
+  p(0.02,'Reeșantionare la 22.05kHz mono...');
+  const sr=22050;
+  const off=new OfflineAudioContext(1, Math.ceil(buffer.duration*sr), sr);
+  const src=off.createBufferSource(); src.buffer=buffer; src.connect(off.destination); src.start();
+  const rendered=await off.startRendering();
+  const samples=rendered.getChannelData(0);
+  const totalLen=samples.length;
+
+  /* --- Pasul 1: onset envelope (rezoluție fină de timp) --- */
+  p(0.08,'Calcul flux spectral (detecție ritm)...');
+  const N1=2048, HOP1=512;
+  const win1=hannWindow(N1);
+  const n1frames=Math.max(1, Math.floor((totalLen-N1)/HOP1)+1);
+  const onsetEnv=new Float64Array(n1frames);
+  let prevMag=null;
+  const onsetMaxBin=Math.min(Math.floor(N1/2), Math.ceil(5000/(sr/N1)));
+  for(let f=0; f<n1frames; f++){
+    const start=f*HOP1;
+    const mag=frameMag(samples.subarray(start,start+N1), win1, N1);
+    let flux=0;
+    if(prevMag){ for(let b=1;b<onsetMaxBin;b++){ const d=mag[b]-prevMag[b]; if(d>0) flux+=d; } }
+    onsetEnv[f]=flux;
+    prevMag=mag;
+    if(f%400===0){ p(0.08+0.20*f/n1frames,'Flux spectral... '+f+'/'+n1frames); await yieldUI(); }
+  }
+
+  /* --- Pasul 2: tempo + grid de bătăi prin autocorelație + faza optimă --- */
+  p(0.30,'Estimare tempo...');
+  const hopSec1=HOP1/sr;
+  const minBpm=60, maxBpm=190;
+  const minLag=Math.round(60/maxBpm/hopSec1), maxLag=Math.round(60/minBpm/hopSec1);
+  let bestLag=minLag, bestScore=-Infinity;
+  for(let lag=minLag; lag<=maxLag; lag++){
+    let s=0, cnt=0;
+    for(let i=0;i+lag<n1frames;i++){ s+=onsetEnv[i]*onsetEnv[i+lag]; cnt++; }
+    if(cnt>0){ s/=cnt; if(s>bestScore){bestScore=s; bestLag=lag;} }
+  }
+  const periodFrames=bestLag;
+  const bpm=60/(periodFrames*hopSec1);
+  p(0.36, 'Tempo: '+bpm.toFixed(1)+' BPM · căutare fază...');
+  let bestPhase=0, bestPhaseScore=-Infinity;
+  for(let ph=0; ph<periodFrames; ph++){
+    let s=0;
+    for(let t=ph; t<n1frames; t+=periodFrames) s+=onsetEnv[t];
+    if(s>bestPhaseScore){bestPhaseScore=s; bestPhase=ph;}
+  }
+  const beatFrameIdx=[];
+  for(let t=bestPhase; t<n1frames; t+=periodFrames) beatFrameIdx.push(t);
+  const beatTimes=beatFrameIdx.map(f=>f*hopSec1);
+
+  /* --- Pasul 3: chroma de rezoluție înaltă (pt acorduri + bas) --- */
+  p(0.42,'Chroma de înaltă rezoluție (armonice + bas)...');
+  const N2=16384, HOP2=2048;
+  const win2=hannWindow(N2);
+  const n2frames=Math.max(1, Math.floor((totalLen-N2)/HOP2)+1);
+  const binHz=sr/N2;
+  // pastram doar bin-urile relevante (aprox 45Hz - 2100Hz) ca sa limitam memoria
+  const binLo=Math.max(1,Math.floor(45/binHz)), binHi=Math.min(Math.floor(N2/2)-1, Math.ceil(2100/binHz));
+  const nBinsKept=binHi-binLo+1;
+  const specMat=[]; // array de Float32Array(nBinsKept), una per frame
+  for(let f=0; f<n2frames; f++){
+    const start=f*HOP2;
+    const mag=frameMag(samples.subarray(start,start+N2), win2, N2);
+    const row=new Float32Array(nBinsKept);
+    for(let b=0;b<nBinsKept;b++) row[b]=mag[binLo+b];
+    specMat.push(row);
+    if(f%150===0){ p(0.42+0.24*f/n2frames,'Chroma... '+f+'/'+n2frames); await yieldUI(); }
+  }
+
+  /* --- filtrare mediană pe axa timpului (per bin) -- suprima percutia --- */
+  p(0.68,'Suprimare percuție (filtru median)...');
+  const MEDWIN=7, half=Math.floor(MEDWIN/2);
+  const harmMat=specMat.map(r=>new Float32Array(r.length));
+  const tmp=new Float32Array(MEDWIN);
+  for(let b=0;b<nBinsKept;b++){
+    for(let f=0;f<n2frames;f++){
+      let cnt=0;
+      for(let k=-half;k<=half;k++){
+        const idx=f+k;
+        if(idx>=0&&idx<n2frames){ tmp[cnt++]=specMat[idx][b]; }
+      }
+      const slice=Array.from(tmp.subarray(0,cnt)).sort((a,c)=>a-c);
+      harmMat[f][b]=slice[Math.floor(slice.length/2)];
+    }
+    if(b%300===0){ await yieldUI(); }
+  }
+
+  /* --- fold catre chroma (12) si bass-chroma (12, doar 55-250Hz) --- */
+  const pcOfBin=new Int8Array(nBinsKept);
+  const isBassBin=new Uint8Array(nBinsKept);
+  for(let b=0;b<nBinsKept;b++){
+    const freq=(binLo+b)*binHz;
+    const midi=69+12*Math.log2(freq/440);
+    let pc=Math.round(midi)%12; if(pc<0) pc+=12;
+    pcOfBin[b]=pc;
+    isBassBin[b]=(freq>=55 && freq<=250)?1:0;
+  }
+  const frameChroma=[], frameBass=[];
+  for(let f=0;f<n2frames;f++){
+    const c=new Float64Array(12), bc=new Float64Array(12);
+    const row=harmMat[f];
+    for(let b=0;b<nBinsKept;b++){
+      c[pcOfBin[b]]+=row[b];
+      if(isBassBin[b]) bc[pcOfBin[b]]+=row[b];
+    }
+    frameChroma.push(c); frameBass.push(bc);
+  }
+  const hopSec2=HOP2/sr;
+
+  /* --- Pasul 4: agregare per bataie (mediana cadrelor din interval) --- */
+  p(0.80,'Agregare acorduri per bătaie...');
+  const nBeats=Math.max(1, beatTimes.length);
+  function medianAgg(frames, tStart, tEnd){
+    const out=new Float64Array(12);
+    const fLo=Math.max(0,Math.floor(tStart/hopSec2)), fHi=Math.min(frames.length-1, Math.ceil(tEnd/hopSec2));
+    for(let pc=0;pc<12;pc++){
+      const vals=[];
+      for(let f=fLo;f<=fHi;f++) vals.push(frames[f][pc]);
+      vals.sort((a,b)=>a-b);
+      out[pc]= vals.length? vals[Math.floor(vals.length/2)] : 0;
+    }
+    return out;
+  }
+  const beatEnd=(i)=> i+1<beatTimes.length? beatTimes[i+1] : (beatTimes[i]+periodFrames*hopSec1);
+  const rawEnergy=[], normChroma=[], bassPcArr=[];
+  for(let i=0;i<nBeats;i++){
+    const t0=beatTimes[i], t1=beatEnd(i);
+    const c=medianAgg(frameChroma, t0, t1);
+    const bc=medianAgg(frameBass, t0, t1);
+    const mx=Math.max(...c);
+    rawEnergy.push(mx);
+    let cn = mx>1e-9? c.map(v=>v/mx) : c;
+    const bmax=Math.max(...bc);
+    let bpc=null;
+    if(bmax>1e-9){ bpc=0; for(let k=1;k<12;k++) if(bc[k]>bc[bpc]) bpc=k; }
+    bassPcArr.push(bpc);
+    if(bpc!==null){
+      const p3=(bpc+4)%12;
+      cn=cn.slice(); cn[p3]=Math.max(0, cn[p3]-HARMONIC_DECONTAM*cn[bpc]);
+    }
+    normChroma.push(cn);
+  }
+  // prag adaptiv N.C. (relativ, nu absolut ca in varianta desktop, fiindca scara STFT difera)
+  const sortedE=[...rawEnergy].sort((a,b)=>b-a);
+  const refE=sortedE[Math.floor(sortedE.length*0.2)] || 1e-6;
+  const NC_THRESH=0.10*refE;
+
+  /* --- scor + netezire temporala usoara (kernel 3-tap) --- */
+  const scoresSeq=normChroma.map(c=>chordScores(c));
+  function smoothScores(seq){
+    const n=seq.length, L=seq[0].length, kernel=[0.15,0.7,0.15], k=1;
+    const out=seq.map(()=>new Float64Array(L));
+    for(let t=0;t<n;t++){
+      let wsum=0; const acc=new Float64Array(L);
+      for(let j=0;j<kernel.length;j++){
+        const idx=t+j-k;
+        if(idx>=0&&idx<n){ for(let l=0;l<L;l++) acc[l]+=seq[idx][l]*kernel[j]; wsum+=kernel[j]; }
+      }
+      for(let l=0;l<L;l++) out[t][l]=acc[l]/wsum;
+    }
+    return out;
+  }
+  const smoothed = nBeats>=3? smoothScores(scoresSeq) : scoresSeq;
+
+  const beats=[];
+  for(let i=0;i<nBeats;i++){
+    let m;
+    if(rawEnergy[i]<NC_THRESH){
+      m={root:null,suffix:'N.C.',name:'N.C.',quality:'none',root_pc:null};
+    } else {
+      let bi=0; for(let k=1;k<smoothed[i].length;k++) if(smoothed[i][k]>smoothed[i][bi]) bi=k;
+      const [br,bs]=ALL_LABELS[bi];
+      m={root:NOTE[br], suffix:bs, name:NOTE[br]+bs, quality:CTMPL[bs].q, root_pc:br};
+    }
+    const bpc=bassPcArr[i];
+    if(bpc!==null && m.root_pc!==null){
+      m.bass_pc=bpc; m.bass_note=NOTE[bpc];
+      m.name_full = bpc===m.root_pc? m.name : (m.name+'/'+NOTE[bpc]);
+    } else { m.bass_pc=m.root_pc; m.bass_note=m.root; m.name_full=m.name; }
+    m.time=beatTimes[i]; m.duration=beatEnd(i)-beatTimes[i]; m.beat_idx=i;
+    beats.push(m);
+  }
+
+  /* --- metru (3/4 vs 4/4) prin autocorelatie a energiei per bataie --- */
+  const beatEnergy=beats.map((b,i)=>rawEnergy[i]);
+  let sig=4;
+  if(beatEnergy.length>=8){
+    const ac=(lag)=>{ let s=0,c=0; for(let i=0;i+lag<beatEnergy.length;i++){s+=beatEnergy[i]*beatEnergy[i+lag]; c++;} return c? s/c:0; };
+    const s3=ac(3), s4=ac(4);
+    sig = (s3>s4*1.1)?3:4;
+  }
+  beats.forEach((b,i)=>{ b.beat_in_measure=i%sig; b.measure=Math.floor(i/sig); });
+
+  /* --- consolidare pe masura (vot majoritar) --- */
+  p(0.90,'Consolidare pe măsuri...');
+  const byM={};
+  beats.forEach(b=>{ (byM[b.measure]=byM[b.measure]||[]).push(b); });
+  Object.keys(byM).forEach(mk=>{
+    const arr=byM[mk];
+    const cnt={};
+    arr.forEach(b=>{cnt[b.name]=(cnt[b.name]||0)+1;});
+    let top=arr[0].name, tn=0;
+    for(const k in cnt) if(cnt[k]>tn){tn=cnt[k]; top=k;}
+    if(tn/arr.length>=0.55){
+      const winner=arr.find(b=>b.name===top);
+      arr.forEach(b=>{
+        b.display=top; b.root=winner.root; b.suffix=winner.suffix;
+        b.quality=winner.quality; b.root_pc=winner.root_pc;
+        b.name_full = (b.bass_pc===winner.root_pc || b.bass_pc===null)? top : (top+'/'+NOTE[b.bass_pc]);
+      });
+    } else arr.forEach(b=>{ b.display=b.name; });
+  });
+
+  /* --- tonalitate globala --- */
+  p(0.95,'Tonalitate globală...');
+  const gc=new Float64Array(12);
+  frameChroma.forEach(c=>{ for(let k=0;k<12;k++) gc[k]+=c[k]; });
+  const gmax=Math.max(...gc); for(let k=0;k<12;k++) gc[k]/= (gmax||1);
+  const [keyRoot,keyMode]=detectKey(gc);
+
+  p(1.0,'Analiză completă!');
+  return {
+    beats, bpm:Math.round(bpm), time_sig:sig, key_root:keyRoot, key_mode:keyMode,
+    duration:buffer.duration, n_measures: beats.length? beats[beats.length-1].measure+1 : 0
+  };
+}
+
+/* ============================================================
+   TABLATURĂ — chitară / bas / pian (voicing-uri generice)
+   ============================================================ */
+const STD_NAMES=['E','A','D','G','B','e'], BASS_NAMES=['E','A','D','G'];
+const GVOI={
+  'C':[null,3,2,0,1,0],'Cm':[null,3,5,5,4,3],'D':[null,null,0,2,3,2],
+  'Dm':[null,null,0,2,3,1],'E':[0,2,2,1,0,0],'Em':[0,2,2,0,0,0],
+  'F':[1,1,2,3,3,1],'Fm':[1,1,3,3,2,1],'G':[3,2,0,0,0,3],'Gm':[3,5,5,3,3,3],
+  'A':[null,0,2,2,2,0],'Am':[null,0,2,2,1,0],'B':[null,2,4,4,4,2],'Bm':[null,2,4,4,3,2],
+  'F#':[2,2,3,4,4,2],'F#m':[2,2,4,4,3,2],'A#':[null,1,3,3,3,1],'A#m':[null,1,3,3,2,1],
+  'G7':[3,2,0,0,0,1],'D7':[null,null,0,2,1,2],'A7':[null,0,2,0,2,0],'E7':[0,2,0,1,0,0],
+  'Cmaj7':[null,3,2,0,0,0],'Gmaj7':[3,2,0,0,0,2],'Am7':[null,0,2,0,1,0],
+  'Em7':[0,2,2,0,3,0],'Dm7':[null,null,0,2,1,1],'Bm7':[null,2,4,2,3,2],
+};
+const BVOI={
+  'C':[null,3,2,0],'Cm':[null,3,1,0],'D':[null,null,0,2],'Dm':[null,null,0,2],
+  'E':[0,2,2,1],'Em':[0,2,2,0],'F':[1,3,3,2],'G':[3,2,0,0],
+  'A':[null,0,2,2],'Am':[null,0,2,2],'B':[null,2,4,4],'Bm':[null,2,4,4],
+};
+function rootPcFromName(n){
+  for(const len of [2,1]){ const s=n.slice(0,len); const idx=NOTE.indexOf(s); if(idx>=0) return idx; }
+  return 0;
+}
+function getTab(name, inst){
+  const voi = inst==='Guitar'? GVOI : BVOI;
+  if(voi[name]) return voi[name];
+  let root=name;
+  for(const s of ['maj7','m7','7','m','dim','aug','sus4','sus2']) if(name.endsWith(s)){ root=name.slice(0,-s.length); break; }
+  if(voi[root]) return voi[root];
+  const pc=rootPcFromName(root); const f=(pc-5+12)%12; const im=name.toLowerCase().replace('maj','').includes('m');
+  if(inst==='Guitar'){
+    if(f>0) return im? [null,f,f+2,f+2,f+1,f] : [null,f,f+2,f+2,f+2,f];
+    return im? [null,0,2,2,1,0] : [null,0,2,2,2,0];
+  }
+  if(f>0) return [null,f,f+2,f+2];
+  return [null,0,2,2];
+}
+function bassNoteFrets(bassPc){
+  if(bassPc===null||bassPc===undefined) return [null,null,null,null];
+  const openPc=[4,9,2,7]; // E A D G
+  let best=null;
+  for(let s=0;s<4;s++){ const f=(bassPc-openPc[s]+120)%12; if(best===null||f<best[1]) best=[s,f]; }
+  const frets=[null,null,null,null]; frets[best[0]]=best[1]; return frets;
+}
+const PIANO_WHITE_PC=[0,2,4,5,7,9,11];
+const PIANO_BLACK=[1,3,null,6,8,10,null];
+function pianoPcsForChord(rootPc,suf){
+  if(rootPc===null||rootPc===undefined) return [];
+  const t=CTMPL[suf]||CTMPL[''];
+  return Array.from(new Set(t.ivs.map(iv=>(rootPc+iv)%12)));
+}
+
+/* ---------- SVG diagram builders ---------- */
+function svgFret(frets, snames, col){
+  const W=54, rowH=18, H=snames.length*rowH+10;
+  const real=frets.filter(f=>f!==null && f>0);
+  const mn = real.length? Math.min(...real):0;
+  const nr = Math.max(real.length? (Math.max(...real)-mn+1):0, 3);
+  const fw=(W-16)/nr;
+  let s=`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+  if(mn>0) s+=`<text x="${W-2}" y="9" font-size="7" fill="var(--text3)" text-anchor="end" font-family="monospace">${mn}</text>`;
+  frets.forEach((f,i)=>{
+    const y=10+i*rowH;
+    s+=`<line x1="10" y1="${y}" x2="${W-4}" y2="${y}" stroke="var(--border2)" stroke-width="1"/>`;
+    s+=`<text x="7" y="${y+3}" font-size="7" fill="var(--text3)" text-anchor="end" font-family="monospace">${snames[i]}</text>`;
+    if(f===null) s+=`<text x="${W-8}" y="${y+3}" font-size="8" fill="var(--red)" text-anchor="middle" font-weight="bold">×</text>`;
+    else if(f===0) s+=`<circle cx="${W-11}" cy="${y}" r="4" fill="none" stroke="var(--green)" stroke-width="1.2"/>`;
+    else { const rel=f-mn, x=12+rel*fw+fw/2; s+=`<circle cx="${x}" cy="${y}" r="4.5" fill="${col}"/>`; }
+  });
+  s+='</svg>';
+  return s;
+}
+function svgPiano(pcs, rootPc, col){
+  const W=100, H=60, n=7, ww=W/n;
+  let s=`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+  const whiteX={};
+  PIANO_WHITE_PC.forEach((pc,i)=>{
+    const x0=i*ww; whiteX[pc]=x0;
+    const on=pcs.includes(pc);
+    s+=`<rect x="${x0+1}" y="1" width="${ww-2}" height="${H-2}" fill="${on?col:'var(--surf3)'}" stroke="var(--border2)" stroke-width="1"/>`;
+    if(pc===rootPc) s+=`<circle cx="${x0+ww/2}" cy="${H-10}" r="3.5" fill="#fff"/>`;
+  });
+  const bw=ww*0.6, bh=H*0.62;
+  PIANO_BLACK.forEach((pc,i)=>{
+    if(pc===null) return;
+    const x0=whiteX[PIANO_WHITE_PC[i]]+ww-bw/2;
+    const on=pcs.includes(pc);
+    s+=`<rect x="${x0}" y="1" width="${bw}" height="${bh}" fill="${on?col:'var(--surf)'}" stroke="var(--border)" stroke-width="1"/>`;
+    if(pc===rootPc) s+=`<circle cx="${x0+bw/2}" cy="${bh-8}" r="3" fill="#fff"/>`;
+  });
+  s+='</svg>';
+  return s;
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+const dropzone=document.getElementById('dropzone');
+const fileInput=document.getElementById('fileInput');
+const progressArea=document.getElementById('progressArea');
+const pbarFill=document.getElementById('pbarFill');
+const progressMsg=document.getElementById('progressMsg');
+const playerEl=document.getElementById('player');
+const infoKey=document.getElementById('infoKey'), infoBpm=document.getElementById('infoBpm'), infoSig=document.getElementById('infoSig');
+const playBtn=document.getElementById('playBtn'), seekEl=document.getElementById('seek'), timeLbl=document.getElementById('timeLbl');
+const chordifyScroll=document.getElementById('chordifyScroll');
+const tabScroll=document.getElementById('tabScroll');
+
+let audioCtx, audioEl=new Audio(), analysis=null, activeView='chordify', activeInst='Guitar';
+let curBeat=-1, beatCells={};
+
+dropzone.addEventListener('click',()=>fileInput.click());
+dropzone.addEventListener('dragover',e=>{e.preventDefault(); dropzone.classList.add('drag');});
+dropzone.addEventListener('dragleave',()=>dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop',e=>{
+  e.preventDefault(); dropzone.classList.remove('drag');
+  if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change',e=>{ if(e.target.files.length) handleFile(e.target.files[0]); });
+
+async function handleFile(file){
+  progressArea.hidden=false; playerEl.hidden=true; pbarFill.style.width='0%';
+  progressMsg.textContent='Se încarcă fișierul...';
+  const arrBuf=await file.arrayBuffer();
+  audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+  const buffer=await audioCtx.decodeAudioData(arrBuf.slice(0));
+  audioEl.src=URL.createObjectURL(file);
+  analysis=await analyzeBuffer(buffer,(v,m)=>{ pbarFill.style.width=(v*100)+'%'; progressMsg.textContent=m; });
+  progressArea.hidden=true; playerEl.hidden=false;
+  infoKey.textContent=NOTE[analysis.key_root]+(analysis.key_mode==='minor'?'m':'');
+  infoBpm.textContent=analysis.bpm;
+  infoSig.textContent=analysis.time_sig+'/4';
+  buildChordify(); buildTab();
+}
+
+/* --- transport --- */
+playBtn.addEventListener('click',()=>{
+  if(audioEl.paused){ audioEl.play(); playBtn.textContent='⏸'; }
+  else { audioEl.pause(); playBtn.textContent='▶'; }
+});
+seekEl.addEventListener('input',()=>{
+  if(!analysis) return;
+  audioEl.currentTime = (seekEl.value/1000)*analysis.duration;
+});
+audioEl.addEventListener('ended',()=>{ playBtn.textContent='▶'; });
+function fmtTime(s){ s=Math.max(0,s|0); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function tick(){
+  if(analysis && analysis.duration>0){
+    seekEl.value = Math.min(1000, (audioEl.currentTime/analysis.duration)*1000);
+    timeLbl.textContent = fmtTime(audioEl.currentTime)+' / '+fmtTime(analysis.duration);
+    let idx=0;
+    for(let i=0;i<analysis.beats.length;i++){ if(analysis.beats[i].time<=audioEl.currentTime) idx=i; else break; }
+    if(idx!==curBeat){ curBeat=idx; highlightChordify(idx); highlightTab(idx); }
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* --- view / instrument switches --- */
+document.querySelectorAll('.tabbtn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); activeView=btn.dataset.view;
+    document.getElementById('view-chordify').hidden = activeView!=='chordify';
+    document.getElementById('view-tab').hidden = activeView!=='tab';
+  });
+});
+document.querySelectorAll('.instbtn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.instbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); activeInst=btn.dataset.inst;
+    buildTab();
+  });
+});
+
+/* --- chordify view --- */
+function buildChordify(){
+  chordifyScroll.innerHTML='';
+  const byM={}; analysis.beats.forEach(b=>{ (byM[b.measure]=byM[b.measure]||[]).push(b); });
+  const nMeas=analysis.n_measures;
+  const PERROW=8;
+  for(let r=0;r<Math.ceil(nMeas/PERROW);r++){
+    const row=document.createElement('div'); row.className='beatrow';
+    for(let mi=r*PERROW; mi<Math.min((r+1)*PERROW,nMeas); mi++){
+      const mbs=byM[mi]||[];
+      mbs.forEach(b=>{
+        const el=document.createElement('div'); el.className='beatblock';
+        const col=QCOL[b.quality]||'var(--accent)';
+        el.style.background=col+'26'; el.style.color=col; el.style.borderColor=col+'55';
+        el.textContent=b.name_full||b.name;
+        el.dataset.beat=b.beat_idx;
+        el.addEventListener('click',()=>{ audioEl.currentTime=b.time; });
+        row.appendChild(el);
+      });
+    }
+    chordifyScroll.appendChild(row);
+  }
+}
+function highlightChordify(beatIdx){
+  chordifyScroll.querySelectorAll('.beatblock.cur').forEach(e=>e.classList.remove('cur'));
+  const el=chordifyScroll.querySelector(`.beatblock[data-beat="${beatIdx}"]`);
+  if(el){ el.classList.add('cur'); el.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'}); }
+}
+
+/* --- tab view --- */
+function buildTab(){
+  if(!analysis) return;
+  tabScroll.innerHTML=''; beatCells={};
+  const inst=activeInst, isPiano=inst==='Piano';
+  const snames = isPiano? [] : (inst==='Guitar'? STD_NAMES : BASS_NAMES);
+  const byM={}; analysis.beats.forEach(b=>{ (byM[b.measure]=byM[b.measure]||[]).push(b); });
+  const nMeas=analysis.n_measures;
+  for(let mi=0; mi<nMeas; mi++){
+    const mbs=byM[mi]||[]; if(!mbs.length) continue;
+    const grp=document.createElement('div'); grp.className='measure-group';
+    const mnum=document.createElement('div'); mnum.className='mnum'; mnum.textContent='m'+(mi+1);
+    grp.appendChild(mnum);
+    const cellsWrap=document.createElement('div'); cellsWrap.className='beatcells';
+    mbs.forEach(b=>{
+      const col=QCOL[b.quality]||'var(--accent)';
+      const cell=document.createElement('div'); cell.className='beatcell'; cell.style.borderColor=col;
+      cell.dataset.beat=b.beat_idx;
+      const lbl=document.createElement('span'); lbl.className='lbl'; lbl.style.color=col;
+      lbl.textContent=b.name_full||b.name; cell.appendChild(lbl);
+      const diagWrap=document.createElement('div');
+      if(isPiano){ diagWrap.innerHTML=svgPiano(pianoPcsForChord(b.root_pc,b.suffix||''), b.root_pc, col); }
+      else if(inst==='Bass'){ diagWrap.innerHTML=svgFret(bassNoteFrets(b.bass_pc), snames, col); }
+      else { diagWrap.innerHTML=svgFret(getTab(b.name,inst), snames, col); }
+      cell.appendChild(diagWrap);
+      cell.addEventListener('click',()=>{ audioEl.currentTime=b.time; });
+      cellsWrap.appendChild(cell);
+      beatCells[b.beat_idx]=cell;
+    });
+    grp.appendChild(cellsWrap);
+    tabScroll.appendChild(grp);
+  }
+}
+function highlightTab(beatIdx){
+  Object.values(beatCells).forEach(c=>c.classList.remove('cur'));
+  const cell=beatCells[beatIdx];
+  if(cell){
+    cell.classList.add('cur');
+    cell.scrollIntoView({behavior:'smooth', block:'center', inline:'nearest'});
+  }
+}
+</script>
+
+</body>
+</html>
