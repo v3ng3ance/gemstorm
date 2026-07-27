@@ -89,7 +89,8 @@ tr.me td{color:var(--amber);font-weight:700}
 .delta.up{color:var(--red)}.delta.dn{color:#4ade80}
 /* ---------- touch ---------- */
 #touch{position:absolute;inset:0;z-index:12;display:none;touch-action:none}
-#touch div{position:absolute;border-radius:50%;
+#touch div{position:absolute;border-radius:50%;touch-action:none;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
   border:2px solid rgba(49,229,255,.45);background:rgba(7,16,28,.52);color:var(--paper);
   display:flex;align-items:center;justify-content:center;font-weight:800;
   width:min(84px,20vw);height:min(84px,20vw);font-size:min(26px,6vw);
@@ -108,6 +109,12 @@ tr.me td{color:var(--amber);font-weight:700}
 #rotate b{display:block;font-size:22px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber)}
 #rotate span{display:block;margin-top:10px;font-size:12px;letter-spacing:.2em;color:var(--dim)}
 @media (orientation:portrait) and (pointer:coarse){#rotate{display:flex}}
+body.touch-ui #hSpeed{bottom:calc(112px + env(safe-area-inset-bottom));right:auto;
+  left:50%;transform:translateX(-50%);text-align:center}
+body.touch-ui #hGear{bottom:calc(112px + env(safe-area-inset-bottom));
+  right:auto;left:calc(50% + 96px);transform:translateX(-50%)}
+body.touch-ui #hPos{bottom:calc(112px + env(safe-area-inset-bottom))}
+body.touch-ui #hDmg{top:74px}
 #pauseBtn,#muteBtn,#langBtn,#fsBtn{position:absolute;z-index:22;pointer-events:auto;
   top:calc(12px + env(safe-area-inset-top));
   background:rgba(7,16,28,.72);border:1px solid var(--line);color:var(--paper);
@@ -140,7 +147,7 @@ tr.me td{color:var(--amber);font-weight:700}
   <button id="pauseBtn" class="hidden">II</button>
   <div id="touch">
     <div id="tL">&#9664;</div><div id="tR">&#9654;</div>
-    <div id="tB">&#9679;</div><div id="tG">&#9658;</div><div id="tH">HB</div>
+    <div id="tB">&#9660;</div><div id="tG">&#9650;</div><div id="tH">HB</div>
   </div>
   <div id="rotate"><div><b>Rotește telefonul</b><span>Jocul se joacă pe orizontală</span></div></div>
 
@@ -169,7 +176,7 @@ tr.me td{color:var(--amber);font-weight:700}
       <div class="card" style="cursor:default"><h3>Iarbă &amp; nisip</h3><p>În afara pistei pierzi rapid viteză și controlul. La raliu, marginile sunt mai iertătoare.</p></div>
       <div class="card" style="cursor:default"><h3>Sunet</h3><p>Tasta M sau butonul din dreapta sus comută între sunet complet, doar anvelope și vânt, sau tăcere.</p></div>
       <div class="card" style="cursor:default"><h3>Asistență</h3><p>Ajutaje de stabilitate și aderență. Legendă = model pur, fără ajutor.</p></div>
-      <div class="card" style="cursor:default"><h3>Mobil</h3><p>Butoane pe ecran: stânga, dreapta, frână, gaz. Ține telefonul pe orizontală.</p></div>
+      <div class="card" style="cursor:default"><h3>Mobil</h3><p>Volanul jos-stânga. Jos-dreapta: triunghiul în sus e accelerația, cel în jos frâna, HB frâna de mână. Ține telefonul pe orizontală.</p></div>
     </div>
     <div class="row"><button class="btn ghost" data-go="menu">Înapoi</button></div>
   </div>
@@ -262,7 +269,7 @@ tr.me td{color:var(--amber);font-weight:700}
    ============================================================ */
 
 /* ---------- i18n ---------- */
-const DICT={"Turbo Challenge &middot; 8 trasee &middot; circuit &amp; raliu": "Turbo Challenge &middot; 8 tracks &middot; circuit &amp; rally","Campionat": "Championship","Sezon complet pe mai multe etape, cu puncte, clasament general și titlu la final.": "A full multi-round season with points, an overall table and a title at the end.","Modul principal": "Main mode","Cursă rapidă": "Quick race","Alegi traseul, mașina și numărul de tururi. Grilă completă de adversari.": "Pick the track, the car and the lap count. Full grid of rivals.","Contra cronometru": "Time trial","Pistă liberă, fără adversari. Doar tu și cel mai bun tur al tău.": "Empty track, no rivals. Just you and your best lap.","Comenzi": "Controls","Taste, touch și cum funcționează avariile, gripul și punctele.": "Keys, touch, and how damage, grip and points work.","Săgeți / WASD &middot; Space = frână de mână &middot; P = pauză": "Arrows / WASD &middot; Space = handbrake &middot; M = mute &middot; P = pause","Comenzi &amp; reguli": "Controls &amp; rules","Volan": "Steering","Săgeată stânga/dreapta sau A/D. Pe pietriș, zăpadă și noroi mașina alunecă — contrează din timp, nu brusc.": "Left/right arrow or A/D. On gravel, snow and mud the car slides — catch it early, not abruptly.","Accelerație": "Throttle","Săgeată sus sau W. Frână: săgeată jos sau S. Space = frână de mână, rotește spatele în viraj.": "Up arrow or W. Brake: down arrow or S. Space is the handbrake — it rotates the rear into a corner.","Avarii": "Damage","Copacii, stâncile și panourile costă scump. Peste 60% avarie pierzi din viteza maximă. Coliziunile cu adversarii doar te încetinesc.": "Trees, rocks and boards are expensive. Past 60% damage you lose top speed. Contact with rivals only slows you down.","Puncte": "Points","25-18-15-12-10-8-6-4-2-1 pentru primii zece. Etapele de raliu se aleargă solo, contra timpilor rivalilor.": "25-18-15-12-10-8-6-4-2-1 for the top ten. Rally stages are run solo, against the rivals' stage times.","Iarbă &amp; nisip": "Grass &amp; sand","În afara pistei pierzi rapid viteză și controlul. La raliu, marginile sunt mai iertătoare.": "Off the track you bleed speed and grip fast. On rally stages the verges are more forgiving.","Mobil": "Mobile","Butoane pe ecran: stânga, dreapta, frână, gaz. Ține telefonul pe orizontală.": "On-screen buttons: left, right, brake, throttle. Hold the phone in landscape.","Înapoi": "Back","Alege campionatul": "Choose a championship","Alege traseul": "Choose a track","Tururi": "Laps","Continuă": "Continue","Alege mașina": "Choose a car","Dificultate": "Difficulty","Amator": "Amateur","Pro": "Pro","Legendă": "Legend","Asistență": "Assists","Sunet": "Sound","Tasta M sau butonul din dreapta sus comută între sunet complet, doar anvelope și vânt, sau tăcere.": "Press M, or the button top right, to cycle full sound, tyres and wind only, or silence.","Ajutaje de stabilitate și aderență. Legendă = model pur, fără ajutor.": "Stability and grip help. Legend is the raw model, with no help at all.","Meniu": "Menu","Start": "Start","Sezon": "Season","Etape": "Rounds","Clasament general": "Overall standings","Abandonează sezonul": "Quit the season","Următoarea etapă": "Next round","Rezultate": "Results","Pauză": "Paused","Reia cursa": "Resume","De la capăt": "Restart","Ieși în meniu": "Exit to menu","Sunet: complet": "Sound: full","Sunet: fără motor": "Sound: no engine","Sunet: oprit": "Sound: off","Rotește telefonul": "Rotate your phone","Jocul se joacă pe orizontală": "This game is played in landscape","România": "Romania","Coasta Amalfi": "Amalfi Coast","Alpi": "Alps","Merzouga": "Merzouga","Făgăraș": "Fagaras","Laponia": "Lapland","Țara Galilor": "Wales","Yokohama": "Yokohama","Circuit de start: viraje largi, o denivelare la mijloc și o linie dreaptă lungă.": "The starter circuit: open corners, one crest in the middle and a long straight.","Faleză cu palmieri, viraje strânse deasupra mării și lumină de apus.": "Palm-lined cliffs, tight corners above the sea and low evening light.","Urcare continuă, ace de păr și coborâre rapidă. Frânează devreme.": "A long climb, hairpins and a fast descent. Brake early.","Circuit urban nocturn. Ziduri aproape, chicane și lumini de neon.": "Night street circuit. Close walls, chicanes and neon.","Etapă de viteză prin deșert. Nisipul iartă puțin, dar stâncile deloc.": "A fast desert stage. The sand forgives a little, the rocks don't.","Pietriș printre brazi. Viraje oarbe, spectatori pe margine, zero spațiu de greșeală.": "Gravel through pines. Blind corners, spectators on the verge, no room for error.","Zăpadă bătătorită. Grip aproape inexistent — conduci din alunecare.": "Packed snow. Almost no grip — you drive it on the slide.","Noroi, ploaie și făgașe. Ultima etapă a sezonului de raliu.": "Mud, rain and ruts. The closing stage of the rally season.","Grup turbo cu întârziere, dar vârf de viteză uriaș. Clasicul anilor '90.": "Laggy turbo, enormous top end. The nineties classic.","Monopost. Aderență și frânare excepționale, dar fragil la contact.": "Single-seater. Exceptional grip and braking, fragile in contact.","Tracțiune integrală. Cea mai bună alegere pe pietriș, zăpadă și noroi.": "All-wheel drive. The best pick on gravel, snow and mud.","Muscle car greu. Iese lat în viraje, dar nu-l oprește nimeni pe drept.": "Heavy muscle car. Runs wide in corners, unstoppable in a straight line.","Patru circuite asfaltate. Cursă cu grilă completă la fiecare etapă.": "Four tarmac circuits. A full grid at every round.","Patru etape speciale contra cronometru. Rivalii aleargă separat — contează doar timpul.": "Four special stages against the clock. Rivals run separately — only the time counts.","Sezonul complet: opt etape, asfalt și macadam alternativ. Titlul suprem.": "The full season: eight rounds alternating tarmac and gravel. The big one.","etape": "rounds","Etapă raliu": "Rally stage","Circuit": "Circuit","Raliu": "Rally","Cursă rapidă — alege traseul": "Quick race — choose a track","Contra cronometru — alege traseul": "Time trial — choose a track","Viteză": "Top speed","Aderență": "Grip","Manevrabilitate": "Handling","Poz": "Pos","Pilot": "Driver","Timp": "Time","Diferență": "Gap","Pct": "Pts","Tu": "You","Etapă": "Round","Tip": "Type","Loc": "Result","următoarea": "next up","— timp de etapă": "— stage time","— rezultate": "— results","Cel mai bun tur": "Best lap","avarii": "damage","puncte": "points","Clasament sezon": "Season standings","Din nou": "Race again","Închide sezonul": "Close the season","etapa": "round","CAMPION! Ai câștigat titlul.": "CHAMPION! The title is yours.","Titlul merge la": "The title goes to","TUR": "LAP","Total": "Total","ETAPĂ": "STAGE","ETAPĂ SOLO": "SOLO STAGE","Ultim tur": "Last lap","AVARII": "DAMAGE","cars on grid": "cars on grid"};
+const DICT={"Turbo Challenge &middot; 8 trasee &middot; circuit &amp; raliu": "Turbo Challenge &middot; 8 tracks &middot; circuit &amp; rally","Campionat": "Championship","Sezon complet pe mai multe etape, cu puncte, clasament general și titlu la final.": "A full multi-round season with points, an overall table and a title at the end.","Modul principal": "Main mode","Cursă rapidă": "Quick race","Alegi traseul, mașina și numărul de tururi. Grilă completă de adversari.": "Pick the track, the car and the lap count. Full grid of rivals.","Contra cronometru": "Time trial","Pistă liberă, fără adversari. Doar tu și cel mai bun tur al tău.": "Empty track, no rivals. Just you and your best lap.","Comenzi": "Controls","Taste, touch și cum funcționează avariile, gripul și punctele.": "Keys, touch, and how damage, grip and points work.","Săgeți / WASD &middot; Space = frână de mână &middot; P = pauză": "Arrows / WASD &middot; Space = handbrake &middot; M = mute &middot; P = pause","Comenzi &amp; reguli": "Controls &amp; rules","Volan": "Steering","Săgeată stânga/dreapta sau A/D. Pe pietriș, zăpadă și noroi mașina alunecă — contrează din timp, nu brusc.": "Left/right arrow or A/D. On gravel, snow and mud the car slides — catch it early, not abruptly.","Accelerație": "Throttle","Săgeată sus sau W. Frână: săgeată jos sau S. Space = frână de mână, rotește spatele în viraj.": "Up arrow or W. Brake: down arrow or S. Space is the handbrake — it rotates the rear into a corner.","Avarii": "Damage","Copacii, stâncile și panourile costă scump. Peste 60% avarie pierzi din viteza maximă. Coliziunile cu adversarii doar te încetinesc.": "Trees, rocks and boards are expensive. Past 60% damage you lose top speed. Contact with rivals only slows you down.","Puncte": "Points","25-18-15-12-10-8-6-4-2-1 pentru primii zece. Etapele de raliu se aleargă solo, contra timpilor rivalilor.": "25-18-15-12-10-8-6-4-2-1 for the top ten. Rally stages are run solo, against the rivals' stage times.","Iarbă &amp; nisip": "Grass &amp; sand","În afara pistei pierzi rapid viteză și controlul. La raliu, marginile sunt mai iertătoare.": "Off the track you bleed speed and grip fast. On rally stages the verges are more forgiving.","Mobil": "Mobile","Volanul jos-stânga. Jos-dreapta: triunghiul în sus e accelerația, cel în jos frâna, HB frâna de mână. Ține telefonul pe orizontală.": "Steering bottom left. Bottom right: up triangle is throttle, down is brake, HB the handbrake. Hold the phone in landscape.","Înapoi": "Back","Alege campionatul": "Choose a championship","Alege traseul": "Choose a track","Tururi": "Laps","Continuă": "Continue","Alege mașina": "Choose a car","Dificultate": "Difficulty","Amator": "Amateur","Pro": "Pro","Legendă": "Legend","Asistență": "Assists","Sunet": "Sound","Tasta M sau butonul din dreapta sus comută între sunet complet, doar anvelope și vânt, sau tăcere.": "Press M, or the button top right, to cycle full sound, tyres and wind only, or silence.","Ajutaje de stabilitate și aderență. Legendă = model pur, fără ajutor.": "Stability and grip help. Legend is the raw model, with no help at all.","Meniu": "Menu","Start": "Start","Sezon": "Season","Etape": "Rounds","Clasament general": "Overall standings","Abandonează sezonul": "Quit the season","Următoarea etapă": "Next round","Rezultate": "Results","Pauză": "Paused","Reia cursa": "Resume","De la capăt": "Restart","Ieși în meniu": "Exit to menu","Sunet: complet": "Sound: full","Sunet: fără motor": "Sound: no engine","Sunet: oprit": "Sound: off","Rotește telefonul": "Rotate your phone","Jocul se joacă pe orizontală": "This game is played in landscape","România": "Romania","Coasta Amalfi": "Amalfi Coast","Alpi": "Alps","Merzouga": "Merzouga","Făgăraș": "Fagaras","Laponia": "Lapland","Țara Galilor": "Wales","Yokohama": "Yokohama","Circuit de start: viraje largi, o denivelare la mijloc și o linie dreaptă lungă.": "The starter circuit: open corners, one crest in the middle and a long straight.","Faleză cu palmieri, viraje strânse deasupra mării și lumină de apus.": "Palm-lined cliffs, tight corners above the sea and low evening light.","Urcare continuă, ace de păr și coborâre rapidă. Frânează devreme.": "A long climb, hairpins and a fast descent. Brake early.","Circuit urban nocturn. Ziduri aproape, chicane și lumini de neon.": "Night street circuit. Close walls, chicanes and neon.","Etapă de viteză prin deșert. Nisipul iartă puțin, dar stâncile deloc.": "A fast desert stage. The sand forgives a little, the rocks don't.","Pietriș printre brazi. Viraje oarbe, spectatori pe margine, zero spațiu de greșeală.": "Gravel through pines. Blind corners, spectators on the verge, no room for error.","Zăpadă bătătorită. Grip aproape inexistent — conduci din alunecare.": "Packed snow. Almost no grip — you drive it on the slide.","Noroi, ploaie și făgașe. Ultima etapă a sezonului de raliu.": "Mud, rain and ruts. The closing stage of the rally season.","Grup turbo cu întârziere, dar vârf de viteză uriaș. Clasicul anilor '90.": "Laggy turbo, enormous top end. The nineties classic.","Monopost. Aderență și frânare excepționale, dar fragil la contact.": "Single-seater. Exceptional grip and braking, fragile in contact.","Tracțiune integrală. Cea mai bună alegere pe pietriș, zăpadă și noroi.": "All-wheel drive. The best pick on gravel, snow and mud.","Muscle car greu. Iese lat în viraje, dar nu-l oprește nimeni pe drept.": "Heavy muscle car. Runs wide in corners, unstoppable in a straight line.","Patru circuite asfaltate. Cursă cu grilă completă la fiecare etapă.": "Four tarmac circuits. A full grid at every round.","Patru etape speciale contra cronometru. Rivalii aleargă separat — contează doar timpul.": "Four special stages against the clock. Rivals run separately — only the time counts.","Sezonul complet: opt etape, asfalt și macadam alternativ. Titlul suprem.": "The full season: eight rounds alternating tarmac and gravel. The big one.","etape": "rounds","Etapă raliu": "Rally stage","Circuit": "Circuit","Raliu": "Rally","Cursă rapidă — alege traseul": "Quick race — choose a track","Contra cronometru — alege traseul": "Time trial — choose a track","Viteză": "Top speed","Aderență": "Grip","Manevrabilitate": "Handling","Poz": "Pos","Pilot": "Driver","Timp": "Time","Diferență": "Gap","Pct": "Pts","Tu": "You","Etapă": "Round","Tip": "Type","Loc": "Result","următoarea": "next up","— timp de etapă": "— stage time","— rezultate": "— results","Cel mai bun tur": "Best lap","avarii": "damage","puncte": "points","Clasament sezon": "Season standings","Din nou": "Race again","Închide sezonul": "Close the season","etapa": "round","CAMPION! Ai câștigat titlul.": "CHAMPION! The title is yours.","Titlul merge la": "The title goes to","TUR": "LAP","Total": "Total","ETAPĂ": "STAGE","ETAPĂ SOLO": "SOLO STAGE","Ultim tur": "Last lap","AVARII": "DAMAGE","cars on grid": "cars on grid"};
 let LANG="ro";
 const I18N_NODES=[];
 const I18N_SKIP={muteBtn:1,pauseBtn:1,langBtn:1,lapCount:1,hud:1,touch:1,cv:1};
@@ -316,7 +323,7 @@ function fit(){
 }
 addEventListener("resize",fit); fit();
 document.addEventListener("visibilitychange",()=>{
-  if(document.hidden){ if(G.mode==="race") pause(); if(master&&AC) master.gain.setTargetAtTime(0,AC.currentTime,.05); }
+  if(document.hidden){ releaseAll(); if(G.mode==="race") pause(); if(master&&AC) master.gain.setTargetAtTime(0,AC.currentTime,.05); }
   else if(master&&AC&&!muted) master.gain.setTargetAtTime(.8,AC.currentTime,.05);
 });
 
@@ -508,7 +515,8 @@ function drawPaceNote(){
 }
 function drawMiniMap(){
   const M=G.mapPts; if(!M||!M.length) return;
-  const bw=158,bh=104, bx=CW-bw-14, by=CH-bh-88, pad=13;
+  const bw=158,bh=104, bx=CW-bw-14, pad=13;
+  const by=COARSE ? 60 : CH-bh-88;      // clear of the thumb controls on a phone
   ctx.save();
   ctx.globalAlpha=.66; ctx.fillStyle="#07101c"; ctx.fillRect(bx,by,bw,bh);
   ctx.globalAlpha=1;
@@ -971,16 +979,58 @@ addEventListener("keyup",e=>{
   if(k==="arrowdown"||k==="s") key.dn=false;
   if(k===" ") key.hb=false;
 });
+const HAS_PTR = typeof window!=="undefined" && !!window.PointerEvent;
+const HELD={};                      // finger id -> which control it is holding
+function pressKey(prop,id){ key[prop]=true; if(id!==undefined) HELD[id]=prop; audioInit(); }
+function releaseId(id){ const p=HELD[id]; if(p!==undefined){ key[p]=false; delete HELD[id]; } }
+function releaseAll(){ for(const id in HELD){ key[HELD[id]]=false; delete HELD[id]; } }
+
 function bindTouch(el,prop){
-  const on=e=>{e.preventDefault();key[prop]=true;audioInit();};
-  const off=e=>{e.preventDefault();key[prop]=false;};
-  el.addEventListener("touchstart",on,{passive:false});
-  el.addEventListener("touchend",off,{passive:false});
-  el.addEventListener("touchcancel",off,{passive:false});
+  if(HAS_PTR){
+    el.addEventListener("pointerdown",e=>{
+      e.preventDefault(); pressKey(prop,e.pointerId);
+      try{ el.setPointerCapture(e.pointerId); }catch(_){}
+    });
+    el.addEventListener("pointerup",e=>{ e.preventDefault(); releaseId(e.pointerId); });
+    el.addEventListener("pointercancel",e=>{ releaseId(e.pointerId); });
+  }
+  // touch fallback for anything without pointer events
+  el.addEventListener("touchstart",e=>{
+    e.preventDefault();
+    const c=e.changedTouches||[];
+    for(let i=0;i<c.length;i++) pressKey(prop,"t"+c[i].identifier);
+  },{passive:false});
+  const end=e=>{
+    e.preventDefault();
+    const c=e.changedTouches||[];
+    for(let i=0;i<c.length;i++) releaseId("t"+c[i].identifier);
+  };
+  el.addEventListener("touchend",end,{passive:false});
+  el.addEventListener("touchcancel",end,{passive:false});
 }
 bindTouch($("tL"),"l"); bindTouch($("tR"),"r"); bindTouch($("tB"),"dn");
 bindTouch($("tG"),"up"); bindTouch($("tH"),"hb");
-const isTouch = COARSE;
+
+// the release is tracked per finger at window level, so lifting off the button
+// — or sliding away from it first — always lets go of the right control
+addEventListener("pointerup",e=>releaseId(e.pointerId));
+addEventListener("pointercancel",e=>releaseId(e.pointerId));
+function winTouchEnd(e){
+  const c=e.changedTouches||[];
+  for(let i=0;i<c.length;i++) releaseId("t"+c[i].identifier);
+}
+addEventListener("touchend",winTouchEnd,{passive:true});
+addEventListener("touchcancel",winTouchEnd,{passive:true});
+addEventListener("blur",releaseAll);
+
+let isTouch = COARSE;
+// some touchscreens do not report as coarse pointers, so switch the controls
+// on the first time a finger actually touches the screen
+addEventListener("touchstart",()=>{
+  if(isTouch) return;
+  isTouch=true;
+  if(G.mode==="race") $("touch").style.display="block";
+},{passive:true});
 // iOS only starts audio inside a gesture, and only once the context is resumed
 document.addEventListener("pointerdown",()=>{ audioInit(); if(AC&&AC.state==="suspended") AC.resume(); },{passive:true});
 document.addEventListener("touchstart",()=>{ audioInit(); if(AC&&AC.state==="suspended") AC.resume(); },{passive:true});
@@ -1845,7 +1895,7 @@ $("nextRound").onclick=()=>{
 };
 
 /* ---------- pause / results nav ---------- */
-function pause(){ if(G.mode!=="race") return; G.mode="paused"; showScreen("scPause");
+function pause(){ if(G.mode!=="race") return; releaseAll(); G.mode="paused"; showScreen("scPause");
   $("hud").classList.add("hidden"); $("touch").style.display="none"; }
 function resume(){ if(G.mode!=="paused") return; G.mode="race"; showScreen(null);
   $("hud").classList.remove("hidden"); if(isTouch)$("touch").style.display="block"; last=performance.now(); }
@@ -1860,6 +1910,7 @@ $("resNext").onclick=()=>{
 };
 
 /* ---------- boot ---------- */
+if(COARSE) document.body.classList.add("touch-ui");
 snapText(document.getElementById("wrap"));
 $("langBtn").onclick=()=>{ setLang(LANG==="ro"?"en":"ro"); };
 (function(){
