@@ -99,8 +99,10 @@ tr.me td{color:var(--amber);font-weight:700}
 #tL{left:calc(14px + env(safe-area-inset-left))}
 #tR{left:calc(14px + env(safe-area-inset-left) + min(94px,22vw))}
 #tB{right:calc(14px + env(safe-area-inset-right) + min(104px,24vw))}
-#tG{right:calc(14px + env(safe-area-inset-right));border-color:rgba(255,180,0,.65);
-    width:min(96px,22vw);height:min(96px,22vw)}
+#tG{right:calc(14px + env(safe-area-inset-right));
+    width:min(104px,24vw);height:min(104px,24vw);
+    border:3px solid #ffb400;color:#ffd98a;
+    box-shadow:0 0 0 2px rgba(0,0,0,.35), 0 0 18px rgba(255,180,0,.35)}
 #tH{right:calc(14px + env(safe-area-inset-right));
     bottom:calc(20px + env(safe-area-inset-bottom) + min(104px,24vw));
     width:min(62px,15vw);height:min(62px,15vw);font-size:min(13px,3.2vw);letter-spacing:.08em}
@@ -108,8 +110,9 @@ tr.me td{color:var(--amber);font-weight:700}
 #touch>div b{line-height:1}
 #touch>div i{font-style:normal;font-size:min(10px,2.6vw);letter-spacing:.06em;
   opacity:.9;margin-top:3px;font-weight:700}
-#tG{background:rgba(90,60,0,.55)}
-#tG:active{background:rgba(255,180,0,.45)}
+#tG{background:rgba(150,100,0,.72)}
+#tG:active{background:rgba(255,180,0,.65);color:#1a1200}
+#tB{border-color:rgba(255,255,255,.5)}
 #rotate{position:absolute;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
   background:var(--ink);text-align:center;padding:24px}
 #rotate b{display:block;font-size:22px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber)}
@@ -1045,6 +1048,9 @@ let isTouch = COARSE;
 addEventListener("touchstart",()=>{
   if(isTouch) return;
   isTouch=true;
+  AUTOGAS=true;
+  document.body.classList.add("touch-ui");
+  if(typeof refreshAutoGas==="function") refreshAutoGas();
   if(G.mode==="race") $("touch").style.display="block";
 },{passive:true});
 // iOS only starts audio inside a gesture, and only once the context is resumed
@@ -1931,7 +1937,7 @@ function refreshAutoGas(){
   const a=$("autoGasBtn"), b=$("autoGasBtn2");
   if(a) a.textContent=lbl;
   if(b) b.textContent=lbl;
-  const g=$("tG"); if(g) g.style.opacity = AUTOGAS ? ".55" : "1";
+  const g=$("tG"); if(g) g.style.opacity="1";   // never dim it: it vanishes
 }
 $("autoGasBtn").onclick=()=>{ AUTOGAS=!AUTOGAS; refreshAutoGas(); };
 $("autoGasBtn2").onclick=()=>{ AUTOGAS=!AUTOGAS; refreshAutoGas(); };
