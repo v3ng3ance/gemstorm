@@ -16,15 +16,18 @@
   --dim:#7b93aa;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--ink);overflow:hidden;
+html,body{height:100%;background:var(--ink);overflow:hidden;overscroll-behavior:none;
   font-family:"Helvetica Neue",Arial,sans-serif;color:var(--paper);
   -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-canvas{display:block;image-rendering:pixelated;background:#000}
+canvas{display:block;image-rendering:pixelated;background:#000;touch-action:none}
+button{touch-action:manipulation}
 /* ---------- overlay UI ---------- */
-.screen{position:absolute;inset:0;display:none;flex-direction:column;
+.screen{position:absolute;inset:0;display:none;flex-direction:column;touch-action:pan-y;
   background:linear-gradient(180deg,#07101c 0%,#0b1a2b 60%,#07101c 100%);
-  z-index:20;overflow-y:auto;padding:clamp(14px,3vh,34px) clamp(14px,4vw,48px)}
+  z-index:20;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:calc(clamp(14px,3vh,34px) + env(safe-area-inset-top)) clamp(14px,4vw,48px)
+          calc(clamp(14px,3vh,34px) + env(safe-area-inset-bottom))}
 .screen.on{display:flex}
 .screen::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px)}
@@ -40,6 +43,7 @@ h1 .b{color:var(--amber)}
 .card:hover,.card:focus-visible{background:#14273d;border-left-color:var(--cyan);outline:none;transform:translateX(3px)}
 .card.sel{background:#173049;border-left-color:var(--cyan)}
 .card h3{font-size:16px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.tmap{float:right;width:74px;height:74px;margin:-2px -4px 4px 8px;opacity:.9}
 .card p{font-size:11.5px;color:var(--dim);margin-top:5px;line-height:1.45}
 .tag{display:inline-block;font-size:9.5px;letter-spacing:.16em;padding:2px 7px;margin-top:8px;
   border:1px solid var(--line);color:var(--cyan);text-transform:uppercase}
@@ -84,19 +88,36 @@ tr.me td{color:var(--amber);font-weight:700}
 #hDmg i{display:block;height:5px;background:var(--red);margin-top:4px}
 .delta.up{color:var(--red)}.delta.dn{color:#4ade80}
 /* ---------- touch ---------- */
-#touch{position:absolute;inset:0;z-index:12;display:none}
-#touch div{position:absolute;bottom:14px;width:78px;height:78px;border-radius:50%;
-  border:2px solid rgba(49,229,255,.4);background:rgba(7,16,28,.55);color:var(--paper);
-  display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800}
-#tL{left:14px}#tR{left:106px}#tB{right:106px}#tG{right:14px;border-color:rgba(255,180,0,.6)}
-#pauseBtn,#muteBtn,#langBtn{position:absolute;top:12px;z-index:22;pointer-events:auto;
+#touch{position:absolute;inset:0;z-index:12;display:none;touch-action:none}
+#touch div{position:absolute;border-radius:50%;
+  border:2px solid rgba(49,229,255,.45);background:rgba(7,16,28,.52);color:var(--paper);
+  display:flex;align-items:center;justify-content:center;font-weight:800;
+  width:min(84px,20vw);height:min(84px,20vw);font-size:min(26px,6vw);
+  bottom:calc(16px + env(safe-area-inset-bottom))}
+#tL{left:calc(14px + env(safe-area-inset-left))}
+#tR{left:calc(14px + env(safe-area-inset-left) + min(94px,22vw))}
+#tB{right:calc(14px + env(safe-area-inset-right) + min(104px,24vw))}
+#tG{right:calc(14px + env(safe-area-inset-right));border-color:rgba(255,180,0,.65);
+    width:min(96px,22vw);height:min(96px,22vw)}
+#tH{right:calc(14px + env(safe-area-inset-right));
+    bottom:calc(20px + env(safe-area-inset-bottom) + min(104px,24vw));
+    width:min(62px,15vw);height:min(62px,15vw);font-size:min(13px,3.2vw);letter-spacing:.08em}
+#touch div:active{background:rgba(49,229,255,.3)}
+#rotate{position:absolute;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+  background:var(--ink);text-align:center;padding:24px}
+#rotate b{display:block;font-size:22px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber)}
+#rotate span{display:block;margin-top:10px;font-size:12px;letter-spacing:.2em;color:var(--dim)}
+@media (orientation:portrait) and (pointer:coarse){#rotate{display:flex}}
+#pauseBtn,#muteBtn,#langBtn,#fsBtn{position:absolute;z-index:22;pointer-events:auto;
+  top:calc(12px + env(safe-area-inset-top));
   background:rgba(7,16,28,.72);border:1px solid var(--line);color:var(--paper);
   padding:8px 12px;font-size:12px;letter-spacing:.2em;cursor:pointer;font-family:inherit;
   min-width:40px;line-height:1}
-#pauseBtn{right:12px}
-#muteBtn{right:60px}
-#langBtn{right:108px}
-#pauseBtn:hover,#muteBtn:hover,#langBtn:hover{border-color:var(--cyan);color:var(--cyan)}
+#pauseBtn{right:calc(12px + env(safe-area-inset-right))}
+#muteBtn{right:calc(60px + env(safe-area-inset-right))}
+#langBtn{right:calc(108px + env(safe-area-inset-right))}
+#fsBtn{right:calc(156px + env(safe-area-inset-right));display:none}
+#pauseBtn:hover,#muteBtn:hover,#langBtn:hover,#fsBtn:hover{border-color:var(--cyan);color:var(--cyan)}
 .hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){.card{transition:none}}
 </style>
@@ -113,13 +134,15 @@ tr.me td{color:var(--amber);font-weight:700}
     <div class="hbox" id="hSpeed"><b>0</b><s>km/h</s></div>
     <div id="hMsg"></div>
   </div>
+  <button id="fsBtn" title="Fullscreen">&#9974;</button>
   <button id="langBtn" title="Language">EN</button>
   <button id="muteBtn" title="M">♪</button>
   <button id="pauseBtn" class="hidden">II</button>
   <div id="touch">
     <div id="tL">&#9664;</div><div id="tR">&#9654;</div>
-    <div id="tB">B</div><div id="tG">G</div>
+    <div id="tB">&#9679;</div><div id="tG">&#9658;</div><div id="tH">HB</div>
   </div>
+  <div id="rotate"><div><b>Rotește telefonul</b><span>Jocul se joacă pe orizontală</span></div></div>
 
   <!-- MENU -->
   <div class="screen on" id="scMenu">
@@ -144,6 +167,7 @@ tr.me td{color:var(--amber);font-weight:700}
       <div class="card" style="cursor:default"><h3>Avarii</h3><p>Copacii, stâncile și panourile costă scump. Peste 60% avarie pierzi din viteza maximă. Coliziunile cu adversarii doar te încetinesc.</p></div>
       <div class="card" style="cursor:default"><h3>Puncte</h3><p>25-18-15-12-10-8-6-4-2-1 pentru primii zece. Etapele de raliu se aleargă solo, contra timpilor rivalilor.</p></div>
       <div class="card" style="cursor:default"><h3>Iarbă &amp; nisip</h3><p>În afara pistei pierzi rapid viteză și controlul. La raliu, marginile sunt mai iertătoare.</p></div>
+      <div class="card" style="cursor:default"><h3>Asistență</h3><p>Ajutaje de stabilitate și aderență. Legendă = model pur, fără ajutor.</p></div>
       <div class="card" style="cursor:default"><h3>Mobil</h3><p>Butoane pe ecran: stânga, dreapta, frână, gaz. Ține telefonul pe orizontală.</p></div>
     </div>
     <div class="row"><button class="btn ghost" data-go="menu">Înapoi</button></div>
@@ -237,7 +261,7 @@ tr.me td{color:var(--amber);font-weight:700}
    ============================================================ */
 
 /* ---------- i18n ---------- */
-const DICT={"Turbo Challenge &middot; 8 trasee &middot; circuit &amp; raliu": "Turbo Challenge &middot; 8 tracks &middot; circuit &amp; rally","Campionat": "Championship","Sezon complet pe mai multe etape, cu puncte, clasament general și titlu la final.": "A full multi-round season with points, an overall table and a title at the end.","Modul principal": "Main mode","Cursă rapidă": "Quick race","Alegi traseul, mașina și numărul de tururi. Grilă completă de adversari.": "Pick the track, the car and the lap count. Full grid of rivals.","Contra cronometru": "Time trial","Pistă liberă, fără adversari. Doar tu și cel mai bun tur al tău.": "Empty track, no rivals. Just you and your best lap.","Comenzi": "Controls","Taste, touch și cum funcționează avariile, gripul și punctele.": "Keys, touch, and how damage, grip and points work.","Săgeți / WASD &middot; Space = frână de mână &middot; P = pauză": "Arrows / WASD &middot; Space = handbrake &middot; M = mute &middot; P = pause","Comenzi &amp; reguli": "Controls &amp; rules","Volan": "Steering","Săgeată stânga/dreapta sau A/D. Pe pietriș, zăpadă și noroi mașina alunecă — contrează din timp, nu brusc.": "Left/right arrow or A/D. On gravel, snow and mud the car slides — catch it early, not abruptly.","Accelerație": "Throttle","Săgeată sus sau W. Frână: săgeată jos sau S. Space = frână de mână, rotește spatele în viraj.": "Up arrow or W. Brake: down arrow or S. Space is the handbrake — it rotates the rear into a corner.","Avarii": "Damage","Copacii, stâncile și panourile costă scump. Peste 60% avarie pierzi din viteza maximă. Coliziunile cu adversarii doar te încetinesc.": "Trees, rocks and boards are expensive. Past 60% damage you lose top speed. Contact with rivals only slows you down.","Puncte": "Points","25-18-15-12-10-8-6-4-2-1 pentru primii zece. Etapele de raliu se aleargă solo, contra timpilor rivalilor.": "25-18-15-12-10-8-6-4-2-1 for the top ten. Rally stages are run solo, against the rivals' stage times.","Iarbă &amp; nisip": "Grass &amp; sand","În afara pistei pierzi rapid viteză și controlul. La raliu, marginile sunt mai iertătoare.": "Off the track you bleed speed and grip fast. On rally stages the verges are more forgiving.","Mobil": "Mobile","Butoane pe ecran: stânga, dreapta, frână, gaz. Ține telefonul pe orizontală.": "On-screen buttons: left, right, brake, throttle. Hold the phone in landscape.","Înapoi": "Back","Alege campionatul": "Choose a championship","Alege traseul": "Choose a track","Tururi": "Laps","Continuă": "Continue","Alege mașina": "Choose a car","Dificultate": "Difficulty","Amator": "Amateur","Pro": "Pro","Legendă": "Legend","Meniu": "Menu","Start": "Start","Sezon": "Season","Etape": "Rounds","Clasament general": "Overall standings","Abandonează sezonul": "Quit the season","Următoarea etapă": "Next round","Rezultate": "Results","Pauză": "Paused","Reia cursa": "Resume","De la capăt": "Restart","Ieși în meniu": "Exit to menu","Sunet: pornit": "Sound: on","Sunet: oprit": "Sound: off","România": "Romania","Coasta Amalfi": "Amalfi Coast","Alpi": "Alps","Merzouga": "Merzouga","Făgăraș": "Fagaras","Laponia": "Lapland","Țara Galilor": "Wales","Yokohama": "Yokohama","Circuit de start: viraje largi, o denivelare la mijloc și o linie dreaptă lungă.": "The starter circuit: open corners, one crest in the middle and a long straight.","Faleză cu palmieri, viraje strânse deasupra mării și lumină de apus.": "Palm-lined cliffs, tight corners above the sea and low evening light.","Urcare continuă, ace de păr și coborâre rapidă. Frânează devreme.": "A long climb, hairpins and a fast descent. Brake early.","Circuit urban nocturn. Ziduri aproape, chicane și lumini de neon.": "Night street circuit. Close walls, chicanes and neon.","Etapă de viteză prin deșert. Nisipul iartă puțin, dar stâncile deloc.": "A fast desert stage. The sand forgives a little, the rocks don't.","Pietriș printre brazi. Viraje oarbe, spectatori pe margine, zero spațiu de greșeală.": "Gravel through pines. Blind corners, spectators on the verge, no room for error.","Zăpadă bătătorită. Grip aproape inexistent — conduci din alunecare.": "Packed snow. Almost no grip — you drive it on the slide.","Noroi, ploaie și făgașe. Ultima etapă a sezonului de raliu.": "Mud, rain and ruts. The closing stage of the rally season.","Grup turbo cu întârziere, dar vârf de viteză uriaș. Clasicul anilor '90.": "Laggy turbo, enormous top end. The nineties classic.","Monopost. Aderență și frânare excepționale, dar fragil la contact.": "Single-seater. Exceptional grip and braking, fragile in contact.","Tracțiune integrală. Cea mai bună alegere pe pietriș, zăpadă și noroi.": "All-wheel drive. The best pick on gravel, snow and mud.","Muscle car greu. Iese lat în viraje, dar nu-l oprește nimeni pe drept.": "Heavy muscle car. Runs wide in corners, unstoppable in a straight line.","Patru circuite asfaltate. Cursă cu grilă completă la fiecare etapă.": "Four tarmac circuits. A full grid at every round.","Patru etape speciale contra cronometru. Rivalii aleargă separat — contează doar timpul.": "Four special stages against the clock. Rivals run separately — only the time counts.","Sezonul complet: opt etape, asfalt și macadam alternativ. Titlul suprem.": "The full season: eight rounds alternating tarmac and gravel. The big one.","etape": "rounds","Etapă raliu": "Rally stage","Circuit": "Circuit","Raliu": "Rally","Cursă rapidă — alege traseul": "Quick race — choose a track","Contra cronometru — alege traseul": "Time trial — choose a track","Viteză": "Top speed","Aderență": "Grip","Manevrabilitate": "Handling","Poz": "Pos","Pilot": "Driver","Timp": "Time","Diferență": "Gap","Pct": "Pts","Tu": "You","Etapă": "Round","Tip": "Type","Loc": "Result","următoarea": "next up","— timp de etapă": "— stage time","— rezultate": "— results","Cel mai bun tur": "Best lap","avarii": "damage","puncte": "points","Clasament sezon": "Season standings","Din nou": "Race again","Închide sezonul": "Close the season","etapa": "round","CAMPION! Ai câștigat titlul.": "CHAMPION! The title is yours.","Titlul merge la": "The title goes to","TUR": "LAP","Total": "Total","ETAPĂ": "STAGE","ETAPĂ SOLO": "SOLO STAGE","Ultim tur": "Last lap","AVARII": "DAMAGE","cars on grid": "cars on grid"};
+const DICT={"Turbo Challenge &middot; 8 trasee &middot; circuit &amp; raliu": "Turbo Challenge &middot; 8 tracks &middot; circuit &amp; rally","Campionat": "Championship","Sezon complet pe mai multe etape, cu puncte, clasament general și titlu la final.": "A full multi-round season with points, an overall table and a title at the end.","Modul principal": "Main mode","Cursă rapidă": "Quick race","Alegi traseul, mașina și numărul de tururi. Grilă completă de adversari.": "Pick the track, the car and the lap count. Full grid of rivals.","Contra cronometru": "Time trial","Pistă liberă, fără adversari. Doar tu și cel mai bun tur al tău.": "Empty track, no rivals. Just you and your best lap.","Comenzi": "Controls","Taste, touch și cum funcționează avariile, gripul și punctele.": "Keys, touch, and how damage, grip and points work.","Săgeți / WASD &middot; Space = frână de mână &middot; P = pauză": "Arrows / WASD &middot; Space = handbrake &middot; M = mute &middot; P = pause","Comenzi &amp; reguli": "Controls &amp; rules","Volan": "Steering","Săgeată stânga/dreapta sau A/D. Pe pietriș, zăpadă și noroi mașina alunecă — contrează din timp, nu brusc.": "Left/right arrow or A/D. On gravel, snow and mud the car slides — catch it early, not abruptly.","Accelerație": "Throttle","Săgeată sus sau W. Frână: săgeată jos sau S. Space = frână de mână, rotește spatele în viraj.": "Up arrow or W. Brake: down arrow or S. Space is the handbrake — it rotates the rear into a corner.","Avarii": "Damage","Copacii, stâncile și panourile costă scump. Peste 60% avarie pierzi din viteza maximă. Coliziunile cu adversarii doar te încetinesc.": "Trees, rocks and boards are expensive. Past 60% damage you lose top speed. Contact with rivals only slows you down.","Puncte": "Points","25-18-15-12-10-8-6-4-2-1 pentru primii zece. Etapele de raliu se aleargă solo, contra timpilor rivalilor.": "25-18-15-12-10-8-6-4-2-1 for the top ten. Rally stages are run solo, against the rivals' stage times.","Iarbă &amp; nisip": "Grass &amp; sand","În afara pistei pierzi rapid viteză și controlul. La raliu, marginile sunt mai iertătoare.": "Off the track you bleed speed and grip fast. On rally stages the verges are more forgiving.","Mobil": "Mobile","Butoane pe ecran: stânga, dreapta, frână, gaz. Ține telefonul pe orizontală.": "On-screen buttons: left, right, brake, throttle. Hold the phone in landscape.","Înapoi": "Back","Alege campionatul": "Choose a championship","Alege traseul": "Choose a track","Tururi": "Laps","Continuă": "Continue","Alege mașina": "Choose a car","Dificultate": "Difficulty","Amator": "Amateur","Pro": "Pro","Legendă": "Legend","Asistență": "Assists","Ajutaje de stabilitate și aderență. Legendă = model pur, fără ajutor.": "Stability and grip help. Legend is the raw model, with no help at all.","Meniu": "Menu","Start": "Start","Sezon": "Season","Etape": "Rounds","Clasament general": "Overall standings","Abandonează sezonul": "Quit the season","Următoarea etapă": "Next round","Rezultate": "Results","Pauză": "Paused","Reia cursa": "Resume","De la capăt": "Restart","Ieși în meniu": "Exit to menu","Sunet: pornit": "Sound: on","Sunet: oprit": "Sound: off","Rotește telefonul": "Rotate your phone","Jocul se joacă pe orizontală": "This game is played in landscape","România": "Romania","Coasta Amalfi": "Amalfi Coast","Alpi": "Alps","Merzouga": "Merzouga","Făgăraș": "Fagaras","Laponia": "Lapland","Țara Galilor": "Wales","Yokohama": "Yokohama","Circuit de start: viraje largi, o denivelare la mijloc și o linie dreaptă lungă.": "The starter circuit: open corners, one crest in the middle and a long straight.","Faleză cu palmieri, viraje strânse deasupra mării și lumină de apus.": "Palm-lined cliffs, tight corners above the sea and low evening light.","Urcare continuă, ace de păr și coborâre rapidă. Frânează devreme.": "A long climb, hairpins and a fast descent. Brake early.","Circuit urban nocturn. Ziduri aproape, chicane și lumini de neon.": "Night street circuit. Close walls, chicanes and neon.","Etapă de viteză prin deșert. Nisipul iartă puțin, dar stâncile deloc.": "A fast desert stage. The sand forgives a little, the rocks don't.","Pietriș printre brazi. Viraje oarbe, spectatori pe margine, zero spațiu de greșeală.": "Gravel through pines. Blind corners, spectators on the verge, no room for error.","Zăpadă bătătorită. Grip aproape inexistent — conduci din alunecare.": "Packed snow. Almost no grip — you drive it on the slide.","Noroi, ploaie și făgașe. Ultima etapă a sezonului de raliu.": "Mud, rain and ruts. The closing stage of the rally season.","Grup turbo cu întârziere, dar vârf de viteză uriaș. Clasicul anilor '90.": "Laggy turbo, enormous top end. The nineties classic.","Monopost. Aderență și frânare excepționale, dar fragil la contact.": "Single-seater. Exceptional grip and braking, fragile in contact.","Tracțiune integrală. Cea mai bună alegere pe pietriș, zăpadă și noroi.": "All-wheel drive. The best pick on gravel, snow and mud.","Muscle car greu. Iese lat în viraje, dar nu-l oprește nimeni pe drept.": "Heavy muscle car. Runs wide in corners, unstoppable in a straight line.","Patru circuite asfaltate. Cursă cu grilă completă la fiecare etapă.": "Four tarmac circuits. A full grid at every round.","Patru etape speciale contra cronometru. Rivalii aleargă separat — contează doar timpul.": "Four special stages against the clock. Rivals run separately — only the time counts.","Sezonul complet: opt etape, asfalt și macadam alternativ. Titlul suprem.": "The full season: eight rounds alternating tarmac and gravel. The big one.","etape": "rounds","Etapă raliu": "Rally stage","Circuit": "Circuit","Raliu": "Rally","Cursă rapidă — alege traseul": "Quick race — choose a track","Contra cronometru — alege traseul": "Time trial — choose a track","Viteză": "Top speed","Aderență": "Grip","Manevrabilitate": "Handling","Poz": "Pos","Pilot": "Driver","Timp": "Time","Diferență": "Gap","Pct": "Pts","Tu": "You","Etapă": "Round","Tip": "Type","Loc": "Result","următoarea": "next up","— timp de etapă": "— stage time","— rezultate": "— results","Cel mai bun tur": "Best lap","avarii": "damage","puncte": "points","Clasament sezon": "Season standings","Din nou": "Race again","Închide sezonul": "Close the season","etapa": "round","CAMPION! Ai câștigat titlul.": "CHAMPION! The title is yours.","Titlul merge la": "The title goes to","TUR": "LAP","Total": "Total","ETAPĂ": "STAGE","ETAPĂ SOLO": "SOLO STAGE","Ultim tur": "Last lap","AVARII": "DAMAGE","cars on grid": "cars on grid"};
 let LANG="ro";
 const I18N_NODES=[];
 const I18N_SKIP={muteBtn:1,pauseBtn:1,langBtn:1,lapCount:1,hud:1,touch:1,cv:1};
@@ -281,7 +305,10 @@ function fmtGap(g){ return (g>=0?"+":"")+g.toFixed(2); }
 /* ---------- canvas ---------- */
 const CW=1024, CH=576;
 const cv=$("cv"), ctx=cv.getContext("2d",{alpha:false});
-cv.width=CW; cv.height=CH;
+const COARSE = (matchMedia("(pointer:coarse)").matches) || Math.min(innerWidth,innerHeight)<680;
+const QLT = COARSE ? .68 : 1;              // fill rate is the bottleneck on phones
+cv.width=Math.round(CW*QLT); cv.height=Math.round(CH*QLT);
+ctx.setTransform(QLT,0,0,QLT,0,0);
 function fit(){
   const w=innerWidth, h=innerHeight, r=Math.min(w/CW,h/CH);
   cv.style.width=(CW*r)+"px"; cv.style.height=(CH*r)+"px";
@@ -296,34 +323,59 @@ document.addEventListener("visibilitychange",()=>{
 const SEG=200, RUMBLE=3, ROADW=2000;
 const CAM_H=1100, FOV=100, CAM_D=1/Math.tan((FOV/2)*Math.PI/180);
 const PLAYER_Z=CAM_H*CAM_D;
-const DRAW=260;
+let DRAW=260;
+if(COARSE) DRAW=165;                       // shorter draw distance on mobile
 const UPP_CAR=4.15;               // world units per sprite pixel — vehicles
 const UPP_SCEN=9.0;               // world units per sprite pixel — scenery
 const PLAYER_W=156*UPP_CAR/ROADW, CAR_W=PLAYER_W;   // 156px = visible body width
 const MAXSPEED=SEG*60;           // units / second, 1 segment per 60Hz frame
+
+/* ---------- vehicle physics constants ----------
+   A_LAT comes from a corner-speed ladder: an EASY bend is flat out, a MEDIUM
+   one needs a small lift, HARD ~70% and SAVAGE ~60% of top speed.            */
+const A_LAT   = 12400;            // peak lateral acceleration, world units/s^2
+const ACC0    = MAXSPEED/1.55;    // reference longitudinal force
+const WHEELB  = 900;              // wheelbase in world units (~2.7 m)
+const STEER_MAX = .62;            // full lock at the front wheels, radians
+const STEER_REF = 2100;           // speed at which usable lock has halved
+const LAT_DAMP = 4.2;             // how hard the tyres resist sliding sideways
+let AI_CORNER=1.0, AI_STRAIGHT=1.0;             // rivals obey the same limits, scaled by skill
+const ASSIST  = [.45,.20,0];      // grip + settling help by difficulty (Legend is raw)
+const GEARF   = [1.00,.76,.60,.485,.40,.335];   // tractive force by gear
+const GEARTOP = [.17,.33,.48,.64,.82,1.00];     // top of each gear, fraction of vmax
+function gearIndex(fr){ for(let i=0;i<6;i++) if(fr<=GEARTOP[i]) return i; return 5; }
+function rpmFrac(fr,g){ const lo=g?GEARTOP[g-1]:0; return clamp((fr-lo)/(GEARTOP[g]-lo),0,1); }
+function cornerSpeed(curve,mu){   // the fastest you can hold a bend of this radius
+  const c=Math.abs(curve);
+  return c<.05 ? 1e9 : Math.sqrt(A_LAT*(mu||1)*SEG*SEG/c);
+}
+function playerMu(){              // grip the player's car has on this surface
+  const th=THEMES[G.track.theme];
+  return th.grip*G.car.grip*(1-clamp(G.damage-.5,0,.5)*.30)*(1+ASSIST[G.diff]);
+}
 
 /* ---------- palettes ---------- */
 const THEMES={
   tarmac:{ sky:["#1b4f8f","#7fc4ff","#cfe9ff"], fog:"#9fd0f0",
     light:{road:"#6b6b6b",grass:"#3f8b3a",rumble:"#e8e8e8",lane:"#efefef"},
     dark :{road:"#666666",grass:"#39812f",rumble:"#c0392b",lane:"#666666"},
-    scen:["tree","tree","sign","stand","tree"], grip:1.0, off:"grass"},
+    scen:["tree","tree","tree","stand","tree","tree"], grip:1.0, off:"grass"},
   coast:{ sky:["#3a1e5c","#ff7b54","#ffd08a"], fog:"#ffb27a",
     light:{road:"#5f5f66",grass:"#c9a86a",rumble:"#f4f4f4",lane:"#f4f4f4"},
     dark :{road:"#5a5a61",grass:"#bd9d62",rumble:"#d84a3a",lane:"#5a5a61"},
-    scen:["palm","palm","sign","palm","stand"], grip:1.0, off:"sand"},
+    scen:["palm","palm","palm","palm","stand","palm"], grip:1.0, off:"sand"},
   night:{ sky:["#05060f","#0b1030","#1b2a5e"], fog:"#0b1030",
     light:{road:"#4a4a52",grass:"#12162b",rumble:"#f7d84a",lane:"#f7f7f7"},
     dark :{road:"#45454d",grass:"#0e1224",rumble:"#2b3350",lane:"#45454d"},
-    scen:["tower","tower","sign","tower","lamp"], grip:.94, off:"grass"},
+    scen:["tower","tower","lamp","tower","lamp","tower"], grip:.94, off:"grass"},
   mountain:{ sky:["#123a52","#5fa8c8","#dff2ff"], fog:"#bcdcea",
     light:{road:"#6d6d70",grass:"#2f6b4f",rumble:"#ffffff",lane:"#ffffff"},
     dark :{road:"#666669",grass:"#2a6046",rumble:"#c0392b",lane:"#666669"},
-    scen:["pine","pine","rock","pine","sign"], grip:.97, off:"grass"},
+    scen:["pine","pine","rock","pine","pine","rock"], grip:.97, off:"grass"},
   desert:{ sky:["#8a4b12","#e08a3c","#ffe1a8"], fog:"#e9bd82",
     light:{road:"#7a6a55",grass:"#d9b878",rumble:"#f2f2f2",lane:"#f2f2f2"},
     dark :{road:"#73644f",grass:"#cdac6d",rumble:"#b4462f",lane:"#73644f"},
-    scen:["cactus","rock","cactus","sign","rock"], grip:.88, off:"sand", rally:true},
+    scen:["cactus","rock","cactus","rock","cactus","rock"], grip:.88, off:"sand", rally:true},
   forest:{ sky:["#2b3a2a","#7d9b6e","#cfd9c2"], fog:"#a8b79b",
     light:{road:"#7c6a52",grass:"#2e5a2a",rumble:"#e6e0c8",lane:null},
     dark :{road:"#73624b",grass:"#295024",rumble:"#8b6b3a",lane:null},
@@ -376,6 +428,103 @@ function makeBuilder(theme){
     rollers:(n=L.LONG)=>{ addRoad(n,n,n,0,HI.LOW,theme); addRoad(n,n,n,0,-HI.LOW,theme); }
   };
   return b;
+}
+
+/* ---------- track map ---------- */
+function computePath(segs,close){
+  let sum=0; for(const sg of segs) sum+=sg.curve;
+  let k = (close && Math.abs(sum)>1) ? clamp(2*Math.PI/Math.abs(sum),.0008,.02) : .0035;
+  let ang=0,x=0,y=0; const pts=[];
+  for(let i=0;i<segs.length;i++){
+    ang += segs[i].curve*k;
+    x += Math.sin(ang); y += Math.cos(ang);
+    if(i%5===0) pts.push([x,y]);
+  }
+  if(close && pts.length>3){                       // pull the loop shut
+    const n=pts.length-1, dx=pts[n][0]-pts[0][0], dy=pts[n][1]-pts[0][1];
+    for(let i=0;i<=n;i++){ pts[i][0]-=dx*i/n; pts[i][1]-=dy*i/n; }
+  }
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+  for(const q of pts){ x0=Math.min(x0,q[0]); x1=Math.max(x1,q[0]);
+                       y0=Math.min(y0,q[1]); y1=Math.max(y1,q[1]); }
+  const sc=Math.max(x1-x0,y1-y0)||1;
+  const ox=(sc-(x1-x0))/2, oy=(sc-(y1-y0))/2;
+  return pts.map(q=>[(q[0]-x0+ox)/sc, (q[1]-y0+oy)/sc]);
+}
+const MAPCACHE={};
+function trackPath(t){
+  if(MAPCACHE[t.id]) return MAPCACHE[t.id];
+  const sSeg=segments, sLen=trackLength, sIdeal=G.idealLap;
+  buildTrack(t);
+  const pts=computePath(segments,!t.rally);
+  segments=sSeg; trackLength=sLen; G.idealLap=sIdeal;
+  MAPCACHE[t.id]=pts; return pts;
+}
+function trackMapSVG(t){
+  const pts=trackPath(t), W=104,H=104,pad=8;
+  const d=pts.map((q,i)=>(i?"L":"M")+(pad+q[0]*(W-2*pad)).toFixed(1)+" "+
+                                     (pad+q[1]*(H-2*pad)).toFixed(1)).join(" ");
+  const s0=pts[0], sx=(pad+s0[0]*(W-2*pad)).toFixed(1), sy=(pad+s0[1]*(H-2*pad)).toFixed(1);
+  return `<svg class="tmap" viewBox="0 0 ${W} ${H}" aria-hidden="true">`+
+    `<path d="${d}" fill="none" stroke="#1d3a55" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>`+
+    `<path d="${d}" fill="none" stroke="${t.rally?"#ffb400":"#31e5ff"}" stroke-width="2.4" `+
+    `stroke-linejoin="round" stroke-linecap="round"/>`+
+    `<circle cx="${sx}" cy="${sy}" r="3.6" fill="#fff"/></svg>`;
+}
+function drawPaceNote(){
+  if(!G.started||G.finished) return;
+  const seg=findSegment(G.position+PLAYER_Z);
+  let c=0,at=0;
+  for(let k=4;k<110;k++){
+    const sg=segments[(seg.index+k)%segments.length];
+    if(Math.abs(sg.curve)>Math.abs(c)){ c=sg.curve; at=k; }
+  }
+  if(Math.abs(c)<1.2) return;
+  const sev=clamp(Math.round(Math.abs(c)/1.6),1,5);
+  const vlim=cornerSpeed(c,playerMu()), over=G.speed/vlim;
+  const col = over>1.20 ? "#ff3b30" : (over>1.02 ? "#ffb400" : "#4ade80");
+  const dir = c>0?1:-1;
+  const cx=CW/2, cy=52, gap=19;
+  ctx.save();
+  ctx.globalAlpha=clamp(1.15-at/110,.25,1);
+  for(let i=0;i<sev;i++){
+    const x=cx+dir*(i-(sev-1)/2)*gap;
+    ctx.beginPath();
+    ctx.moveTo(x-dir*8,cy-13); ctx.lineTo(x+dir*7,cy); ctx.lineTo(x-dir*8,cy+13);
+    ctx.lineWidth=5; ctx.strokeStyle="#07101c"; ctx.lineJoin="round"; ctx.stroke();
+    ctx.lineWidth=3; ctx.strokeStyle=col; ctx.stroke();
+  }
+  const bw=110, bx=cx-bw/2, by=cy+22;
+  ctx.globalAlpha=.85;
+  ctx.fillStyle="rgba(7,16,28,.7)"; ctx.fillRect(bx,by,bw,5);
+  ctx.fillStyle=col; ctx.fillRect(bx,by,bw*clamp(1-at/110,0,1),5);
+  ctx.restore();
+}
+function drawMiniMap(){
+  const M=G.mapPts; if(!M||!M.length) return;
+  const bw=158,bh=104, bx=CW-bw-14, by=CH-bh-88, pad=13;
+  ctx.save();
+  ctx.globalAlpha=.66; ctx.fillStyle="#07101c"; ctx.fillRect(bx,by,bw,bh);
+  ctx.globalAlpha=1;
+  ctx.strokeStyle="rgba(49,229,255,.30)"; ctx.lineWidth=1;
+  ctx.strokeRect(bx+.5,by+.5,bw-1,bh-1);
+  const px=q=>bx+pad+q[0]*(bw-2*pad), py=q=>by+pad+q[1]*(bh-2*pad);
+  ctx.beginPath();
+  for(let i=0;i<M.length;i++){ const X=px(M[i]),Y=py(M[i]); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }
+  ctx.strokeStyle="#24435f"; ctx.lineWidth=5.5; ctx.lineJoin="round"; ctx.lineCap="round"; ctx.stroke();
+  ctx.strokeStyle=G.track&&G.track.rally?"#8a6a20":"#1f6b80"; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle="#ffffff";
+  ctx.fillRect(px(M[0])-2.5,py(M[0])-2.5,5,5);
+  for(const c of G.cars){
+    const i=Math.floor(c.z/SEG/5)%M.length;
+    ctx.fillStyle=c.color;
+    ctx.beginPath(); ctx.arc(px(M[i]),py(M[i]),2.6,0,7); ctx.fill();
+  }
+  const mi=Math.floor(G.position/SEG/5)%M.length;
+  ctx.fillStyle="#ffb400";
+  ctx.beginPath(); ctx.arc(px(M[mi]),py(M[mi]),4.4,0,7); ctx.fill();
+  ctx.strokeStyle="#07101c"; ctx.lineWidth=1.4; ctx.stroke();
+  ctx.restore();
 }
 
 /* ---------- procedural sprites ---------- */
@@ -555,15 +704,15 @@ function buildMesh(type){
   });
   if(M.wing)  addWing(F,M.wing);
   if(M.fwing) addWing(F,M.fwing);
-  const rz=M.sec[0][0]-.04, rw=M.sec[0][1];
+  const rz=M.sec[0][0]-.05, rw=M.sec[0][1];
   if(M.lights){
-    F.push({v:quad(-rw*.84,-rw*.30,.56,.74,rz),m:"light"});
-    F.push({v:quad( rw*.30, rw*.84,.56,.74,rz),m:"light"});
-    F.push({v:quad(-.22,.22,.38,.52,rz),m:"plate"});
+    F.push({v:quad(-rw*.84,-rw*.30,.56,.74,rz),m:"light",decal:1});
+    F.push({v:quad( rw*.30, rw*.84,.56,.74,rz),m:"light",decal:1});
+    F.push({v:quad(-.22,.22,.38,.52,rz),m:"plate",decal:1});
   }
-  F.push({v:quad(-rw*.92,rw*.92,.24,.36,rz),m:"under"});
-  F.push({v:quad(-rw*.34,-rw*.12,.30,.40,rz-.03),m:"pipe"});
-  F.push({v:quad( rw*.12, rw*.34,.30,.40,rz-.03),m:"pipe"});
+  F.push({v:quad(-rw*.92,rw*.92,.24,.36,rz),m:"under",decal:1});
+  F.push({v:quad(-rw*.34,-rw*.12,.30,.40,rz-.03),m:"pipe",decal:1});
+  F.push({v:quad( rw*.12, rw*.34,.30,.40,rz-.03),m:"pipe",decal:1});
   return F;
 }
 
@@ -598,12 +747,22 @@ function renderCar(color,yaw,type,brake){
     const k=P3.length; mx/=k; my/=k; mz/=k;
     if(n[0]*mx + n[1]*(my-.70) + n[2]*mz < 0) n=[-n[0],-n[1],-n[2]];
     const lit=clamp(.40+.70*Math.max(0,n[0]*LIGHT[0]+n[1]*LIGHT[1]+n[2]*LIGHT[2]),0,1.2);
-    polys.push({S:S,d:d,m:f.m,lit:lit});
+    polys.push({S:S,d:d,m:f.m,lit:lit,decal:f.decal});
   }
-  polys.sort((a,b)=>b.d-a.d);
-  return mk(CARCV.w,CARCV.h,function(g){
-    g.fillStyle="rgba(0,0,0,.32)";
-    g.beginPath(); g.ellipse(CARCV.cx+yaw*22, CARCV.h-7, CARCV.w*.27, CARCV.h*.055, 0,0,7); g.fill();
+  // rear decals always paint on top of the bodywork, whatever the yaw angle
+  polys.sort((a,b)=>(a.decal?1:0)-(b.decal?1:0) || b.d-a.d);
+  // where the tyres actually meet the road, in sprite pixels
+  let minX=1e9,maxX=-1e9,maxY=-1e9;
+  for(const p of polys) for(const q of p.S){
+    if(q[0]<minX) minX=q[0]; if(q[0]>maxX) maxX=q[0]; if(q[1]>maxY) maxY=q[1];
+  }
+  const cnv = mk(CARCV.w,CARCV.h,function(g){
+    // contact shadow, hugging the wheels so the car sits on the road
+    const cxm=(minX+maxX)/2, rx=(maxX-minX)*.44;
+    g.fillStyle="rgba(0,0,0,.20)";
+    g.beginPath(); g.ellipse(cxm,maxY-2,rx,5.5,0,0,7); g.fill();
+    g.fillStyle="rgba(0,0,0,.42)";
+    g.beginPath(); g.ellipse(cxm,maxY-2,rx*.74,3.4,0,0,7); g.fill();
     for(const p of polys){
       let col;
       switch(p.m){
@@ -628,6 +787,8 @@ function renderCar(color,yaw,type,brake){
       }
     }
   });
+  cnv.contact = maxY/CARCV.h;   // fraction of sprite height down to the tyres
+  return cnv;
 }
 
 const carCache={};
@@ -760,6 +921,7 @@ const G={
   season:null,
   // race runtime
   position:0, playerX:0, speed:0, lateral:0, yawVis:0, rollV:0, pitchV:0,
+  psi:0, slide:0, gear:0, rpm:0, shiftT:0, steerPos:0, vLat:0,
   lap:0, lapTime:0, raceTime:0, best:null, lastLap:null, lapTimes:[],
   damage:0, cars:[], started:false, finished:false, countdown:3,
   results:null, skidT:0, offroad:false
@@ -794,8 +956,12 @@ function bindTouch(el,prop){
   el.addEventListener("touchend",off,{passive:false});
   el.addEventListener("touchcancel",off,{passive:false});
 }
-bindTouch($("tL"),"l"); bindTouch($("tR"),"r"); bindTouch($("tB"),"dn"); bindTouch($("tG"),"up");
-const isTouch = matchMedia("(pointer:coarse)").matches;
+bindTouch($("tL"),"l"); bindTouch($("tR"),"r"); bindTouch($("tB"),"dn");
+bindTouch($("tG"),"up"); bindTouch($("tH"),"hb");
+const isTouch = COARSE;
+// iOS only starts audio inside a gesture, and only once the context is resumed
+document.addEventListener("pointerdown",()=>{ audioInit(); if(AC&&AC.state==="suspended") AC.resume(); },{passive:true});
+document.addEventListener("touchstart",()=>{ audioInit(); if(AC&&AC.state==="suspended") AC.resume(); },{passive:true});
 
 /* ---------- audio ---------- */
 let AC=null, master=null, ENG=null, muted=false;
@@ -803,6 +969,7 @@ function audioInit(){
   if(AC) return;
   try{
     AC=new (window.AudioContext||window.webkitAudioContext)();
+    if(AC.state==="suspended" && AC.resume) AC.resume();
     master=AC.createGain(); master.gain.value=muted?0:.8; master.connect(AC.destination);
 
     // engine — two slightly detuned saws + sub sine through a resonant lowpass
@@ -862,7 +1029,7 @@ function audioUpdate(){
     return;
   }
   const sp=clamp(G.speed/MAXSPEED,0,1);
-  const rev=G.started ? clamp(.16+rpmOf(sp)*.84,0,1) : (.16+(key.up?.55:0));
+  const rev=G.started ? clamp(.14+G.rpm*.86,0,1) : (.14+(key.up?.55:0));
   const load=key.up?1:(key.dn?.22:.42);
   const f=40+rev*98;                                  // note climbs, drops on upshift
   ENG.o1.frequency.setTargetAtTime(f,t,.045);
@@ -874,8 +1041,8 @@ function audioUpdate(){
   ENG.ng.gain.setTargetAtTime(clamp(sp*.012+(G.offroad?.042:0)+clamp(G.skidT,0,1)*.038,0,.09),t,.06);
   ENG.wg.gain.setTargetAtTime(sp*sp*.042,t,.10);
 }
-function gearOf(sp){ return clamp(1+Math.floor(sp*5.999),1,6); }
-function rpmOf(sp){ const g=gearOf(sp); return clamp((sp*5.999)-(g-1),0,1); }
+function gearOf(){ return G.gear+1; }
+function rpmOf(){ return G.rpm; }
 
 /* ============================================================
    TRACK / RACE SETUP
@@ -889,9 +1056,10 @@ function buildTrack(track){
   // pad to a clean multiple
   while(segments.length%RUMBLE!==0) addSegment(0,lastY(),theme);
   trackLength=segments.length*SEG;
-  // idealised flat-out lap: what a clean run is worth on this layout
+  // reference lap: a perfect driver riding the grip limit everywhere
+  const gmu=THEMES[track.theme].grip;
   let it=0;
-  for(const sg of segments) it += SEG/(MAXSPEED*(1-Math.min(Math.abs(sg.curve)/C.SAVAGE,1)*.30));
+  for(const sg of segments) it += SEG/Math.min(MAXSPEED, cornerSpeed(sg.curve,gmu));
   G.idealLap=it;
 
   // start / finish
@@ -907,12 +1075,12 @@ function buildTrack(track){
     const s=segments[n];
     if(n%4===0 && Math.random()<.82){
       const side=Math.random()<.5?-1:1;
-      const off=side*(1.25+Math.random()*2.6);
+      const off=side*(1.48+Math.random()*2.7);
       s.sprites.push({src:SPR[pick(pool)],offset:off});
     }
-    if(n%40===0) s.sprites.push({src:SPR.sign,offset:Math.random()<.5?-1.9:1.9});
+    if(n%150===0) s.sprites.push({src:SPR.sign,offset:Math.random()<.5?-2.1:2.1});
     if(Math.abs(s.curve)>=C.HARD && n%3===0)
-      s.sprites.push({src:theme.rally?SPR.spec:SPR.hay,offset:(s.curve>0?1:-1)*1.18});
+      s.sprites.push({src:theme.rally?SPR.spec:SPR.hay,offset:(s.curve>0?1:-1)*1.30});
   }
   // finish banners
   segments[2].sprites.push({src:SPR.flag,offset:-1.5});
@@ -924,7 +1092,7 @@ function resetCars(){
   if(G.raceType==="tt" || G.track.rally) return;   // solo modes
   const field = G.season ? G.season.rivals : defaultRivals();
   field.forEach((r,i)=>{
-    const skill = r.skill * [0.80,0.90,0.985][G.diff];
+    const skill = r.skill * [0.58,0.74,0.90][G.diff];
     G.cars.push({
       name:r.name, color:r.color, type:r.type||"gt", skill:skill,
       offset: (i%2?1:-1)*(0.30+((i/2|0)%3)*0.28),
@@ -945,10 +1113,12 @@ function startRace(){
   buildTrack(G.track);
   segments.forEach(s=>s.cars=[]);
   G.position=0; G.playerX=0; G.speed=0; G.lateral=0; G.yawVis=0; G.rollV=0; G.pitchV=0;
+  G.psi=0; G.slide=0; G.gear=0; G.rpm=0; G.shiftT=0; G.steerPos=0; G.vLat=0;
   G.lap=0; G.lapTime=0; G.raceTime=0; G.lastLap=null; G.lapTimes=[];
   G.damage=0; G.finished=false; G.started=false; G.countdown=3.99;
   G.results=null; G.skidT=0;
   G.laps = G.track.rally ? 1 : G.laps;
+  G.mapPts = computePath(segments,!G.track.rally);
   resetCars();
   G.mode="race";
   showScreen(null);
@@ -975,7 +1145,8 @@ function update(dt){
   if(G.finished){
     G.speed=Math.max(0,G.speed-MAXSPEED*.55*dt);
     G.position=increase(G.position,dt*G.speed,trackLength);
-    G.yawVis=lerp(G.yawVis,0,clamp(dt*3,0,1));
+    G.yawVis=lerp(G.yawVis,0,clamp(dt*3,0,1)); G.psi=0; G.vLat*=Math.max(0,1-dt*3);
+    G.slide=0; G.rpm=Math.max(0,G.rpm-dt);
     updateCars(dt); return;
   }
 
@@ -983,82 +1154,115 @@ function update(dt){
 
   const car=G.car, theme=THEMES[G.track.theme];
   const playerSeg=findSegment(G.position+PLAYER_Z);
-  const speedPct=G.speed/MAXSPEED;
-  const dmgPen = 1 - clamp(G.damage-.45,0,.5)*.34;     // damage cuts top speed
+  const onRoad = Math.abs(G.playerX)<=1;
+  G.offroad=!onRoad;
+  const dmgPen = 1 - clamp(G.damage-.45,0,.5)*.34;
   // slipstream: tucking in behind a rival is worth real speed
   let slip=1;
   for(let i=1;i<=5 && slip===1;i++){
     for(const sc of segments[(playerSeg.index+i)%segments.length].cars)
       if(Math.abs(sc.offset-G.playerX)<.55){ slip=1.075; break; }
   }
-  const maxSpeed = MAXSPEED*car.top*dmgPen*slip;
-  const grip = theme.grip * car.grip;
+  const vmax = MAXSPEED*car.top*dmgPen*slip;
 
-  // --- steering ---
-  const steerAuth = dt * 2.4 * car.hand * (0.35+0.65*Math.min(1,speedPct*2.2));
   let steerIn=0;
   if(key.l) steerIn=-1; else if(key.r) steerIn=1;
-  const hb = key.hb && speedPct>.15;
-  // lateral velocity model → gives slide on low grip
-  const target = steerIn*steerAuth;
-  const respond = clamp(.55+grip*.55,.45,1.4)*(hb?1.6:1);
-  G.lateral = lerp(G.lateral, target, clamp(dt*6*respond,0,1));
+  const hb = key.hb && G.speed>vmax*.10;
+
+  /* ---------- tyre grip available right now ---------- */
+  const surf = onRoad ? theme.grip : (theme.rally?.62:.44)*theme.grip;
+  const aid  = ASSIST[G.diff];
+  const mu   = surf * car.grip * (1 - clamp(G.damage-.5,0,.5)*.30) * (1+aid);
+
+  /* ---------- gearbox ---------- */
+  const f = clamp(G.speed/vmax,0,1.15);
+  if(G.shiftT>0) G.shiftT-=dt;
+  else if(G.gear<5 && f>GEARTOP[G.gear]){ G.gear++; G.shiftT=.15; }
+  else if(G.gear>0 && f<GEARTOP[G.gear-1]*.93){ G.gear--; G.shiftT=.09; }
+  G.rpm = rpmFrac(f,G.gear);
+
+  /* ---------- longitudinal: torque, drag, brakes ---------- */
+  const torque = .50+.64*Math.sin(clamp(G.rpm,0,1)*2.5+.34);      // peaky, falls off at redline
+  let F = 0;
+  if(key.up && G.shiftT<=0)
+    F = ACC0*car.accel*GEARF[G.gear]*torque*clamp(mu*1.30,.30,1);  // no traction, no drive
+  const TQ_TOP = .50+.64*Math.sin(2.84);          // torque left at the redline
+  const dragRef = ACC0*car.accel*GEARF[5]*TQ_TOP*.94;
+  let drag = dragRef*Math.pow(clamp(G.speed/vmax,0,1.3),2.6) + ACC0*.035;
+  // the verge scrubs speed off, but you can always crawl back out of it
+  if(!onRoad) drag += ACC0*(theme.rally?.34:.70)*(1-aid*.5)*clamp(G.speed/vmax*3.5,0,1);
+  let brake = 0;
+  if(key.dn) brake += ACC0*1.80*mu;
+  if(hb)     brake += ACC0*0.85*mu;
+  if(!key.up && !key.dn) brake += ACC0*.15;                         // engine braking
+  G.speed = clamp(G.speed + (F-drag-brake)*dt, 0, vmax*1.02);
+
+  /* ---------- friction circle: braking eats cornering grip ---------- */
+  const netLong = F - drag - brake;
+  const longUse = clamp(Math.abs(netLong)/(ACC0*1.85),0,1);
+  const aLat = A_LAT*mu*Math.sqrt(Math.max(.42, 1-longUse*longUse));
+
+  /* ---------- lateral: a force balance, not a heading integrator ----------
+     The old model integrated heading with no restoring term, so once slip
+     built up it stayed there for ever and the wheel went dead. Here the
+     wheel commands a lateral acceleration, the bend demands one, and the
+     difference moves the car across the road. Braking cuts the bend's
+     demand (it scales with v^2), so lifting always gets the car back.     */
+  G.steerPos = lerp(G.steerPos, steerIn, clamp(dt*5.5,0,1));   // hands move, not teleport
+
+  // rear axle stepping out: handbrake, or power on a loose surface
+  let slideReq = 0;
+  if(hb) slideReq += steerIn*1.10;
+  if(key.up && G.rpm>.45 && mu<.90) slideReq += steerIn*.40*(1-mu);
+  G.slide = lerp(G.slide, slideReq, clamp(dt*4.5,0,1));
+  if(steerIn && Math.sign(steerIn)!==Math.sign(G.slide)) G.slide*=Math.max(0,1-dt*3.2);
+  if(aid>0) G.slide *= Math.max(0,1-dt*aid*2.2);
+
+  const aKin  = G.speed*G.speed*Math.tan(STEER_MAX*car.hand)/WHEELB;  // geometry at low speed
+  const aWheel= (G.steerPos + G.slide*.45) * Math.min(aLat, aKin);    // what you ask for
+  const aRoad = playerSeg.curve*G.speed*G.speed/(SEG*SEG);            // what the bend demands
+  const understeer = Math.abs(aRoad) > aLat*1.02 ||
+                     Math.abs(aWheel) >= aLat*.98;
+  // tyres resist sliding sideways, so lateral speed settles instead of running away
+  G.vLat = (G.vLat + (aWheel-aRoad)*dt) * Math.max(0, 1-dt*LAT_DAMP*(aid>0?1+aid:1));
+  G.lateral = G.vLat*dt/ROADW;
   G.playerX += G.lateral;
+  G.psi = Math.atan2(G.vLat, Math.max(G.speed,600));        // slip angle, for the visuals
 
-  // centrifugal
-  const cf = 0.30*(1+(1-grip)*0.6)*(hb?1.4:1);
-  G.playerX -= dt*2*speedPct*playerSeg.curve*cf;
+  /* ---------- feedback for sound and visuals ---------- */
+  const skid = (understeer?.55:0) + Math.abs(G.slide)*.8 + (!onRoad?.5:0);
+  G.skidT = lerp(G.skidT, skid*clamp(G.speed/vmax,0,1), clamp(dt*8,0,1));
+  G.yawVis = clamp(G.psi*3.4 + G.slide*.30, -1, 1);
+  const latG = clamp(aWheel/A_LAT, -1.2, 1.2);
+  G.rollV  = lerp(G.rollV,  latG, clamp(dt*4.5,0,1));
+  G.pitchV = lerp(G.pitchV, clamp((F-drag-brake)/(ACC0*1.4),-1,1), clamp(dt*5,0,1));
 
-  G.skidT = lerp(G.skidT, (Math.abs(G.lateral-target)*40 + (hb?1:0))*speedPct, dt*8);
-
-  // visual yaw: the car points where you steer, plus the slide angle
-  const yawTarget = clamp(steerIn*.72 + G.lateral*38 + (hb?steerIn*.22:0), -1, 1);
-  G.yawVis = lerp(G.yawVis, yawTarget, clamp(dt*7,0,1));
-  // body roll lags the yaw, weight transfer follows the pedals
-  const rollTarget = clamp(yawTarget*.8 + playerSeg.curve/C.SAVAGE*.45,-1,1)*speedPct;
-  G.rollV  = lerp(G.rollV,  rollTarget, clamp(dt*4.5,0,1));
-  G.pitchV = lerp(G.pitchV, key.dn?-1:(key.up?.7:0), clamp(dt*5,0,1));
-
-  // --- throttle ---
-  const accel = maxSpeed/(2.6/car.accel);
-  const brake = -maxSpeed/1.6;
-  const decel = -maxSpeed/6;
-  if(key.up) G.speed += accel*dt;
-  else if(key.dn) G.speed += brake*dt;
-  else G.speed += decel*dt;
-  if(hb) G.speed += -maxSpeed/3.2*dt;
-
-  // --- off road ---
-  const onRoad = Math.abs(G.playerX)<=1;
-  G.offroad=!onRoad;
-  const offLimit = maxSpeed*(theme.rally?.42:.28);
+  /* ---------- off road ---------- */
   if(!onRoad){
-    if(G.speed>offLimit) G.speed += (theme.rally?-maxSpeed/2.4:-maxSpeed/1.5)*dt;
-    G.playerX += (Math.random()-.5)*dt*(theme.rally?.5:1.1)*speedPct;
-    // scenery collision
+    G.playerX += (Math.random()-.5)*dt*(theme.rally?.35:.7)*clamp(G.speed/vmax,0,1);
+    G.vLat += (Math.random()-.5)*dt*(theme.rally?900:1900);
     for(const s of playerSeg.sprites){
       if(spriteHit(s, G.playerX)){
-        G.speed = maxSpeed*.22; G.damage=clamp(G.damage+.075,0,1);
+        G.speed = vmax*.26; G.damage=clamp(G.damage+.055,0,1);
         G.position = increase(G.position, -PLAYER_Z*.18, trackLength);
-        G.playerX *= .80;                    // shoved back toward the track
-        G.lateral = 0;
+        G.playerX *= .80; G.vLat*=-.15; G.slide=0;
         beep(90,.28,.25); break;
       }
     }
   }
 
-  // --- car collisions ---
+  /* ---------- car collisions ---------- */
   for(const c of playerSeg.cars){
     if(G.speed>c.speed && overlap(G.playerX,PLAYER_W,c.offset,CAR_W,.8)){
       G.speed = Math.max(c.speed*.95, G.speed*.86);
       G.damage=clamp(G.damage+.02,0,1);
-      G.playerX += (G.playerX>c.offset?1:-1)*.06;   // you nudge past instead of stalling
+      G.playerX += (G.playerX>c.offset?1:-1)*.06;
+      G.vLat *= .5;
       beep(150,.12,.12); break;
     }
   }
 
   G.playerX = clamp(G.playerX,-2.6,2.6);
-  G.speed = clamp(G.speed,0,maxSpeed);
   const before=G.position;
   G.position = increase(G.position, dt*G.speed, trackLength);
   if(G.position<before) onLapComplete();
@@ -1082,18 +1286,29 @@ function updateCars(dt){
   for(const c of G.cars){
     const oldSeg=findSegment(c.z);
     // AI target speed depends on curve severity + skill
-    const seg=findSegment(c.z+PLAYER_Z*.6);
-    const sev=Math.abs(seg.curve)/C.SAVAGE;
-    // rivals are human: now and then one runs wide and loses time
+
+    // rivals obey the same corner speeds and braking distances as the player,
+    // just at a fraction of the limit set by their skill
     if(c.err>0) c.err-=dt;
     else if(Math.random()<dt*.06) c.err=rnd(.7,2.1);
-    const tgt = MAXSPEED*c.skill*(1-sev*.40)*(c.err>0?.70:1);
-    c.speed = lerp(c.speed, tgt, dt*1.4);
+    const gmu=THEMES[G.track.theme].grip;
+    let tgt = MAXSPEED*c.skill*AI_STRAIGHT;
+    tgt = Math.min(tgt, cornerSpeed(oldSeg.curve,gmu)*c.skill*AI_CORNER);
+    for(let k=2;k<70;k+=3){                        // brake marker, not clairvoyance
+      const sg=segments[(oldSeg.index+k)%segments.length];
+      const vl=cornerSpeed(sg.curve,gmu)*c.skill*AI_CORNER*.97;
+      if(c.speed>vl && k*SEG < ((c.speed*c.speed-vl*vl)/(2*ACC0*1.55))*1.10){
+        tgt=Math.min(tgt,vl); break;
+      }
+    }
+    if(c.err>0) tgt*=.70;
+    c.speed = c.speed<tgt ? Math.min(tgt, c.speed+ACC0*.50*dt)
+                          : Math.max(tgt, c.speed-ACC0*1.55*dt);
     // lane change to avoid others / player
     const prevOff=c.offset;
     c.offset += aiOffset(c,oldSeg,dt);
     c.offset = clamp(c.offset,-.92,.92);
-    const yawT=clamp(seg.curve*.11 + (c.offset-prevOff)*26, -1, 1);
+    const yawT=clamp(oldSeg.curve*.11 + (c.offset-prevOff)*26, -1, 1);
     c.yaw = lerp(c.yaw||0, yawT, clamp(dt*5,0,1));
     const before=c.z;
     c.z = increase(c.z, dt*c.speed, trackLength);
@@ -1162,7 +1377,7 @@ function buildResults(){
     // solo stage: rivals are timed against the layout itself, so a clean run wins
     const ref = G.idealLap || G.raceTime;
     const grip = THEMES[G.track.theme].grip;
-    const pace = [1.34,1.15,1.00][G.diff] * (1+(1-grip)*.9);
+    const pace = [1.60,1.34,0.98][G.diff] * (1+(1-grip)*.55);
     const field = G.season ? G.season.rivals : defaultRivals();
     rows.push({name:"Tu",time:G.raceTime,me:true});
     field.forEach(r=>{
@@ -1248,8 +1463,8 @@ function render(){
       const sx=lerp(s.p1.screen.x,s.p2.screen.x,pct);
       const sy=lerp(s.p1.screen.y,s.p2.screen.y,pct);
       const spr=carSprite(c.color,c.yaw||0,c.type,3);
-      drawSprite(spr,UPP_CAR,sc,sx+sc*c.offset*ROADW*CW/2,sy,-.5,-.915,s.clip,s.fog,theme,
-                 -(c.yaw||0)*.10);
+      drawSprite(spr,UPP_CAR,sc,sx+sc*c.offset*ROADW*CW/2,sy,-.5,-(spr.contact||.915),
+                 s.clip,s.fog,theme,-(c.yaw||0)*.10);
     }
     for(const sp of s.sprites){
       const sc=s.p1.screen.scale, sx=s.p1.screen.x, sy=s.p1.screen.y;
@@ -1257,6 +1472,8 @@ function render(){
     }
   }
   drawPlayer(playerSeg,playerPct);
+  drawMiniMap();
+  drawPaceNote();
 }
 
 function fogFactor(d){ return 1/Math.exp(Math.pow(d,2)*5); }
@@ -1339,7 +1556,8 @@ function drawPlayer(seg,pct){
   // body roll out of the corner + weight transfer under power/braking
   const roll = -G.rollV*.075;
   const squat = clamp(G.pitchV,-1,1);
-  const dx=CW/2-w/2 + G.yawVis*30, dy=CH-6-h*.915+bounce - squat*h*.012;
+  const foot=img.contact||.915;
+  const dx=CW/2-w/2 + G.yawVis*30, dy=CH-2-h*foot+bounce - squat*h*.012;
   // skid dust
   if((G.offroad||G.skidT>.35) && sp>.12){
     ctx.globalAlpha=.35;
@@ -1348,15 +1566,15 @@ function drawPlayer(seg,pct){
     for(let i=0;i<7;i++){
       const r=8+Math.random()*26;
       ctx.beginPath();
-      ctx.arc(dx+w*(i<4?.16:.84)+rnd(-16,16), dy+h-rnd(0,26), r,0,7); ctx.fill();
+      ctx.arc(dx+w*(i<4?.22:.78)+rnd(-16,16), dy+h*foot-rnd(-4,22), r,0,7); ctx.fill();
     }
     ctx.globalAlpha=1;
   }
   ctx.save();
-  ctx.translate(dx+w/2, dy+h*.915);
+  ctx.translate(dx+w/2, dy+h*foot);
   ctx.rotate(roll);
   ctx.scale(1, 1+squat*.018);
-  ctx.drawImage(img,-w/2,-h*.915,w,h);
+  ctx.drawImage(img,-w/2,-h*foot,w,h);
   ctx.restore();
 }
 
@@ -1366,7 +1584,8 @@ function drawHUD(){
   const sp=G.speed/MAXSPEED;
   const kmh=Math.round(sp*(G.car.type==="f1"?340:290));
   $("hSpeed").innerHTML=`<b>${kmh}</b><s>km/h</s>`;
-  $("hGear").textContent=gearOf(sp);
+  $("hGear").textContent=G.gear+1;
+  $("hGear").style.color = (G.rpm>.88 && G.gear<5) ? "#ff3b30" : "var(--cyan)";
   const lapLine = G.track.rally ? T("ETAPĂ") : `${T("TUR")} ${Math.min(G.lap+1,G.laps)}/${G.laps}`;
   $("hTime").innerHTML =
     `<span class="k">${lapLine}</span>${fmtTime(G.lapTime)}`+
@@ -1445,7 +1664,7 @@ function renderTrackList(){
   $("trackTitle").textContent = T(G.raceType==="tt" ? "Contra cronometru — alege traseul" : "Cursă rapidă — alege traseul");
   $("trackList").innerHTML = TRACKS.map(t=>
     `<div class="card${G.track&&G.track.id===t.id?" sel":""}" data-track="${t.id}">`+
-    `<h3>${t.name}</h3><p>${T(t.desc)}</p>`+
+    `${trackMapSVG(t)}<h3>${t.name}</h3><p>${T(t.desc)}</p>`+
     `<span class="tag${t.rally?" r":""}">${T(t.rally?"Etapă raliu":"Circuit")}</span> `+
     `<span class="tag">${T(t.loc)}</span></div>`).join("");
   $("trackList").querySelectorAll("[data-track]").forEach(el=>{
@@ -1556,6 +1775,20 @@ $("resNext").onclick=()=>{
 /* ---------- boot ---------- */
 snapText(document.getElementById("wrap"));
 $("langBtn").onclick=()=>{ setLang(LANG==="ro"?"en":"ro"); };
+(function(){
+  const el=document.documentElement;
+  const req=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(req && COARSE){
+    $("fsBtn").style.display="block";
+    $("fsBtn").onclick=()=>{
+      if(document.fullscreenElement||document.webkitFullscreenElement){
+        (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+      } else req.call(el);
+      setTimeout(fit,300);
+    };
+  }
+})();
+addEventListener("orientationchange",()=>setTimeout(fit,200));
 buildSprites();
 G.track=TRACKS[0];
 ctx.fillStyle="#07101c"; ctx.fillRect(0,0,CW,CH);
