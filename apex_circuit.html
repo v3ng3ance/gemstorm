@@ -1497,6 +1497,25 @@ function render(){
 
   drawSky(theme, baseSeg.curve, playerY);
 
+  // where the farthest visible segment lands: everything below it is ground,
+  // never sky, so nothing can bleed through the track surface
+  let yTop=CH;
+  for(let n=0;n<DRAW;n++){
+    const s=segments[(baseSeg.index+n)%segments.length];
+    const cz=(s.p2.world.z-((s.index<baseSeg.index)?trackLength:0))-G.position;
+    if(cz<=CAM_D) continue;
+    const yy=CH/2-(CAM_D/cz)*(s.p2.world.y-(playerY+CAM_H))*CH/2;
+    if(yy<yTop) yTop=yy;
+  }
+  yTop=Math.max(0,Math.floor(yTop));
+  ctx.fillStyle=theme.light.grass;
+  ctx.fillRect(0,yTop,CW,CH-yTop);
+  if(yTop>0){                       // soften the join between ground and sky
+    const hz=ctx.createLinearGradient(0,yTop-16,0,yTop+10);
+    hz.addColorStop(0,"rgba(0,0,0,0)"); hz.addColorStop(1,theme.fog);
+    ctx.globalAlpha=.55; ctx.fillStyle=hz; ctx.fillRect(0,yTop-16,CW,26); ctx.globalAlpha=1;
+  }
+
   // road
   for(let n=0;n<DRAW;n++){
     const s=segments[(baseSeg.index+n)%segments.length];
@@ -1532,7 +1551,8 @@ function render(){
   drawPaceNote();
 }
 
-function fogFactor(d){ return 1/Math.exp(Math.pow(d,2)*5); }
+function fogFactor(d){ return 1/Math.exp(Math.pow(d,2)*3.2); }
+const FOG_ROAD=.42, FOG_SPRITE=.80;   // how far each is allowed to wash out
 
 function project(p,camX,camY,camZ){
   p.camera.x=(p.world.x||0)-camX;
@@ -1568,8 +1588,10 @@ function drawSky(theme,curve,y){
 
 function drawSegment(s,theme){
   const c=s.color, p1=s.p1.screen, p2=s.p2.screen;
-  // grass
-  ctx.fillStyle=c.grass; ctx.fillRect(0,p2.y,CW,p1.y-p2.y);
+  // grass: fill right up to whatever the nearer segments already covered, so
+  // sub-pixel segments can never leave a gap
+  ctx.fillStyle=c.grass;
+  ctx.fillRect(0,p2.y,CW,Math.max(p1.y,s.clip)-p2.y);
   const r1=p1.w/Math.max(6,6), r2=p2.w/Math.max(6,6);
   const l1=p1.w/32, l2=p2.w/32;
   poly(p1.x-p1.w-r1,p1.y,p1.x-p1.w,p1.y,p2.x-p2.w,p2.y,p2.x-p2.w-r2,p2.y,c.rumble);
@@ -1584,8 +1606,8 @@ function drawSegment(s,theme){
     }
   }
   if(s.fog<1){
-    ctx.globalAlpha=1-s.fog; ctx.fillStyle=theme.fog;
-    ctx.fillRect(0,p2.y,CW,p1.y-p2.y); ctx.globalAlpha=1;
+    ctx.globalAlpha=(1-s.fog)*FOG_ROAD; ctx.fillStyle=theme.fog;
+    ctx.fillRect(0,p2.y,CW,Math.max(p1.y,s.clip)-p2.y); ctx.globalAlpha=1;
   }
 }
 function poly(x1,y1,x2,y2,x3,y3,x4,y4,col){
@@ -1605,7 +1627,7 @@ function drawSprite(img,upp,scale,destX,destY,offX,offY,clipY,fog,theme,roll){
   ctx.drawImage(img,0,0,img.width,sh,dx,dy,w,h-clipH);
   if(fog!==undefined && fog<1){
     const t=tinted(img,theme.fog);
-    ctx.globalAlpha=(1-fog)*.92;
+    ctx.globalAlpha=(1-fog)*FOG_SPRITE;
     ctx.drawImage(t,0,0,t.width,t.height*(1-clipH/h),dx,dy,w,h-clipH);
     ctx.globalAlpha=1;
   }
