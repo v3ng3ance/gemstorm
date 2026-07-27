@@ -167,6 +167,7 @@ tr.me td{color:var(--amber);font-weight:700}
       <div class="card" style="cursor:default"><h3>Avarii</h3><p>Copacii, stâncile și panourile costă scump. Peste 60% avarie pierzi din viteza maximă. Coliziunile cu adversarii doar te încetinesc.</p></div>
       <div class="card" style="cursor:default"><h3>Puncte</h3><p>25-18-15-12-10-8-6-4-2-1 pentru primii zece. Etapele de raliu se aleargă solo, contra timpilor rivalilor.</p></div>
       <div class="card" style="cursor:default"><h3>Iarbă &amp; nisip</h3><p>În afara pistei pierzi rapid viteză și controlul. La raliu, marginile sunt mai iertătoare.</p></div>
+      <div class="card" style="cursor:default"><h3>Sunet</h3><p>Tasta M sau butonul din dreapta sus comută între sunet complet, doar anvelope și vânt, sau tăcere.</p></div>
       <div class="card" style="cursor:default"><h3>Asistență</h3><p>Ajutaje de stabilitate și aderență. Legendă = model pur, fără ajutor.</p></div>
       <div class="card" style="cursor:default"><h3>Mobil</h3><p>Butoane pe ecran: stânga, dreapta, frână, gaz. Ține telefonul pe orizontală.</p></div>
     </div>
@@ -248,7 +249,7 @@ tr.me td{color:var(--amber);font-weight:700}
     <div class="row">
       <button class="btn" id="resumeBtn">Reia cursa</button>
       <button class="btn ghost" id="restartBtn">De la capăt</button>
-      <button class="btn ghost" id="muteToggle">Sunet: pornit</button>
+      <button class="btn ghost" id="muteToggle">Sunet: complet</button>
       <button class="btn ghost" data-go="menu">Ieși în meniu</button>
     </div>
   </div>
@@ -261,7 +262,7 @@ tr.me td{color:var(--amber);font-weight:700}
    ============================================================ */
 
 /* ---------- i18n ---------- */
-const DICT={"Turbo Challenge &middot; 8 trasee &middot; circuit &amp; raliu": "Turbo Challenge &middot; 8 tracks &middot; circuit &amp; rally","Campionat": "Championship","Sezon complet pe mai multe etape, cu puncte, clasament general și titlu la final.": "A full multi-round season with points, an overall table and a title at the end.","Modul principal": "Main mode","Cursă rapidă": "Quick race","Alegi traseul, mașina și numărul de tururi. Grilă completă de adversari.": "Pick the track, the car and the lap count. Full grid of rivals.","Contra cronometru": "Time trial","Pistă liberă, fără adversari. Doar tu și cel mai bun tur al tău.": "Empty track, no rivals. Just you and your best lap.","Comenzi": "Controls","Taste, touch și cum funcționează avariile, gripul și punctele.": "Keys, touch, and how damage, grip and points work.","Săgeți / WASD &middot; Space = frână de mână &middot; P = pauză": "Arrows / WASD &middot; Space = handbrake &middot; M = mute &middot; P = pause","Comenzi &amp; reguli": "Controls &amp; rules","Volan": "Steering","Săgeată stânga/dreapta sau A/D. Pe pietriș, zăpadă și noroi mașina alunecă — contrează din timp, nu brusc.": "Left/right arrow or A/D. On gravel, snow and mud the car slides — catch it early, not abruptly.","Accelerație": "Throttle","Săgeată sus sau W. Frână: săgeată jos sau S. Space = frână de mână, rotește spatele în viraj.": "Up arrow or W. Brake: down arrow or S. Space is the handbrake — it rotates the rear into a corner.","Avarii": "Damage","Copacii, stâncile și panourile costă scump. Peste 60% avarie pierzi din viteza maximă. Coliziunile cu adversarii doar te încetinesc.": "Trees, rocks and boards are expensive. Past 60% damage you lose top speed. Contact with rivals only slows you down.","Puncte": "Points","25-18-15-12-10-8-6-4-2-1 pentru primii zece. Etapele de raliu se aleargă solo, contra timpilor rivalilor.": "25-18-15-12-10-8-6-4-2-1 for the top ten. Rally stages are run solo, against the rivals' stage times.","Iarbă &amp; nisip": "Grass &amp; sand","În afara pistei pierzi rapid viteză și controlul. La raliu, marginile sunt mai iertătoare.": "Off the track you bleed speed and grip fast. On rally stages the verges are more forgiving.","Mobil": "Mobile","Butoane pe ecran: stânga, dreapta, frână, gaz. Ține telefonul pe orizontală.": "On-screen buttons: left, right, brake, throttle. Hold the phone in landscape.","Înapoi": "Back","Alege campionatul": "Choose a championship","Alege traseul": "Choose a track","Tururi": "Laps","Continuă": "Continue","Alege mașina": "Choose a car","Dificultate": "Difficulty","Amator": "Amateur","Pro": "Pro","Legendă": "Legend","Asistență": "Assists","Ajutaje de stabilitate și aderență. Legendă = model pur, fără ajutor.": "Stability and grip help. Legend is the raw model, with no help at all.","Meniu": "Menu","Start": "Start","Sezon": "Season","Etape": "Rounds","Clasament general": "Overall standings","Abandonează sezonul": "Quit the season","Următoarea etapă": "Next round","Rezultate": "Results","Pauză": "Paused","Reia cursa": "Resume","De la capăt": "Restart","Ieși în meniu": "Exit to menu","Sunet: pornit": "Sound: on","Sunet: oprit": "Sound: off","Rotește telefonul": "Rotate your phone","Jocul se joacă pe orizontală": "This game is played in landscape","România": "Romania","Coasta Amalfi": "Amalfi Coast","Alpi": "Alps","Merzouga": "Merzouga","Făgăraș": "Fagaras","Laponia": "Lapland","Țara Galilor": "Wales","Yokohama": "Yokohama","Circuit de start: viraje largi, o denivelare la mijloc și o linie dreaptă lungă.": "The starter circuit: open corners, one crest in the middle and a long straight.","Faleză cu palmieri, viraje strânse deasupra mării și lumină de apus.": "Palm-lined cliffs, tight corners above the sea and low evening light.","Urcare continuă, ace de păr și coborâre rapidă. Frânează devreme.": "A long climb, hairpins and a fast descent. Brake early.","Circuit urban nocturn. Ziduri aproape, chicane și lumini de neon.": "Night street circuit. Close walls, chicanes and neon.","Etapă de viteză prin deșert. Nisipul iartă puțin, dar stâncile deloc.": "A fast desert stage. The sand forgives a little, the rocks don't.","Pietriș printre brazi. Viraje oarbe, spectatori pe margine, zero spațiu de greșeală.": "Gravel through pines. Blind corners, spectators on the verge, no room for error.","Zăpadă bătătorită. Grip aproape inexistent — conduci din alunecare.": "Packed snow. Almost no grip — you drive it on the slide.","Noroi, ploaie și făgașe. Ultima etapă a sezonului de raliu.": "Mud, rain and ruts. The closing stage of the rally season.","Grup turbo cu întârziere, dar vârf de viteză uriaș. Clasicul anilor '90.": "Laggy turbo, enormous top end. The nineties classic.","Monopost. Aderență și frânare excepționale, dar fragil la contact.": "Single-seater. Exceptional grip and braking, fragile in contact.","Tracțiune integrală. Cea mai bună alegere pe pietriș, zăpadă și noroi.": "All-wheel drive. The best pick on gravel, snow and mud.","Muscle car greu. Iese lat în viraje, dar nu-l oprește nimeni pe drept.": "Heavy muscle car. Runs wide in corners, unstoppable in a straight line.","Patru circuite asfaltate. Cursă cu grilă completă la fiecare etapă.": "Four tarmac circuits. A full grid at every round.","Patru etape speciale contra cronometru. Rivalii aleargă separat — contează doar timpul.": "Four special stages against the clock. Rivals run separately — only the time counts.","Sezonul complet: opt etape, asfalt și macadam alternativ. Titlul suprem.": "The full season: eight rounds alternating tarmac and gravel. The big one.","etape": "rounds","Etapă raliu": "Rally stage","Circuit": "Circuit","Raliu": "Rally","Cursă rapidă — alege traseul": "Quick race — choose a track","Contra cronometru — alege traseul": "Time trial — choose a track","Viteză": "Top speed","Aderență": "Grip","Manevrabilitate": "Handling","Poz": "Pos","Pilot": "Driver","Timp": "Time","Diferență": "Gap","Pct": "Pts","Tu": "You","Etapă": "Round","Tip": "Type","Loc": "Result","următoarea": "next up","— timp de etapă": "— stage time","— rezultate": "— results","Cel mai bun tur": "Best lap","avarii": "damage","puncte": "points","Clasament sezon": "Season standings","Din nou": "Race again","Închide sezonul": "Close the season","etapa": "round","CAMPION! Ai câștigat titlul.": "CHAMPION! The title is yours.","Titlul merge la": "The title goes to","TUR": "LAP","Total": "Total","ETAPĂ": "STAGE","ETAPĂ SOLO": "SOLO STAGE","Ultim tur": "Last lap","AVARII": "DAMAGE","cars on grid": "cars on grid"};
+const DICT={"Turbo Challenge &middot; 8 trasee &middot; circuit &amp; raliu": "Turbo Challenge &middot; 8 tracks &middot; circuit &amp; rally","Campionat": "Championship","Sezon complet pe mai multe etape, cu puncte, clasament general și titlu la final.": "A full multi-round season with points, an overall table and a title at the end.","Modul principal": "Main mode","Cursă rapidă": "Quick race","Alegi traseul, mașina și numărul de tururi. Grilă completă de adversari.": "Pick the track, the car and the lap count. Full grid of rivals.","Contra cronometru": "Time trial","Pistă liberă, fără adversari. Doar tu și cel mai bun tur al tău.": "Empty track, no rivals. Just you and your best lap.","Comenzi": "Controls","Taste, touch și cum funcționează avariile, gripul și punctele.": "Keys, touch, and how damage, grip and points work.","Săgeți / WASD &middot; Space = frână de mână &middot; P = pauză": "Arrows / WASD &middot; Space = handbrake &middot; M = mute &middot; P = pause","Comenzi &amp; reguli": "Controls &amp; rules","Volan": "Steering","Săgeată stânga/dreapta sau A/D. Pe pietriș, zăpadă și noroi mașina alunecă — contrează din timp, nu brusc.": "Left/right arrow or A/D. On gravel, snow and mud the car slides — catch it early, not abruptly.","Accelerație": "Throttle","Săgeată sus sau W. Frână: săgeată jos sau S. Space = frână de mână, rotește spatele în viraj.": "Up arrow or W. Brake: down arrow or S. Space is the handbrake — it rotates the rear into a corner.","Avarii": "Damage","Copacii, stâncile și panourile costă scump. Peste 60% avarie pierzi din viteza maximă. Coliziunile cu adversarii doar te încetinesc.": "Trees, rocks and boards are expensive. Past 60% damage you lose top speed. Contact with rivals only slows you down.","Puncte": "Points","25-18-15-12-10-8-6-4-2-1 pentru primii zece. Etapele de raliu se aleargă solo, contra timpilor rivalilor.": "25-18-15-12-10-8-6-4-2-1 for the top ten. Rally stages are run solo, against the rivals' stage times.","Iarbă &amp; nisip": "Grass &amp; sand","În afara pistei pierzi rapid viteză și controlul. La raliu, marginile sunt mai iertătoare.": "Off the track you bleed speed and grip fast. On rally stages the verges are more forgiving.","Mobil": "Mobile","Butoane pe ecran: stânga, dreapta, frână, gaz. Ține telefonul pe orizontală.": "On-screen buttons: left, right, brake, throttle. Hold the phone in landscape.","Înapoi": "Back","Alege campionatul": "Choose a championship","Alege traseul": "Choose a track","Tururi": "Laps","Continuă": "Continue","Alege mașina": "Choose a car","Dificultate": "Difficulty","Amator": "Amateur","Pro": "Pro","Legendă": "Legend","Asistență": "Assists","Sunet": "Sound","Tasta M sau butonul din dreapta sus comută între sunet complet, doar anvelope și vânt, sau tăcere.": "Press M, or the button top right, to cycle full sound, tyres and wind only, or silence.","Ajutaje de stabilitate și aderență. Legendă = model pur, fără ajutor.": "Stability and grip help. Legend is the raw model, with no help at all.","Meniu": "Menu","Start": "Start","Sezon": "Season","Etape": "Rounds","Clasament general": "Overall standings","Abandonează sezonul": "Quit the season","Următoarea etapă": "Next round","Rezultate": "Results","Pauză": "Paused","Reia cursa": "Resume","De la capăt": "Restart","Ieși în meniu": "Exit to menu","Sunet: complet": "Sound: full","Sunet: fără motor": "Sound: no engine","Sunet: oprit": "Sound: off","Rotește telefonul": "Rotate your phone","Jocul se joacă pe orizontală": "This game is played in landscape","România": "Romania","Coasta Amalfi": "Amalfi Coast","Alpi": "Alps","Merzouga": "Merzouga","Făgăraș": "Fagaras","Laponia": "Lapland","Țara Galilor": "Wales","Yokohama": "Yokohama","Circuit de start: viraje largi, o denivelare la mijloc și o linie dreaptă lungă.": "The starter circuit: open corners, one crest in the middle and a long straight.","Faleză cu palmieri, viraje strânse deasupra mării și lumină de apus.": "Palm-lined cliffs, tight corners above the sea and low evening light.","Urcare continuă, ace de păr și coborâre rapidă. Frânează devreme.": "A long climb, hairpins and a fast descent. Brake early.","Circuit urban nocturn. Ziduri aproape, chicane și lumini de neon.": "Night street circuit. Close walls, chicanes and neon.","Etapă de viteză prin deșert. Nisipul iartă puțin, dar stâncile deloc.": "A fast desert stage. The sand forgives a little, the rocks don't.","Pietriș printre brazi. Viraje oarbe, spectatori pe margine, zero spațiu de greșeală.": "Gravel through pines. Blind corners, spectators on the verge, no room for error.","Zăpadă bătătorită. Grip aproape inexistent — conduci din alunecare.": "Packed snow. Almost no grip — you drive it on the slide.","Noroi, ploaie și făgașe. Ultima etapă a sezonului de raliu.": "Mud, rain and ruts. The closing stage of the rally season.","Grup turbo cu întârziere, dar vârf de viteză uriaș. Clasicul anilor '90.": "Laggy turbo, enormous top end. The nineties classic.","Monopost. Aderență și frânare excepționale, dar fragil la contact.": "Single-seater. Exceptional grip and braking, fragile in contact.","Tracțiune integrală. Cea mai bună alegere pe pietriș, zăpadă și noroi.": "All-wheel drive. The best pick on gravel, snow and mud.","Muscle car greu. Iese lat în viraje, dar nu-l oprește nimeni pe drept.": "Heavy muscle car. Runs wide in corners, unstoppable in a straight line.","Patru circuite asfaltate. Cursă cu grilă completă la fiecare etapă.": "Four tarmac circuits. A full grid at every round.","Patru etape speciale contra cronometru. Rivalii aleargă separat — contează doar timpul.": "Four special stages against the clock. Rivals run separately — only the time counts.","Sezonul complet: opt etape, asfalt și macadam alternativ. Titlul suprem.": "The full season: eight rounds alternating tarmac and gravel. The big one.","etape": "rounds","Etapă raliu": "Rally stage","Circuit": "Circuit","Raliu": "Rally","Cursă rapidă — alege traseul": "Quick race — choose a track","Contra cronometru — alege traseul": "Time trial — choose a track","Viteză": "Top speed","Aderență": "Grip","Manevrabilitate": "Handling","Poz": "Pos","Pilot": "Driver","Timp": "Time","Diferență": "Gap","Pct": "Pts","Tu": "You","Etapă": "Round","Tip": "Type","Loc": "Result","următoarea": "next up","— timp de etapă": "— stage time","— rezultate": "— results","Cel mai bun tur": "Best lap","avarii": "damage","puncte": "points","Clasament sezon": "Season standings","Din nou": "Race again","Închide sezonul": "Close the season","etapa": "round","CAMPION! Ai câștigat titlul.": "CHAMPION! The title is yours.","Titlul merge la": "The title goes to","TUR": "LAP","Total": "Total","ETAPĂ": "STAGE","ETAPĂ SOLO": "SOLO STAGE","Ultim tur": "Last lap","AVARII": "DAMAGE","cars on grid": "cars on grid"};
 let LANG="ro";
 const I18N_NODES=[];
 const I18N_SKIP={muteBtn:1,pauseBtn:1,langBtn:1,lapCount:1,hud:1,touch:1,cv:1};
@@ -333,20 +334,25 @@ const MAXSPEED=SEG*60;           // units / second, 1 segment per 60Hz frame
 /* ---------- vehicle physics constants ----------
    A_LAT comes from a corner-speed ladder: an EASY bend is flat out, a MEDIUM
    one needs a small lift, HARD ~70% and SAVAGE ~60% of top speed.            */
-const A_LAT   = 12400;            // peak lateral acceleration, world units/s^2
+const A_LAT   = 13800;            // peak lateral acceleration, world units/s^2
 const ACC0    = MAXSPEED/1.55;    // reference longitudinal force
 const WHEELB  = 900;              // wheelbase in world units (~2.7 m)
 const STEER_MAX = .62;            // full lock at the front wheels, radians
 const STEER_REF = 2100;           // speed at which usable lock has halved
-const LAT_DAMP = 4.2;             // how hard the tyres resist sliding sideways
+const LAT_DAMP = 2.9;             // how hard the tyres resist sliding sideways.
+                                  // Lower = the car changes lane faster; it does NOT
+                                  // make corners easier (that is A_LAT vs the bend).
 let AI_CORNER=1.0, AI_STRAIGHT=1.0;             // rivals obey the same limits, scaled by skill
 const ASSIST  = [.45,.20,0];      // grip + settling help by difficulty (Legend is raw)
 const GEARF   = [1.00,.76,.60,.485,.40,.335];   // tractive force by gear
 const GEARTOP = [.17,.33,.48,.64,.82,1.00];     // top of each gear, fraction of vmax
 function gearIndex(fr){ for(let i=0;i<6;i++) if(fr<=GEARTOP[i]) return i; return 5; }
 function rpmFrac(fr,g){ const lo=g?GEARTOP[g-1]:0; return clamp((fr-lo)/(GEARTOP[g]-lo),0,1); }
+const CURVE_K = .88;              // how much of the drawn curvature the car feels.
+                                  // Applied to BOTH the demand and cornerSpeed, so
+                                  // the ladder, the rivals and the pace notes agree.
 function cornerSpeed(curve,mu){   // the fastest you can hold a bend of this radius
-  const c=Math.abs(curve);
+  const c=Math.abs(curve)*CURVE_K;
   return c<.05 ? 1e9 : Math.sqrt(A_LAT*(mu||1)*SEG*SEG/c);
 }
 function playerMu(){              // grip the player's car has on this surface
@@ -529,8 +535,24 @@ function drawMiniMap(){
 
 /* ---------- procedural sprites ---------- */
 const SPR={};
+let SPR_UID=0;
 function mk(w,h,fn){ const c=document.createElement("canvas"); c.width=w;c.height=h;
-  const g=c.getContext("2d"); fn(g,w,h); return c; }
+  const g=c.getContext("2d"); fn(g,w,h); c.__uid=++SPR_UID; return c; }
+
+// a fog-coloured silhouette of a sprite, cached: same shape, flat colour
+const TINT={};
+function tinted(img,color){
+  const key=(img.__uid||0)+"|"+color;
+  if(TINT[key]) return TINT[key];
+  const c=document.createElement("canvas");
+  c.width=Math.max(1,Math.ceil(img.width/2));
+  c.height=Math.max(1,Math.ceil(img.height/2));
+  const g=c.getContext("2d");
+  g.drawImage(img,0,0,c.width,c.height);
+  g.globalCompositeOperation="source-in";
+  g.fillStyle=color; g.fillRect(0,0,c.width,c.height);
+  TINT[key]=c; return c;
+}
 
 function buildSprites(){
   SPR.tree = mk(120,190,(g,w,h)=>{
@@ -921,7 +943,7 @@ const G={
   season:null,
   // race runtime
   position:0, playerX:0, speed:0, lateral:0, yawVis:0, rollV:0, pitchV:0,
-  psi:0, slide:0, gear:0, rpm:0, shiftT:0, steerPos:0, vLat:0,
+  psi:0, slide:0, gear:0, rpm:0, shiftT:0, steerPos:0, vLat:0, engWork:0,
   lap:0, lapTime:0, raceTime:0, best:null, lastLap:null, lapTimes:[],
   damage:0, cars:[], started:false, finished:false, countdown:3,
   results:null, skidT:0, offroad:false
@@ -938,7 +960,7 @@ addEventListener("keydown",e=>{
   if(k==="arrowdown"||k==="s") key.dn=true;
   if(k===" ") key.hb=true;
   if(k==="p"||k==="escape"){ if(G.mode==="race") pause(); else if(G.mode==="paused") resume(); }
-  if(k==="m"){ audioInit(); setMute(!muted); }
+  if(k==="m"){ audioInit(); setAudioMode(audioMode+1); }
   audioInit();
 });
 addEventListener("keyup",e=>{
@@ -963,27 +985,39 @@ const isTouch = COARSE;
 document.addEventListener("pointerdown",()=>{ audioInit(); if(AC&&AC.state==="suspended") AC.resume(); },{passive:true});
 document.addEventListener("touchstart",()=>{ audioInit(); if(AC&&AC.state==="suspended") AC.resume(); },{passive:true});
 
-/* ---------- audio ---------- */
-let AC=null, master=null, ENG=null, muted=false;
+/* ---------- audio ----------
+   The old engine was two saws at a steady pitch: on a straight you sat pinned
+   at the rev limiter and it turned into a drone for half the lap. This version
+   uses an impulse-train timbre, ties loudness to how hard the engine is
+   actually WORKING (so cruising is quiet and corner exits bark), flutters on
+   the limiter, and lets wind and tyres carry the sense of speed.          */
+let AC=null, master=null, ENG=null, muted=false, audioMode=0;   // 0 all, 1 no engine, 2 silent
 function audioInit(){
   if(AC) return;
   try{
     AC=new (window.AudioContext||window.webkitAudioContext)();
     if(AC.state==="suspended" && AC.resume) AC.resume();
-    master=AC.createGain(); master.gain.value=muted?0:.8; master.connect(AC.destination);
+    master=AC.createGain(); master.gain.value=(audioMode===2)?0:.8;
+    master.connect(AC.destination);
 
-    // engine — two slightly detuned saws + sub sine through a resonant lowpass
+    // impulse-train timbre: a stack of harmonics, brightest around the 5th,
+    // which reads as cylinders firing rather than as a synth tone
+    const NH=24, re=new Float32Array(NH+1), im=new Float32Array(NH+1);
+    for(let i=1;i<=NH;i++)
+      im[i]=(1/Math.pow(i,.92))*(1+.85*Math.exp(-Math.pow((i-5)/2.6,2)));
+    const wave=AC.createPeriodicWave(re,im,{disableNormalization:false});
+
     const o1=AC.createOscillator(), o2=AC.createOscillator(), sub=AC.createOscillator();
-    o1.type="sawtooth"; o2.type="sawtooth"; sub.type="sine"; o2.detune.value=-13;
-    const lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=420; lp.Q.value=5;
-    const hp=AC.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=48;
+    o1.setPeriodicWave(wave); o2.setPeriodicWave(wave); sub.type="sine";
+    o2.detune.value=-16;
+    const lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=420; lp.Q.value=3.2;
+    const hp=AC.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=52;
     const eg=AC.createGain(); eg.gain.value=0;
-    const sg=AC.createGain(); sg.gain.value=.55;
+    const sg=AC.createGain(); sg.gain.value=.45;
     o1.connect(lp); o2.connect(lp); lp.connect(hp); hp.connect(eg);
     sub.connect(sg); sg.connect(eg); eg.connect(master);
     o1.start(); o2.start(); sub.start();
 
-    // soft brown noise, reused for tyres and wind
     const buf=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);
     const d=buf.getChannelData(0); let v=0;
     for(let i=0;i<d.length;i++){ v=(v+(Math.random()*2-1)*.34)*.94; d[i]=v; }
@@ -992,19 +1026,22 @@ function audioInit(){
     const ng=AC.createGain(); ng.gain.value=0;
     tyre.connect(nf); nf.connect(ng); ng.connect(master); tyre.start();
     const wind=AC.createBufferSource(); wind.buffer=buf; wind.loop=true;
-    const wf=AC.createBiquadFilter(); wf.type="lowpass"; wf.frequency.value=380;
+    const wf=AC.createBiquadFilter(); wf.type="lowpass"; wf.frequency.value=520;
     const wg=AC.createGain(); wg.gain.value=0;
     wind.connect(wf); wf.connect(wg); wg.connect(master); wind.start();
 
-    ENG={o1:o1,o2:o2,sub:sub,lp:lp,eg:eg,nf:nf,ng:ng,wg:wg};
+    ENG={o1:o1,o2:o2,sub:sub,lp:lp,eg:eg,nf:nf,ng:ng,wg:wg,wf:wf};
   }catch(e){ AC=null; }
 }
-function setMute(m){
-  muted=m;
-  if(master) master.gain.setTargetAtTime(m?0:.8, AC.currentTime, .05);
-  const b=$("muteBtn"); if(b) b.textContent = m ? "\u2715" : "\u266A";
-  const p=$("muteToggle"); if(p) p.textContent = T(m?"Sunet: oprit":"Sunet: pornit");
+function setAudioMode(m){
+  audioMode=((m%3)+3)%3;
+  muted=(audioMode===2);
+  if(master&&AC) master.gain.setTargetAtTime(muted?0:.8,AC.currentTime,.05);
+  const b=$("muteBtn"); if(b) b.textContent=["\u266A","FX","\u2715"][audioMode];
+  const p=$("muteToggle");
+  if(p) p.textContent=T(["Sunet: complet","Sunet: fără motor","Sunet: oprit"][audioMode]);
 }
+function setMute(){ setAudioMode(audioMode); }     // kept for the language switch
 function beep(f,dur,vol){
   if(!AC||muted) return;
   const o=AC.createOscillator(), g=AC.createGain(), lp=AC.createBiquadFilter();
@@ -1018,28 +1055,44 @@ function beep(f,dur,vol){
 function audioUpdate(){
   if(!AC||!ENG) return;
   const t=AC.currentTime;
-  if(G.mode!=="race" || G.finished){
-    const tc = G.finished ? .22 : .12;
-    ENG.eg.gain.setTargetAtTime(G.finished?.004:0,t,tc);
-    ENG.ng.gain.setTargetAtTime(0,t,tc);
-    ENG.wg.gain.setTargetAtTime(0,t,tc);
-    ENG.o1.frequency.setTargetAtTime(42,t,.5);
-    ENG.o2.frequency.setTargetAtTime(42,t,.5);
-    ENG.sub.frequency.setTargetAtTime(21,t,.5);
-    return;
+  const off = (G.mode!=="race") || G.finished || audioMode>=1;
+  if(off || !G.track){
+    ENG.eg.gain.setTargetAtTime(0,t,G.finished?.22:.12);
+    if(G.mode!=="race"||G.finished){
+      ENG.ng.gain.setTargetAtTime(0,t,.12);
+      ENG.wg.gain.setTargetAtTime(0,t,.12);
+      return;
+    }
   }
   const sp=clamp(G.speed/MAXSPEED,0,1);
-  const rev=G.started ? clamp(.14+G.rpm*.86,0,1) : (.14+(key.up?.55:0));
-  const load=key.up?1:(key.dn?.22:.42);
-  const f=40+rev*98;                                  // note climbs, drops on upshift
-  ENG.o1.frequency.setTargetAtTime(f,t,.045);
-  ENG.o2.frequency.setTargetAtTime(f*1.006,t,.045);
-  ENG.sub.frequency.setTargetAtTime(f*.5,t,.06);
-  ENG.lp.frequency.setTargetAtTime(230+rev*1450*load+sp*480,t,.07);
-  ENG.eg.gain.setTargetAtTime(.011+.028*load*(.35+rev*.65),t,.08);
-  ENG.nf.frequency.setTargetAtTime(680+sp*900,t,.10);
-  ENG.ng.gain.setTargetAtTime(clamp(sp*.012+(G.offroad?.042:0)+clamp(G.skidT,0,1)*.038,0,.09),t,.06);
-  ENG.wg.gain.setTargetAtTime(sp*sp*.042,t,.10);
+  G.audT=(G.audT||0)+1;
+
+  if(!off){
+    const rev=G.started ? clamp(.12+G.rpm*.88,0,1) : (.12+(key.up?.5:0));
+    // how hard the engine is actually pulling: near zero when cruising at top
+    // speed, high out of a corner. This is what stops the constant drone.
+    const work=clamp(G.engWork!==undefined?G.engWork:(key.up?1:0),0,1);
+    const coast=key.up?1:(key.dn?.10:.16);
+    // bouncing off the limiter breaks up the note on long straights
+    const onLimit=(G.rpm>.95&&key.up&&G.gear>=5);
+    const flut=onLimit ? (G.audT%5<2?.52:1) : 1;
+    const shift=G.shiftT>0 ? .22 : 1;
+
+    let f=44+rev*172;
+    if(onLimit) f*=(G.audT%5<2?.972:1);
+    ENG.o1.frequency.setTargetAtTime(f,t,.035);
+    ENG.o2.frequency.setTargetAtTime(f*1.007,t,.035);
+    ENG.sub.frequency.setTargetAtTime(f*.5,t,.05);
+    ENG.lp.frequency.setTargetAtTime((260+rev*1750*(.35+.65*work)+sp*420)*(shift<1?.5:1),t,.05);
+    ENG.eg.gain.setTargetAtTime(
+      (.006+.030*(.18+.82*work)*(.30+.70*rev))*coast*flut*shift, t, .06);
+  }
+  // tyres and wind carry the speed once the engine backs off
+  ENG.nf.frequency.setTargetAtTime(640+sp*1000,t,.10);
+  ENG.ng.gain.setTargetAtTime(
+    clamp(sp*.020+(G.offroad?.055:0)+clamp(G.skidT,0,1)*.055,0,.11),t,.06);
+  ENG.wf.frequency.setTargetAtTime(360+sp*700,t,.10);
+  ENG.wg.gain.setTargetAtTime(Math.pow(sp,2.1)*.075,t,.10);
 }
 function gearOf(){ return G.gear+1; }
 function rpmOf(){ return G.rpm; }
@@ -1196,6 +1249,7 @@ function update(dt){
   if(hb)     brake += ACC0*0.85*mu;
   if(!key.up && !key.dn) brake += ACC0*.15;                         // engine braking
   G.speed = clamp(G.speed + (F-drag-brake)*dt, 0, vmax*1.02);
+  G.engWork = clamp((F-drag)/(ACC0*.62),0,1);      // drives the engine note
 
   /* ---------- friction circle: braking eats cornering grip ---------- */
   const netLong = F - drag - brake;
@@ -1208,7 +1262,7 @@ function update(dt){
      wheel commands a lateral acceleration, the bend demands one, and the
      difference moves the car across the road. Braking cuts the bend's
      demand (it scales with v^2), so lifting always gets the car back.     */
-  G.steerPos = lerp(G.steerPos, steerIn, clamp(dt*5.5,0,1));   // hands move, not teleport
+  G.steerPos = lerp(G.steerPos, steerIn, clamp(dt*9,0,1));     // hands move, not teleport
 
   // rear axle stepping out: handbrake, or power on a loose surface
   let slideReq = 0;
@@ -1218,9 +1272,11 @@ function update(dt){
   if(steerIn && Math.sign(steerIn)!==Math.sign(G.slide)) G.slide*=Math.max(0,1-dt*3.2);
   if(aid>0) G.slide *= Math.max(0,1-dt*aid*2.2);
 
-  const aKin  = G.speed*G.speed*Math.tan(STEER_MAX*car.hand)/WHEELB;  // geometry at low speed
+  // more lock is usable at low speed, exactly like a real steering rack
+  const lockEff = STEER_MAX*car.hand*(1 + 1.3*Math.max(0,1-G.speed/6000));
+  const aKin  = G.speed*G.speed*Math.tan(lockEff)/WHEELB;             // geometry at low speed
   const aWheel= (G.steerPos + G.slide*.45) * Math.min(aLat, aKin);    // what you ask for
-  const aRoad = playerSeg.curve*G.speed*G.speed/(SEG*SEG);            // what the bend demands
+  const aRoad = playerSeg.curve*CURVE_K*G.speed*G.speed/(SEG*SEG);    // what the bend demands
   const understeer = Math.abs(aRoad) > aLat*1.02 ||
                      Math.abs(aWheel) >= aLat*.98;
   // tyres resist sliding sideways, so lateral speed settles instead of running away
@@ -1232,7 +1288,7 @@ function update(dt){
   /* ---------- feedback for sound and visuals ---------- */
   const skid = (understeer?.55:0) + Math.abs(G.slide)*.8 + (!onRoad?.5:0);
   G.skidT = lerp(G.skidT, skid*clamp(G.speed/vmax,0,1), clamp(dt*8,0,1));
-  G.yawVis = clamp(G.psi*3.4 + G.slide*.30, -1, 1);
+  G.yawVis = clamp(G.steerPos*.52 + G.psi*1.7 + G.slide*.30, -1, 1);
   const latG = clamp(aWheel/A_LAT, -1.2, 1.2);
   G.rollV  = lerp(G.rollV,  latG, clamp(dt*4.5,0,1));
   G.pitchV = lerp(G.pitchV, clamp((F-drag-brake)/(ACC0*1.4),-1,1), clamp(dt*5,0,1));
@@ -1488,18 +1544,25 @@ function project(p,camX,camY,camZ){
   p.screen.w=Math.round(p.screen.scale*ROADW*CW/2);
 }
 
+function buildSkyline(){
+  const p=[];
+  for(let i=0;i<=40;i++)
+    p.push(Math.sin(i*.83)*17 + Math.sin(i*.31+1.2)*26 + Math.cos(i*1.9)*7);
+  return p;
+}
 function drawSky(theme,curve,y){
   const g=ctx.createLinearGradient(0,0,0,CH*.62);
   g.addColorStop(0,theme.sky[0]); g.addColorStop(.55,theme.sky[1]); g.addColorStop(1,theme.sky[2]);
   ctx.fillStyle=g; ctx.fillRect(0,0,CW,CH);
-  // distant hills, parallax on curve + elevation
-  const off = -(G.skyX||0);
-  ctx.fillStyle=shade(theme.sky[0],.06);
+  // fixed ridge line — the horizon only rises and falls with the road's elevation
+  const R=G.skyline||(G.skyline=buildSkyline());
+  ctx.fillStyle=shade(theme.sky[0],.10);
   ctx.beginPath(); ctx.moveTo(0,CH*.62);
-  for(let i=0;i<=16;i++){
-    const px=i/16*CW;
-    ctx.lineTo(px, CH*.44 + Math.sin(i*1.7+off*.004)*26 + Math.cos(i*.7)*18 + y*.006);
-  }
+  for(let i=0;i<R.length;i++) ctx.lineTo(i/(R.length-1)*CW, CH*.44 + R[i] + y*.005);
+  ctx.lineTo(CW,CH*.62); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=shade(theme.sky[0],.02);
+  ctx.beginPath(); ctx.moveTo(0,CH*.62);
+  for(let i=0;i<R.length;i++) ctx.lineTo(i/(R.length-1)*CW, CH*.50 + R[i]*.45 + y*.005);
   ctx.lineTo(CW,CH*.62); ctx.closePath(); ctx.fill();
 }
 
@@ -1538,10 +1601,13 @@ function drawSprite(img,upp,scale,destX,destY,offX,offY,clipY,fog,theme,roll){
   if(clipH>=h) return;
   if(w<1||h<1) return;
   if(roll){ ctx.save(); ctx.translate(dx+w/2,dy+h); ctx.rotate(roll); ctx.translate(-(dx+w/2),-(dy+h)); }
-  ctx.drawImage(img,0,0,img.width,img.height*(1-clipH/h),dx,dy,w,h-clipH);
+  const sh=img.height*(1-clipH/h);
+  ctx.drawImage(img,0,0,img.width,sh,dx,dy,w,h-clipH);
   if(fog!==undefined && fog<1){
-    ctx.globalAlpha=(1-fog)*.9; ctx.fillStyle=theme.fog;
-    ctx.fillRect(dx,dy,w,h-clipH); ctx.globalAlpha=1;
+    const t=tinted(img,theme.fog);
+    ctx.globalAlpha=(1-fog)*.92;
+    ctx.drawImage(t,0,0,t.width,t.height*(1-clipH/h),dx,dy,w,h-clipH);
+    ctx.globalAlpha=1;
   }
   if(roll) ctx.restore();
 }
@@ -1623,7 +1689,6 @@ function loop(now){
   dt=Math.min(dt,1/24);
   if(G.mode==="race"){
     update(dt);
-    G.skyX=(G.skyX||0)+G.speed*dt*.02;
     render();
     drawHUD();
   }
@@ -1762,8 +1827,8 @@ function pause(){ if(G.mode!=="race") return; G.mode="paused"; showScreen("scPau
   $("hud").classList.add("hidden"); $("touch").style.display="none"; }
 function resume(){ if(G.mode!=="paused") return; G.mode="race"; showScreen(null);
   $("hud").classList.remove("hidden"); if(isTouch)$("touch").style.display="block"; last=performance.now(); }
-$("muteBtn").onclick=()=>{ audioInit(); setMute(!muted); };
-$("muteToggle").onclick=()=>{ audioInit(); setMute(!muted); };
+$("muteBtn").onclick=()=>{ audioInit(); setAudioMode(audioMode+1); };
+$("muteToggle").onclick=()=>{ audioInit(); setAudioMode(audioMode+1); };
 $("pauseBtn").onclick=pause;
 $("resumeBtn").onclick=resume;
 $("restartBtn").onclick=()=>{ G.best=null; startRace(); };
