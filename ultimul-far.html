@@ -61,6 +61,7 @@ body.pad [data-pad]::after{ content:attr(data-pad); position:absolute; right:-10
 
 #scrLevels{ background:rgba(5,7,18,.8); }
 .lv-head{ position:absolute; left:60px; right:60px; top:36px; display:flex; align-items:baseline; justify-content:space-between; }
+.lv-acts{ display:flex; gap:14px; }
 .lv-head h2{ font-family:'Pirata One',Georgia,serif; font-weight:400; font-size:66px; margin:0; color:var(--amber); }
 .lv-grid{ position:absolute; left:60px; right:60px; top:122px; display:grid; grid-template-columns:repeat(5,1fr); gap:20px; }
 .ch-col h3{ font-family:'Pirata One',Georgia,serif; font-weight:400; font-size:33px; margin:0 0 2px; color:var(--bone); line-height:1; }
@@ -146,7 +147,7 @@ body.pad [data-pad]::after{ content:attr(data-pad); position:absolute; right:-10
   </div>
 
   <div id="scrLevels" class="screen">
-    <div class="lv-head"><h2>Harta Marevei</h2><button id="lBack" class="btn" data-back data-pad="B">Înapoi</button></div>
+    <div class="lv-head"><h2>Harta Marevei</h2><div class="lv-acts"><button id="lDiff" class="btn">Dificultate: Poveste</button><button id="lBack" class="btn" data-back data-pad="B">Înapoi</button></div></div>
     <div class="lv-grid" id="lvGrid"></div>
   </div>
 
@@ -209,8 +210,10 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 
 /* ============================ SALVARE ============================ */
 const SAVE_KEY='ultimul-far-v1';
-let save={stars:Array(20).fill(0),mute:false,seen:{}};
-try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&Array.isArray(s.stars)){save.stars=s.stars.concat(Array(20).fill(0)).slice(0,20);save.mute=!!s.mute;save.seen=s.seen||{};}}catch(e){}
+let save={stars:Array(20).fill(0),mute:false,seen:{},diff:1};
+try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s&&Array.isArray(s.stars)){save.stars=s.stars.concat(Array(20).fill(0)).slice(0,20);save.mute=!!s.mute;save.seen=s.seen||{};save.diff=[0,1,2].includes(s.diff)?s.diff:1;}}catch(e){}
+const DIFFS=[{name:'Poveste',hp:.75,gold:1.25},{name:'Normal',hp:1.12,gold:1},{name:'Greu',hp:1.5,gold:.9}];
+const DIFF=()=>DIFFS[save.diff]||DIFFS[1];
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}}
 
 /* ============================ DATE JOC ============================ */
@@ -396,7 +399,7 @@ function buildLevel(L){
  const seed=1000+L*7919,rng=rngf(seed),ch=Math.floor(L/4);let A=null,B=null;
  for(let i=0;i<400;i++){const p=genPath(rng);if(p.length>=23&&p[p.length-1][1]>=2&&p[0][1]>=1){A=p;if(p.length>=26-ch)break;}}
  if(!A){A=[];for(let c=0;c<COLS;c++)A.push([c,4]);}
- if(TWO.has(L))for(let i=0;i<300&&!B;i++)B=genBranch(rng,A);
+ if(TWO.has(L))for(let i=0;i<600&&!B;i++){B=genBranch(rng,A);if(B&&B.cells.length+A.length-B.join<22)B=null;}
  const grid=[];for(let r=0;r<ROWS;r++)grid.push(Array(COLS).fill(0));
  A.forEach(([c,r])=>grid[r][c]=1);
  const paths=[mkPath(A)];let cellsB=null;
@@ -411,13 +414,13 @@ function buildLevel(L){
 function poolFor(L,w){
  const p=[['scrum',0],['taciune',2]];
  if(L>=2)p.push(['liliac',3]);if(L>=4)p.push(['paznic',2]);if(L>=5)p.push(['jar',3]);if(L>=8)p.push(['zgura',2]);if(L>=9)p.push(['bolovan',4]);
- if(L>=12)p.shift();
- return p.filter(x=>w>=x[1]||(L>=12&&w>=1)).map(x=>x[0]);
+ if(L>=12)p[0][1]=99;
+ return p.filter(x=>w>=x[1]).map(x=>x[0]);
 }
 function buildWaves(L,np){
  const rng=rngf(4242+L*977),n=Math.min(15,6+Math.floor(L*.5)),boss=L%4===3,waves=[];
  for(let w=0;w<n;w++){
-  const last=w===n-1;let budget=(6+w*4.2+L*1.3+w*L*.13)*(boss&&last?.5:1);
+  const last=w===n-1;let budget=(5+w*3.5+L*.9+w*L*.09)*(boss&&last?.5:1)*(np>1?.88:1);
   let pool=poolFor(L,w);if(!pool.length)pool=['taciune'];
   const ng=Math.max(1,Math.min(3,1+Math.floor(rng()*Math.min(3,1+w/3))));
   const sp=[];let t=0;
@@ -437,10 +440,10 @@ function buildWaves(L,np){
 function newGame(L){
  const lv=buildLevel(L);
  return{L,ch:Math.floor(L/4),lv,paths:lv.paths,grid:lv.grid,lh:lv.lh,towers:[],enemies:[],proj:[],fx:[],parts:[],amb:[],
-  gold:250+L*45+(lv.paths.length>1?140:0),lives:20,wave:0,waves:buildWaves(L,lv.paths.length),queue:[],timer:-1,time:0,speed:1,paused:false,state:'demo',
+  gold:Math.round((300+L*50+(lv.paths.length>1?160:0))*DIFF().gold),lives:20,wave:0,waves:buildWaves(L,lv.paths.length),queue:[],timer:-1,time:0,speed:1,paused:false,state:'demo',
   cur:{c:6,r:3},curVis:false,pointer:null,menu:null,aim:false,cdS:0,cdF:0,shake:0,built:0,banner:null,bossRef:null,lhHit:0,hudKey:''};
 }
-function tStats(t){const d=TOWERS[t.type],k=t.tier;return{range:(d.range+.25*k)*T,rate:(d.rate||0)*(1-.1*k),dmg:(d.dmg||0)*(1+.65*k),dps:(d.dps||0)*(1+.6*k),slow:d.slow?d.slow+.1*k:0,splash:d.splash?(d.splash+.15*k)*T:0,chain:d.chain?d.chain+k:0};}
+function tStats(t){const d=TOWERS[t.type],k=t.tier;return{range:(d.range+.25*k)*T,rate:(d.rate||0)*(1-.1*k),dmg:(d.dmg||0)*(1+.8*k),dps:(d.dps||0)*(1+.75*k),slow:d.slow?d.slow+.1*k:0,splash:d.splash?(d.splash+.15*k)*T:0,chain:d.chain?d.chain+k:0};}
 const upCost=t=>Math.round(TOWERS[t.type].cost*(.8+.4*t.tier));
 const sellVal=t=>Math.floor(t.spent*.7);
 const towerAt=(c,r)=>G.towers.find(t=>t.c===c&&t.r===r);
@@ -450,9 +453,9 @@ function bobOf(e){return e.air?-22+Math.sin(e.anim*5)*4:-Math.abs(Math.sin(e.ani
 function posE(e){const p=pathPos(e.path,e.d);e.x=p.x-p.dy*e.off;e.y=p.y+p.dx*e.off;if(p.dx>.2)e.dir=1;else if(p.dx<-.2)e.dir=-1;}
 function spawn(q){
  const g=G,d=EN[q.type],L=g.L,pi=Math.min(q.p||0,g.paths.length-1);
- const mul=d.boss?(1+.2*L):(1+.11*L)*(1+.08*(q.wave||0));
- const e={type:q.type,def:d,pi,path:g.paths[pi],d:q.d0||0,hp:d.hp*mul,max:d.hp*mul,spd:d.spd*T,armor:d.armor*(1+L*.04),air:!!d.air,r:d.r,
-  off:(Math.random()-.5)*(d.boss?4:22),slowT:0,slowF:0,frz:0,flash:0,anim:Math.random()*10,alive:true,gold:Math.round(d.gold*(1+.03*L)),healT:2,spawnT:4,x:-60,y:0,dir:1,boss:!!d.boss,wave:q.wave||0};
+ const mul=(d.boss?(1+.16*L):(1+.085*L)*(1+.06*(q.wave||0)))*DIFF().hp;
+ const e={type:q.type,def:d,pi,path:g.paths[pi],d:q.d0||0,hp:d.hp*mul,max:d.hp*mul,spd:d.spd*T,armor:d.armor*(1+L*.02),air:!!d.air,r:d.r,
+  off:(Math.random()-.5)*(d.boss?4:22),slowT:0,slowF:0,frz:0,flash:0,anim:Math.random()*10,alive:true,gold:Math.round(d.gold*(1+.05*L)),healT:2,spawnT:4,x:-60,y:0,dir:1,boss:!!d.boss,wave:q.wave||0};
  posE(e);g.enemies.push(e);
  if(!d.boss&&g.state==='play'&&!save.seen[q.type]){save.seen[q.type]=1;if(q.type==='zgura')save.seen.zmica=1;persist();if(q.type!=='zmica')g.intro={type:q.type,life:5};}
  if(e.boss){g.bossRef=e;banner(d.name);sfx('boss');g.shake=8;}
@@ -462,7 +465,8 @@ function startWave(){
  const g=G;if(g.wave>=g.waves.length)return;
  const w=g.waves[g.wave];let maxT=0;
  for(const s of w){g.queue.push({at:g.time+s.t,type:s.type,p:s.p,wave:g.wave});maxT=Math.max(maxT,s.t);}
- g.wave++;g.timer=g.wave<g.waves.length?maxT+13:-1;
+ if(g.wave>0){const b=20+g.wave*4;g.gold+=b;ftext(W-200,150,'+'+b+' la începutul valului','#f2b134');}
+ g.wave++;g.timer=g.wave<g.waves.length?maxT+14:-1;
  if(!w.some(s=>EN[s.type].boss))banner('Valul '+g.wave);sfx('horn');
 }
 function callWave(){
@@ -506,7 +510,7 @@ function update(dt){
   let sp=e.spd;if(e.frz>0){e.frz-=dt;sp=0;}else if(e.slowT>0){e.slowT-=dt;sp*=1-e.slowF;}
   e.cur=sp;e.d+=sp*dt;posE(e);
   if(e.def.heal){e.healT-=dt;if(e.healT<=0){e.healT=2.2;let any=false;for(const o of g.enemies){if(o!==e&&o.alive&&o.hp<o.max&&Math.hypot(o.x-e.x,o.y-e.y)<1.6*T){o.hp=Math.min(o.max,o.hp+o.max*.1);any=true;}}if(any)g.fx.push({k:'ring',x:e.x,y:e.y,r0:10,r1:1.6*T,life:.5,max:.5,col:'130,255,150'});}}
-  if(e.boss&&e.def.minion){e.spawnT-=dt;if(e.spawnT<=0){e.spawnT=7;for(let i=0;i<2;i++)spawn({type:e.def.minion,p:e.pi,wave:Math.max(0,g.wave-5),d0:Math.max(0,e.d-30-i*22)});}}
+  if(e.boss&&e.def.minion){e.spawnT-=dt;if(e.spawnT<=0){e.spawnT=8.5;for(let i=0;i<2;i++)spawn({type:e.def.minion,p:e.pi,wave:Math.max(0,g.wave-7),d0:Math.max(0,e.d-30-i*22)});}}
   if(e.d>=e.path.total){e.alive=false;const lost=e.boss?10:1;g.lives=Math.max(0,g.lives-lost);g.shake=7;g.lhHit=.5;sfx('hurt');
    for(let i=0;i<14;i++)part(g.lh.x,g.lh.y-40,rnd(-90,90),rnd(-140,0),rnd(.4,.8),3,'#d2503f','spark');
    if(g.lives<=0){endLevel(false);return;}}
@@ -1034,7 +1038,7 @@ function showResult(g,win,stars){
  $('#rRetry').toggleAttribute('data-default',!win);nx.toggleAttribute('data-default',win);
  show('scrResult');if(!win||g.L===19)setFocus($('#rRetry'));
 }
-function pauseGame(){if(!G||G.state!=='play')return;G.paused=true;G.menu=null;$('#pInfo').textContent='Nivelul '+(G.L+1)+', '+LEVELNAMES[G.L]+'. Valul '+G.wave+' din '+G.waves.length+'.';show('scrPause');}
+function pauseGame(){if(!G||G.state!=='play')return;G.paused=true;G.menu=null;$('#pInfo').textContent='Nivelul '+(G.L+1)+', '+LEVELNAMES[G.L]+'. Valul '+G.wave+' din '+G.waves.length+'. Dificultate: '+DIFF().name+'.';show('scrPause');}
 function resumeGame(){if(!G)return;G.paused=false;show(null);}
 function toMap(){makeDemo(G?G.L:0);buildLevelGrid();show('scrLevels');}
 function syncSoundBtns(){const t='Sunet: '+(save.mute?'oprit':'pornit');$('#tSound').textContent=t;$('#pSound').textContent=t;}
@@ -1118,6 +1122,9 @@ bind('#tPlay',()=>openLevels());
 bind('#tFull',()=>{const d=document.documentElement;try{if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().catch(()=>{});else if(document.exitFullscreen)document.exitFullscreen();}catch(e){}});
 bind('#tSound',()=>AU.setMute(!save.mute));bind('#pSound',()=>AU.setMute(!save.mute));
 bind('#lBack',()=>show('scrTitle'));
+bind('#lDiff',()=>{save.diff=(save.diff+1)%3;persist();syncDiff();});
+function syncDiff(){$('#lDiff').textContent='Dificultate: '+DIFF().name;}
+syncDiff();
 bind('#sNext',()=>storyNext());bind('#sSkip',()=>storySkip());
 bind('#pResume',()=>resumeGame());bind('#pRetry',()=>startLevel(G.L));bind('#pMap',()=>toMap());
 bind('#rNext',()=>startLevel(Math.min(19,G.L+1)));bind('#rRetry',()=>startLevel(G.L));bind('#rMap',()=>toMap());
