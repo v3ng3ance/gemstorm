@@ -2,7 +2,7 @@
 <html lang="ro">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#070914">
 <title>Ultimul Far</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,9 +18,10 @@
 :root[data-theme="dark"]{ --page:#070914; }
 html{ scroll-padding-top:env(safe-area-inset-top,0px); height:100%; }
 *,*::before,*::after{ box-sizing:inherit; }
-html,body{ margin:0; height:100%; overflow:hidden; background:var(--page); }
+html,body{ margin:0; height:100%; overflow:hidden; background:var(--page); overscroll-behavior:none; }
+body{ position:fixed; inset:0; }
 body{ font-family:'Alegreya',Georgia,'Times New Roman',serif; color:var(--bone); touch-action:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
-#stage{ position:absolute; left:50%; top:50%; width:1280px; height:720px; transform-origin:50% 50%; overflow:hidden; background:#000; }
+#stage{ position:fixed; left:0; top:0; width:1280px; height:720px; transform-origin:0 0; overflow:hidden; background:#000; }
 #game{ position:absolute; left:0; top:0; width:1280px; height:720px; display:block; }
 .hidden{ display:none !important; }
 button{ font-family:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
@@ -100,6 +101,16 @@ body.pad [data-pad]::after{ content:attr(data-pad); position:absolute; right:-10
 @keyframes pop{ 45%{ transform:scale(1.18); color:#ffe08a; } }
 .stat.hurt{ animation:hurt .5s ease-out; }
 @keyframes hurt{ 25%{ transform:translateX(-5px); color:#ff6a50; } 55%{ transform:translateX(5px); color:#ff6a50; } }
+body.small #hud{ height:96px; }
+body.small .stats{ font-size:34px; gap:34px; }
+body.small .stat svg{ width:36px; height:36px; }
+body.small .hbtn{ min-height:72px; min-width:76px; font-size:28px; padding:0 26px; }
+body.small .spell{ width:116px; height:116px; }
+body.small .spell svg{ width:52px; height:52px; }
+body.small .spell span{ font-size:18px; }
+body.small #spells{ gap:20px; }
+body.small .btn{ min-height:74px; font-size:30px; padding:0 36px; }
+body.small .dlg .txt{ font-size:32px; }
 @media (prefers-reduced-motion: reduce){ .stat.pop,.stat.hurt{ animation:none; } .spell.on{ box-shadow:none; } }
 </style>
 </head>
@@ -864,14 +875,14 @@ function render(){
 function drawOverlayUI(){
  const g=G,c=ctx;c.textAlign='center';c.textBaseline='middle';
  // bară boss
- if(g.bossRef&&g.state==='play'){const b=g.bossRef,w=440,x=W/2-w/2,y=92;c.fillStyle='rgba(8,10,22,0.85)';rr(c,x-12,y-10,w+24,44,10);c.fill();
+ if(g.bossRef&&g.state==='play'){const b=g.bossRef,w=440,x=W/2-w/2,y=SMALL()?112:92;c.fillStyle='rgba(8,10,22,0.85)';rr(c,x-12,y-10,w+24,44,10);c.fill();
   c.font='400 22px "Pirata One", Georgia, serif';c.fillStyle='#f2b134';c.fillText(b.def.name,W/2,y+4);c.fillStyle='#3a1414';c.fillRect(x,y+18,w,9);c.fillStyle='#d2503f';c.fillRect(x,y+18,w*Math.max(0,b.hp/b.max),9);}
  // val următor
- if(g.state==='play'&&g.wave<g.waves.length){const cnt={};for(const sw of g.waves[g.wave])cnt[sw.type]=(cnt[sw.type]||0)+1;const ks=Object.keys(cnt),w=ks.length*72+100,x0=W-20-w,y0=82;
+ if(g.state==='play'&&g.wave<g.waves.length){const cnt={};for(const sw of g.waves[g.wave])cnt[sw.type]=(cnt[sw.type]||0)+1;const ks=Object.keys(cnt),w=ks.length*72+100,x0=W-20-w,y0=SMALL()?104:82;
   c.fillStyle='rgba(8,11,26,0.82)';rr(c,x0,y0,w,52,12);c.fill();c.textAlign='left';c.font='400 18px Alegreya, Georgia, serif';c.fillStyle='#9aa0b8';c.fillText('Urmează',x0+14,y0+27);
   ks.forEach((k,i)=>{const ix=x0+104+i*72;enemyIcon(k,ix,y0+26,EN[k].boss?15:11);c.textAlign='left';c.font='700 18px Alegreya, Georgia, serif';c.fillStyle='#eadfc4';c.fillText('×'+cnt[k],ix+17,y0+30);});c.textAlign='center';}
  // inamic nou
- if(g.intro&&g.state==='play'){const d=EN[g.intro.type],k=g.intro.life,a=Math.max(0,Math.min(1,k,(5-k)*3)),x0=20,y0=H-232,w=500,h=106;c.globalAlpha=a;
+ if(g.intro&&g.state==='play'){const d=EN[g.intro.type],k=g.intro.life,a=Math.max(0,Math.min(1,k,(5-k)*3)),x0=20,y0=H-262,w=500,h=106;c.globalAlpha=a;
   c.fillStyle='rgba(10,13,30,0.94)';rr(c,x0,y0,w,h,14);c.fill();c.strokeStyle='rgba(210,80,63,0.65)';c.lineWidth=2;c.stroke();c.fillStyle='rgba(255,255,255,0.06)';circ(c,x0+58,y0+53,40);c.fill();
   enemyIcon(g.intro.type,x0+58,y0+58,20);c.textAlign='left';c.fillStyle='#e0715f';c.font='400 17px Alegreya, Georgia, serif';c.fillText('Inamic nou',x0+114,y0+24);
   c.fillStyle='#f2b134';c.font='400 30px "Pirata One", Georgia, serif';c.fillText(d.name,x0+114,y0+52);c.fillStyle='#eadfc4';c.font='400 19px Alegreya, Georgia, serif';c.fillText(d.desc||'',x0+114,y0+84);c.textAlign='center';c.globalAlpha=1;}
@@ -887,6 +898,7 @@ function drawOverlayUI(){
   if(g.built===0)hintBox(nav?'Mută cursorul lângă drum și apasă '+btn+' ca să construiești.':'Atinge un loc liber de lângă drum ca să ridici un turn.');
   else if(g.wave===0)hintBox(lastInput==='pad'?'Apasă X ca să pornească primul val.':'Când ești gata, apasă „Începe valul”.');}
 }
+const SMALL=()=>document.body.classList.contains('small');
 function enemyIcon(type,x,y,s){const d=EN[type],e={type,def:d,anim:G.time,r:s,dir:1,air:!!d.air,flash:0,frz:0,slowT:0};ctx.save();ctx.translate(x,y+s*.3);(ED[d.draw||type]||ED.scrum)(ctx,e,s);ctx.restore();}
 function hintBox(t){const c=ctx;c.font='400 23px Alegreya, Georgia, serif';const w=c.measureText(t).width+44;c.fillStyle='rgba(10,13,30,0.9)';rr(c,W/2-w/2,H-64,w,44,12);c.fill();c.strokeStyle='rgba(242,177,52,0.5)';c.lineWidth=2;c.stroke();c.fillStyle='#eadfc4';c.fillText(t,W/2,H-42);}
 
@@ -1057,16 +1069,17 @@ function hud(){
 /* ============================ INPUT ============================ */
 function bump(sel,cls){const el=$(sel).parentElement;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);}
 function setInput(m){if(m===lastInput)return;lastInput=m;document.body.classList.toggle('nav',m==='pad'||m==='key');document.body.classList.toggle('pad',m==='pad');if(G)G.curVis=m==='pad'||m==='key';}
-function toLogical(e){const r=cvs.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H};}
+function toLogical(e){const sx=e.clientX,sy=e.clientY;if(ROT)return{x:(sy-TY)/SCALE,y:(TX-sx)/SCALE};return{x:(sx-TX)/SCALE,y:(sy-TY)/SCALE};}
+function menuHit(p){const m=G.menu;let bi=-1,bd=46;m.items.forEach((it,i)=>{const d=Math.hypot(it.x-p.x,it.y-p.y);if(d<bd){bd=d;bi=i;}});return bi;}
 function cellOf(p){return{c:Math.floor(p.x/T),r:Math.floor((p.y-OY)/T)};}
 cvs.addEventListener('pointerdown',e=>{
  AU.init();setInput(e.pointerType==='mouse'?'mouse':'touch');const g=G;if(!g||g.state!=='play'||g.paused)return;const p=toLogical(e);g.pointer=p;
  if(g.aim){castStrike(p.x,p.y);return;}
- if(g.menu){const i=g.menu.items.findIndex(it=>Math.hypot(it.x-p.x,it.y-p.y)<=36);if(i>=0){menuAct(i);return;}g.menu=null;}
+ if(g.menu){const i=menuHit(p);if(i>=0){menuAct(i);return;}g.menu=null;}
  const c=cellOf(p);if(c.c>=0&&c.c<COLS&&c.r>=0&&c.r<ROWS){g.cur=c;openMenu(c.c,c.r);}
 });
 cvs.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;setInput('mouse');const g=G;if(!g||g.state!=='play')return;const p=toLogical(e);g.pointer=p;
- if(g.menu){const i=g.menu.items.findIndex(it=>Math.hypot(it.x-p.x,it.y-p.y)<=36);if(i>=0)g.menu.sel=i;}
+ if(g.menu){const i=menuHit(p);if(i>=0)g.menu.sel=i;}
  const c=cellOf(p);if(c.c>=0&&c.c<COLS&&c.r>=0&&c.r<ROWS){g.cur=c;g.curVis=true;}else g.curVis=false;});
 cvs.addEventListener('pointerleave',()=>{if(G&&lastInput==='mouse')G.curVis=false;});
 cvs.addEventListener('contextmenu',e=>e.preventDefault());
@@ -1119,7 +1132,7 @@ function pollPad(dt){
 /* ============================ BUTOANE DOM ============================ */
 function bind(id,f){$(id).addEventListener('click',e=>{AU.init();sfx('click');f(e);});}
 bind('#tPlay',()=>openLevels());
-bind('#tFull',()=>{const d=document.documentElement;try{if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().catch(()=>{});else if(document.exitFullscreen)document.exitFullscreen();}catch(e){}});
+bind('#tFull',()=>{const d=document.documentElement;try{if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{});}catch(e){}}).catch(()=>{});else if(document.exitFullscreen)document.exitFullscreen();}catch(e){}});
 bind('#tSound',()=>AU.setMute(!save.mute));bind('#pSound',()=>AU.setMute(!save.mute));
 bind('#lBack',()=>show('scrTitle'));
 bind('#lDiff',()=>{save.diff=(save.diff+1)%3;persist();syncDiff();});
@@ -1138,13 +1151,20 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&G&&G.state
 
 /* ============================ RESIZE & BUCLĂ ============================ */
 let rotDismissed=false;
+let ROT=false,TX=0,TY=0,lastSz='';
 function resize(){
- const vw=innerWidth,vh=innerHeight;SCALE=Math.min(vw/W,vh/H);const pr=Math.min(2,window.devicePixelRatio||1);K=Math.min(2.5,SCALE*pr);
- $('#stage').style.transform='translate(-50%,-50%) scale('+SCALE+')';
- cvs.width=Math.round(W*K);cvs.height=Math.round(H*K);if(G)renderMap();
- $('#rotate').classList.toggle('show',vh>vw*1.1&&vw<900);
+ const vv=window.visualViewport,vw=vv?vv.width:innerWidth,vh=vv?vv.height:innerHeight,ox=vv?vv.offsetLeft:0,oy=vv?vv.offsetTop:0;
+ if(!vw||!vh)return;
+ ROT=vh>vw*1.05;const st=$('#stage');
+ if(ROT){SCALE=Math.min(vh/W,vw/H);TX=ox+vw/2+H*SCALE/2;TY=oy+vh/2-W*SCALE/2;st.style.transform='translate('+TX+'px,'+TY+'px) rotate(90deg) scale('+SCALE+')';}
+ else{SCALE=Math.min(vw/W,vh/H);TX=ox+(vw-W*SCALE)/2;TY=oy+(vh-H*SCALE)/2;st.style.transform='translate('+TX+'px,'+TY+'px) scale('+SCALE+')';}
+ document.body.classList.toggle('small',Math.min(W*SCALE,H*SCALE*16/9)<1000);
+ const pr=Math.min(2,window.devicePixelRatio||1);K=Math.min(2.5,Math.max(.3,SCALE*pr));
+ const sz=Math.round(W*K)+'x'+Math.round(H*K);if(sz!==lastSz){lastSz=sz;cvs.width=Math.round(W*K);cvs.height=Math.round(H*K);if(G)renderMap();}
 }
 addEventListener('resize',resize);
+addEventListener('orientationchange',()=>{resize();setTimeout(resize,250);setTimeout(resize,700);});
+if(window.visualViewport){visualViewport.addEventListener('resize',resize);visualViewport.addEventListener('scroll',resize);}
 let last=performance.now();
 function frame(now){
  const dt=Math.min(.05,(now-last)/1000);last=now;
