@@ -21,7 +21,8 @@ html{ scroll-padding-top:env(safe-area-inset-top,0px); height:100%; }
 html,body{ margin:0; height:100%; overflow:hidden; background:var(--page); overscroll-behavior:none; }
 body{ position:fixed; inset:0; }
 body{ font-family:'Alegreya',Georgia,'Times New Roman',serif; color:var(--bone); touch-action:none; -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; }
-#stage{ position:fixed; left:0; top:0; width:1280px; height:720px; transform-origin:0 0; overflow:hidden; background:#000; }
+#wrap{ position:fixed; left:0; top:0; right:0; bottom:0; overflow:hidden; background:var(--page); }
+#stage{ position:absolute; left:0; top:0; width:1280px; height:720px; transform-origin:0 0; overflow:hidden; background:#000; }
 #game{ position:absolute; left:0; top:0; width:1280px; height:720px; display:block; }
 .hidden{ display:none !important; }
 button{ font-family:inherit; cursor:pointer; -webkit-tap-highlight-color:transparent; }
@@ -115,7 +116,7 @@ body.small .dlg .txt{ font-size:32px; }
 </style>
 </head>
 <body>
-<div id="stage">
+<div id="wrap"><div id="stage">
   <canvas id="game"></canvas>
 
   <div id="hud" class="hidden">
@@ -201,8 +202,9 @@ body.small .dlg .txt{ font-size:32px; }
     </div>
   </div>
 
-  <div id="rotate"><div><b>Ultimul Far</b>Întoarce telefonul pe orizontală ca să vezi toată harta.</div></div>
-</div>
+  </div></div>
+<div id="rotate" hidden><div><b>Ultimul Far</b>Întoarce telefonul pe orizontală ca să vezi toată harta.</div></div>
+
 
 <script>
 'use strict';
@@ -1069,7 +1071,7 @@ function hud(){
 /* ============================ INPUT ============================ */
 function bump(sel,cls){const el=$(sel).parentElement;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);}
 function setInput(m){if(m===lastInput)return;lastInput=m;document.body.classList.toggle('nav',m==='pad'||m==='key');document.body.classList.toggle('pad',m==='pad');if(G)G.curVis=m==='pad'||m==='key';}
-function toLogical(e){const sx=e.clientX,sy=e.clientY;if(ROT)return{x:(sy-TY)/SCALE,y:(TX-sx)/SCALE};return{x:(sx-TX)/SCALE,y:(sy-TY)/SCALE};}
+function toLogical(e){const wr=$('#wrap').getBoundingClientRect(),sx=e.clientX-wr.left,sy=e.clientY-wr.top;if(ROT)return{x:(sy-TY)/SCALE,y:(TX-sx)/SCALE};return{x:(sx-TX)/SCALE,y:(sy-TY)/SCALE};}
 function menuHit(p){const m=G.menu;let bi=-1,bd=46;m.items.forEach((it,i)=>{const d=Math.hypot(it.x-p.x,it.y-p.y);if(d<bd){bd=d;bi=i;}});return bi;}
 function cellOf(p){return{c:Math.floor(p.x/T),r:Math.floor((p.y-OY)/T)};}
 cvs.addEventListener('pointerdown',e=>{
@@ -1153,7 +1155,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&G&&G.state
 let rotDismissed=false;
 let ROT=false,TX=0,TY=0,lastSz='';
 function resize(){
- const vv=window.visualViewport,vw=vv?vv.width:innerWidth,vh=vv?vv.height:innerHeight,ox=vv?vv.offsetLeft:0,oy=vv?vv.offsetTop:0;
+ const wr=$('#wrap'),vw=wr.clientWidth||innerWidth,vh=wr.clientHeight||innerHeight,ox=0,oy=0;
  if(!vw||!vh)return;
  ROT=vh>vw*1.05;const st=$('#stage');
  if(ROT){SCALE=Math.min(vh/W,vw/H);TX=ox+vw/2+H*SCALE/2;TY=oy+vh/2-W*SCALE/2;st.style.transform='translate('+TX+'px,'+TY+'px) rotate(90deg) scale('+SCALE+')';}
