@@ -59,6 +59,7 @@ body.pad [data-pad]::after{ content:attr(data-pad); position:absolute; right:-10
 .title-wrap p{ font-size:27px; line-height:1.45; margin:26px 0 38px; max-width:30ch; color:var(--bone); }
 .title-btns{ display:flex; flex-direction:column; align-items:flex-start; gap:16px; }
 .title-row{ display:flex; gap:14px; }
+#ver{ position:absolute; right:22px; bottom:18px; font-size:18px; color:rgba(234,223,196,.45); }
 .controls-note{ position:absolute; left:92px; bottom:42px; font-size:19px; color:var(--muted); max-width:60ch; line-height:1.45; }
 
 #scrLevels{ background:rgba(5,7,18,.8); }
@@ -155,6 +156,7 @@ body.small .dlg .txt{ font-size:32px; }
         </div>
       </div>
     </div>
+    <div id="ver">v5</div>
     <div class="controls-note">Se joacă prin atingere, cu mouse-ul sau cu un gamepad. Pe gamepad: stick sau cruce pentru cursor, A construiește, B anulează, X pornește valul, LB și RB aruncă vrăjile.</div>
   </div>
 
@@ -1155,7 +1157,11 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&G&&G.state
 let rotDismissed=false;
 let ROT=false,TX=0,TY=0,lastSz='';
 function resize(){
- const wr=$('#wrap'),vw=wr.clientWidth||innerWidth,vh=wr.clientHeight||innerHeight,ox=0,oy=0;
+ let vw=innerWidth,vh=innerHeight;const ox=0,oy=0,wr=$('#wrap');
+ if(wr.clientWidth){vw=Math.min(vw,wr.clientWidth);vh=Math.min(vh,wr.clientHeight);}
+ if(window.visualViewport&&visualViewport.width){vw=Math.min(vw,visualViewport.width);vh=Math.min(vh,visualViewport.height);}
+ if(window.screen&&screen.width&&screen.height){const a=Math.min(screen.width,screen.height),b=Math.max(screen.width,screen.height);if(vw>vh){vw=Math.min(vw,b);vh=Math.min(vh,a);}else{vw=Math.min(vw,a);vh=Math.min(vh,b);}}
+ const sig=vw+'x'+vh;$('#ver').textContent='v5 · '+Math.round(vw)+'×'+Math.round(vh)+(vh>vw*1.05?' · rotit':'');
  if(!vw||!vh)return;
  ROT=vh>vw*1.05;const st=$('#stage');
  if(ROT){SCALE=Math.min(vh/W,vw/H);TX=ox+vw/2+H*SCALE/2;TY=oy+vh/2-W*SCALE/2;st.style.transform='translate('+TX+'px,'+TY+'px) rotate(90deg) scale('+SCALE+')';}
