@@ -66,7 +66,9 @@ body{height:100%;margin:0;background:var(--wood-d);color:var(--paper);overflow:h
 #info .need{opacity:.7}#info .big{opacity:.7;font-size:.88em;margin-left:.2em}
 #info .bar{height:4px;background:rgba(255,255,255,.14);border-radius:2px;margin:.15em 0 .35em}
 #info .bar i{display:block;height:100%;border-radius:2px;background:var(--brass-l);transition:width .4s}
-.plate .pp{color:var(--brass-l);font-weight:600}
+.plate .pts{margin-left:.6em;padding-left:.6em;border-left:1px solid rgba(201,162,74,.35);font-family:Alegreya,Georgia,serif;font-weight:400;font-size:.9em;color:#e8dcb8}
+.plate .pts b{color:var(--brass-l);font-size:1.3em;font-variant-numeric:tabular-nums;font-weight:700}
+.plate.me .pts b{font-size:1.45em}
 @media (max-width:640px){#info .live{display:none}}
 #info img{width:1.35em;height:1.35em}
 #info b{font-family:'Alegreya SC',Georgia,serif;color:var(--paper)}
@@ -506,7 +508,7 @@ function platePos(seat){const s=oS();
 function pilePos(seat){const s=oS(),dx=Math.min(W*.33,CW*1.9+70);
   if(seat==='b')return {x:W/2+dx,y:H-CH-50};
   if(seat==='t')return {x:W/2+dx,y:TOP()+CH*s+28};
-  const {half}=sideSpan(),pp=platePos(seat);return {x:pp.x,y:SY()-half-CH*.24-10};
+  const pp=platePos(seat),x=Math.max(62,CH*s*.5+16);return {x:seat==='l'?x+75+CW*.35:W-x-75-CW*.35,y:pp.y};
 }
 const TS=()=>{const l=LIM();return Math.max(.5,Math.min(W<700?.8:.88,(l.bot-l.top)/CH-.62))};
 
@@ -572,11 +574,12 @@ function updatePlates(){if(!g)return;
     if(g.hands&&g.dealer===p)sub.push('împarte');
     if(g.bids&&g.bids[p]!=null)sub.push(g.bids[p]?('licitat '+g.bids[p]):'pas');
     if(g.taken&&g.taken[p].length)sub.push((g.taken[p].length/g.n)+(g.taken[p].length/g.n===1?' tură':' ture'));
-    if(g.pts&&g.phase!=='bid'){const t=teamOf(g,p);sub.push(`<b class="pp">${g.pts[t]+g.ann[t]} pct</b>`)}
+
     const dot=g.teams?`<i style="background:${p%2?'#c4483f':'#e6c76f'}"></i>`:'';
-    el.innerHTML=`<div class="nm">${dot}${NAMES[p]}</div><div class="sub">${sub.join(', ')||'&nbsp;'}</div>`}
+    let pts='';if(g.pts){const t=teamOf(g,p),v=g.pts[t]+g.ann[t];pts=`<span class="pts" title="${v>=33?'= '+Math.floor(v/33)+' puncte mari':''}"><b>${v}</b> pct</span>`}
+    el.innerHTML=`<div class="nm">${dot}${NAMES[p]}${pts}</div><div class="sub">${sub.join(', ')||'&nbsp;'}</div>`;el.classList.toggle('me',p===0)}
   positionPlates()}
-function positionPlates(){if(!g)return;const seats=seatsOf(g.n);plates.forEach((el,p)=>{const o=platePos(seats[p]),hw=el.offsetWidth/2+10;el.style.left=Math.min(W-hw,Math.max(hw,o.x))+'px';el.style.top=o.y+'px'})}
+function positionPlates(){if(!g)return;const seats=seatsOf(g.n);plates.forEach((el,p)=>{const o=platePos(seats[p]),hw=el.offsetWidth/2+10;el.style.left=Math.min(W-hw,Math.max(hw,o.x))+'px';el.style.top=(seats[p]==='b'?H-CH-24-el.offsetHeight/2:seats[p]==='t'?o.y-18+el.offsetHeight/2:o.y)+'px'})}
 function setTurn(p){plates.forEach((el,i)=>el.classList.toggle('turn',i===p))}
 function bubble(p,text,big){const o=plates[p];if(!o)return;const b=document.createElement('div');b.className='bubble'+(big?' big':'');b.textContent=text;
   b.style.left=o.style.left;b.style.top=(parseFloat(o.style.top)-o.offsetHeight/2-10)+'px';table.appendChild(b);setTimeout(()=>b.remove(),1700*Math.max(.7,SPEED))}
