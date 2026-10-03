@@ -20,7 +20,7 @@ html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{height:100%;margin:0;background:var(--wood-d);color:var(--paper);overflow:hidden;
   font-family:Alegreya,Georgia,'Times New Roman',serif;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-#table{position:relative;height:100%;overflow:hidden;
+#table{position:relative;height:100%;overflow:hidden;overflow:clip;
   background:repeating-linear-gradient(91deg,rgba(0,0,0,.07) 0 2px,transparent 2px 7px,rgba(255,220,170,.025) 7px 9px,transparent 9px 15px),
   radial-gradient(ellipse at 50% 40%,#53341f,#2a190d 70%,#1b0f07)}
 #felt{position:absolute;inset:clamp(6px,1.4vw,16px);border-radius:clamp(26px,7vw,110px);
@@ -40,6 +40,8 @@ body{height:100%;margin:0;background:var(--wood-d);color:var(--paper);overflow:h
   border-radius:calc(var(--cw)*.065);overflow:hidden;box-shadow:0 1px 1px rgba(0,0,0,.45),0 3px 9px rgba(0,0,0,.3)}
 .card .back{transform:rotateY(180deg)}
 .card img{width:100%;height:100%;display:block;pointer-events:none}
+.realcards .card .face,.realcards .card .back{background:#fff}
+.realcards .card img{object-fit:cover}
 .card.playable{cursor:pointer}
 .card.playable:hover .lift,.card.playable:focus-visible .lift{transform:translateY(-9%)}
 .card.playable:focus-visible .face{box-shadow:0 0 0 3px var(--brass-l)}
@@ -112,8 +114,8 @@ body{height:100%;margin:0;background:var(--wood-d);color:var(--paper);overflow:h
 .sheet{position:absolute;top:clamp(56px,7vh,74px);right:clamp(12px,2vw,26px);width:min(310px,88vw);max-height:calc(100% - 100px);overflow:auto;z-index:650;
   color:#1f2a4a;font-family:Caveat,'Comic Sans MS',cursive;font-size:21px;line-height:26px;padding:8px 12px 14px 44px;border-radius:2px;
   background:linear-gradient(90deg,transparent 34px,rgba(168,35,43,.5) 34px 35px,transparent 35px),repeating-linear-gradient(180deg,transparent 0 25px,rgba(60,90,150,.3) 25px 26px),#f4eed9;
-  box-shadow:0 14px 40px rgba(0,0,0,.55);transform:translateX(125%) rotate(1.5deg);transition:transform .35s ease}
-.sheet.open{transform:rotate(1deg)}
+  box-shadow:0 14px 40px rgba(0,0,0,.55);transform:translateX(125%) rotate(1.5deg);transition:transform .35s ease,visibility 0s .35s;visibility:hidden}
+.sheet.open{transform:rotate(1deg);visibility:visible;transition:transform .35s ease}
 .sheet h4{margin:0;font-weight:700;font-size:25px;line-height:26px}
 .sheet table{border-collapse:collapse;width:100%}
 .sheet td,.sheet th{text-align:center;padding:0 4px;height:26px;font-weight:500}
@@ -132,7 +134,7 @@ body{height:100%;margin:0;background:var(--wood-d);color:var(--paper);overflow:h
   <svg id="emblem" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="92" fill="none" stroke="#e6c76f" stroke-width="3"/><circle cx="100" cy="100" r="84" fill="none" stroke="#e6c76f" stroke-width="1"/><path d="M100,30 L112,82 L170,70 L122,100 L170,130 L112,118 L100,170 L88,118 L30,130 L78,100 L30,70 L88,82 Z" fill="#e6c76f"/></svg>
   <div id="layer"></div>
   <div id="bar">
-    <a class="tb" id="bHome" href="index.html" title="Înapoi la jocuri" style="text-decoration:none">Jocuri</a>
+    <a class="tb" id="bHome" href="https://vanzari.team-mobile.ro/horia.html" title="Înapoi la Arcade Horia" style="text-decoration:none">Jocuri</a>
     <span class="ttl">Cruce</span>
     <button class="tb" id="bNew">Joc nou</button>
     <button class="tb" id="bRules">Reguli</button>
@@ -145,42 +147,50 @@ body{height:100%;margin:0;background:var(--wood-d);color:var(--paper);overflow:h
 
 <script>
 //ENGINE-START
+// Reguli după regulamentul cruceonline.com/regulament
 const SUITS=['Roșu','Verde','Ghindă','Dubă'];
-const RNAME=['Nouarul','Doiarul','Treiarul','Craiul','Zecele','Asul'];
+const RNAME=['Nouarul','Doiarul','Treiarul','Pătrarul','Zecarul','Asul'];
 const RLAB=['IX','2','3','4','X','A'];
 const PTS=[0,2,3,4,10,11];
 const cardName=c=>RNAME[c.r]+' de '+SUITS[c.s];
 function makeDeck(){const d=[];for(let s=0;s<4;s++)for(let r=0;r<6;r++)d.push({id:s*6+r,s,r});return d}
 function shuffle(a,rng){for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));const t=a[i];a[i]=a[j];a[j]=t}return a}
-function teamOf(g,p){return g.n===4?p%2:p}
-function teamCount(g){return g.n===4?2:g.n}
-function createGame(n,target,rng){rng=rng||Math.random;
-  return {n,target,rng,totals:Array(n===4?2:n).fill(0),history:[],dealer:Math.floor(rng()*n),handNo:0,over:false,winner:-1}}
+function teamOf(g,p){return g.teams?p%2:p}
+function teamCount(g){return g.teams?2:g.n}
+// n: 2|3|4; teams: doar la 4 (echipe față în față)
+function createGame(n,target,rng,teams){rng=rng||Math.random;teams=!!(teams&&n===4);
+  return {n,teams,target,baseTarget:target,rng,totals:Array(teams?2:n).fill(0),history:[],dealer:Math.floor(rng()*n),handNo:0,over:false,winner:-1}}
 function startHand(g){
   g.handNo++;g.dealer=(g.dealer+1)%g.n;
-  const deck=shuffle(makeDeck(),g.rng),per=24/g.n,pk=g.n===4?3:4;
+  const deck=shuffle(makeDeck(),g.rng),per=g.n===2?8:6,first=(g.dealer+1)%g.n;
   g.hands=[];for(let p=0;p<g.n;p++)g.hands.push([]);
   g.dealSeq=[];let k=0;
-  for(let round=0;round<per/pk;round++)for(let j=1;j<=g.n;j++){const p=(g.dealer+j)%g.n;
+  // „rupe”: întâi jumătate din cărți fiecăruia, apoi restul
+  for(const pk of [Math.ceil(per/2),Math.floor(per/2)])for(let j=0;j<g.n;j++){const p=(first+j)%g.n;
     for(let x=0;x<pk;x++){const c=deck[k++];g.hands[p].push(c);g.dealSeq.push({id:c.id,p})}}
-  g.phase='bid';g.turn=(g.dealer+1)%g.n;g.bids=Array(g.n).fill(null);g.high=0;g.bidder=-1;g.bidsMade=0;g.forced=false;
+  g.stock=deck.slice(k);g.lastDraws=[];
+  g.phase='bid';g.turn=first;g.first=first;g.bids=Array(g.n).fill(null);g.high=0;g.bidder=-1;g.bidsMade=0;g.forced=false;
   g.trump=-1;g.trick=[];const T=teamCount(g);
   g.pts=Array(T).fill(0);g.tricks=Array(T).fill(0);g.ann=Array(T).fill(0);g.annDone=[false,false,false,false];
-  g.taken=g.hands.map(()=>[]);g.seen=new Set();g.aiTrump=Array(g.n).fill(-1);g.lastTrick=null;g.result=null;
+  g.taken=g.hands.map(()=>[]);g.seen=new Set();g.aiTrump=Array(g.n).fill(-1);g.lastTrick=null;g.result=null;g.targetRaised=false;
 }
+function pairsIn(h){let n=0;for(let s=0;s<4;s++)if(h.some(c=>c.s===s&&c.r===2)&&h.some(c=>c.s===s&&c.r===3))n++;return n}
+// fără anunțare max 3; 4 cere o anunțare; 5 cere 2 (1 pe echipe); 6 cere 3 (2 pe echipe)
+function maxBid(g,p){const a=pairsIn(g.hands[p]),t=g.teams?1:0;
+  if(a>=3-t)return 6;if(a>=2-t)return 5;if(a>=1)return 4;return 3}
 function placeBid(g,p,b){
   if(g.phase!=='bid'||g.turn!==p)throw new Error('not bidding turn');
-  if(b!==0&&(b<=g.high||b>6))throw new Error('bad bid');
+  if(b!==0&&(b<=g.high||b>maxBid(g,p)))throw new Error('bad bid');
   g.bids[p]=b;if(b>g.high){g.high=b;g.bidder=p}g.bidsMade++;
   if(g.bidsMade===g.n){
-    if(g.high===0){g.forced=true;g.high=1;g.bidder=g.dealer;g.bids[g.dealer]=1}
+    if(g.high===0){g.forced=true;g.high=1;g.bidder=g.first;g.bids[g.first]=1}
     g.phase='play';g.turn=g.bidder;
   }else g.turn=(p+1)%g.n;
 }
 function beats(a,b,lead,T){if(a.s===b.s)return a.r>b.r;return a.s===T}
 function trickWinnerIdx(trick,T){let w=0;for(let i=1;i<trick.length;i++)if(beats(trick[i].c,trick[w].c,trick[0].c.s,T))w=i;return w}
 function legalCards(g,p){
-  const h=g.hands[p];if(!g.trick.length)return h.slice();
+  const h=g.hands[p];if(!g.trick.length||g.stock.length)return h.slice();
   const lead=g.trick[0].c.s,T=g.trump,w=g.trick[trickWinnerIdx(g.trick,T)].c;
   const same=h.filter(c=>c.s===lead);
   if(same.length){if(w.s===lead){const hi=same.filter(c=>c.r>w.r);if(hi.length)return hi}return same}
@@ -196,7 +206,9 @@ function playCard(g,p,id){
   if(!g.trick.length){
     if(g.trump<0){g.trump=c.s;trumpSet=true}
     if((c.r===2||c.r===3)&&!g.annDone[c.s]){const m=c.r===2?3:2;
-      if(h.some(x=>x.s===c.s&&x.r===m)){ann=c.s===g.trump?40:20;g.annDone[c.s]=true;g.ann[teamOf(g,p)]+=ann}}
+      if(h.some(x=>x.s===c.s&&x.r===m)){
+        ann=c.s===g.trump?((g.high===1&&teamOf(g,p)===teamOf(g,g.bidder))?20:40):20;
+        g.annDone[c.s]=true;g.ann[teamOf(g,p)]+=ann}}
   }
   h.splice(h.indexOf(c),1);g.trick.push({p,c});g.seen.add(c.id);
   if(g.trick.length===g.n)g.phase='trick';else g.turn=(p+1)%g.n;
@@ -206,40 +218,44 @@ function resolveTrick(g){
   const wi=trickWinnerIdx(g.trick,g.trump),wp=g.trick[wi].p,t=teamOf(g,wp);
   const pts=g.trick.reduce((s,x)=>s+PTS[x.c.r],0);
   g.pts[t]+=pts;g.tricks[t]++;g.taken[wp].push(...g.trick.map(x=>x.c));
-  g.lastTrick={cards:g.trick.slice(),winner:wp};g.trick=[];g.turn=wp;
+  g.lastTrick={cards:g.trick.slice(),winner:wp};g.trick=[];g.turn=wp;g.lastDraws=[];
+  if(g.stock.length){for(let j=0;j<g.n&&g.stock.length;j++){const p=(wp+j)%g.n,c=g.stock.shift();g.hands[p].push(c);g.lastDraws.push({p,id:c.id})}}
   if(g.hands.every(h=>!h.length)){g.phase='end';g.result=scoreHand(g)}else g.phase='play';
   return {winner:wp,pts};
 }
 function scoreHand(g){
   const T=teamCount(g),bt=teamOf(g,g.bidder),rows=[];
   for(let t=0;t<T;t++){
-    const annC=g.tricks[t]>0?g.ann[t]:0,small=g.pts[t]+annC,big=Math.floor(small/33);
+    const small=g.pts[t]+g.ann[t],big=Math.floor(small/33);
     let delta=big,made=null;if(t===bt){made=big>=g.high;delta=made?big:-g.high}
-    rows.push({t,cardPts:g.pts[t],ann:g.ann[t],annC,small,big,delta,made,tricks:g.tricks[t]});g.totals[t]+=delta;
+    rows.push({t,cardPts:g.pts[t],ann:g.ann[t],small,big,delta,made,tricks:g.tricks[t]});g.totals[t]+=delta;
   }
   g.history.push({hand:g.handNo,bidder:g.bidder,bid:g.high,trump:g.trump,bt,deltas:rows.map(r=>r.delta),made:rows[bt].made,totals:g.totals.slice()});
-  const max=Math.max(...g.totals);
-  if(max>=g.target){const ws=[];g.totals.forEach((v,i)=>{if(v===max)ws.push(i)});if(ws.length===1){g.over=true;g.winner=ws[0]}}
+  // dacă mai mulți ating scorul final deodată, scorul final crește cu 10 până rămâne un singur câștigător
+  const reach=()=>g.totals.filter(v=>v>=g.target).length;
+  while(reach()>1){g.target+=10;g.targetRaised=true}
+  if(reach()===1){g.over=true;g.winner=g.totals.findIndex(v=>v>=g.target)}
   return rows;
 }
 // ---------- AI ----------
-function estimateHand(h,T,n){
+function estimateHand(h,T,n,teams){
   const avg=120/(24/n),by=[[],[],[],[]];h.forEach(c=>by[c.s].push(c.r));
   const has=(a,r)=>a.includes(r),t=by[T];let tr=0;
   if(has(t,5))tr+=1;
   if(has(t,4))tr+=has(t,5)?0.9:(t.length>=3?0.55:0.25);
   if(has(t,3))tr+=t.length>=4?0.55:(has(t,5)&&has(t,4)?0.45:0.2);
-  tr+=Math.max(0,t.length-6/n-1)*0.6;
+  tr+=Math.max(0,t.length-h.length/4-1)*0.6;
   for(let s=0;s<4;s++){if(s===T)continue;const a=by[s];
     if(has(a,5))tr+=n===2?0.75:(a.length<=2?0.75:0.55);
     if(has(a,4)&&has(a,5))tr+=0.4;}
   let ann=0;for(let s=0;s<4;s++)if(has(by[s],2)&&has(by[s],3))ann+=s===T?40:16;
-  return tr*avg+ann+(n===4?24:0);
+  const scale=(24/n)/h.length; // la jocul cu cărți de jos mâna inițială e mai mică
+  return tr*avg*Math.min(scale,1.5)+ann+(teams?24:0);
 }
 function aiBid(g,p){
   const h=g.hands[p];let best=-1,bs=0;
-  for(let s=0;s<4;s++){const e=estimateHand(h,s,g.n);if(e>best){best=e;bs=s}}
-  g.aiTrump[p]=bs;const big=Math.min(6,Math.floor((best+3)/33));
+  for(let s=0;s<4;s++){const e=estimateHand(h,s,g.n,g.teams);if(e>best){best=e;bs=s}}
+  g.aiTrump[p]=bs;const big=Math.min(maxBid(g,p),Math.floor((best+3)/33));
   if(big>g.high)return g.rng()<0.55?g.high+1:big;
   return 0;
 }
@@ -251,7 +267,7 @@ function aiPlay(g,p){
   if(!g.trick.length){
     if(T<0){
       let s=g.aiTrump[p];
-      if(s<0){let best=-1;for(let q=0;q<4;q++){const e=estimateHand(h,q,n);if(e>best){best=e;s=q}}}
+      if(s<0){let best=-1;for(let q=0;q<4;q++){const e=estimateHand(h,q,n,g.teams);if(e>best){best=e;s=q}}}
       const inS=L.filter(c=>c.s===s);if(!inS.length)return L.slice().sort(byCost)[0];
       if(inS.some(c=>c.r===3)&&inS.some(c=>c.r===2))return inS.find(c=>c.r===3);
       return inS.sort((a,b)=>b.r-a.r)[0];
@@ -261,25 +277,26 @@ function aiPlay(g,p){
       if(K&&O)return isMaster(g,p,K)?K:O;}
     const masters=L.filter(c=>isMaster(g,p,c)&&(c.s===T||c.r>=4));
     const nonT=masters.filter(c=>c.s!==T);
-    if(nonT.length)return nonT.sort((a,b)=>PTS[b.r]-PTS[a.r])[0];
+    if(nonT.length&&!g.stock.length)return nonT.sort((a,b)=>PTS[b.r]-PTS[a.r])[0];
     let outT=6-h.filter(c=>c.s===T).length;g.seen.forEach(id=>{if(Math.floor(id/6)===T)outT--});
     const mT=masters.filter(c=>c.s===T);
-    if(mT.length&&outT>0)return mT.sort((a,b)=>b.r-a.r)[0];
+    if(mT.length&&outT>0&&!g.stock.length)return mT.sort((a,b)=>b.r-a.r)[0];
     const lows=L.filter(c=>c.s!==T);return (lows.length?lows:L).slice().sort(byCost)[0];
   }
   const wi=trickWinnerIdx(g.trick,T),w=g.trick[wi],lead=g.trick[0].c.s;
-  const last=g.trick.length===n-1,partnerWin=n===4&&teamOf(g,w.p)===me;
+  const last=g.trick.length===n-1,partnerWin=g.teams&&teamOf(g,w.p)===me;
   const tpts=g.trick.reduce((s,x)=>s+PTS[x.c.r],0);
   const winners=L.filter(c=>beats(c,w.c,lead,T)),losers=L.filter(c=>!beats(c,w.c,lead,T));
   if(partnerWin){
     if(losers.length){
-      const safe=last||(w.c.s===T&&isMaster(g,p,w.c))||(w.c.s===lead&&isMaster(g,p,w.c)&&g.trick.length===2&&!h.some(c=>c.s===T)&&false);
+      const safe=last||(w.c.s===T&&isMaster(g,p,w.c));
       if(safe)return losers.slice().sort((a,b)=>((a.s===T)-(b.s===T))||(PTS[b.r]-PTS[a.r]))[0];
       return losers.slice().sort(byCost)[0];
     }
     return winners.slice().sort(byCost)[0];
   }
   if(winners.length){
+    if(g.stock.length&&tpts<10&&losers.length)return losers.slice().sort(byCost)[0];
     if(last)return winners.slice().sort(byCost)[0];
     const m=winners.filter(c=>isMaster(g,p,c)&&(c.s===T||lead!==T));
     if(m.length&&(tpts>=10||m.some(c=>c.s!==T)))return m.sort(byCost)[0];
@@ -293,139 +310,130 @@ function aiPlay(g,p){
 
 <script>
 //ART-START
-const OUT='#2a1c12';
-const GRAD=`<radialGradient id="gs0" cx=".38" cy=".3" r=".85"><stop offset="0" stop-color="#f5646b"/><stop offset=".55" stop-color="#bc1c25"/><stop offset="1" stop-color="#730f10"/></radialGradient><radialGradient id="gs1" cx=".38" cy=".3" r=".85"><stop offset="0" stop-color="#a6d86e"/><stop offset=".55" stop-color="#3f8a2b"/><stop offset="1" stop-color="#1f4d18"/></radialGradient><radialGradient id="gs2" cx=".38" cy=".3" r=".85"><stop offset="0" stop-color="#f8df90"/><stop offset=".55" stop-color="#d0962e"/><stop offset="1" stop-color="#83540e"/></radialGradient><radialGradient id="gs3" cx=".36" cy=".3" r=".85"><stop offset="0" stop-color="#fff5b8"/><stop offset=".5" stop-color="#ebb733"/><stop offset="1" stop-color="#946006"/></radialGradient>`;
-const PAPERDEF=`<linearGradient id="pp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8f1de"/><stop offset="1" stop-color="#eadcba"/></linearGradient><filter id="gr" x="0" y="0" width="1" height="1"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 .35  0 0 0 0 .24  0 0 0 0 .1  0 0 0 .2 0"/></filter><clipPath id="cc"><rect x="1" y="1" width="198" height="308" rx="12"/></clipPath>`;
+const OUT='#1b1410',RED='#dc2a26',RED2='#f27b66',YEL='#f2cf33',GRN='#4f9a32',GRN2='#d2e04a',BLU='#2f63b5',WHT='#fdfcf8',SKIN='#f6d3b2',SKS='#d49c76';
 function suitShape(s){
-  const hl=(d)=>`<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2.4" stroke-linecap="round"/>`;
-  if(s===0)return `<path d="M0,17 C-5,11 -22,1 -22,-9 C-22,-18 -15,-22 -8.5,-22 C-4,-22 -1,-19.5 0,-16 C1,-19.5 4,-22 8.5,-22 C15,-22 22,-18 22,-9 C22,1 5,11 0,17 Z" fill="url(#gs0)" stroke="${OUT}" stroke-width="1.6"/>`+hl('M-15,-11 C-14,-16 -10,-18 -6,-17');
-  if(s===1)return `<path d="M0,-23 C9,-15 20,-6 18,5 C16,13 8,15.5 2.5,13 L1.8,23 L-1.8,23 L-2.5,13 C-8,15.5 -16,13 -18,5 C-20,-6 -9,-15 0,-23 Z" fill="url(#gs1)" stroke="${OUT}" stroke-width="1.6"/><path d="M0,-19 L0,13 M0,-7 L-8,-12 M0,-7 L8,-12 M0,1 L-12,-4 M0,1 L12,-4 M0,8 L-10,5 M0,8 L10,5" stroke="#173a10" stroke-width="1.1" stroke-opacity=".75" fill="none"/>`+hl('M-12,-6 C-10,-11 -6,-15 -3,-17');
-  if(s===2)return `<path d="M0,-23 C9,-23 12.5,-11 11.5,0 L-11.5,0 C-12.5,-11 -9,-23 0,-23 Z" fill="url(#gs2)" stroke="${OUT}" stroke-width="1.6"/>`+hl('M-6,-13 C-5,-17 -2,-20 1,-20')+`<path d="M-15,-1 C-15,8 -8,13.5 0,13.5 C8,13.5 15,8 15,-1 Z" fill="#6e4220" stroke="${OUT}" stroke-width="1.6"/><path d="M-12,2 L-4,12 M-6,1 L4,13 M0,1 L10,11 M6,1 L13,6 M12,2 L4,12 M6,1 L-4,13 M0,1 L-10,11 M-6,1 L-13,6" stroke="#3a210e" stroke-width="1" fill="none"/><path d="M-1.6,13.5 L-2.2,22 L2.2,22 L1.6,13.5 Z" fill="#5a3418" stroke="${OUT}" stroke-width="1"/>`;
-  return `<circle cx="0" cy="-17" r="3.8" fill="none" stroke="${OUT}" stroke-width="2.2"/><circle cx="0" cy="2" r="17.5" fill="url(#gs3)" stroke="${OUT}" stroke-width="1.6"/><path d="M-16.8,-3.5 C-8,-6.5 8,-6.5 16.8,-3.5 L17.3,3 C8,0 -8,0 -17.3,3 Z" fill="#a5281f" stroke="${OUT}" stroke-width=".9"/><path d="M-9,12 L9,12" stroke="${OUT}" stroke-width="2.2" stroke-linecap="round"/><circle cx="-9" cy="12" r="2.2" fill="${OUT}"/><circle cx="9" cy="12" r="2.2" fill="${OUT}"/>`+hl('M-11,-10 C-8,-13 -4,-14.5 -1,-14.5');
+  if(s===0)return `<path d="M0,18 C-6,11 -22,1 -22,-9 C-22,-18 -15,-22 -8.5,-22 C-4,-22 -1,-19.5 0,-16 C1,-19.5 4,-22 8.5,-22 C15,-22 22,-18 22,-9 C22,1 6,11 0,18 Z" fill="${RED}" stroke="${OUT}" stroke-width="1.3"/><path d="M-2,13 C-8,7 -18,-1 -18,-9 C-18,-15 -13,-18 -9,-18 C-5,-18 -3,-15 -2,-12 Z" fill="${RED2}" opacity=".7"/>`;
+  if(s===1)return `<path d="M0,-23 C9,-15 20,-6 18,5 C16,13 8,15.5 2.5,13 L0,13 Z" fill="${GRN}" stroke="${OUT}" stroke-width="1.2"/><path d="M0,-23 C-9,-15 -20,-6 -18,5 C-16,13 -8,15.5 -2.5,13 L0,13 Z" fill="${GRN2}" stroke="${OUT}" stroke-width="1.2"/><path d="M0,-20 L0,23 M0,-8 L-8,-13 M0,-8 L8,-13 M0,0 L-12,-5 M0,0 L12,-5 M0,7 L-10,4 M0,7 L10,4" stroke="#c0322a" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+  if(s===2)return `<path d="M-1.6,-22 L0,-27 L1.6,-22 Z" fill="${OUT}"/><path d="M0,-23 C-9,-23 -12.5,-11 -11.5,0 L0,0 Z" fill="${YEL}"/><path d="M0,-23 C9,-23 12.5,-11 11.5,0 L0,0 Z" fill="${RED}"/><path d="M0,-23 C9,-23 12.5,-11 11.5,0 L-11.5,0 C-12.5,-11 -9,-23 0,-23 Z" fill="none" stroke="${OUT}" stroke-width="1.3"/><path d="M-15,-1 C-15,8 -8,13.5 0,13.5 C8,13.5 15,8 15,-1 Z" fill="${GRN}" stroke="${OUT}" stroke-width="1.3"/><path d="M-12,2 L-4,12 M-6,1 L4,13 M0,1 L10,11 M6,1 L13,6 M12,2 L4,12 M6,1 L-4,13 M0,1 L-10,11 M-6,1 L-13,6" stroke="${GRN2}" stroke-width="1.1" fill="none"/><path d="M-1.6,13.5 L-2.2,22 L2.2,22 L1.6,13.5 Z" fill="#6b3f1d" stroke="${OUT}" stroke-width="1"/>`;
+  return `<circle cx="0" cy="-17.5" r="3.4" fill="${YEL}" stroke="${OUT}" stroke-width="1.2"/><circle cx="0" cy="2" r="17.5" fill="${YEL}"/><path d="M-16.4,8 A17.5,17.5 0 0 0 16.4,8 Z" fill="${GRN}"/><path d="M-16.8,-3 C-8,0 8,0 16.8,-3 L17.3,4.5 C8,7.5 -8,7.5 -17.3,4.5 Z" fill="${RED}"/><circle cx="0" cy="2" r="17.5" fill="none" stroke="${OUT}" stroke-width="1.3"/><path d="M-8,13.5 L8,13.5" stroke="${OUT}" stroke-width="2.2" stroke-linecap="round"/><circle cx="-9" cy="13.5" r="2.1" fill="${OUT}"/><circle cx="9" cy="13.5" r="2.1" fill="${OUT}"/><path d="M-11,-10 C-8,-13 -4,-14.5 -1,-14.5" stroke="#fff" stroke-opacity=".75" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
 }
 const sym=(s,x,y,sc,rot)=>`<g transform="translate(${x},${y}) scale(${sc})${rot?` rotate(${rot})`:''}">${suitShape(s)}</g>`;
-function wrapCard(body,defs){
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 310" width="400" height="620"><defs>${GRAD}${PAPERDEF}${defs||''}</defs><g clip-path="url(#cc)"><rect width="200" height="310" fill="url(#pp)"/>${body}<rect width="200" height="310" filter="url(#gr)"/></g><rect x="7" y="7" width="186" height="296" rx="7" fill="none" stroke="#3a2b1f" stroke-width="1.3"/><rect x="1" y="1" width="198" height="308" rx="12" fill="none" stroke="#a8977a" stroke-width="1.4"/></svg>`;
-}
 const FONT=`font-family="Georgia,'Times New Roman',serif" font-weight="700" fill="${OUT}" text-anchor="middle"`;
-function index(s,label,x){x=x||20;return `<text x="${x}" y="28" ${FONT} font-size="${label.length>1?15:18}">${label}</text>${sym(s,x,43,.3)}`}
+function wrapCard(body,defs){
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 310" width="400" height="620"><defs><clipPath id="cc"><rect x="1" y="1" width="198" height="308" rx="12"/></clipPath><clipPath id="hc"><rect x="4" y="4" width="192" height="151"/></clipPath>${defs||''}</defs><g clip-path="url(#cc)"><rect width="200" height="310" fill="${WHT}"/>${body}</g><rect x="1" y="1" width="198" height="308" rx="12" fill="none" stroke="#8f887c" stroke-width="1.8"/></svg>`;
+}
+const mirror=h=>`<g clip-path="url(#hc)">${h}</g><g transform="rotate(180 100 155)"><g clip-path="url(#hc)">${h}</g></g>`;
+const divider=`<path d="M8,155 L192,155" stroke="#5e564b" stroke-width="1.2"/>`;
+const label=(t,x,y,size)=>`<text x="${x||19}" y="${y||31}" ${FONT} font-size="${size||(t.length>1?21:25)}">${t}</text>`;
+
+// ---------- pip cards ----------
+function vignette(s,withSym){
+  let o=`<ellipse cx="100" cy="171" rx="48" ry="10" fill="#8cc04a" stroke="#4f7a2a" stroke-width="1"/><path d="M60,170 l2,-5 l2,5 M132,172 l2,-6 l2,6 M90,176 l2,-4 l2,4" stroke="#3f6a22" stroke-width="1.2" fill="none"/>`;
+  if(withSym)return o+sym(s,100,148,1);
+  if(s===0)o+=`<path d="M78,168 L78,140 L84,140 L84,135 L88,135 L88,140 L92,140 L92,148 L108,148 L108,140 L112,140 L112,135 L116,135 L116,140 L122,140 L122,168 Z" fill="#e8dcc0" stroke="${OUT}" stroke-width="1.2"/><path d="M96,126 L100,118 L104,126 L104,148 L96,148 Z" fill="#e8dcc0" stroke="${OUT}" stroke-width="1.2"/><path d="M95,127 L100,116 L105,127 Z" fill="${RED}" stroke="${OUT}" stroke-width="1"/><path d="M95,168 L95,158 C95,152 105,152 105,158 L105,168 Z" fill="#6b3f1d"/><rect x="82" y="150" width="4" height="6" fill="${OUT}"/><rect x="114" y="150" width="4" height="6" fill="${OUT}"/>`;
+  if(s===1)o+=`<rect x="80" y="146" width="40" height="22" fill="#f0e2c2" stroke="${OUT}" stroke-width="1.2"/><path d="M76,148 L100,130 L124,148 Z" fill="${RED}" stroke="${OUT}" stroke-width="1.2"/><rect x="95" y="155" width="9" height="13" fill="#6b3f1d"/><rect x="84" y="152" width="7" height="6" fill="${YEL}" stroke="${OUT}" stroke-width=".8"/><rect x="109" y="152" width="7" height="6" fill="${YEL}" stroke="${OUT}" stroke-width=".8"/><circle cx="66" cy="152" r="9" fill="${GRN}" stroke="${OUT}" stroke-width="1"/><rect x="64.5" y="160" width="3" height="9" fill="#6b3f1d"/>`;
+  if(s===2)o+=`<path d="M86,168 L90,132 L110,132 L114,168 Z" fill="#e8dcc0" stroke="${OUT}" stroke-width="1.2"/><path d="M100,140 L80,120 M100,140 L120,120 M100,140 L80,160 M100,140 L120,160" stroke="#6b3f1d" stroke-width="3"/><path d="M100,140 L80,120 M100,140 L120,120 M100,140 L80,160 M100,140 L120,160" stroke="#f0e2c2" stroke-width="1.2"/><circle cx="100" cy="140" r="3" fill="${OUT}"/><rect x="96" y="156" width="8" height="12" fill="#6b3f1d"/>`;
+  if(s===3)o+=`<rect x="96" y="132" width="8" height="36" fill="#7a4a24" stroke="${OUT}" stroke-width="1"/><circle cx="100" cy="128" r="17" fill="${GRN}" stroke="${OUT}" stroke-width="1.1"/><circle cx="90" cy="122" r="3" fill="${RED}"/><circle cx="106" cy="118" r="3" fill="${RED}"/><circle cx="108" cy="133" r="3" fill="${RED}"/><path d="M62,166 L62,156 M70,167 L70,157 M128,167 L128,157 M136,166 L136,156 M60,159 L72,159 M126,159 L138,159" stroke="#7a4a24" stroke-width="2"/>`;
+  return o;
+}
 function pipCard(s,r){
-  const pos=r===0?[[58,72],[142,72],[58,124],[142,124],[100,157],[58,190],[142,190],[58,242],[142,242]]
-                 :[[58,68],[142,68],[58,118],[142,118],[100,131],[100,185],[58,198],[142,198],[58,248],[142,248]];
-  const lab=RLAB[r];
-  let b=`<path d="M100,24 C92,30 92,36 100,40 C108,36 108,30 100,24 Z M100,270 C92,276 92,282 100,286 C108,282 108,276 100,270 Z" fill="#b48a3a" opacity=".55"/>`;
-  b+=pos.map(([x,y])=>sym(s,x,y,1.05)).join('');
-  return wrapCard(b+index(s,lab,22)+index(s,lab,178));
-}
-const PAL=[
-  {coat:'#b3262d',cloak:'#2f4a8a',trim:'#e3b544',hose:'#2f4a8a',hose2:'#e3b544',hat:'#2a2f55',hair:'#6b3d1e',beard:'#8a7a6a'},
-  {coat:'#3d7f33',cloak:'#7b2a24',trim:'#e0a93e',hose:'#7b2a24',hose2:'#3d7f33',hat:'#5a3418',hair:'#3a2414',beard:'#6b5646'},
-  {coat:'#8a5226',cloak:'#2e6b3c',trim:'#e6c35a',hose:'#a8302b',hose2:'#2e6b3c',hat:'#a8302b',hair:'#c48a3a',beard:'#d6cfc2'},
-  {coat:'#2f4f8f',cloak:'#a8322c',trim:'#e8b63c',hose:'#e8b63c',hose2:'#a8322c',hat:'#3d6b2f',hair:'#2a1c12',beard:'#a9a9a9'}];
-const SKIN='#f2cda6',SKS='#d6a37c';
-function arm(d,col){return `<path d="${d}" stroke="${OUT}" stroke-width="15.5" stroke-linecap="round" fill="none"/><path d="${d}" stroke="${col}" stroke-width="12.5" stroke-linecap="round" fill="none"/>`}
-function head(P,kind){
-  let o=`<rect x="94" y="94" width="12" height="13" fill="${SKS}"/><ellipse cx="100" cy="83" rx="13" ry="15.5" fill="${SKIN}" stroke="${OUT}" stroke-width="1.4"/>`;
-  o+=`<path d="M87,82 C85,70 92,66 100,66 C108,66 115,70 113,82 C112,76 108,73 100,73 C92,73 88,76 87,82 Z" fill="${P.hair}"/>`;
-  if(kind!=='K')o+=`<path d="M87,80 C85,88 86,94 89,98 L91,86 Z M113,80 C115,88 114,94 111,98 L109,86 Z" fill="${P.hair}"/>`;
-  o+=`<circle cx="94.5" cy="82" r="1.5" fill="${OUT}"/><circle cx="105.5" cy="82" r="1.5" fill="${OUT}"/><path d="M91.5,78.5 L97,77.8 M103,77.8 L108.5,78.5" stroke="${P.hair}" stroke-width="1.3"/>`;
-  o+=`<path d="M100,84 L98.3,90 L101.3,90" fill="none" stroke="${SKS}" stroke-width="1.2"/><circle cx="93" cy="88.5" r="2.6" fill="#e8907a" opacity=".35"/><circle cx="107" cy="88.5" r="2.6" fill="#e8907a" opacity=".35"/>`;
-  if(kind==='U')o+=`<path d="M96,94 Q100,96.5 104,94" stroke="#9a4a3a" stroke-width="1.4" fill="none"/>`;
-  if(kind==='O')o+=`<path d="M93.5,92.5 Q100,89 106.5,92.5 Q103,94.5 100,93 Q97,94.5 93.5,92.5 Z" fill="${P.hair}"/><path d="M97,96 Q100,104 103,96 Z" fill="${P.hair}"/>`;
-  if(kind==='K')o+=`<path d="M86.5,86 C87,104 95,114 100,114 C105,114 113,104 113.5,86 C109,93 104,92 100,92.5 C96,92 91,93 86.5,86 Z" fill="${P.beard}" stroke="${OUT}" stroke-width="1.1"/><path d="M93,92.5 Q100,88.5 107,92.5 Q103,95 100,93.5 Q97,95 93,92.5 Z" fill="${P.beard}" stroke="${OUT}" stroke-width=".8"/><path d="M95,99 L96,108 M100,98 L100,110 M105,99 L104,108" stroke="${OUT}" stroke-opacity=".35" stroke-width=".9"/>`;
-  return o;
-}
-function standing(P,kind){
-  let o=`<path d="M74,108 C60,150 52,210 50,256 C80,266 120,266 150,256 C148,210 140,150 126,108 Z" fill="${P.cloak}" stroke="${OUT}" stroke-width="1.6"/><path d="M62,180 C60,210 58,235 58,255 M138,180 C140,210 142,235 142,255" stroke="${OUT}" stroke-opacity=".35" stroke-width="1.2" fill="none"/>`;
-  o+=`<path d="M86,198 L84,258 L97,258 L98,200 Z" fill="${P.hose}" stroke="${OUT}" stroke-width="1.4"/><path d="M102,200 L103,258 L116,258 L114,198 Z" fill="${P.hose2}" stroke="${OUT}" stroke-width="1.4"/>`;
-  o+=`<path d="M83,254 L97.5,254 L98,270 L70,272 C70,265 77,261 83,260 Z" fill="#3b2516" stroke="${OUT}" stroke-width="1.3"/><path d="M102.5,254 L117,254 L117,260 C123,261 130,265 130,272 L102,270 Z" fill="#3b2516" stroke="${OUT}" stroke-width="1.3"/>`;
-  o+=`<path d="M78,106 Q100,98 122,106 L134,204 Q100,215 66,204 Z" fill="${P.coat}" stroke="${OUT}" stroke-width="1.6"/><path d="M88,172 L84,206 M100,174 L100,210 M112,172 L116,206" stroke="${OUT}" stroke-opacity=".4" stroke-width="1.2"/>`;
-  o+=`<path d="M67,203 Q100,213.5 133,203" fill="none" stroke="${P.trim}" stroke-width="4"/><path d="M100,104 L100,158" stroke="${P.trim}" stroke-width="3"/><circle cx="100" cy="118" r="1.8" fill="${OUT}"/><circle cx="100" cy="132" r="1.8" fill="${OUT}"/><circle cx="100" cy="146" r="1.8" fill="${OUT}"/>`;
-  o+=`<path d="M73,157 Q100,163 127,157 L128,167 Q100,173 72,167 Z" fill="#3b2516" stroke="${OUT}" stroke-width="1.2"/><rect x="95" y="159.5" width="10" height="9" fill="${P.trim}" stroke="${OUT}" stroke-width="1"/>`;
-  o+=arm('M81,111 C71,126 67,150 66,174',P.coat)+`<circle cx="66" cy="180" r="6.2" fill="${SKIN}" stroke="${OUT}" stroke-width="1.2"/>`;
-  if(kind==='U'){
-    o+=`<path d="M147,36 L147,278" stroke="#4a2f17" stroke-width="5.5" stroke-linecap="round"/><path d="M147,36 L147,278" stroke="#7a5230" stroke-width="3" stroke-linecap="round"/><path d="M147,30 L143.5,46 L150.5,46 Z" fill="#cfd3d8" stroke="${OUT}" stroke-width="1.1"/><path d="M149,50 C162,47 171,58 168,72 C161,65 155,65 149,68 Z" fill="#cfd3d8" stroke="${OUT}" stroke-width="1.2"/><path d="M145,52 L136,58 L145,61 Z" fill="#cfd3d8" stroke="${OUT}" stroke-width="1"/>`;
-  }else{
-    o+=`<path d="M145,128 L145,48 L147.5,38 L150,48 L150,128 Z" fill="#dfe2e6" stroke="${OUT}" stroke-width="1.2"/><path d="M147.5,46 L147.5,126" stroke="#9aa0a8" stroke-width=".9"/><rect x="136" y="126" width="23" height="4.5" rx="2" fill="${P.trim}" stroke="${OUT}" stroke-width="1"/><rect x="145.5" y="130" width="4" height="13" fill="#5a3a1e"/><circle cx="147.5" cy="145" r="3.2" fill="${P.trim}" stroke="${OUT}" stroke-width="1"/>`;
+  const X=r===4,pos=[[52,60],[52,94],[148,60],[148,94]];if(X)pos.push([100,54]);
+  let h='';
+  if(s===1||s===2){const col=s===1?'#c0322a':'#6b3f1d';
+    h+=`<path d="M100,150 L100,${X?60:96}" stroke="${col}" stroke-width="2.6" fill="none"/>`;
+    pos.forEach(([x,y])=>{if(x!==100)h+=`<path d="M100,${y+30} Q${(x+100)/2},${y+30} ${x},${y+20}" stroke="${col}" stroke-width="2" fill="none"/>`});
   }
-  o+=arm('M119,111 C130,118 138,126 144,134',P.coat)+`<circle cx="147" cy="136" r="6.2" fill="${SKIN}" stroke="${OUT}" stroke-width="1.2"/>`;
-  o+=`<path d="M84,105 Q100,115 116,105 L113,99.5 Q100,108 87,99.5 Z" fill="${P.trim}" stroke="${OUT}" stroke-width="1.1"/>`;
-  o+=head(P,kind);
-  o+=`<path d="M84,73 C83,57 117,57 116,73 Z" fill="${P.hat}" stroke="${OUT}" stroke-width="1.3"/><ellipse cx="100" cy="73" rx="21" ry="4.6" fill="${P.hat}" stroke="${OUT}" stroke-width="1.3"/><path d="M85,68 Q100,64 115,68" stroke="${P.trim}" stroke-width="2.4" fill="none"/>`;
-  o+=`<path d="M110,64 C120,50 132,46 140,36 C136,52 124,60 113,68 Z" fill="${kind==='O'?'#f4efe4':P.trim}" stroke="${OUT}" stroke-width="1.1"/><path d="M113,66 C122,56 130,50 138,40" stroke="${OUT}" stroke-opacity=".5" stroke-width=".8" fill="none"/>`;
-  return o;
+  h+=pos.map(([x,y])=>sym(s,x,y,1)).join('');
+  h+=label(RLAB[r],19,30,21);
+  return wrapCard(mirror(h)+vignette(s,!X));
 }
-function seated(P){
-  let o=`<path d="M54,252 L54,96 C54,66 146,66 146,96 L146,252 Z" fill="#6e4322" stroke="${OUT}" stroke-width="1.6"/><path d="M62,244 L62,100 C62,80 138,80 138,100 L138,244 Z" fill="${P.cloak}" stroke="${OUT}" stroke-width="1"/><path d="M62,112 L138,112 M62,124 L138,124" stroke="${P.trim}" stroke-width="1.2" opacity=".6"/><circle cx="54" cy="94" r="5" fill="${P.trim}" stroke="${OUT}" stroke-width="1"/><circle cx="146" cy="94" r="5" fill="${P.trim}" stroke="${OUT}" stroke-width="1"/>`;
-  o+=`<path d="M86,262 L98,262 L98,272 L78,273 C78,268 82,265 86,264 Z M114,262 L102,262 L102,272 L122,273 C122,268 118,265 114,264 Z" fill="#3b2516" stroke="${OUT}" stroke-width="1.2"/>`;
-  o+=`<path d="M76,108 Q100,98 124,108 L138,186 L150,252 Q100,266 50,252 L62,186 Z" fill="${P.coat}" stroke="${OUT}" stroke-width="1.6"/><path d="M62,190 Q100,180 138,190" stroke="${OUT}" stroke-opacity=".45" stroke-width="1.3" fill="none"/><path d="M74,200 L70,248 M126,200 L130,248" stroke="${OUT}" stroke-opacity=".35" stroke-width="1.2"/>`;
-  o+=`<path d="M93,104 L107,104 L112,258 L88,258 Z" fill="#f4efe4" stroke="${OUT}" stroke-width="1.2"/><path d="M51,250 Q100,264 149,250 L150,259 Q100,273 50,259 Z" fill="#f4efe4" stroke="${OUT}" stroke-width="1.2"/>`;
-  let dots='';[[100,124],[98,150],[103,176],[99,202],[104,228],[60,257],[80,262],[120,262],[140,257]].forEach(([x,y])=>{dots+=`<path d="M${x},${y-3} L${x-1.6},${y+2} L${x+1.6},${y+2} Z" fill="${OUT}"/>`});o+=dots;
-  o+=arm('M80,112 C70,132 70,156 86,176',P.coat)+`<circle cx="90" cy="178" r="6.4" fill="${SKIN}" stroke="${OUT}" stroke-width="1.2"/>`;
-  o+=`<path d="M117,182 L156,58" stroke="#8a6418" stroke-width="5" stroke-linecap="round"/><path d="M117,182 L156,58" stroke="#e8c04e" stroke-width="2.6" stroke-linecap="round"/><path d="M156,42 C151,48 149,53 150,60 L162,60 C163,53 161,48 156,42 Z" fill="#e8c04e" stroke="${OUT}" stroke-width="1"/><path d="M149,60 L163,60" stroke="${OUT}" stroke-width="2"/><circle cx="156" cy="40" r="2.6" fill="#b3262d" stroke="${OUT}" stroke-width=".8"/><circle cx="141" cy="106" r="3" fill="#e8c04e" stroke="${OUT}" stroke-width=".9"/>`;
-  o+=arm('M120,112 C132,128 132,150 124,170',P.coat)+`<circle cx="121" cy="174" r="6.4" fill="${SKIN}" stroke="${OUT}" stroke-width="1.2"/>`;
-  o+=`<path d="M77,106 Q100,126 123,106 Q119,96 100,101 Q81,96 77,106 Z" fill="#f4efe4" stroke="${OUT}" stroke-width="1.2"/><path d="M90,110 L88.5,114 L91.5,114 Z M110,110 L108.5,114 L111.5,114 Z M100,113 L98.5,117 L101.5,117 Z" fill="${OUT}"/>`;
-  o+=head(P,'K');
-  o+=`<path d="M85,72 L84,55 L91.5,62.5 L96,50 L100,59 L104,50 L108.5,62.5 L116,55 L115,72 Z" fill="#e8bd3a" stroke="${OUT}" stroke-width="1.3"/><rect x="84" y="67" width="32" height="6" fill="#d3a52a" stroke="${OUT}" stroke-width="1.1"/><circle cx="92" cy="70" r="1.8" fill="#b3262d"/><circle cx="100" cy="70" r="1.8" fill="#2f4f8f"/><circle cx="108" cy="70" r="1.8" fill="#b3262d"/><circle cx="96" cy="50" r="2" fill="#f4efe4" stroke="${OUT}" stroke-width=".7"/><circle cx="104" cy="50" r="2" fill="#f4efe4" stroke="${OUT}" stroke-width=".7"/>`;
+// ---------- figures ----------
+const PAL=[
+  {coat:RED,stripe:YEL,sleeve:BLU,cloak:BLU,hat:BLU,hair:'#8a5a2a',beard:'#7a5232'},
+  {coat:GRN,stripe:YEL,sleeve:RED,cloak:RED,hat:BLU,hair:'#4a2c16',beard:'#5a3a22'},
+  {coat:YEL,stripe:RED,sleeve:GRN,cloak:GRN,hat:RED,hair:'#9a6a2a',beard:'#b8b0a0'},
+  {coat:BLU,stripe:RED,sleeve:RED,cloak:RED,hat:RED,hair:'#3a2414',beard:'#4a3424'}];
+function sleeve(d,lines,col,str){return `<path d="${d}" fill="${col}" stroke="${OUT}" stroke-width="1.3"/><path d="${lines}" stroke="${str}" stroke-width="3" fill="none"/>`}
+function bust(o){
+  let g='';
+  if(o.cloak)g+=`<path d="M40,160 C44,128 58,102 78,93 L122,93 C142,102 156,128 160,160 Z" fill="${o.cloak}" stroke="${OUT}" stroke-width="1.4"/><path d="M58,160 C60,130 66,112 76,100 M142,160 C140,130 134,112 124,100" stroke="${OUT}" stroke-opacity=".35" stroke-width="1.2" fill="none"/>`;
+  if(o.cloak&&o.collar==='ermine')g+=`<path d="M40,160 C44,128 58,102 78,93 L82,99 C66,108 54,130 50,160 Z M160,160 C156,128 142,102 122,93 L118,99 C134,108 146,130 150,160 Z" fill="#f6f2e8" stroke="${OUT}" stroke-width="1"/><path d="M52,140 l-1.5,4 l3,0 Z M60,118 l-1.5,4 l3,0 Z M148,140 l-1.5,4 l3,0 Z M140,118 l-1.5,4 l3,0 Z" fill="${OUT}"/>`;
+  g+=`<path d="M66,160 L68,112 C70,98 84,90 100,90 C116,90 130,98 132,112 L134,160 Z" fill="${o.coat}" stroke="${OUT}" stroke-width="1.4"/>`;
+  g+=`<path d="M92,96 L108,96 L110,160 L90,160 Z" fill="${o.stripe}" stroke="${OUT}" stroke-width="1"/><path d="M90,124 L110,124 M90,142 L110,142" stroke="${OUT}" stroke-width=".9" opacity=".55"/><circle cx="100" cy="108" r="1.8" fill="${OUT}"/><circle cx="100" cy="133" r="1.8" fill="${OUT}"/><circle cx="100" cy="151" r="1.8" fill="${OUT}"/><path d="M68,132 Q100,138 132,132" stroke="${OUT}" stroke-width="1" fill="none" opacity=".5"/>`;
+  g+=sleeve('M70,99 C58,106 57,126 66,144 L82,142 C82,128 82,114 80,101 Z','M61,114 L80,111 M60,126 L81,123 M64,137 L82,135',o.sleeve,o.stripe);
+  g+=sleeve('M130,99 C142,104 144,120 136,136 L120,132 C122,120 122,110 120,101 Z','M140,110 L121,108 M139,121 L122,119',o.sleeve,o.stripe);
+  if(o.propBack)g+=o.propBack;
+  g+=`<circle cx="76" cy="146" r="6.3" fill="${SKIN}" stroke="${OUT}" stroke-width="1.2"/><circle cx="126" cy="136" r="6.3" fill="${SKIN}" stroke="${OUT}" stroke-width="1.2"/>`;
+  if(o.prop)g+=o.prop;
+  const col=o.collar==='ermine'?'#f6f2e8':o.collar==='fur'?'#8a5a32':'#f6f2e8';
+  g+=`<path d="M74,98 C84,110 116,110 126,98 C120,90 110,88 100,92 C90,88 80,90 74,98 Z" fill="${col}" stroke="${OUT}" stroke-width="1.2"/>`;
+  if(o.collar==='ermine')g+=`<path d="M86,99 l-1.6,4 l3.2,0 Z M100,102 l-1.6,4 l3.2,0 Z M114,99 l-1.6,4 l3.2,0 Z" fill="${OUT}"/>`;
+  if(o.collar==='fur')g+=`<path d="M80,98 L83,102 M90,101 L92,105 M110,101 L108,105 M120,98 L117,102" stroke="#5a3418" stroke-width="1.2"/>`;
+  const hs=g.length;
+  if(o.longHair)g+=`<path d="M84,52 C78,72 80,90 86,98 L92,80 Z M116,52 C122,72 120,90 114,98 L108,80 Z" fill="${o.hair}" stroke="${OUT}" stroke-width="1"/>`;
+  g+=`<rect x="94" y="72" width="12" height="20" fill="${SKS}"/><ellipse cx="100" cy="62" rx="14" ry="17" fill="${SKIN}" stroke="${OUT}" stroke-width="1.4"/>`;
+  g+=`<path d="M86.5,60 C85,46 92,42 100,42 C108,42 115,46 113.5,60 C112,52 107,50 100,50 C93,50 88,52 86.5,60 Z" fill="${o.hair}"/>`;
+  g+=`<path d="M91,56.5 L97,55.6 M103,55.6 L109,56.5" stroke="${o.hair==='#f2e2a0'?'#a08040':o.hair}" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="94.5" cy="60.5" rx="1.7" ry="1.9" fill="${OUT}"/><ellipse cx="105.5" cy="60.5" rx="1.7" ry="1.9" fill="${OUT}"/><path d="M100,62 L98,69 L101.5,69" fill="none" stroke="${SKS}" stroke-width="1.3"/><circle cx="92" cy="68" r="3" fill="#ec8f7a" opacity=".38"/><circle cx="108" cy="68" r="3" fill="#ec8f7a" opacity=".38"/>`;
+  if(o.beard==='full')g+=`<path d="M86,64 C87,84 95,94 100,94 C105,94 113,84 114,64 C109,72 104,71 100,71.5 C96,71 91,72 86,64 Z" fill="${o.beardCol}" stroke="${OUT}" stroke-width="1.1"/><path d="M93,72 Q100,68 107,72 Q103,74.5 100,73 Q97,74.5 93,72 Z" fill="${o.beardCol}" stroke="${OUT}" stroke-width=".8"/>`;
+  else if(o.beard==='short')g+=`<path d="M88,68 C90,80 96,86 100,86 C104,86 110,80 112,68 C108,74 104,74 100,74 C96,74 92,74 88,68 Z" fill="${o.beardCol}" stroke="${OUT}" stroke-width="1"/><path d="M93,72 Q100,68 107,72 Q103,74.5 100,73 Q97,74.5 93,72 Z" fill="${o.beardCol}"/>`;
+  else if(o.beard==='mustache')g+=`<path d="M93,72 Q100,68.5 107,72 Q103,74.5 100,73 Q97,74.5 93,72 Z" fill="${o.beardCol}"/><path d="M96,77.5 Q100,79.5 104,77.5" stroke="#9a3a2a" stroke-width="1.4" fill="none"/>`;
+  else g+=`<path d="M95.5,74.5 Q100,78 104.5,74.5" stroke="#b8443a" stroke-width="1.6" fill="none"/>`;
+  if(o.old)g+=`<path d="M90,52 L95,51 M105,51 L110,52 M89,72 Q92,76 95,77 M111,72 Q108,76 105,77" stroke="${SKS}" stroke-width="1"/>`;
+  const H=o.hatCol;
+  if(o.hat==='crown')g+=`<path d="M84,50 L83,30 L91,40 L96,25 L100,35 L104,25 L109,40 L117,30 L116,50 Z" fill="#f0c430" stroke="${OUT}" stroke-width="1.3"/><rect x="83" y="44" width="34" height="7" fill="#d9a520" stroke="${OUT}" stroke-width="1.1"/><circle cx="91" cy="47.5" r="2" fill="${RED}"/><circle cx="100" cy="47.5" r="2" fill="${BLU}"/><circle cx="109" cy="47.5" r="2" fill="${RED}"/><circle cx="96" cy="25" r="2.2" fill="#fff" stroke="${OUT}" stroke-width=".7"/><circle cx="104" cy="25" r="2.2" fill="#fff" stroke="${OUT}" stroke-width=".7"/>`;
+  if(o.hat==='beret')g+=`<path d="M70,50 C64,34 88,24 104,26 C124,24 140,36 132,50 C120,44 82,44 70,50 Z" fill="${H}" stroke="${OUT}" stroke-width="1.3"/><path d="M76,46 C90,41 112,41 126,46" stroke="${YEL}" stroke-width="2" fill="none"/><path d="M118,32 C132,20 146,22 156,12 C152,28 136,34 122,38 Z" fill="#fff" stroke="${OUT}" stroke-width="1"/><path d="M122,34 C134,26 144,24 152,16" stroke="${RED}" stroke-width="1.2" fill="none"/>`;
+  if(o.hat==='cap')g+=`<path d="M84,50 C82,30 106,20 122,30 C128,34 128,42 122,44 C118,38 114,40 116,50 Z" fill="${H}" stroke="${OUT}" stroke-width="1.3"/><path d="M84,47 L117,47" stroke="${YEL}" stroke-width="3"/>`;
+  if(o.hat==='wreath')[[86,46],[92,40],[100,38],[108,40],[114,46]].forEach(([x,y],i)=>{g+=`<circle cx="${x}" cy="${y}" r="4.2" fill="${i%2?'#f6b7c8':'#fff'}" stroke="${OUT}" stroke-width=".8"/><circle cx="${x}" cy="${y}" r="1.4" fill="${YEL}"/>`});
+  if(o.hat==='straw')g+=`<ellipse cx="100" cy="46" rx="30" ry="7" fill="#e8c25a" stroke="${OUT}" stroke-width="1.2"/><path d="M84,46 C84,30 116,30 116,46 Z" fill="#e8c25a" stroke="${OUT}" stroke-width="1.2"/><path d="M84,42 L116,42" stroke="${RED}" stroke-width="3"/>`;
+  if(o.hat==='hood')g=g.replace(/<ellipse cx="100" cy="62"/,`<path d="M78,98 C70,70 76,36 100,34 C124,36 130,70 122,98 C116,90 116,80 114,62 C112,48 88,48 86,62 C84,80 84,90 78,98 Z" fill="${H}" stroke="${OUT}" stroke-width="1.3"/><ellipse cx="100" cy="62"`)+`<path d="M85,58 C86,44 114,44 115,58 C110,50 90,50 85,58 Z" fill="${H}" stroke="${OUT}" stroke-width="1.2"/>`;
+  return g.slice(0,hs)+`<g transform="translate(100,94) scale(1.22) translate(-100,-94)">${g.slice(hs)}</g>`;
+}
+const PROPS={
+  scepter:`<path d="M124,146 L150,32" stroke="#8a6418" stroke-width="5" stroke-linecap="round"/><path d="M124,146 L150,32" stroke="#f0c430" stroke-width="2.6" stroke-linecap="round"/><path d="M151,18 C146,24 145,28 146,34 L156,35 C157,29 156,24 151,18 Z" fill="#f0c430" stroke="${OUT}" stroke-width="1"/><circle cx="151" cy="16" r="3" fill="${RED}" stroke="${OUT}" stroke-width=".8"/>`,
+  sword:`<path d="M123.5,130 L123.5,36 L126,26 L128.5,36 L128.5,130 Z" fill="#e2e5e9" stroke="${OUT}" stroke-width="1.2"/><path d="M126,34 L126,128" stroke="#9aa0a8" stroke-width=".9"/><rect x="115" y="128" width="22" height="5" rx="2" fill="${YEL}" stroke="${OUT}" stroke-width="1"/>`,
+  halberd:`<path d="M122,154 L158,22" stroke="#5a3a1e" stroke-width="5" stroke-linecap="round"/><path d="M122,154 L158,22" stroke="#8a6034" stroke-width="2.6"/><path d="M158,22 L157,8 L163,20 Z" fill="#dfe2e6" stroke="${OUT}" stroke-width="1"/><path d="M158,30 C170,32 176,44 170,54 C166,46 160,44 154,44 Z" fill="#dfe2e6" stroke="${OUT}" stroke-width="1.1"/><path d="M156,32 L146,30 L153,40 Z" fill="#dfe2e6" stroke="${OUT}" stroke-width="1"/>`,
+  crossbow:`<path d="M72,150 L140,96" stroke="#6b3f1d" stroke-width="7" stroke-linecap="round"/><path d="M72,150 L140,96" stroke="#a46a34" stroke-width="4" stroke-linecap="round"/><path d="M118,84 C132,92 144,104 150,120" stroke="#5a5a5a" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M118,84 L150,120" stroke="#333" stroke-width=".9"/>`,
+  bouquet:`<path d="M126,136 L134,118 M126,136 L124,116 M126,136 L142,122" stroke="#3f7a2a" stroke-width="1.8"/>`+[[134,114,'#e94a5a'],[123,112,'#fff'],[143,119,'#f6b7c8'],[130,104,YEL],[140,108,'#e94a5a'],[118,104,'#f6b7c8']].map(([x,y,c])=>`<circle cx="${x}" cy="${y}" r="5" fill="${c}" stroke="${OUT}" stroke-width=".8"/><circle cx="${x}" cy="${y}" r="1.6" fill="${YEL}"/>`).join(''),
+  sheaf:`<path d="M116,146 L128,92 L146,92 L138,146 Z" fill="#e8c25a" stroke="${OUT}" stroke-width="1.1"/><path d="M126,94 L120,76 M132,92 L130,72 M138,92 L140,72 M144,94 L150,78" stroke="#c49a2a" stroke-width="3" stroke-linecap="round"/><rect x="122" y="116" width="20" height="5" fill="${RED}" stroke="${OUT}" stroke-width=".8"/><path d="M66,148 C56,126 62,110 80,108 C72,116 68,130 72,146" fill="none" stroke="#9aa0a8" stroke-width="3.5"/>`,
+  grapes:`<path d="M128,140 L130,118" stroke="#3f7a2a" stroke-width="1.8"/><path d="M130,118 C124,108 136,104 138,112 C142,104 150,110 144,118 Z" fill="${GRN}" stroke="${OUT}" stroke-width=".9"/>`+[[124,124],[132,124],[140,124],[128,131],[136,131],[132,138],[120,131],[144,131]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="4.3" fill="#6a2f6a" stroke="#2a1030" stroke-width=".8"/>`).join(''),
+  sticks:`<path d="M58,152 L150,104 M62,156 L152,112 M56,146 L146,98" stroke="#7a4a24" stroke-width="3.5" stroke-linecap="round"/><path d="M98,124 L106,140" stroke="${RED}" stroke-width="3"/>`
+};
+function backdrop(kind){
+  if(kind==='winter')return `<rect x="4" y="4" width="192" height="151" fill="#e3ebf2"/><path d="M4,128 Q60,110 110,124 Q160,112 196,122 L196,155 L4,155 Z" fill="#fff" stroke="#b9c7d5" stroke-width="1"/>`+[[30,40],[160,70],[40,90],[176,100],[150,22],[24,120]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="2" fill="#fff" stroke="#b9c7d5" stroke-width=".6"/>`).join('')+`<path d="M168,128 L168,88 M168,104 L156,92 M168,98 L180,86 M168,112 L178,104" stroke="#4a3424" stroke-width="2.2" stroke-linecap="round"/>`;
+  const sky={spring:'#e4f1f7',summer:'#fbf0c8',autumn:'#f6e2c8'}[kind],g1={spring:'#9ccc5a',summer:'#d9c050',autumn:'#c08a3a'}[kind],g2={spring:'#6aa83a',summer:'#b9a03a',autumn:'#9a6a2a'}[kind];
+  let o=`<rect x="4" y="4" width="192" height="151" fill="${sky}"/><path d="M4,122 Q60,104 110,118 Q160,106 196,116 L196,155 L4,155 Z" fill="${g1}"/><path d="M4,140 Q90,128 196,142 L196,155 L4,155 Z" fill="${g2}"/>`;
+  const tc={spring:'#7ab84a',summer:'#5f9a3a',autumn:'#d9792b'}[kind];
+  o+=`<rect x="164" y="104" width="4" height="22" fill="#6b3f1d"/><circle cx="166" cy="98" r="11" fill="${tc}" stroke="${OUT}" stroke-width=".9"/><rect x="30" y="108" width="3.5" height="18" fill="#6b3f1d"/><circle cx="32" cy="103" r="9" fill="${tc}" stroke="${OUT}" stroke-width=".9"/>`;
+  if(kind==='spring')[[160,94],[170,100],[164,104],[28,100],[36,106]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="2.2" fill="#f6b7c8"/>`);
+  if(kind==='summer')o+=`<circle cx="160" cy="34" r="12" fill="#f6b43c"/>`;
   return o;
 }
 function faceCard(s,r){
-  const P=PAL[s],kind=r===1?'U':r===2?'O':'K';
-  let b=`<rect x="9" y="9" width="182" height="292" rx="6" fill="url(#skyF)"/><path d="M9,262 Q100,248 191,262 L191,301 L9,301 Z" fill="#a3a95e"/><path d="M9,280 Q100,270 191,282 L191,301 L9,301 Z" fill="#7e8a45"/><path d="M30,268 l3,-6 l3,6 M160,272 l3,-7 l3,7 M120,286 l2,-5 l2,5 M50,290 l2,-5 l2,5" stroke="#5c6a2e" stroke-width="1.2" fill="none"/>`;
-  b+=kind==='K'?seated(P):standing(P,kind);
-  if(kind==='U')b+=sym(s,46,232,1.12);
-  if(kind==='O')b+=sym(s,54,56,1.05);
-  if(kind==='K')b+=sym(s,52,44,.86);
-  b+=index(s,RLAB[r]);
-  return wrapCard(b,`<linearGradient id="skyF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9e2c8"/><stop offset="1" stop-color="#f6efd9"/></linearGradient>`);
+  const P=PAL[s],kind=r===1?'U':r===2?'O':'K';let h='',sy='';
+  if(kind==='K')h+=bust({cloak:RED,coat:P.coat,stripe:P.stripe,sleeve:P.sleeve,collar:'ermine',hair:P.hair,beard:'full',beardCol:P.beard,hat:'crown',prop:PROPS.scepter,old:true});sy=sym(s,48,40,.86);
+  if(kind==='O'){const prop=s===2?PROPS.crossbow:PROPS.sword;
+    h+=bust({cloak:P.cloak,coat:P.coat,stripe:P.stripe,sleeve:P.sleeve,collar:'fur',hair:P.hair,beard:'short',beardCol:P.beard,hat:'beret',hatCol:P.hat,prop});sy=sym(s,46,42,.92)}
+  if(kind==='U')h+=bust({coat:P.sleeve,stripe:P.stripe,sleeve:P.coat,collar:'shirt',hair:P.hair,beard:'mustache',beardCol:P.hair,hat:'cap',hatCol:P.hat,prop:PROPS.halberd});sy=sym(s,30,120,.86);
+  h=`<g transform="translate(100,160) scale(1.03) translate(-100,-160)">${h}</g>`+sy+label(RLAB[r],18,30,24);
+  return wrapCard(mirror(h)+divider);
 }
-function scene(s){
-  let o='';const W='#ffffff';
-  if(s===1){ // spring
-    o+=`<rect x="20" y="80" width="160" height="180" fill="url(#sk)"/><circle cx="140" cy="122" r="11" fill="#f7da6a"/><path d="M118,140 q5,-5 10,0 q5,-5 10,0" stroke="${OUT}" stroke-width="1.3" fill="none"/><path d="M20,205 Q60,180 100,198 Q140,178 180,196 L180,260 L20,260 Z" fill="#8cbf55"/><path d="M20,228 Q80,210 180,232 L180,260 L20,260 Z" fill="#5f9a3a"/><path d="M73,232 L76,178 L82,178 L84,232 Z" fill="#6b4423" stroke="${OUT}" stroke-width="1"/>`;
-    [[78,160,21],[60,172,14],[96,172,15],[78,145,13]].forEach(([x,y,r])=>o+=`<circle cx="${x}" cy="${y}" r="${r}" fill="#79b54a" stroke="#3c6e24" stroke-width="1"/>`);
-    [[70,150],[86,156],[64,168],[92,168],[80,170],[74,138],[100,176],[58,178],[84,142]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="2.6" fill="#f6b7c8"/>`);
-    [[112,242,'#fff'],[126,248,'#f3d64a'],[140,240,'#fff'],[52,246,'#f3d64a'],[150,250,'#f6b7c8'],[100,252,'#fff']].forEach(([x,y,c])=>o+=`<circle cx="${x}" cy="${y}" r="2.4" fill="${c}"/>`);
-    return [o,'#bfe0ef','#f4f0d8'];
-  }
-  if(s===0){ // summer
-    o+=`<rect x="20" y="80" width="160" height="180" fill="url(#sk)"/><g stroke="#f2a33a" stroke-width="2.2">`;
-    for(let i=0;i<12;i++){const a=i*Math.PI/6;o+=`<line x1="${(128+Math.cos(a)*21).toFixed(1)}" y1="${(124+Math.sin(a)*21).toFixed(1)}" x2="${(128+Math.cos(a)*28).toFixed(1)}" y2="${(124+Math.sin(a)*28).toFixed(1)}"/>`}
-    o+=`</g><circle cx="128" cy="124" r="17" fill="#f6b43c"/><path d="M20,196 Q70,182 120,192 Q150,186 180,192 L180,260 L20,260 Z" fill="#b7bf63"/><rect x="20" y="204" width="160" height="56" fill="#e2b84b"/>`;
-    for(let x=24;x<180;x+=6)o+=`<path d="M${x},258 L${x+2},${208+(x*7)%9}" stroke="#b48a28" stroke-width="1.2"/>`;
-    o+=`<path d="M64,238 L72,196 L86,196 L94,238 Z" fill="#d9a83a" stroke="${OUT}" stroke-width="1"/><path d="M68,198 L64,186 M74,196 L72,182 M80,196 L80,180 M86,196 L88,182 M90,198 L95,186" stroke="#b07f22" stroke-width="2.2"/><rect x="68" y="214" width="22" height="5" fill="#8a5a1a"/>`;
-    [[112,230],[132,244],[150,226],[42,236],[160,250],[118,252]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="3.2" fill="#c8272a"/><circle cx="${x}" cy="${y}" r="1" fill="${OUT}"/>`);
-    return [o,'#f6d58a','#f7eccd'];
-  }
-  if(s===2){ // autumn
-    o+=`<rect x="20" y="80" width="160" height="180" fill="url(#sk)"/><path d="M20,200 Q70,178 110,194 Q150,180 180,190 L180,260 L20,260 Z" fill="#b6773a"/><path d="M20,226 Q90,210 180,230 L180,260 L20,260 Z" fill="#8a5426"/><path d="M60,232 L63,170 L69,170 L72,232 Z" fill="#5a3418" stroke="${OUT}" stroke-width="1"/><path d="M66,180 L52,164 M66,176 L82,160" stroke="#5a3418" stroke-width="3"/>`;
-    [[66,152,20,'#d9792b'],[48,164,13,'#c4482a'],[84,162,14,'#e6a23a'],[62,136,12,'#c4482a']].forEach(([x,y,r,c])=>o+=`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" stroke="#7a3a14" stroke-width="1"/>`);
-    o+=`<path d="M130,186 C120,180 116,192 124,196 C118,200 126,208 132,200 C138,208 146,200 140,196 C148,192 144,180 134,186 Z" fill="#6f8a2e" stroke="${OUT}" stroke-width="1"/><path d="M132,196 L132,206" stroke="${OUT}" stroke-width="1.4"/>`;
-    [[126,212],[134,212],[142,212],[130,220],[138,220],[134,228],[122,220],[146,220],[130,236],[138,236],[134,244]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="4.6" fill="#6a2f5a" stroke="#3b1630" stroke-width=".8"/>`);
-    [[100,130,30],[150,150,-20],[110,176,60],[40,200,10]].forEach(([x,y,a])=>o+=`<ellipse cx="${x}" cy="${y}" rx="4" ry="2" transform="rotate(${a} ${x} ${y})" fill="#d9792b"/>`);
-    return [o,'#f0b072','#f3e3c3'];
-  }
-  o+=`<rect x="20" y="80" width="160" height="180" fill="url(#sk)"/><path d="M20,206 Q70,184 110,200 Q150,186 180,196 L180,260 L20,260 Z" fill="#f4f7fa" stroke="#c3cfdb" stroke-width="1.2"/><path d="M20,232 Q90,218 180,236 L180,260 L20,260 Z" fill="#e3eaf1"/>`;
-  o+=`<path d="M60,236 L62,150 L67,150 L69,236 Z" fill="#3a2b22"/><path d="M64,200 L44,178 M64,186 L84,164 M64,170 L50,150 M64,166 L78,146 M50,186 L42,186 M78,174 L90,176 M54,160 L46,152" stroke="#3a2b22" stroke-width="2.4" stroke-linecap="round"/>`;
-  o+=`<rect x="112" y="200" width="38" height="26" fill="#8a5a3a" stroke="${OUT}" stroke-width="1"/><path d="M106,202 L131,180 L156,202 Z" fill="#7a3a2a" stroke="${OUT}" stroke-width="1"/><path d="M106,202 L131,180 L156,202 L150,202 L131,186 L112,202 Z" fill="${W}"/><rect x="140" y="182" width="6" height="12" fill="#5a3a2a"/><rect x="122" y="208" width="9" height="8" fill="#f2c94c" stroke="${OUT}" stroke-width=".8"/><path d="M143,180 C138,170 148,166 142,156 C138,150 146,144 142,136" stroke="#9aa8b6" stroke-width="2.5" fill="none" opacity=".7"/>`;
-  [[40,110],[56,96],[90,108],[110,96],[150,112],[166,130],[30,140],[96,134],[124,150],[160,160],[40,170],[88,160],[118,124],[74,120],[140,138]].forEach(([x,y])=>o+=`<circle cx="${x}" cy="${y}" r="1.9" fill="${W}"/>`);
-  return [o,'#aebfd0','#e9eef2'];
-}
-const SEASON=['VARA','PRIMĂVARA','TOAMNA','IARNA'];
+const SEASON=['PRIMĂVARA','TOAMNA','IARNA','VARA'];
 function aceCard(s){
-  const [sc,c1,c2]=scene(s);
-  const defs=`<linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient><clipPath id="med"><ellipse cx="100" cy="172" rx="70" ry="82"/></clipPath>`;
-  let b=`<ellipse cx="100" cy="172" rx="76" ry="88" fill="#efe1b8" stroke="#b48a3a" stroke-width="1.6"/><g clip-path="url(#med)">${sc}</g><ellipse cx="100" cy="172" rx="70" ry="82" fill="none" stroke="${OUT}" stroke-width="2.4"/>`;
-  b+=sym(s,100,72,1.95);
-  b+=`<path d="M26,264 L174,264 L165,277 L174,290 L26,290 L35,277 Z" fill="#f3e6c0" stroke="${OUT}" stroke-width="1.4"/><text x="100" y="282.5" ${FONT} font-size="${SEASON[s].length>6?13:15}" letter-spacing="2">${SEASON[s]}</text>`;
-  b+=index(s,'A');
-  return wrapCard(b,defs);
+  const kinds=['spring','autumn','winter','summer'],k=kinds[s];let h='';const bd=backdrop(k);
+  if(k==='spring')h+=bust({coat:BLU,stripe:RED,sleeve:'#f6f2e8',collar:'shirt',hair:'#e6c66a',beard:'none',hat:'wreath',longHair:true,prop:PROPS.bouquet});
+  if(k==='summer')h+=bust({coat:RED,stripe:YEL,sleeve:'#f6f2e8',collar:'shirt',hair:'#6b3f1d',beard:'none',hat:'straw',longHair:true,prop:PROPS.sheaf});
+  if(k==='autumn')h+=bust({coat:GRN,stripe:YEL,sleeve:RED,collar:'shirt',hair:'#5a3418',beard:'mustache',beardCol:'#5a3418',hat:'cap',hatCol:RED,prop:PROPS.grapes});
+  if(k==='winter')h+=bust({coat:'#7a4a7a',stripe:'#d9cfc0',sleeve:'#6b5a8a',collar:'fur',hair:'#d8d4cc',beard:'none',hat:'hood',hatCol:BLU,old:true,prop:PROPS.sticks});
+  h=bd+`<g transform="translate(100,160) scale(1.0) translate(-100,-160)">${h}</g>`;
+  h+=`<rect x="70" y="10" width="60" height="16" rx="3" fill="${WHT}" opacity=".9"/><text x="100" y="22" ${FONT} font-size="${SEASON[s].length>6?10:12}" letter-spacing="1">${SEASON[s]}</text>`;
+  h+=sym(s,46,46,.85)+sym(s,154,46,.85)+label('A',16,26,20);
+  return wrapCard(mirror(h)+divider);
 }
 function backCard(){
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 310" width="400" height="620"><defs>${GRAD}${PAPERDEF}<pattern id="lat" width="13" height="13" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="13" height="13" fill="#7a1d23"/><path d="M0,6.5 L13,6.5 M6.5,0 L6.5,13" stroke="#d6b25a" stroke-width=".7" opacity=".55"/><circle cx="6.5" cy="6.5" r="1.5" fill="#e8c766"/></pattern></defs><g clip-path="url(#cc)"><rect width="200" height="310" fill="url(#pp)"/><rect x="10" y="10" width="180" height="290" rx="7" fill="url(#lat)" stroke="#6a4a1a" stroke-width="1.2"/><rect x="15" y="15" width="170" height="280" rx="5" fill="none" stroke="#e8c766" stroke-width="1.2"/><ellipse cx="100" cy="155" rx="52" ry="66" fill="#4f1015" stroke="#e8c766" stroke-width="2"/><ellipse cx="100" cy="155" rx="46" ry="60" fill="none" stroke="#e8c766" stroke-width=".8"/><path d="M100,113 L107,145 L140,138 L112,155 L140,172 L107,165 L100,197 L93,165 L60,172 L88,155 L60,138 L93,145 Z" fill="#e8c766" stroke="#8a6418" stroke-width="1"/><circle cx="100" cy="155" r="5" fill="#7a1d23" stroke="#e8c766" stroke-width="1.2"/>${sym(0,100,52,.42)}${sym(1,152,155,.42)}${sym(2,100,262,.42)}${sym(3,48,155,.42)}<rect width="200" height="310" filter="url(#gr)"/></g><rect x="1" y="1" width="198" height="308" rx="12" fill="none" stroke="#a8977a" stroke-width="1.4"/></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 310" width="400" height="620"><defs><clipPath id="cc"><rect x="1" y="1" width="198" height="308" rx="12"/></clipPath><pattern id="lat" width="13" height="13" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="13" height="13" fill="#2f4f8f"/><path d="M0,6.5 L13,6.5 M6.5,0 L6.5,13" stroke="#9fb8e6" stroke-width=".7" opacity=".6"/><circle cx="6.5" cy="6.5" r="1.5" fill="#d9e4f7"/></pattern></defs><g clip-path="url(#cc)"><rect width="200" height="310" fill="${WHT}"/><rect x="9" y="9" width="182" height="292" rx="7" fill="url(#lat)" stroke="#1b2a4a" stroke-width="1.2"/><rect x="14" y="14" width="172" height="282" rx="5" fill="none" stroke="#d9e4f7" stroke-width="1.2"/><ellipse cx="100" cy="155" rx="50" ry="64" fill="#1e3566" stroke="#d9e4f7" stroke-width="2"/><path d="M100,115 L107,146 L138,139 L112,155 L138,171 L107,164 L100,195 L93,164 L62,171 L88,155 L62,139 L93,146 Z" fill="#f2cf33" stroke="${OUT}" stroke-width="1"/><circle cx="100" cy="155" r="5" fill="${RED}" stroke="${OUT}" stroke-width="1"/>${sym(0,100,54,.45)}${sym(1,154,155,.45)}${sym(2,100,262,.45)}${sym(3,46,155,.45)}</g><rect x="1" y="1" width="198" height="308" rx="12" fill="none" stroke="#8f887c" stroke-width="1.8"/></svg>`;
 }
 function cardSVG(id){const s=Math.floor(id/6),r=id%6;return r===0||r===4?pipCard(s,r):r===5?aceCard(s):faceCard(s,r)}
-function suitIconSVG(s){return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-25 -25 50 50" width="50" height="50"><defs>${GRAD}</defs>${suitShape(s)}</svg>`}
+function suitIconSVG(s){return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-25 -28 50 52" width="50" height="52">${suitShape(s)}</svg>`}
 //ART-END
 </script>
 
@@ -462,11 +470,12 @@ function snd(type){if(muted)return;const a=ac();if(!a)return;if(a.state==='suspe
 
 // ---------- geometry ----------
 function geom(){const r=table.getBoundingClientRect();W=r.width;H=r.height;
-  CH=Math.min(H*.23,190,(W/5.3)*1.55);CW=CH/1.55;table.style.setProperty('--cw',CW+'px');table.style.setProperty('--ch',CH+'px')}
+  CH=Math.min(H*.25,210,(W/5.1)*1.55);CW=CH/1.55;table.style.setProperty('--cw',CW+'px');table.style.setProperty('--ch',CH+'px')}
 const oS=()=>W<700?.5:.6;
 const TOP=()=>W<=640?(g&&g.n!==3?118:110):Math.max(58,H*.075);
 const SY=()=>H*.43;
-const CY=()=>{if(!g)return H*.45;const s=oS();const top=g.n===3?TOP():TOP()+CH*s+50;const bot=H-CH-70;return (top+bot)/2};
+const LIM=()=>{const s=oS();return {top:(!g||g.n===3)?TOP():TOP()+CH*s+52,bot:H-CH-76}};
+const CY=()=>{if(!g)return H*.45;const l=LIM();return (l.top+l.bot)/2};
 function sideSpan(){const per=g?24/g.n:6,s=oS();const sp=Math.min(CW*s*.45,(H*.36)/Math.max(1,per-1));return {sp,half:(per-1)/2*sp+CW*s*.5}}
 function handPos(seat,i,k){
   const d=i-(k-1)/2;
@@ -478,7 +487,7 @@ function handPos(seat,i,k){
   if(seat==='l')return {x:ch*.5+16,y:SY()+d*sp,a:90+d*1.6,s};
   return {x:W-ch*.5-16,y:SY()+d*sp,a:-90-d*1.6,s};
 }
-function trickPos(seat){const cx=W/2,cy=CY();const k=W<=640?.7:.98,o={b:[0,CH*.4],t:[0,-CH*.4],l:[-CW*k,0],r:[CW*k,0]}[seat];return {x:cx+o[0],y:cy+o[1]}}
+function trickPos(seat){const cx=W/2,cy=CY();const k=W<=640?.7:.98,o={b:[0,CH*.31],t:[0,-CH*.31],l:[-CW*k,0],r:[CW*k,0]}[seat];return {x:cx+o[0],y:cy+o[1]}}
 function platePos(seat){const s=oS();
   if(seat==='b')return {x:W/2,y:H-CH-50};
   if(seat==='t')return {x:W/2,y:TOP()+CH*s+28};
@@ -490,7 +499,7 @@ function pilePos(seat){const s=oS(),dx=Math.min(W*.33,CW*1.9+70);
   if(seat==='t')return {x:W/2+dx,y:TOP()+CH*s+28};
   const {half}=sideSpan(),pp=platePos(seat);return {x:pp.x,y:SY()-half-CH*.24-10};
 }
-const TS=()=>W<700?.8:.88;
+const TS=()=>{const l=LIM();return Math.max(.5,Math.min(W<700?.8:.88,(l.bot-l.top)/CH-.62))};
 
 function place(id,o){const el=cardEls[id];
   el.style.transform=`translate(${(o.x-CW/2).toFixed(1)}px,${(o.y-CH/2).toFixed(1)}px) rotate(${(o.a||0).toFixed(2)}deg) scale(${o.s||1})`;
@@ -499,9 +508,11 @@ function place(id,o){const el=cardEls[id];
 function sortHand(h){return h.slice().sort((a,b)=>SUIT_ORDER.indexOf(a.s)-SUIT_ORDER.indexOf(b.s)||a.r-b.r)}
 function deckPos(i){return {x:W/2-i*.25,y:CY()-i*.35,a:0,s:.86,z:1+i,up:false}}
 function layoutDeck(){for(let i=0;i<24;i++)place(i,deckPos(i))}
+function stockPos(){return g.n===2?{x:W/2-CW*1.75,y:CY()}:{x:W/2,y:TOP()+CH*.36}}
 function layoutAll(){
   if(!g||!g.hands)return layoutDeck();
   const seats=seatsOf(g.n);
+  if(g.stock&&g.stock.length){const o=stockPos();g.stock.forEach((c,i)=>place(c.id,{x:o.x-i*.6,y:o.y-i*.8,a:g.n===2?90:0,s:.72,z:2+i,up:false}))}
   g.hands.forEach((h,p)=>{const sh=sortHand(h);sh.forEach((c,i)=>place(c.id,{...handPos(seats[p],i,sh.length),z:10+i,up:p===0}))});
   g.trick.forEach((t,i)=>{const o=trickPos(seats[t.p]);place(t.c.id,{x:o.x,y:o.y,a:rot[t.c.id]||0,s:TS(),z:120+i,up:true})});
   g.taken.forEach((arr,p)=>{const o=pilePos(seats[p]);arr.forEach((c,j)=>place(c.id,{x:o.x+(j%3-1)*1.2,y:o.y-j*.45,a:(prot[c.id]||0)+(seats[p]==='l'||seats[p]==='r'?90:0),s:.42,z:60+j,up:false}))});
@@ -518,13 +529,32 @@ for(let id=0;id<24;id++){
   el.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&pendingCard){e.preventDefault();pendingCard(id)}});
   layer.appendChild(el);cardEls[id]=el;
 }
+// ---------- poze reale ale cărților (opțional) ----------
+// Pune pozele în folderul "cards/" lângă cruce.html, cu numele: rosu-as.png, verde-craiu.png, ghinda-10.png, duba-doiar.png ...
+// culori: rosu, verde, ghinda, duba   valori: 9, 10, doiar, treiar, craiu, as   spatele: spate.png
+const CARD_DIR='cards/',CARD_EXT='.png';
+const FN_S=['rosu','verde','ghinda','duba'],FN_R=['9','doiar','treiar','craiu','10','as'];
+function tryRealCards(){
+  if(location.protocol==='blob:'||location.hostname.endsWith('claude.ai')||location.hostname.endsWith('claudeusercontent.com'))return;
+  const urls=[];for(let id=0;id<24;id++)urls.push(CARD_DIR+FN_S[Math.floor(id/6)]+'-'+FN_R[id%6]+CARD_EXT);
+  const backU=CARD_DIR+'spate'+CARD_EXT;
+  const load=u=>new Promise(r=>{const i=new Image();i.onload=()=>r(true);i.onerror=()=>r(false);i.src=u});
+  Promise.all([...urls,backU].map(load)).then(ok=>{
+    if(!ok.slice(0,24).every(Boolean))return;
+    urls.forEach((u,id)=>{IMG[id]=u;cardEls[id].querySelector('.face img').src=u});
+    if(ok[24])cardEls.forEach(el=>{el.querySelector('.back img').src=backU});
+    document.body.classList.add('realcards');
+    const fan=document.querySelector('.fan');if(fan)fan.querySelectorAll('img').forEach((im,i)=>{im.src=IMG[[1,0,2,3][i]*6+5]});
+  });
+}
+tryRealCards();
 function markPlayable(L){
   for(let id=0;id<24;id++){const el=cardEls[id];el.classList.remove('playable','blocked');el.removeAttribute('tabindex')}
   if(!L)return;g.hands[0].forEach(c=>{const ok=L.includes(c),el=cardEls[c.id];el.classList.add(ok?'playable':'blocked');if(ok)el.tabIndex=0})
 }
 
 // ---------- plates, bubbles, info ----------
-function teamName(t){return g.n===4?(t===0?'Noi':'Ei'):NAMES[t]}
+function teamName(t){return g.teams?(t===0?'Noi':'Ei'):NAMES[t]}
 function setupPlates(){plates.forEach(p=>p.remove());plates=[];
   for(let p=0;p<g.n;p++){const el=document.createElement('div');el.className='plate';table.appendChild(el);plates.push(el)}
   updatePlates()}
@@ -532,8 +562,8 @@ function updatePlates(){if(!g)return;
   for(let p=0;p<g.n;p++){const el=plates[p];let sub=[];
     if(g.hands&&g.dealer===p)sub.push('împarte');
     if(g.bids&&g.bids[p]!=null)sub.push(g.bids[p]?('licitat '+g.bids[p]):'pas');
-    if(g.taken&&g.taken[p].length)sub.push((g.taken[p].length/g.n)+(g.taken[p].length/g.n===1?' levată':' levate'));
-    const dot=g.n===4?`<i style="background:${p%2?'#c4483f':'#e6c76f'}"></i>`:'';
+    if(g.taken&&g.taken[p].length)sub.push((g.taken[p].length/g.n)+(g.taken[p].length/g.n===1?' tură':' ture'));
+    const dot=g.teams?`<i style="background:${p%2?'#c4483f':'#e6c76f'}"></i>`:'';
     el.innerHTML=`<div class="nm">${dot}${NAMES[p]}</div><div class="sub">${sub.join(', ')||'&nbsp;'}</div>`}
   positionPlates()}
 function positionPlates(){if(!g)return;const seats=seatsOf(g.n);plates.forEach((el,p)=>{const o=platePos(seats[p]),hw=el.offsetWidth/2+10;el.style.left=Math.min(W-hw,Math.max(hw,o.x))+'px';el.style.top=o.y+'px'})}
@@ -542,7 +572,8 @@ function bubble(p,text,big){const o=plates[p];if(!o)return;const b=document.crea
   b.style.left=o.style.left;b.style.top=(parseFloat(o.style.top)-o.offsetHeight/2-10)+'px';table.appendChild(b);setTimeout(()=>b.remove(),1700*Math.max(.7,SPEED))}
 function updateInfo(){const el=$('#info');if(!g||!g.hands){el.innerHTML='';return}
   let h='';
-  if(g.trump>=0)h+=`<div class="row">Atu <img src="${SUITIMG[g.trump]}" alt=""><b>${SUITS[g.trump]}</b></div>`;
+  if(g.stock&&g.stock.length)h+=`<div class="row">Jos: <b>${g.stock.length}</b> ${g.stock.length===1?'carte':'cărți'}</div>`;
+  if(g.trump>=0)h+=`<div class="row">Tromf <img src="${SUITIMG[g.trump]}" alt=""><b>${SUITS[g.trump]}</b></div>`;
   if(g.bidder>=0&&g.phase!=='bid')h+=`<div class="row">${NAMES[g.bidder]} a licitat <b>${g.high}</b></div>`;
   h+=`<div class="row">`+g.totals.map((v,t)=>`${teamName(t)} <b>${v}</b>`).join('&ensp;')+`</div><div class="row" style="opacity:.7">până la ${g.target}</div>`;
   el.innerHTML=h}
@@ -564,24 +595,25 @@ $('#bNew').onclick=showStart;
 
 function showRules(){
   const el=panel(`<div class="rules"><h2>Regulile jocului</h2>
-  <h3>Cărțile</h3><p>Pachet unguresc de 24 de cărți: Roșu, Verde, Ghindă și Dubă. În ordinea puterii: 9, doiarul (2), treiarul (3), craiul (4), zecele și asul. Asul valorează 11 puncte, zecele 10, craiul 4, treiarul 3, doiarul 2, nouarul 0. Toate cărțile însumează 120 de puncte.</p>
-  <h3>Licitația</h3><p>Fiecare jucător spune o singură dată câte puncte mari crede că face (1–6) sau zice pas. Licitația trebuie să fie mai mare decât cea de dinainte. Dacă toți zic pas, cel care împarte e obligat la 1. 33 de puncte mici fac un punct mare.</p>
-  <h3>Atuul</h3><p>Cine câștigă licitația deschide primul, iar culoarea primei cărți jucate devine atu pentru toată mâna.</p>
-  <h3>Obligații</h3><p>Răspunzi la culoare. Dacă poți lua levata, ești obligat să o iei. Dacă nu ai culoarea, tai cu atu (și supratai dacă poți). Abia când nu ai nici culoare, nici atu, dai ce vrei.</p>
-  <h3>Anunțuri</h3><p>Dacă ai craiul și treiarul de aceeași culoare și deschizi cu unul dintre ele, zici 20, iar în atu zici 40. Anunțul se pune doar dacă echipa face măcar o levată.</p>
-  <h3>Scorul</h3><p>Fiecare primește punctele mari făcute. Cine a licitat și nu-și face licitația pierde valoarea ei. La 4 jucători se joacă în echipe, cu partenerul în față. Câștigă primul care ajunge la 11 sau 21.</p></div>
+  <h3>Cărțile</h3><p>Pachet unguresc de 24 de cărți în patru culori: Roșu (primăvara), Dubă (vara), Verde (toamna) și Ghindă (iarna). De la cea mai slabă la cea mai tare: nouar (0 puncte), doiar (2), treiar (3), pătrar (4), zecar (10), as (11). Pachetul are 120 de puncte.</p>
+  <h3>Împărțirea</h3><p>La patru, fiecare primește 6 cărți, individual sau pe echipe (partenerul e în față). La trei se primesc câte 6, la doi câte 8, iar restul rămân jos: după fiecare tură, fiecare trage câte o carte, începând cu cel care a luat. Cât timp mai sunt cărți jos, poți pune orice carte.</p>
+  <h3>Licitația</h3><p>Fiecare spune o dată un scor de la 1 la 6 sau pas; un scor S cere cel puțin 33×S puncte. Fără anunțare nu poți licita mai mult de 3. Pentru 4 îți trebuie o anunțare, pentru 5 două (una pe echipe), pentru 6 trei (două pe echipe). Dacă toți zic pas, primul care a primit cărți e forțat cu 1.</p>
+  <h3>Tromful</h3><p>Câștigătorul licitației pune prima carte, iar culoarea ei devine tromf. Orice tromf duce orice carte de altă culoare.</p>
+  <h3>Obligații</h3><p>Pui culoarea cerută și, dacă poți, o carte mai mare decât cea mai mare de pe masă din culoarea cerută (nu e nevoie dacă tura a fost deja tăiată cu tromf). Dacă nu ai culoarea, pui tromf, mai mare decât tromful de jos dacă ai. Abia fără culoare și fără tromf pui ce vrei.</p>
+  <h3>Anunțări</h3><p>Dacă ai treiarul și pătrarul de aceeași culoare și ceri culoarea cu unul dintre ele, anunți: 40 în tromf, 20 în altă culoare. Dacă tu sau echipa ta ați luat licitația cu 1, anunțarea în tromf valorează doar 20.</p>
+  <h3>Scorul</h3><p>Cine a licitat și nu a strâns punctele licitației scade licitația din scor; altfel adună cât a făcut (punctele împărțite la 33). Ceilalți adună cât au făcut. Câștigă primul care atinge scorul final; dacă îl ating mai mulți deodată, scorul final crește cu 10 până rămâne unul singur.</p></div>
   <div class="acts"><button class="btn" id="rOk">Am înțeles</button></div>`);
   el.querySelector('#rOk').onclick=()=>{el.remove();if(pendingPanelRestore)pendingPanelRestore()};
 }
 let pendingPanelRestore=null;
 
-let opt={n:4,target:11,speed:1};
+let opt={n:44,target:11,speed:1};
 function showStart(){
   pendingPanelRestore=null;
   const segs=(key,vals)=>`<div class="seg" role="group">${vals.map(([v,l])=>`<button data-k="${key}" data-v="${v}" aria-pressed="${opt[key]===v}">${l}</button>`).join('')}</div>`;
   const el=panel(`<div class="fan">${[1,0,2,3].map((s,i)=>`<img src="${IMG[s*6+5]}" alt="" style="transform:rotate(${(i-1.5)*9}deg) translateY(${Math.abs(i-1.5)*8}px)">`).join('')}</div>
-   <h2>Cruce</h2><p>Licitezi, alegi atuul cu prima carte și zici 20 sau 40 când ai craiul cu treiarul. Joci împotriva calculatorului.</p>
-   <span class="lbl">Jucători</span>${segs('n',[[2,'2'],[3,'3'],[4,'4 în echipe']])}
+   <h2>Cruce</h2><p>Licitezi, alegi tromful cu prima carte și anunți 20 sau 40 când ai treiarul cu pătrarul. Joci împotriva calculatorului.</p>
+   <span class="lbl">Jucători</span>${segs('n',[[2,'2'],[3,'3'],[4,'4'],[44,'4 în echipe']])}
    <span class="lbl">Joc până la</span>${segs('target',[[11,'11'],[21,'21']])}
    <span class="lbl">Ritm</span>${segs('speed',[[1,'Liniștit'],[.55,'Rapid']])}
    <div class="acts"><button class="btn" id="sGo">Împarte cărțile</button><button class="btn ghost" id="sRules">Reguli</button></div>`);
@@ -595,15 +627,19 @@ function showStart(){
 const wait=(ms,id)=>new Promise((res,rej)=>setTimeout(()=>id===runId?res():rej('abort'),ms*SPEED));
 function startGame(){
   runId++;const id=runId;pendingCard=null;markPlayable(null);SPEED=opt.speed;
-  NAMES=opt.n===2?['Tu','Ion']:opt.n===3?['Tu','Ion','Maria']:['Tu','Ion','Maria','Gheorghe'];
-  g=createGame(opt.n,opt.target);setupPlates();renderSheet();updateInfo();$('#sheet').classList.remove('open');
+  const n=opt.n===44?4:opt.n;NAMES=n===2?['Tu','Ion']:n===3?['Tu','Ion','Maria']:['Tu','Ion','Maria','Gheorghe'];
+  g=createGame(n,opt.target,Math.random,opt.n===44);setupPlates();renderSheet();updateInfo();$('#sheet').classList.remove('open');
   (async()=>{try{while(!g.over)await playHand(id);await gameOver(id)}catch(e){if(e!=='abort')console.error(e)}})();
 }
 function askBid(id){return new Promise(res=>{
-  const forcedHint=g.dealer===0&&g.high===0;
-  let chips=`<button class="chip pass" data-b="0">Pas</button>`;for(let b=1;b<=6;b++)chips+=`<button class="chip" data-b="${b}" ${b<=g.high?'disabled':''}>${b}</button>`;
+  const mx=maxBid(g,0);
+  let chips=`<button class="chip pass" data-b="0">Pas</button>`;for(let b=1;b<=6;b++)chips+=`<button class="chip" data-b="${b}" ${b<=g.high||b>mx?'disabled':''}>${b}</button>`;
   const prev=g.high?`Cea mai mare licitație: ${NAMES[g.bidder]}, ${g.high}.`:'Nimeni n-a licitat încă.';
-  const el=panel(`<h2>Câte faci?</h2><p>${prev} Atuul îl alegi tu cu prima carte, dacă iei licitația.</p><div class="chips">${chips}</div>${forcedHint?'<p class="note">Toți au zis pas. Dacă zici și tu pas, ești obligat la 1.</p>':''}`);
+  let notes='';
+  if(mx<6)notes+=`<p class="note">${mx===3?'Fără anunțare (treiar și pătrar de aceeași culoare) poți licita cel mult 3.':`Cu ${pairsIn(g.hands[0])} ${pairsIn(g.hands[0])===1?'anunțare':'anunțări'} poți licita cel mult ${mx}.`}</p>`;
+  if(g.first===0)notes+='<p class="note">Licitezi primul: dacă toți ceilalți zic pas, ești obligat la 1.</p>';
+  if(g.stock.length)notes+=`<p class="note">Licitezi pe ${g.hands[0].length} cărți; restul de ${g.stock.length} se trag de jos în timpul jocului.</p>`;
+  const el=panel(`<h2>Câte faci?</h2><p>${prev} Tromful îl alegi tu cu prima carte, dacă iei licitația.</p><div class="chips">${chips}</div>${notes}`);
   el.style.top='40%';
   el.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{if(id!==runId)return;el.remove();res(Number(b.dataset.b))});
 })}
@@ -640,7 +676,7 @@ async function playHand(id){
     setTurn(-1);await wait(650,id);
     const wc=g.trick[trickWinnerIdx(g.trick,g.trump)].c;cardEls[wc.id].classList.add('win');
     await wait(700,id);cardEls[wc.id].classList.remove('win');
-    resolveTrick(g);snd('collect');layoutAll();updatePlates();await wait(450,id);
+    resolveTrick(g);snd('collect');layoutAll();updatePlates();updateInfo();if(g.lastDraws.length){setTimeout(()=>snd('deal'),250);await wait(350,id)}await wait(450,id);
   }
   renderSheet();updateInfo();
   await handSummary(id);
@@ -651,17 +687,17 @@ function handSummary(id){return new Promise(res=>{
   const title=br.made?(g.bidder===0?'Ți-ai făcut licitația':`${who} și-a făcut licitația`):(g.bidder===0?'Ai căzut':`${who} a căzut`);
   snd(myTeamOk?'win':'lose');
   let t=`<table class="res"><tr><th></th><th>Cărți</th><th>Anunțuri</th><th>Mici</th><th>Mari</th><th>Scor</th></tr>`;
-  rows.forEach(r=>{t+=`<tr><td>${teamName(r.t)}${r.t===bt?' (licitație)':''}</td><td>${r.cardPts}</td><td>${r.ann?(r.annC?r.ann:`<s>${r.ann}</s>`):'–'}</td><td>${r.small}</td><td>${r.big}</td><td class="${r.delta<0?'neg':''}">${r.delta>0?'+':''}${r.delta}</td></tr>`});
+  rows.forEach(r=>{t+=`<tr><td>${teamName(r.t)}${r.t===bt?' (licitație)':''}</td><td>${r.cardPts}</td><td>${r.ann||'–'}</td><td>${r.small}</td><td>${r.big}</td><td class="${r.delta<0?'neg':''}">${r.delta>0?'+':''}${r.delta}</td></tr>`});
   t+='</table>';
   const tot=g.totals.map((v,i)=>`${teamName(i)}: <b>${v}</b>`).join('&emsp;');
-  const struck=rows.some(r=>r.ann&&!r.annC)?'<p class="note">Anunțurile tăiate nu se pun, pentru că echipa nu a făcut nicio levată.</p>':'';
+  const struck=g.targetRaised&&g.over?`<p class="note">Mai mulți au atins scorul final deodată, așa că scorul final a crescut la ${g.target}.</p>`:(g.targetRaised?`<p class="note">Mai mulți au atins scorul final deodată: acum se joacă până la ${g.target}.</p>`:'');
   const el=panel(`<h2>${title}</h2><p>A licitat ${g.high} în ${SUITS[g.trump]} și a făcut ${br.big}.</p>${t}${struck}<p>${tot}</p><div class="acts"><button class="btn" id="hNext">${g.over?'Vezi rezultatul':'Mâna următoare'}</button><button class="btn ghost" id="hSheet">Foaia de scor</button></div>`);
   el.querySelector('#hNext').onclick=()=>{if(id!==runId)return;el.remove();res()};
   el.querySelector('#hSheet').onclick=()=>{renderSheet();$('#sheet').classList.toggle('open')};
 })}
 function gameOver(id){return new Promise(()=>{
   const w=g.winner,iWon=w===0;snd(iWon?'win':'lose');
-  const title=iWon?(g.n===4?'Ați câștigat!':'Ai câștigat!'):`A câștigat ${teamName(w)}`;
+  const title=iWon?(g.teams?'Ați câștigat!':'Ai câștigat!'):`A câștigat ${teamName(w)}`;
   const el=panel(`<h2>${title}</h2><p>${g.totals.map((v,i)=>`${teamName(i)}: <b>${v}</b>`).join('&emsp;')}</p><p>După ${g.handNo} ${g.handNo===1?'mână':'mâini'}, jocul până la ${g.target} s-a încheiat.</p><div class="acts"><button class="btn" id="gAgain">Încă un joc</button><button class="btn ghost" id="gOpt">Schimbă setările</button></div>`);
   el.querySelector('#gAgain').onclick=()=>{closePanels();startGame()};
   el.querySelector('#gOpt').onclick=showStart;
