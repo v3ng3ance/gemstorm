@@ -633,7 +633,7 @@ function showStart(){
    <span class="lbl">Jucători</span>${segs('n',[[2,'2'],[3,'3'],[4,'4'],[44,'4 în echipe']])}
    <span class="lbl">Joc până la</span>${segs('target',[[11,'11'],[21,'21']])}
    <span class="lbl">Ritm</span>${segs('speed',[[1,'Liniștit'],[.55,'Rapid']])}
-   <div class="acts"><button class="btn" id="sGo">Împarte cărțile</button><button class="btn ghost" id="sRules">Reguli</button></div>`);
+   <div class="acts"><button class="btn" id="sGo">Împarte cărțile</button><button class="btn ghost" id="sRules">Reguli</button></div><p class="note" style="margin:.8em 0 0;font-size:.8em;opacity:.7">Versiunea 7 · punctaj în timp real</p>`);
   el.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{const k=b.dataset.k,v=Number(b.dataset.v);opt[k]=v;
     el.querySelectorAll(`.seg button[data-k="${k}"]`).forEach(x=>x.setAttribute('aria-pressed',String(Number(x.dataset.v)===v)))});
   el.querySelector('#sGo').onclick=()=>{ac();closePanels();startGame()};
