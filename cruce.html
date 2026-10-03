@@ -59,6 +59,15 @@ body{height:100%;margin:0;background:var(--wood-d);color:var(--paper);overflow:h
 
 #info{position:absolute;right:clamp(16px,2.6vw,34px);top:clamp(14px,2vw,24px);z-index:550;text-align:right;font-size:clamp(13px,1.4vw,15px);line-height:1.35;color:#e5d9b8}
 #info .row{display:flex;align-items:center;justify-content:flex-end;gap:.35em}
+#info .live{margin:.45em 0;padding:.4em .7em .45em;background:rgba(10,6,2,.38);border:1px solid rgba(201,162,74,.3);border-radius:6px;min-width:11.5em}
+#info .lh{font-family:'Alegreya SC',Georgia,serif;font-size:.85em;color:var(--brass-l);text-align:right;margin-bottom:.1em}
+#info .live .row b{font-size:1.15em;font-variant-numeric:tabular-nums}
+#info .live .row.me b{color:var(--brass-l)}
+#info .need{opacity:.7}#info .big{opacity:.7;font-size:.88em;margin-left:.2em}
+#info .bar{height:4px;background:rgba(255,255,255,.14);border-radius:2px;margin:.15em 0 .35em}
+#info .bar i{display:block;height:100%;border-radius:2px;background:var(--brass-l);transition:width .4s}
+.plate .pp{color:var(--brass-l);font-weight:600}
+@media (max-width:640px){#info .live{display:none}}
 #info img{width:1.35em;height:1.35em}
 #info b{font-family:'Alegreya SC',Georgia,serif;color:var(--paper)}
 
@@ -563,6 +572,7 @@ function updatePlates(){if(!g)return;
     if(g.hands&&g.dealer===p)sub.push('împarte');
     if(g.bids&&g.bids[p]!=null)sub.push(g.bids[p]?('licitat '+g.bids[p]):'pas');
     if(g.taken&&g.taken[p].length)sub.push((g.taken[p].length/g.n)+(g.taken[p].length/g.n===1?' tură':' ture'));
+    if(g.pts&&g.phase!=='bid'){const t=teamOf(g,p);sub.push(`<b class="pp">${g.pts[t]+g.ann[t]} pct</b>`)}
     const dot=g.teams?`<i style="background:${p%2?'#c4483f':'#e6c76f'}"></i>`:'';
     el.innerHTML=`<div class="nm">${dot}${NAMES[p]}</div><div class="sub">${sub.join(', ')||'&nbsp;'}</div>`}
   positionPlates()}
@@ -575,7 +585,11 @@ function updateInfo(){const el=$('#info');if(!g||!g.hands){el.innerHTML='';retur
   if(g.stock&&g.stock.length)h+=`<div class="row">Jos: <b>${g.stock.length}</b> ${g.stock.length===1?'carte':'cărți'}</div>`;
   if(g.trump>=0)h+=`<div class="row">Tromf <img src="${SUITIMG[g.trump]}" alt=""><b>${SUITS[g.trump]}</b></div>`;
   if(g.bidder>=0&&g.phase!=='bid')h+=`<div class="row">${NAMES[g.bidder]} a licitat <b>${g.high}</b></div>`;
-  h+=`<div class="row">`+g.totals.map((v,t)=>`${teamName(t)} <b>${v}</b>`).join('&ensp;')+`</div><div class="row" style="opacity:.7">până la ${g.target}</div>`;
+  if(g.pts&&g.phase!=='bid'){
+    h+=`<div class="live"><div class="lh">Puncte în mâna asta</div>`+g.pts.map((v0,t)=>{const v=v0+g.ann[t],isB=g.bidder>=0&&teamOf(g,g.bidder)===t,need=g.high*33,big=Math.floor(v/33);
+      return `<div class="row${t===0?' me':''}">${teamName(t)} <b>${v}</b>${isB?`<span class="need">/ ${need}</span>`:''}<span class="big">= ${big}</span></div>`+(isB?`<div class="bar"><i style="width:${Math.min(100,v/need*100).toFixed(0)}%${v>=need?';background:#7fc46a':''}"></i></div>`:'')}).join('')+`</div>`;
+  }
+  h+=`<div class="row">Scor:&ensp;`+g.totals.map((v,t)=>`${teamName(t)} <b>${v}</b>`).join('&ensp;')+`</div><div class="row" style="opacity:.7">până la ${g.target}</div>`;
   el.innerHTML=h}
 
 // ---------- panels ----------
@@ -665,13 +679,13 @@ async function playHand(id){
     placeBid(g,p,b);bubble(p,b?String(b):'Pas');updatePlates()}
   setTurn(-1);await wait(500,id);
   if(g.forced){bubble(g.bidder,'Obligat la 1');await wait(900,id)}
-  updateInfo();
+  updateInfo();updatePlates();
   while(g.phase!=='end'){
     while(g.phase==='play'){const p=g.turn;setTurn(p);let c;
       if(p===0)c=await askCard(id);else{await wait(700,id);c=aiPlay(g,p)}
       const r=playCard(g,p,c.id);snd('card');layoutAll();
       if(r.trumpSet)updateInfo();
-      if(r.ann){bubble(p,'Zic '+r.ann+'!',true);snd('ann');await wait(1000,id)}
+      if(r.ann){bubble(p,'Zic '+r.ann+'!',true);snd('ann');updateInfo();updatePlates();await wait(1000,id)}
     }
     setTurn(-1);await wait(650,id);
     const wc=g.trick[trickWinnerIdx(g.trick,g.trump)].c;cardEls[wc.id].classList.add('win');
