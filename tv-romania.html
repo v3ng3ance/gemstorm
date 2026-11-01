@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TV România Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+<style>
+/* Layout: listă de canale în stânga, player în dreapta; pe telefon player sus, listă dedesubt */
+:root{
+  --bg:#0d0f14; --panel:#151821; --line:#252a36; --fg:#e8eaf0; --dim:#8a90a2;
+  --accent:#ffcc33; --live:#ff4d4d;
+  --display:"Archivo",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:14px/1.4 var(--display);display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;padding:10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{font-weight:800;letter-spacing:.02em;font-size:18px;display:flex;align-items:center;gap:8px}
+.brand i{width:10px;height:10px;border-radius:50%;background:var(--live);box-shadow:0 0 10px var(--live);animation:p 1.6s infinite}
+@keyframes p{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.brand i{animation:none}}
+.src{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+input,select,button{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+button{cursor:pointer}
+button:hover{border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#plUrl{width:min(340px,60vw);font-family:var(--mono);font-size:12px}
+main{flex:1;display:grid;grid-template-columns:340px 1fr;min-height:0}
+aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.filters{display:flex;gap:6px;padding:10px;border-bottom:1px solid var(--line)}
+.filters input{flex:1;min-width:0}
+.filters select{max-width:130px}
+#list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
+#list li{display:grid;grid-template-columns:28px 44px 1fr auto;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);cursor:pointer}
+#list li:hover{background:var(--panel)}
+#list li.on{background:var(--panel);box-shadow:inset 3px 0 var(--accent)}
+.num{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:right}
+.logo{width:44px;height:28px;object-fit:contain;background:#fff1;border-radius:4px}
+.nm{min-width:0}
+.nm b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm span{font-size:11px;color:var(--dim)}
+.fav{background:none;border:0;color:var(--dim);font-size:16px;padding:2px 4px}
+.fav.y{color:var(--accent)}
+section{display:flex;flex-direction:column;min-height:0;min-width:0}
+.stage{position:relative;background:#000;flex:1;min-height:220px;display:flex;align-items:center;justify-content:center}
+video{width:100%;height:100%;max-height:100%;background:#000}
+#msg{position:absolute;inset:auto 16px 16px 16px;background:#000c;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px}
+.bar{display:flex;align-items:center;gap:10px;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+#now{font-weight:800;font-size:16px}
+#nowUrl{font-family:var(--mono);font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.count{font-family:var(--mono);font-size:11px;color:var(--dim);padding:6px 10px;border-top:1px solid var(--line)}
+@media (max-width:760px){
+  main{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  section{order:-1}
+  .stage{flex:none;aspect-ratio:16/9;min-height:0}
+  aside{border-right:0;border-top:1px solid var(--line)}
+  .src{margin-left:0;width:100%}
+  #plUrl{flex:1;width:auto}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><i></i>TV România Live</div>
+  <div class="src">
+    <input id="plUrl" aria-label="URL playlist M3U">
+    <button id="loadBtn">Încarcă</button>
+    <label><button type="button" onclick="document.getElementById('file').click()">Fișier .m3u</button></label>
+    <input id="file" type="file" accept=".m3u,.m3u8,audio/x-mpegurl" hidden>
+  </div>
+</header>
+<main>
+  <aside>
+    <div class="filters">
+      <input id="q" placeholder="Caută canal…" aria-label="Caută canal">
+      <select id="grp" aria-label="Categorie"><option value="">Toate</option><option value="__fav">★ Favorite</option></select>
+    </div>
+    <ul id="list"></ul>
+    <div class="count" id="count">Se încarcă lista…</div>
+  </aside>
+  <section>
+    <div class="stage">
+      <video id="v" controls playsinline></video>
+      <div id="msg" hidden></div>
+    </div>
+    <div class="bar">
+      <span id="now">Alege un canal</span>
+      <span id="nowUrl"></span>
+      <button id="prev" title="Canal anterior (↑)">◀</button>
+      <button id="next" title="Canal următor (↓)">▶</button>
+      <button id="copy" title="Copiază linkul pentru VLC">Copiază link</button>
+    </div>
+  </section>
+</main>
+<script>
+const DEFAULT_PL = "https://iptv-org.github.io/iptv/countries/ro.m3u";
+const $ = id => document.getElementById(id);
+const v = $("v"), listEl = $("list");
+let channels = [], shown = [], cur = -1, hls = null;
+const store = {
+  get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d }catch{ return d } },
+  set(k, x){ try{ localStorage.setItem(k, JSON.stringify(x)) }catch{} }
+};
+let favs = new Set(store.get("tvro_favs", []));
+
+function parseM3U(text){
+  const out = [], lines = text.split(/\r?\n/);
+  let meta = null;
+  for (const raw of lines){
+    const l = raw.trim();
+    if (!l) continue;
+    if (l.startsWith("#EXTINF")){
+      const attr = k => (l.match(new RegExp(k + '="([^"]*)"')) || [])[1] || "";
+      meta = {
+        name: l.slice(l.lastIndexOf(",") + 1).trim() || attr("tvg-name"),
+        logo: attr("tvg-logo"),
+        group: (attr("group-title") || "Altele").split(";")[0]
+      };
+    } else if (!l.startsWith("#") && meta){
+      out.push({...meta, url: l}); meta = null;
+    }
+  }
+  return out;
+}
+
+async function loadUrl(url){
+  $("count").textContent = "Se încarcă lista…";
+  try{
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    setChannels(parseM3U(await r.text()));
+    store.set("tvro_pl", url);
+  }catch(e){
+    $("count").textContent = "Nu am putut încărca lista (" + e.message + "). Verifică linkul sau încarcă un fișier .m3u.";
+  }
+}
+
+function setChannels(arr){
+  channels = arr.sort((a,b)=>a.name.localeCompare(b.name,"ro"));
+  const groups = [...new Set(channels.map(c=>c.group))].sort();
+  const sel = $("grp");
+  sel.length = 2;
+  groups.forEach(g => sel.add(new Option(g, g)));
+  render();
+  const last = store.get("tvro_last", null);
+  const i = shown.findIndex(c => c.url === last);
+  if (i >= 0) select(i, false);
+}
+
+function render(){
+  const q = $("q").value.toLowerCase(), g = $("grp").value;
+  shown = channels.filter(c =>
+    (!q || c.name.toLowerCase().includes(q)) &&
+    (!g || (g === "__fav" ? favs.has(c.url) : c.group === g)));
+  listEl.innerHTML = "";
+  shown.forEach((c, i) => {
+    const li = document.createElement("li");
+    li.tabIndex = 0;
+    if (cur >= 0 && channels[cur] === c) li.className = "on";
+    li.innerHTML = `<span class="num">${i+1}</span>
+      <img class="logo" alt="" loading="lazy">
+      <span class="nm"><b></b><span></span></span>
+      <button class="fav" title="Favorit">★</button>`;
+    const img = li.querySelector("img");
+    if (c.logo) { img.src = c.logo; img.onerror = () => img.style.visibility = "hidden"; }
+    else img.style.visibility = "hidden";
+    li.querySelector("b").textContent = c.name;
+    li.querySelector(".nm span").textContent = c.group;
+    const f = li.querySelector(".fav");
+    if (favs.has(c.url)) f.classList.add("y");
+    f.onclick = e => { e.stopPropagation(); favs.has(c.url) ? favs.delete(c.url) : favs.add(c.url); store.set("tvro_favs",[...favs]); render(); };
+    li.onclick = () => select(i);
+    li.onkeydown = e => { if (e.key === "Enter") select(i); };
+    listEl.appendChild(li);
+  });
+  $("count").textContent = `${shown.length} din ${channels.length} canale`;
+}
+
+function msg(t){ $("msg").hidden = !t; $("msg").textContent = t || ""; }
+
+function select(i, autoplay = true){
+  const c = shown[i]; if (!c) return;
+  cur = channels.indexOf(c);
+  store.set("tvro_last", c.url);
+  [...listEl.children].forEach((li, k) => li.classList.toggle("on", k === i));
+  listEl.children[i]?.scrollIntoView({block:"nearest"});
+  $("now").textContent = c.name; $("nowUrl").textContent = c.url;
+  play(c.url, autoplay);
+}
+
+function play(url, autoplay){
+  msg("Se conectează…");
+  if (hls){ hls.destroy(); hls = null; }
+  v.removeAttribute("src");
+  if (location.protocol === "https:" && url.startsWith("http:")){
+    msg("Stream HTTP blocat pe o pagină HTTPS. Deschide fișierul local sau folosește „Copiază link” în VLC.");
+    return;
+  }
+  const isHls = /\.m3u8(\?|$)/i.test(url) || !/\.(mp4|webm|ts)(\?|$)/i.test(url);
+  if (isHls && window.Hls && Hls.isSupported()){
+    hls = new Hls({ enableWorker:true, lowLatencyMode:true });
+    hls.loadSource(url); hls.attachMedia(v);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => { msg(""); if (autoplay) v.play().catch(()=>{}); });
+    hls.on(Hls.Events.ERROR, (_, d) => {
+      if (d.fatal) msg("Canalul nu răspunde sau blochează redarea în browser (" + d.details + "). Încearcă alt canal sau deschide linkul în VLC.");
+    });
+  } else {
+    v.src = url;
+    v.onloadeddata = () => msg("");
+    v.onerror = () => msg("Canalul nu poate fi redat în acest browser. Încearcă linkul în VLC.");
+    if (autoplay) v.play().catch(()=>{});
+  }
+}
+
+function step(d){
+  const i = shown.findIndex(c => c === channels[cur]);
+  if (!shown.length) return;
+  select(((i < 0 ? 0 : i + d) + shown.length) % shown.length);
+}
+
+$("prev").onclick = () => step(-1);
+$("next").onclick = () => step(1);
+$("copy").onclick = async () => {
+  const u = channels[cur]?.url; if (!u) return;
+  try{ await navigator.clipboard.writeText(u); $("copy").textContent = "Copiat"; }
+  catch{ $("copy").textContent = "Selectează linkul de jos"; }
+  setTimeout(()=> $("copy").textContent = "Copiază link", 1500);
+};
+$("q").oninput = render;
+$("grp").onchange = render;
+$("loadBtn").onclick = () => loadUrl($("plUrl").value.trim() || DEFAULT_PL);
+$("plUrl").onkeydown = e => { if (e.key === "Enter") $("loadBtn").click(); };
+$("file").onchange = async e => { const f = e.target.files[0]; if (f) setChannels(parseM3U(await f.text())); };
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input,select")) return;
+  if (e.key === "ArrowDown"){ e.preventDefault(); step(1); }
+  if (e.key === "ArrowUp"){ e.preventDefault(); step(-1); }
+  if (e.key === "f"){ v.requestFullscreen?.().catch(()=>{}); }
+});
+
+$("plUrl").value = store.get("tvro_pl", DEFAULT_PL);
+loadUrl($("plUrl").value);
+</script>
+</body>
+</html>
