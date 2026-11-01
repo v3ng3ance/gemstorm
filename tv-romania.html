@@ -11,11 +11,12 @@
 /* Layout: listă de canale în stânga, player în dreapta; pe telefon player sus, listă dedesubt */
 :root{
   --bg:#0d0f14; --panel:#151821; --line:#252a36; --fg:#e8eaf0; --dim:#8a90a2;
-  --accent:#ffcc33; --live:#ff4d4d;
+  --accent:#ffcc33; --live:#ff4d4d; --ok:#3ecf8e;
   --display:"Archivo",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font:14px/1.4 var(--display);display:flex;flex-direction:column}
 header{display:flex;align-items:center;gap:12px;padding:10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -27,22 +28,28 @@ header{display:flex;align-items:center;gap:12px;padding:10px max(16px,env(safe-a
 input,select,button{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:7px 10px}
 button{cursor:pointer}
 button:hover{border-color:var(--accent)}
+button:disabled{opacity:.5;cursor:default}
 :focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-#plUrl{width:min(340px,60vw);font-family:var(--mono);font-size:12px}
+#plUrl,#proxy{width:min(300px,60vw);font-family:var(--mono);font-size:12px}
 main{flex:1;display:grid;grid-template-columns:340px 1fr;min-height:0}
 aside{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
-.filters{display:flex;gap:6px;padding:10px;border-bottom:1px solid var(--line)}
+.filters{display:flex;gap:6px;padding:10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .filters input{flex:1;min-width:0}
 .filters select{max-width:130px}
+.tools{display:flex;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);font-size:12px;color:var(--dim);flex-wrap:wrap}
+.tools label{display:flex;gap:5px;align-items:center;cursor:pointer}
 #list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1}
-#list li{display:grid;grid-template-columns:28px 44px 1fr auto;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);cursor:pointer}
+#list li{display:grid;grid-template-columns:28px 44px 1fr auto auto;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);cursor:pointer}
 #list li:hover{background:var(--panel)}
 #list li.on{background:var(--panel);box-shadow:inset 3px 0 var(--accent)}
+#list li.dead{opacity:.4}
 .num{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:right}
 .logo{width:44px;height:28px;object-fit:contain;background:#fff1;border-radius:4px}
 .nm{min-width:0}
 .nm b{display:block;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .nm span{font-size:11px;color:var(--dim)}
+.st{width:8px;height:8px;border-radius:50%;background:transparent}
+.st.ok{background:var(--ok)} .st.px{background:var(--accent)} .st.dead{background:var(--live)}
 .fav{background:none;border:0;color:var(--dim);font-size:16px;padding:2px 4px}
 .fav.y{color:var(--accent)}
 section{display:flex;flex-direction:column;min-height:0;min-width:0}
@@ -51,7 +58,27 @@ video{width:100%;height:100%;max-height:100%;background:#000}
 #msg{position:absolute;inset:auto 16px 16px 16px;background:#000c;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px}
 .bar{display:flex;align-items:center;gap:10px;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
 #now{font-weight:800;font-size:16px}
-#nowUrl{font-family:var(--mono);font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+#via{font-family:var(--mono);font-size:11px;color:var(--dim)}
+#nowUrl{font-family:var(--mono);font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;user-select:all}
+#ad{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0d0f14e6;text-align:center;padding:16px}
+#ad b{font-size:20px;font-weight:800}
+#ad .clock{font-family:var(--mono);font-size:42px;color:var(--accent);font-variant-numeric:tabular-nums}
+#ad span{color:var(--dim);font-size:13px}
+#ad.mini{inset:auto 16px 16px auto;background:#000c;border:1px solid var(--accent);border-radius:8px;flex-direction:row;padding:8px 12px}
+#ad.mini .clock{font-size:18px}
+#ad.mini b,#ad.mini span{font-size:13px}
+.adset{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--dim)}
+.adset select{padding:5px 6px;font-size:12px}
+.adset label{display:flex;gap:5px;align-items:center;cursor:pointer}
+.tsbar button{font-family:var(--mono);font-size:12px;padding:6px 9px}
+.tsinfo{display:flex;align-items:center;gap:10px;flex:1;min-width:200px;font-family:var(--mono);font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+#tsState{white-space:nowrap}
+#tsState.live{color:var(--live);font-weight:500}
+#tsState.behind{color:var(--accent)}
+.tsmeter{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;min-width:60px}
+.tsmeter i{display:block;height:100%;width:0;background:var(--accent);transition:width .5s}
+#tsBuf{white-space:nowrap}
+#adBtn{border-color:var(--accent);color:var(--accent);font-weight:700}
 .count{font-family:var(--mono);font-size:11px;color:var(--dim);padding:6px 10px;border-top:1px solid var(--line)}
 @media (max-width:760px){
   main{grid-template-columns:1fr;grid-template-rows:auto 1fr}
@@ -59,7 +86,7 @@ video{width:100%;height:100%;max-height:100%;background:#000}
   .stage{flex:none;aspect-ratio:16/9;min-height:0}
   aside{border-right:0;border-top:1px solid var(--line)}
   .src{margin-left:0;width:100%}
-  #plUrl{flex:1;width:auto}
+  #plUrl,#proxy{flex:1;width:auto}
 }
 </style>
 </head>
@@ -67,10 +94,11 @@ video{width:100%;height:100%;max-height:100%;background:#000}
 <header>
   <div class="brand"><i></i>TV România Live</div>
   <div class="src">
-    <input id="plUrl" aria-label="URL playlist M3U">
+    <input id="plUrl" aria-label="URL playlist M3U" placeholder="Link playlist M3U">
     <button id="loadBtn">Încarcă</button>
-    <label><button type="button" onclick="document.getElementById('file').click()">Fișier .m3u</button></label>
+    <button type="button" onclick="document.getElementById('file').click()">Fișier .m3u</button>
     <input id="file" type="file" accept=".m3u,.m3u8,audio/x-mpegurl" hidden>
+    <input id="proxy" aria-label="Adresa proxy" placeholder="Proxy: https://tv-proxy.xxx.workers.dev">
   </div>
 </header>
 <main>
@@ -79,6 +107,10 @@ video{width:100%;height:100%;max-height:100%;background:#000}
       <input id="q" placeholder="Caută canal…" aria-label="Caută canal">
       <select id="grp" aria-label="Categorie"><option value="">Toate</option><option value="__fav">★ Favorite</option></select>
     </div>
+    <div class="tools">
+      <button id="checkBtn">Verifică canalele</button>
+      <label><input type="checkbox" id="hideDead"> Ascunde canalele moarte</label>
+    </div>
     <ul id="list"></ul>
     <div class="count" id="count">Se încarcă lista…</div>
   </aside>
@@ -86,13 +118,45 @@ video{width:100%;height:100%;max-height:100%;background:#000}
     <div class="stage">
       <video id="v" controls playsinline></video>
       <div id="msg" hidden></div>
+      <div id="ad" hidden>
+        <b id="adTitle">Pauză de reclame</b>
+        <div class="clock" id="adClock">3:00</div>
+        <span id="adInfo"></span>
+        <button id="adBack">Revino acum</button>
+      </div>
     </div>
     <div class="bar">
       <span id="now">Alege un canal</span>
+      <span id="via"></span>
       <span id="nowUrl"></span>
       <button id="prev" title="Canal anterior (↑)">◀</button>
       <button id="next" title="Canal următor (↓)">▶</button>
       <button id="copy" title="Copiază linkul pentru VLC">Copiază link</button>
+    </div>
+    <div class="bar tsbar">
+      <button id="tsPlay" title="Pauză / Play (Spațiu)">⏸ Pauză</button>
+      <button id="tsBack" title="Înapoi 30 secunde (←)">−30s</button>
+      <button id="tsFwd" title="Înainte 30 secunde (→)">+30s</button>
+      <button id="tsFwd60">+1 min</button>
+      <button id="tsLive" title="Sari la emisia în direct (L)">LIVE</button>
+      <div class="tsinfo">
+        <span id="tsState" class="live">● LIVE</span>
+        <div class="tsmeter"><i id="tsFill"></i></div>
+        <span id="tsBuf"></span>
+      </div>
+    </div>
+    <div class="bar adset">
+      <button id="adBtn" title="Tasta R">Reclame</button>
+      <select id="adMode" aria-label="Ce fac la reclame">
+        <option value="mute">Opresc sunetul</option>
+        <option value="zap">Trec pe alt canal</option>
+      </select>
+      <select id="adDur" aria-label="Durata pauzei">
+        <option value="120">2 min</option><option value="180">3 min</option>
+        <option value="240">4 min</option><option value="300">5 min</option>
+        <option value="420">7 min</option><option value="600">10 min</option>
+      </select>
+      <label><input type="checkbox" id="adAuto"> Detectare automată (unde canalul marchează reclamele)</label>
     </div>
   </section>
 </main>
@@ -100,12 +164,33 @@ video{width:100%;height:100%;max-height:100%;background:#000}
 const DEFAULT_PL = "https://iptv-org.github.io/iptv/countries/ro.m3u";
 const $ = id => document.getElementById(id);
 const v = $("v"), listEl = $("list");
-let channels = [], shown = [], cur = -1, hls = null;
+let channels = [], shown = [], cur = -1, hls = null, playToken = 0;
 const store = {
   get(k, d){ try{ return JSON.parse(localStorage.getItem(k)) ?? d }catch{ return d } },
   set(k, x){ try{ localStorage.setItem(k, JSON.stringify(x)) }catch{} }
 };
 let favs = new Set(store.get("tvro_favs", []));
+// status per URL: "ok" (direct), "px" (merge prin proxy), "dead"
+let status = store.get("tvro_status", {});
+
+const proxyBase = () => $("proxy").value.trim().replace(/\/+$/, "");
+const pageHttps = location.protocol === "https:";
+
+function viaProxy(c){
+  let u = proxyBase() + "/?url=" + encodeURIComponent(c.url);
+  if (c.ref) u += "&ref=" + encodeURIComponent(c.ref);
+  if (c.ua) u += "&ua=" + encodeURIComponent(c.ua);
+  return u;
+}
+// Ordinea rutelor de încercat pentru un canal
+function routes(c){
+  const r = [];
+  const directOk = !(pageHttps && c.url.startsWith("http:")) && !c.ref && !c.ua;
+  if (status[c.url] === "px" && proxyBase()) return [viaProxy(c), ...(directOk ? [c.url] : [])];
+  if (directOk) r.push(c.url);
+  if (proxyBase()) r.push(viaProxy(c));
+  return r;
+}
 
 function parseM3U(text){
   const out = [], lines = text.split(/\r?\n/);
@@ -118,8 +203,13 @@ function parseM3U(text){
       meta = {
         name: l.slice(l.lastIndexOf(",") + 1).trim() || attr("tvg-name"),
         logo: attr("tvg-logo"),
-        group: (attr("group-title") || "Altele").split(";")[0]
+        group: (attr("group-title") || "Altele").split(";")[0],
+        ref: attr("http-referrer"), ua: attr("http-user-agent")
       };
+    } else if (l.startsWith("#EXTVLCOPT") && meta){
+      const m = l.match(/^#EXTVLCOPT:([^=]+)=(.*)$/);
+      if (m && m[1] === "http-referrer") meta.ref = m[2].trim();
+      if (m && m[1] === "http-user-agent") meta.ua = m[2].trim();
     } else if (!l.startsWith("#") && meta){
       out.push({...meta, url: l}); meta = null;
     }
@@ -140,7 +230,9 @@ async function loadUrl(url){
 }
 
 function setChannels(arr){
-  channels = arr.sort((a,b)=>a.name.localeCompare(b.name,"ro"));
+  const seen = new Set();
+  channels = arr.filter(c => !seen.has(c.url) && seen.add(c.url))
+                .sort((a,b)=>a.name.localeCompare(b.name,"ro"));
   const groups = [...new Set(channels.map(c=>c.group))].sort();
   const sel = $("grp");
   sel.length = 2;
@@ -152,24 +244,29 @@ function setChannels(arr){
 }
 
 function render(){
-  const q = $("q").value.toLowerCase(), g = $("grp").value;
+  const q = $("q").value.toLowerCase(), g = $("grp").value, hide = $("hideDead").checked;
   shown = channels.filter(c =>
     (!q || c.name.toLowerCase().includes(q)) &&
-    (!g || (g === "__fav" ? favs.has(c.url) : c.group === g)));
+    (!g || (g === "__fav" ? favs.has(c.url) : c.group === g)) &&
+    !(hide && status[c.url] === "dead"));
   listEl.innerHTML = "";
   shown.forEach((c, i) => {
     const li = document.createElement("li");
     li.tabIndex = 0;
-    if (cur >= 0 && channels[cur] === c) li.className = "on";
+    if (status[c.url] === "dead") li.classList.add("dead");
+    if (cur >= 0 && channels[cur] === c) li.classList.add("on");
     li.innerHTML = `<span class="num">${i+1}</span>
       <img class="logo" alt="" loading="lazy">
       <span class="nm"><b></b><span></span></span>
+      <span class="st"></span>
       <button class="fav" title="Favorit">★</button>`;
     const img = li.querySelector("img");
     if (c.logo) { img.src = c.logo; img.onerror = () => img.style.visibility = "hidden"; }
     else img.style.visibility = "hidden";
     li.querySelector("b").textContent = c.name;
     li.querySelector(".nm span").textContent = c.group;
+    const st = li.querySelector(".st");
+    if (status[c.url]) { st.classList.add(status[c.url]); st.title = {ok:"Merge direct", px:"Merge prin proxy", dead:"Nu răspunde"}[status[c.url]]; }
     const f = li.querySelector(".fav");
     if (favs.has(c.url)) f.classList.add("y");
     f.onclick = e => { e.stopPropagation(); favs.has(c.url) ? favs.delete(c.url) : favs.add(c.url); store.set("tvro_favs",[...favs]); render(); };
@@ -177,48 +274,254 @@ function render(){
     li.onkeydown = e => { if (e.key === "Enter") select(i); };
     listEl.appendChild(li);
   });
-  $("count").textContent = `${shown.length} din ${channels.length} canale`;
+  const dead = channels.filter(c => status[c.url] === "dead").length;
+  $("count").textContent = `${shown.length} din ${channels.length} canale` + (dead ? ` · ${dead} nu răspund` : "");
 }
 
 function msg(t){ $("msg").hidden = !t; $("msg").textContent = t || ""; }
 
 function select(i, autoplay = true){
   const c = shown[i]; if (!c) return;
-  cur = channels.indexOf(c);
-  store.set("tvro_last", c.url);
-  [...listEl.children].forEach((li, k) => li.classList.toggle("on", k === i));
-  listEl.children[i]?.scrollIntoView({block:"nearest"});
-  $("now").textContent = c.name; $("nowUrl").textContent = c.url;
-  play(c.url, autoplay);
+  if (ad) endAd(false);           // alegere manuală = anulează pauza
+  playChannel(c, autoplay);
 }
 
-function play(url, autoplay){
-  msg("Se conectează…");
-  if (hls){ hls.destroy(); hls = null; }
-  v.removeAttribute("src");
-  if (location.protocol === "https:" && url.startsWith("http:")){
-    msg("Stream HTTP blocat pe o pagină HTTPS. Deschide fișierul local sau folosește „Copiază link” în VLC.");
+function playChannel(c, autoplay = true, remember = true){
+  cur = channels.indexOf(c);
+  if (remember) store.set("tvro_last", c.url);
+  const i = shown.indexOf(c);
+  [...listEl.children].forEach((li, k) => li.classList.toggle("on", k === i));
+  if (i >= 0) listEl.children[i]?.scrollIntoView({block:"nearest"});
+  $("now").textContent = c.name; $("nowUrl").textContent = c.url;
+  play(c, autoplay);
+}
+
+// ---------- Pauza de reclame ----------
+let ad = null; // {mode, back, end, timer, auto, wasMuted}
+const fmt = s => Math.floor(s/60) + ":" + String(s%60).padStart(2,"0");
+
+function pickFallback(except){
+  const ok = c => c !== except && status[c.url] !== "dead";
+  return channels.find(c => favs.has(c.url) && ok(c))
+      || channels.find(c => status[c.url] === "ok" && ok(c))
+      || channels.find(ok);
+}
+
+// ---------- Timeshift ----------
+let bufFull = false;
+function bufferAhead(){
+  const t = v.currentTime, b = v.buffered;
+  for (let i = 0; i < b.length; i++) if (b.start(i) <= t + 0.5 && b.end(i) > t) return b.end(i) - t;
+  return 0;
+}
+function behindLive(){
+  const lat = hls && Number.isFinite(hls.latency) ? hls.latency : 0;
+  return Math.max(0, lat - (hls?.targetLatency || 0));
+}
+function seekBy(sec){
+  const t = v.currentTime, b = v.buffered;
+  if (!b.length) return 0;
+  let lo = b.start(0), hi = b.end(b.length - 1);
+  for (let i = 0; i < b.length; i++) if (b.start(i) <= t + 0.5 && b.end(i) >= t) { lo = b.start(i); hi = b.end(i); }
+  const to = Math.min(hi - 2, Math.max(lo + 0.5, t + sec));
+  if (to > t || sec < 0) v.currentTime = to;
+  return to - t;
+}
+function goLive(){
+  const b = v.buffered;
+  const edge = hls?.liveSyncPosition;
+  if (Number.isFinite(edge) && edge > v.currentTime) v.currentTime = edge;
+  else if (b.length) v.currentTime = b.end(b.length - 1) - 3;
+  v.play().catch(()=>{});
+}
+let toastT = 0;
+function toast(t){ msg(t); clearTimeout(toastT); toastT = setTimeout(() => { if ($("msg").textContent === t) msg(""); }, 2500); }
+
+function updTs(){
+  const ahead = bufferAhead(), behind = Math.max(behindLive(), v.paused ? 0 : 0);
+  const st = $("tsState");
+  const isLive = !v.paused && ahead < 25 && behind < 25;
+  st.className = isLive ? "live" : "behind";
+  st.textContent = v.paused ? "⏸ În pauză · se înregistrează" : isLive ? "● LIVE" : `În urmă cu ${fmt(Math.round(behind || ahead))}`;
+  $("tsBuf").textContent = ahead >= 5 ? `poți sări ${fmt(Math.floor(ahead))}` + (bufFull ? " (max)" : "") : "";
+  $("tsFill").style.width = Math.min(100, ahead / +$("adDur").value * 100) + "%";
+  $("tsPlay").textContent = v.paused ? "▶ Play" : "⏸ Pauză";
+}
+setInterval(updTs, 1000);
+v.addEventListener("play", updTs); v.addEventListener("pause", updTs);
+
+function startAd(auto = false){
+  const c = channels[cur];
+  if (!c || ad) return;
+  // Dacă avem buffer, sărim efectiv peste reclame
+  const ahead = bufferAhead();
+  if (!auto && ahead > 15){
+    const jumped = seekBy(Math.min(+$("adDur").value, ahead - 3));
+    toast(`Am sărit ${fmt(Math.round(jumped))} înainte`);
     return;
   }
-  const isHls = /\.m3u8(\?|$)/i.test(url) || !/\.(mp4|webm|ts)(\?|$)/i.test(url);
-  if (isHls && window.Hls && Hls.isSupported()){
-    hls = new Hls({ enableWorker:true, lowLatencyMode:true });
-    hls.loadSource(url); hls.attachMedia(v);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => { msg(""); if (autoplay) v.play().catch(()=>{}); });
-    hls.on(Hls.Events.ERROR, (_, d) => {
-      if (d.fatal) msg("Canalul nu răspunde sau blochează redarea în browser (" + d.details + "). Încearcă alt canal sau deschide linkul în VLC.");
-    });
-  } else {
-    v.src = url;
-    v.onloadeddata = () => msg("");
-    v.onerror = () => msg("Canalul nu poate fi redat în acest browser. Încearcă linkul în VLC.");
-    if (autoplay) v.play().catch(()=>{});
+  const mode = auto ? "mute" : $("adMode").value;
+  const secs = +$("adDur").value;
+  ad = { mode, back: c, auto, wasMuted: v.muted, end: auto ? 0 : Date.now() + secs * 1000 };
+  const box = $("ad");
+  box.classList.toggle("mini", mode === "zap" || auto);
+  $("adTitle").textContent = auto ? "Reclame detectate" : "Pauză de reclame";
+  if (mode === "zap"){
+    const f = pickFallback(c);
+    if (!f){ ad.mode = "mute"; box.classList.remove("mini"); }
+    else {
+      $("adInfo").textContent = `Revin la ${c.name}`;
+      playChannel(f, true, false);
+    }
   }
+  if (ad.mode === "mute"){
+    v.muted = true;
+    $("adInfo").textContent = auto ? "Sunet oprit până se termină"
+      : `Sunet oprit · revin la ${c.name}. Ca să poți sări reclamele, ține Pauză câteva minute înainte.`;
+  }
+  $("adClock").hidden = auto;
+  box.hidden = false;
+  tickAd();
+  ad.timer = setInterval(tickAd, 1000);
+}
+
+function tickAd(){
+  if (!ad || !ad.end) return;
+  const left = Math.max(0, Math.round((ad.end - Date.now()) / 1000));
+  $("adClock").textContent = fmt(left);
+  if (left <= 0) endAd(true);
+}
+
+function endAd(goBack = true){
+  if (!ad) return;
+  const a = ad; ad = null;
+  clearInterval(a.timer);
+  $("ad").hidden = true;
+  if (a.mode === "mute") v.muted = a.wasMuted;
+  if (a.mode === "zap" && goBack) playChannel(a.back, true);
+}
+
+// Detectare automată: tag-uri SCTE-35 / CUE-OUT / CUE-IN în playlist-ul HLS
+function checkCue(frag){
+  if (!$("adAuto").checked || !frag) return;
+  if (ad && !ad.auto) return;
+  const tags = (frag.tagList || []).map(t => [String(t[0]).toUpperCase(), String(t[1] || "")]);
+  const outTag = tags.find(([n]) => /CUE-OUT(?!-CONT)|SCTE35-OUT|OATCLS-SCTE35/.test(n));
+  const inn = tags.some(([n]) => /CUE-IN|SCTE35-IN/.test(n));
+  if (inn && ad && ad.auto) return endAd(false);
+  if (outTag && !ad){
+    const dur = parseFloat((outTag[1].match(/[\d.]+/) || [])[0]);
+    const ahead = bufferAhead();
+    if (dur > 0 && ahead > 10){
+      const j = seekBy(Math.min(dur, ahead - 3));
+      return toast(`Reclame detectate · am sărit ${fmt(Math.round(j))}`);
+    }
+    startAd(true);
+    if (dur > 0) ad.end = Date.now() + dur * 1000;   // se termină singură dacă lipsește CUE-IN
+  }
+}
+
+function setStatus(c, s){ status[c.url] = s; store.set("tvro_status", status); }
+
+function play(c, autoplay){
+  const token = ++playToken;
+  bufFull = false;
+  const list = routes(c);
+  if (!list.length){
+    msg("Canalul are nevoie de proxy (stream http sau headere speciale). Completează adresa proxy-ului sus, sau folosește „Copiază link” în VLC.");
+    return;
+  }
+  tryRoute(c, list, 0, autoplay, token);
+}
+
+function tryRoute(c, list, k, autoplay, token){
+  if (token !== playToken) return;
+  if (hls){ hls.destroy(); hls = null; }
+  v.removeAttribute("src"); v.load();
+  if (k >= list.length){
+    setStatus(c, "dead"); render();
+    msg(proxyBase()
+      ? "Canalul nu răspunde nici direct, nici prin proxy. Probabil e oprit sau blocat geografic. Încearcă linkul în VLC."
+      : "Canalul blochează redarea în browser. Adaugă un proxy (câmpul de sus) sau deschide linkul în VLC.");
+    return;
+  }
+  const src = list[k], isProxy = src !== c.url;
+  $("via").textContent = isProxy ? "· prin proxy" : "· direct";
+  msg(isProxy ? "Se conectează prin proxy…" : "Se conectează…");
+  const ok = () => {
+    if (token !== playToken) return;
+    msg(""); setStatus(c, isProxy ? "px" : "ok");
+    if (autoplay) v.play().catch(()=>{});
+  };
+  const fail = () => tryRoute(c, list, k + 1, autoplay, token);
+
+  if (window.Hls && Hls.isSupported()){
+    hls = new Hls({
+      enableWorker:true, manifestLoadingMaxRetry:1, levelLoadingMaxRetry:2,
+      // Timeshift: continuă să descarce înainte (până la 30 min) chiar și în pauză
+      maxBufferLength: 1800, maxMaxBufferLength: 1800,
+      maxBufferSize: 1000 * 1000 * 1000,
+      backBufferLength: 120
+    });
+    let started = false;
+    hls.on(Hls.Events.MANIFEST_PARSED, () => { started = true; ok(); });
+    hls.on(Hls.Events.FRAG_CHANGED, (_, d) => checkCue(d.frag));
+    hls.on(Hls.Events.ERROR, (_, d) => {
+      if (!d.fatal){
+        if (d.details === Hls.ErrorDetails.BUFFER_FULL_ERROR) bufFull = true;
+        return;
+      }
+      if (!started) return fail();
+      if (d.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+      else { msg("Conexiune pierdută, reîncerc…"); hls.startLoad(); }
+    });
+    hls.loadSource(src); hls.attachMedia(v);
+  } else {
+    v.src = src;
+    v.onloadedmetadata = ok;
+    v.onerror = fail;
+    v.load();
+  }
+}
+
+// Verificare în masă: cere manifestul fiecărui canal
+async function probe(url){
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 8000);
+  try{
+    const r = await fetch(url, { signal: ctl.signal });
+    if (!r.ok) return false;
+    const txt = (await r.text()).slice(0, 200);
+    return txt.trimStart().startsWith("#EXTM3U");
+  }catch{ return false }
+  finally{ clearTimeout(t) }
+}
+async function checkAll(){
+  const btn = $("checkBtn"); btn.disabled = true;
+  let done = 0, i = 0;
+  const work = async () => {
+    while (i < channels.length){
+      const c = channels[i++];
+      let res = "dead";
+      for (const src of routes({...c, url: c.url})){
+        if (await probe(src)){ res = src === c.url ? "ok" : "px"; break; }
+      }
+      status[c.url] = res;
+      btn.textContent = `Verific… ${++done}/${channels.length}`;
+    }
+  };
+  // ignoră statusul vechi la verificare
+  const old = status; status = {};
+  await Promise.all(Array.from({length:6}, work));
+  for (const k in old) if (!(k in status)) status[k] = old[k];
+  store.set("tvro_status", status);
+  btn.textContent = "Verifică canalele"; btn.disabled = false;
+  render();
 }
 
 function step(d){
-  const i = shown.findIndex(c => c === channels[cur]);
   if (!shown.length) return;
+  const i = shown.findIndex(c => c === channels[cur]);
   select(((i < 0 ? 0 : i + d) + shown.length) % shown.length);
 }
 
@@ -227,11 +530,14 @@ $("next").onclick = () => step(1);
 $("copy").onclick = async () => {
   const u = channels[cur]?.url; if (!u) return;
   try{ await navigator.clipboard.writeText(u); $("copy").textContent = "Copiat"; }
-  catch{ $("copy").textContent = "Selectează linkul de jos"; }
+  catch{ $("copy").textContent = "Selectează linkul"; }
   setTimeout(()=> $("copy").textContent = "Copiază link", 1500);
 };
 $("q").oninput = render;
 $("grp").onchange = render;
+$("hideDead").onchange = () => { store.set("tvro_hide", $("hideDead").checked); render(); };
+$("checkBtn").onclick = checkAll;
+$("proxy").onchange = () => { store.set("tvro_proxy", proxyBase()); status = {}; store.set("tvro_status", status); render(); };
 $("loadBtn").onclick = () => loadUrl($("plUrl").value.trim() || DEFAULT_PL);
 $("plUrl").onkeydown = e => { if (e.key === "Enter") $("loadBtn").click(); };
 $("file").onchange = async e => { const f = e.target.files[0]; if (f) setChannels(parseM3U(await f.text())); };
@@ -240,8 +546,30 @@ document.addEventListener("keydown", e => {
   if (e.key === "ArrowDown"){ e.preventDefault(); step(1); }
   if (e.key === "ArrowUp"){ e.preventDefault(); step(-1); }
   if (e.key === "f"){ v.requestFullscreen?.().catch(()=>{}); }
+  if (e.key === "r"){ ad ? endAd(true) : startAd(false); }
+  if (e.key === " "){ e.preventDefault(); v.paused ? v.play().catch(()=>{}) : v.pause(); }
+  if (e.key === "ArrowLeft"){ e.preventDefault(); seekBy(-30); }
+  if (e.key === "ArrowRight"){ e.preventDefault(); seekBy(30); }
+  if (e.key === "l"){ goLive(); }
 });
 
+$("tsPlay").onclick = () => v.paused ? v.play().catch(()=>{}) : v.pause();
+$("tsBack").onclick = () => seekBy(-30);
+$("tsFwd").onclick = () => { if (seekBy(30) < 1) toast("Nu ai buffer înainte. Ține Pauză ca să se strângă."); };
+$("tsFwd60").onclick = () => { if (seekBy(60) < 1) toast("Nu ai buffer înainte. Ține Pauză ca să se strângă."); };
+$("tsLive").onclick = goLive;
+
+$("adBtn").onclick = () => ad ? endAd(true) : startAd(false);
+$("adBack").onclick = () => endAd(true);
+$("adMode").value = store.get("tvro_admode", "mute");
+$("adDur").value = String(store.get("tvro_addur", 180));
+$("adAuto").checked = store.get("tvro_adauto", true);
+$("adMode").onchange = () => store.set("tvro_admode", $("adMode").value);
+$("adDur").onchange = () => store.set("tvro_addur", +$("adDur").value);
+$("adAuto").onchange = () => { store.set("tvro_adauto", $("adAuto").checked); if (!$("adAuto").checked && ad?.auto) endAd(false); };
+
+$("proxy").value = store.get("tvro_proxy", "");
+$("hideDead").checked = store.get("tvro_hide", false);
 $("plUrl").value = store.get("tvro_pl", DEFAULT_PL);
 loadUrl($("plUrl").value);
 </script>
