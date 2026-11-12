@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#24160c">
+<title>Șeptică — cărți unguresti</title>
+<style>
+:root{--cw:80px;--ch:128px;--sw:44px;--gold:#e8c66a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#0d2617;font-family:Georgia,'Times New Roman',serif;color:#f4ecd8;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+#app{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 48%,#33804f 0%,#1f5d3a 48%,#103620 100%)}
+#app::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;background:repeating-linear-gradient(45deg,rgba(0,0,0,.25) 0 1px,transparent 1px 4px),repeating-linear-gradient(-45deg,rgba(255,255,255,.08) 0 1px,transparent 1px 5px)}
+#app::after{content:"";position:absolute;inset:46px 0 0 0;pointer-events:none;box-shadow:inset 0 0 0 6px #4a2f17,inset 0 0 0 8px #b08440,inset 0 0 60px rgba(0,0,0,.55)}
+/* top bar */
+#top{position:absolute;top:0;left:0;right:0;height:46px;display:flex;align-items:center;gap:8px;padding:0 8px;background:linear-gradient(#4a2e17,#24160c);border-bottom:2px solid #8a6230;z-index:30}
+#top h1{margin:0;font-size:19px;letter-spacing:2px;color:var(--gold);text-shadow:0 1px 0 #000;white-space:nowrap}
+#score{flex:1;display:flex;justify-content:center;gap:6px;flex-wrap:nowrap;overflow:hidden}
+.chip{background:rgba(0,0,0,.35);border:1px solid #8a6230;border-radius:12px;padding:2px 8px;font-size:13px;white-space:nowrap}
+.chip b{color:var(--gold)}
+.tb{background:linear-gradient(#6b4422,#3e2610);border:1px solid #a87a3c;color:#f4ecd8;border-radius:8px;width:34px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.tb:active{transform:translateY(1px)}
+/* cards */
+.card{width:var(--cw);height:var(--ch);border-radius:calc(var(--cw)*.09);box-shadow:0 2px 6px rgba(0,0,0,.5);position:relative;flex:none;background:#fbf5e6}
+.card svg{width:100%;height:100%;display:block;border-radius:inherit}
+.card.back{background:#8e1b22}
+.fly{position:fixed;z-index:50;pointer-events:none;margin:0!important}
+/* seats */
+.seat{position:absolute;z-index:5;display:flex;flex-direction:column;align-items:center;gap:4px}
+.pos-top{top:56px;left:50%;transform:translateX(-50%)}
+.pos-left{left:14px;top:37%;transform:translateY(-50%)}
+.pos-right{right:14px;top:37%;transform:translateY(-50%)}
+.pinfo{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.45);border:1px solid rgba(232,198,106,.5);border-radius:14px;padding:2px 9px 2px 3px;font-size:13px;white-space:nowrap;transition:box-shadow .2s,border-color .2s}
+.pinfo .av{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:#fff}
+.pinfo .pts{color:var(--gold);font-weight:bold}
+.seat.turn .pinfo,#me.turn{border-color:#ffe28a;box-shadow:0 0 0 2px rgba(255,226,138,.5),0 0 14px rgba(255,226,138,.6)}
+.ohand{display:flex;height:calc(var(--sw)*1.6)}
+.ohand .card{width:var(--sw);height:calc(var(--sw)*1.6);border-radius:4px;margin-left:calc(var(--sw)*-.58)}
+.ohand .card:first-child{margin-left:0}
+/* bottom */
+#bottom{position:absolute;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:6px;z-index:6}
+#msg{min-height:22px;font-size:15px;text-align:center;padding:2px 12px;background:rgba(0,0,0,.4);border-radius:12px;max-width:94vw}
+#msg:empty{visibility:hidden}
+#actions{display:flex;gap:8px;min-height:0}
+.btn{background:linear-gradient(#f0d07a,#b88a2c);color:#2a1a08;border:1px solid #5a3e12;border-radius:10px;padding:8px 18px;font:bold 15px Georgia,serif;cursor:pointer;box-shadow:0 2px 0 #5a3e12}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn.alt{background:linear-gradient(#e8dcc0,#b4a582)}
+#hand{display:flex;justify-content:center;align-items:flex-end;height:calc(var(--ch) + 12px);padding-top:12px}
+#hand .card{margin:0 calc(var(--cw)*-.04);transition:transform .15s,filter .15s,box-shadow .15s}
+#hand.wait .card.ok{cursor:pointer;transform:translateY(-8px);box-shadow:0 0 0 2px #f5d76e,0 6px 12px rgba(0,0,0,.5)}
+#hand.wait .card.ok:hover{transform:translateY(-14px)}
+#hand.wait .card.no{filter:brightness(.5) saturate(.6)}
+#me{display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.45);border:1px solid rgba(232,198,106,.5);border-radius:14px;padding:2px 10px;font-size:13px}
+#me .pts{color:var(--gold);font-weight:bold}
+/* center */
+#trick{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,calc(var(--cw)*6.6));height:calc(var(--ch)*1.3);z-index:4}
+#trick .tc{position:absolute;transition:left .25s ease,top .25s ease}
+#trick .tc .tag{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;font-size:11px;font-weight:bold;color:#fff;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.7)}
+#trick .tc.win .card{box-shadow:0 0 0 3px #ffe28a,0 0 16px rgba(255,226,138,.8)}
+#trick .rk{position:absolute;left:50%;top:-24px;transform:translateX(-50%);font-size:13px;background:rgba(0,0,0,.4);padding:1px 10px;border-radius:10px;white-space:nowrap}
+#stock{position:absolute;left:18px;top:60px;z-index:4;display:flex;flex-direction:column;align-items:center;gap:3px}
+#stock .pile{position:relative;width:calc(var(--cw)*.55);height:calc(var(--cw)*.55*1.6)}
+#stock .pile .card{position:absolute;width:100%;height:100%;border-radius:5px}
+#stock .cnt{font-size:12px;background:rgba(0,0,0,.45);padding:1px 8px;border-radius:9px}
+#toast{position:absolute;left:50%;top:calc(50% - var(--ch)*.65 - 34px);transform:translateX(-50%);z-index:20;background:rgba(20,10,0,.8);border:1px solid var(--gold);color:#ffe9a8;padding:5px 14px;border-radius:14px;font-size:15px;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+#toast.on{opacity:1}
+@media (max-height:500px){#trick .rk{display:none}.pos-left,.pos-right{top:52%}#trick{top:45%}#msg{font-size:13px}#bottom{gap:3px}}
+/* modals */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;padding:14px}
+.modal.on{display:flex}
+.box{background:linear-gradient(#f8eed6,#e8d7b0);color:#2a1a08;border:3px solid #6b4422;border-radius:14px;max-width:460px;width:100%;max-height:88vh;overflow:auto;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+.box h2{margin:0 0 10px;text-align:center;color:#6b1a1a;letter-spacing:1px}
+.box h3{margin:14px 0 6px;font-size:16px;color:#4a2e17}
+.box p,.box li{font-size:14.5px;line-height:1.45}
+.box ul{padding-left:20px;margin:6px 0}
+.opt{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.opt button{flex:1;min-width:70px;padding:8px 6px;border:1px solid #6b4422;border-radius:8px;background:#fff8e6;font:15px Georgia,serif;cursor:pointer;color:#2a1a08}
+.opt button.sel{background:#6b4422;color:#f8eed6}
+.row{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+table.res{width:100%;border-collapse:collapse;margin:8px 0;font-size:15px}
+table.res td{padding:5px 6px;border-bottom:1px solid #c9b48a}
+table.res td:last-child{text-align:right;font-weight:bold}
+.big{font-size:18px;text-align:center;margin:6px 0;font-weight:bold}
+.deco{display:flex;justify-content:center;gap:4px;margin:4px 0 10px}
+.deco .card{--cw:46px;width:46px;height:74px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="sR" viewBox="0 0 100 100"><path d="M50 90C22 68 6 50 10 30 14 12 38 8 50 28 62 8 86 12 90 30 94 50 78 68 50 90Z" fill="#d1262e" stroke="#7a0f14" stroke-width="3"/><path d="M22 28c5-9 16-8 19 0" fill="none" stroke="#ff9d9d" stroke-width="4" stroke-linecap="round"/></symbol>
+<symbol id="sV" viewBox="0 0 100 100"><path d="M50 4C68 20 90 38 84 62 79 80 62 84 50 76 38 84 21 80 16 62 10 38 32 20 50 4Z" fill="#3c9c3e" stroke="#174d18" stroke-width="3"/><path d="M50 14V97M50 34L36 25M50 34L64 25M50 50L29 39M50 50L71 39M50 64L30 57M50 64L70 57" stroke="#174d18" stroke-width="2.6" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="sG" viewBox="0 0 100 100"><path d="M50 4v16" stroke="#4a2c12" stroke-width="6" stroke-linecap="round"/><path d="M30 46C30 78 44 92 50 97 56 92 70 78 70 46Z" fill="#d79a42" stroke="#6b3f14" stroke-width="3"/><path d="M40 56c-2 12 2 22 6 28" stroke="#f7d08a" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M21 49C19 24 81 24 79 49 66 58 34 58 21 49Z" fill="#6e4520" stroke="#3a220c" stroke-width="3"/><path d="M30 36l9 9M42 32l10 10M55 32l10 10M67 36l7 7M33 46l9-9M45 47l10-10M58 47l10-10" stroke="#3a220c" stroke-width="1.8"/></symbol>
+<symbol id="sD" viewBox="0 0 100 100"><circle cx="50" cy="9" r="6" fill="none" stroke="#7a5a0a" stroke-width="4"/><path d="M50 15C34 15 28 32 28 50 28 64 22 72 13 80H87C78 72 72 64 72 50 72 32 66 15 50 15Z" fill="#f0c040" stroke="#7a5a0a" stroke-width="3"/><path d="M23 68H77" stroke="#7a5a0a" stroke-width="3"/><path d="M38 27c-4 6-5 16-5 26" stroke="#fff3b8" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="50" cy="87" r="8" fill="#b88a1a" stroke="#7a5a0a" stroke-width="3"/></symbol>
+<pattern id="bp" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="9" height="9" fill="#8e1b22"/><path d="M0 0H9M0 0V9" stroke="#d4a24a" stroke-width="1.1"/></pattern>
+</defs></svg>
+
+<div id="app">
+  <div id="top">
+    <h1>ȘEPTICĂ</h1>
+    <div id="score"></div>
+    <button class="tb" id="bSnd" title="Sunet">🔊</button>
+    <button class="tb" id="bHelp" title="Reguli">?</button>
+    <button class="tb" id="bMenu" title="Joc nou">☰</button>
+  </div>
+  <div id="stock"><div class="pile"></div><div class="cnt"></div></div>
+  <div id="seats"></div>
+  <div id="trick"></div>
+  <div id="toast"></div>
+  <div id="bottom">
+    <div id="msg"></div>
+    <div id="actions"></div>
+    <div id="hand"></div>
+    <div id="me"></div>
+  </div>
+</div>
+
+<div class="modal" id="mStart"><div class="box">
+  <h2>Șeptică</h2>
+  <div class="deco" id="decoCards"></div>
+  <h3>Jucători</h3>
+  <div class="opt" data-k="n"><button data-v="2">2</button><button data-v="3">3</button><button data-v="4">4 (echipe)</button></div>
+  <h3>Meciul se joacă până la</h3>
+  <div class="opt" data-k="target"><button data-v="3">3 victorii</button><button data-v="5">5</button><button data-v="7">7</button></div>
+  <h3>Viteză</h3>
+  <div class="opt" data-k="fast"><button data-v="0">Normală</button><button data-v="1">Rapidă</button></div>
+  <div class="row"><button class="btn" id="bStart">Începe</button><button class="btn alt" id="bRules2">Reguli</button><button class="btn alt" id="bClose" style="display:none">Înapoi</button></div>
+</div></div>
+
+<div class="modal" id="mRules"><div class="box">
+  <h2>Regulile Șepticii</h2>
+  <p>Se joacă cu pachetul de <b>32 de cărți unguresti</b>: culorile <b>roșu</b>, <b>verde</b>, <b>ghindă</b> și <b>dubă</b>, iar valorile 7, 8, 9, 10, Doiar (2), Treiar (3), Popă (4) și As (A). La 3 jucători se scot doi de 8 (rămân 30 de cărți).</p>
+  <h3>Scopul</h3>
+  <p>Strângi cât mai multe <b>puncte</b>. Puncte valorează doar <b>10-urile și Așii</b> — 8 puncte în total. Câștigă mâna cine are cele mai multe puncte (la egalitate nu primește nimeni). Dacă iei toate cele 8 puncte primești 2 victorii.</p>
+  <h3>Cum se joacă</h3>
+  <ul>
+    <li>Fiecare are 4 cărți în mână. Cine începe pune o carte; restul pun, pe rând, câte una.</li>
+    <li>Nu trebuie să răspunzi la culoare. Contează doar <b>valoarea</b>: mâna o ia ultimul care a pus o carte de <b>aceeași valoare</b> cu prima, sau un <b>7</b>. Șeptarul „taie” orice.</li>
+    <li>Dacă cel care a început a fost tăiat, poate <b>continua</b> punând din nou o carte de aceeași valoare sau un 7 — apoi ceilalți mai pun câte o carte. Dacă nu poate sau nu vrea, <b>lasă mâna</b>.</li>
+    <li>Cine ia mâna strânge cărțile, toți completează până la 4 cărți din pachet (începând cu el), iar el începe următoarea mână.</li>
+    <li>La 4 jucători, jucătorul de vizavi îți este partener. Dacă partenerul tău ia mâna, poți să-i „dai” puncte.</li>
+  </ul>
+  <h3>Sfaturi</h3>
+  <ul>
+    <li>Păstrează-ți 7-urile pentru mâinile cu puncte.</li>
+    <li>Începe cu o valoare din care ai perechi — așa poți continua dacă ești tăiat.</li>
+    <li>Nu da 10 sau As pe o mână pe care n-o poți lua.</li>
+  </ul>
+  <div class="row"><button class="btn" id="bRulesOk">Am înțeles</button></div>
+</div></div>
+
+<div class="modal" id="mEnd"><div class="box">
+  <h2 id="endTitle">Sfârșitul mâinii</h2>
+  <div id="endBody"></div>
+  <div class="row"><button class="btn" id="bNext">Continuă</button></div>
+</div></div>
+
+<script>
+"use strict";
+/* ---------- constants ---------- */
+const SUITS=['R','V','G','D'];
+const SUITNAME={R:'roșu',V:'verde',G:'ghindă',D:'dubă'};
+const RANKS=['7','8','9','10','U','O','K','A'];
+const RNAME={'7':'7','8':'8','9':'9','10':'10',U:'Doiar',O:'Treiar',K:'Popă',A:'As'};
+const RIDX={'7':'7','8':'8','9':'9','10':'10',U:'2',O:'3',K:'4',A:'A'};
+const SCOL={R:'#c0262d',V:'#2f7d32',G:'#8a5a2b',D:'#b8860b'};
+const STINT={R:'#fde3dc',V:'#e1f1d8',G:'#f3e3cc',D:'#fbf0c6'};
+const PCOL=['#2d6cdf','#c0392b','#8e44ad','#d68910'];
+const NAMES=['Tu','Ionel','Maria','Vasile'];
+const ABORT={};
+const $=s=>document.querySelector(s);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const auto=/[?&]auto=1/.test(location.search);
+
+let S={n:2,target:5,fast:false,sound:true};
+try{Object.assign(S,JSON.parse(localStorage.getItem('septica_s')||'{}'))}catch(e){}
+function saveS(){try{localStorage.setItem('septica_s',JSON.stringify(S))}catch(e){}}
+if(auto){S.fast=true;S.sound=false;}
+const D=ms=>auto?Math.max(1,ms*.05):(S.fast?ms*.5:ms);
+
+/* ---------- card art ---------- */
+const cache={};
+function cname(c){return RNAME[c.r]+' de '+SUITNAME[c.s];}
+function isPt(c){return c.r==='10'||c.r==='A';}
+const PIPS={
+ '7':[[27,28],[73,28],[27,62],[73,62],[27,96],[73,96],[50,130]],
+ '8':[[27,26],[73,26],[27,58],[73,58],[27,90],[73,90],[27,122],[73,122]],
+ '9':[[27,26],[73,26],[27,58],[73,58],[50,74],[27,90],[73,90],[27,122],[73,122]],
+ '10':[[27,24],[73,24],[50,44],[27,62],[73,62],[27,98],[73,98],[50,116],[27,136],[73,136]]
+};
+function corner(c){
+  const t=RIDX[c.r],col=SCOL[c.s];
+  const g=`<text x="9.5" y="16" font-size="${t.length>1?12:15}" text-anchor="middle" font-weight="bold" fill="${col}" font-family="Georgia,serif">${t}</text><use href="#s${c.s}" x="2.5" y="19" width="14" height="14"/>`;
+  return g+`<g transform="rotate(180 50 80)">${g}</g>`;
+}
+function figure(c){
+  const col=SCOL[c.s],k=c.r;
+  let s=`<rect x="17" y="10" width="66" height="140" rx="5" fill="${STINT[c.s]}" stroke="${col}" stroke-width="1.4"/>`;
+  s+=`<path d="M17 132H83V145Q83 150 78 150H22Q17 150 17 145Z" fill="#7aa35a" opacity=".55"/>`;
+  if(k==='K'){ // seated king with cape
+    s+=`<path d="M30 70Q50 60 70 70L80 138H20Z" fill="#7a1c1c" stroke="#2a0a0a" stroke-width="1"/>`;
+    s+=`<path d="M36 72Q50 66 64 72L68 128H32Z" fill="${col}" stroke="#222" stroke-width="1"/>`;
+    s+=`<path d="M40 128h8v10h-10zM52 128h8l2 10h-10z" fill="#3b2a1e"/>`;
+    s+=`<rect x="34" y="98" width="32" height="5" fill="#3a2410"/><rect x="47" y="97" width="6" height="7" fill="#e8c66a"/>`;
+    s+=`<path d="M64 74L72 100" stroke="#5a3a1a" stroke-width="2.5"/><path d="M73 60v52" stroke="#c9a03a" stroke-width="2.5"/><circle cx="73" cy="58" r="4" fill="#e8c66a" stroke="#7a5a0a"/>`;
+    s+=`<circle cx="71" cy="100" r="4" fill="#f2c9a0" stroke="#5a3a20" stroke-width=".8"/>`;
+    s+=`<path d="M36 74L28 98L33 100L42 82" fill="${col}" stroke="#222" stroke-width="1"/><circle cx="30" cy="100" r="4" fill="#f2c9a0" stroke="#5a3a20" stroke-width=".8"/>`;
+    s+=`<path d="M41 66Q50 72 59 66L58 62H42Z" fill="#fff" stroke="#999" stroke-width=".6"/>`;
+    s+=`<circle cx="50" cy="50" r="11" fill="#f2c9a0" stroke="#5a3a20" stroke-width="1"/>`;
+    s+=`<path d="M39 52Q40 70 50 70Q60 70 61 52Q56 60 50 58Q44 60 39 52Z" fill="#e8e2d6" stroke="#8a8070" stroke-width=".8"/>`;
+    s+=`<circle cx="46" cy="48" r="1.2" fill="#222"/><circle cx="54" cy="48" r="1.2" fill="#222"/>`;
+    s+=`<path d="M38 41L38 30L43 36L46 28L50 35L54 28L57 36L62 30L62 41Z" fill="#e8c66a" stroke="#7a5a0a" stroke-width="1"/><circle cx="50" cy="38" r="1.6" fill="#c0262d"/>`;
+    s+=`<use href="#s${c.s}" x="20" y="13" width="18" height="18"/>`;
+  }else{
+    const upper=k==='O';
+    s+=`<path d="M42 116L40 138H48L50 118M58 116L60 138H52L50 118" fill="#3b2a1e"/>`;
+    s+=`<path d="M38 138h11v4H36zM51 138h11l2 4H51z" fill="#1f140c"/>`;
+    s+=`<path d="M35 70Q50 62 65 70L70 120H30Z" fill="${col}" stroke="#222" stroke-width="1.1"/>`;
+    s+=`<path d="M50 68V118" stroke="rgba(0,0,0,.3)" stroke-width="1"/>`;
+    s+=`<circle cx="50" cy="78" r="1.4" fill="#e8c66a"/><circle cx="50" cy="86" r="1.4" fill="#e8c66a"/><circle cx="50" cy="104" r="1.4" fill="#e8c66a"/>`;
+    s+=`<rect x="31" y="92" width="38" height="5" fill="#3a2410"/><rect x="47" y="91" width="6" height="7" fill="#e8c66a"/>`;
+    if(upper){ // arm raised holding symbol
+      s+=`<path d="M64 72L74 50L69 47L60 66" fill="${col}" stroke="#222" stroke-width="1"/><circle cx="72" cy="46" r="4" fill="#f2c9a0" stroke="#5a3a20" stroke-width=".8"/>`;
+      s+=`<path d="M36 72L28 98L33 100L42 82" fill="${col}" stroke="#222" stroke-width="1"/><circle cx="30" cy="100" r="4" fill="#f2c9a0" stroke="#5a3a20" stroke-width=".8"/>`;
+      s+=`<use href="#s${c.s}" x="61" y="17" width="22" height="22"/>`;
+    }else{ // arm lowered holding symbol
+      s+=`<path d="M64 72L72 100L67 102L58 82" fill="${col}" stroke="#222" stroke-width="1"/><circle cx="70" cy="104" r="4" fill="#f2c9a0" stroke="#5a3a20" stroke-width=".8"/>`;
+      s+=`<path d="M36 72L28 98L33 100L42 82" fill="${col}" stroke="#222" stroke-width="1"/><circle cx="30" cy="100" r="4" fill="#f2c9a0" stroke="#5a3a20" stroke-width=".8"/>`;
+      s+=`<use href="#s${c.s}" x="60" y="104" width="22" height="22"/>`;
+    }
+    s+=`<path d="M42 66Q50 72 58 66L57 62H43Z" fill="#fff" stroke="#999" stroke-width=".6"/>`;
+    s+=`<circle cx="50" cy="52" r="10.5" fill="#f2c9a0" stroke="#5a3a20" stroke-width="1"/>`;
+    s+=`<circle cx="46" cy="51" r="1.2" fill="#222"/><circle cx="54" cy="51" r="1.2" fill="#222"/>`;
+    s+=`<path d="M44 57Q47 59 50 57Q53 59 56 57" stroke="#5a3a20" stroke-width="1.4" fill="none"/>`;
+    if(upper){
+      s+=`<path d="M36 45Q50 30 64 45Z" fill="#2a2a2a"/><ellipse cx="50" cy="45" rx="17" ry="3.5" fill="#1a1a1a"/><path d="M60 40Q72 22 66 16Q66 30 58 38" fill="#c0262d" stroke="#7a0f14" stroke-width=".8"/>`;
+    }else{
+      s+=`<path d="M39 47Q40 34 50 34Q60 34 61 47Q50 43 39 47Z" fill="#5a3a20"/><path d="M50 34L52 29" stroke="#5a3a20" stroke-width="2"/><circle cx="52" cy="28" r="2" fill="#c0262d"/>`;
+    }
+  }
+  return s;
+}
+function ace(c){
+  const col=SCOL[c.s];
+  let s=`<rect x="12" y="10" width="76" height="140" rx="6" fill="${STINT[c.s]}" stroke="${col}" stroke-width="1.5"/>`;
+  s+=`<rect x="16" y="14" width="68" height="132" rx="4" fill="none" stroke="${col}" stroke-width=".7" stroke-dasharray="2 2"/>`;
+  s+=`<path d="M50 22Q34 26 30 40M50 22Q66 26 70 40M50 138Q34 134 30 120M50 138Q66 134 70 120" stroke="${col}" stroke-width="1.4" fill="none"/>`;
+  s+=`<circle cx="30" cy="42" r="2.4" fill="${col}"/><circle cx="70" cy="42" r="2.4" fill="${col}"/><circle cx="30" cy="118" r="2.4" fill="${col}"/><circle cx="70" cy="118" r="2.4" fill="${col}"/>`;
+  s+=`<use href="#s${c.s}" x="22" y="48" width="56" height="56"/>`;
+  s+=`<path d="M28 30H72L68 36H32Z" fill="${col}"/><text x="50" y="35" font-size="6" text-anchor="middle" fill="#fff" font-family="Georgia,serif" letter-spacing="1">AS</text>`;
+  s+=`<text x="50" y="128" font-size="10" text-anchor="middle" fill="${col}" font-family="Georgia,serif" font-style="italic">${SUITNAME[c.s]}</text>`;
+  return s;
+}
+function cardSVG(c){
+  const id=c.s+c.r; if(cache[id])return cache[id];
+  let s=`<svg viewBox="0 0 100 160"><rect x="1" y="1" width="98" height="158" rx="8" fill="#fbf5e6" stroke="#8a7a5a" stroke-width="1.5"/>`;
+  if(PIPS[c.r]) s+=PIPS[c.r].map(([x,y])=>`<use href="#s${c.s}" x="${x-11}" y="${y-11}" width="22" height="22"/>`).join('');
+  else if(c.r==='A') s+=ace(c);
+  else s+=figure(c);
+  s+=corner(c)+`</svg>`;
+  return cache[id]=s;
+}
+const BACK=`<svg viewBox="0 0 100 160"><rect x="0" y="0" width="100" height="160" rx="8" fill="url(#bp)"/><rect x="5" y="5" width="90" height="150" rx="6" fill="none" stroke="#f0d07a" stroke-width="2"/><ellipse cx="50" cy="80" rx="24" ry="32" fill="#6b1016" stroke="#f0d07a" stroke-width="2"/><text x="50" y="91" font-size="30" text-anchor="middle" fill="#f0d07a" font-family="Georgia,serif" font-weight="bold">Ș</text></svg>`;
+function cardEl(c,cls){const d=document.createElement('div');d.className='card'+(c?'':' back')+(cls?' '+cls:'');d.innerHTML=c?cardSVG(c):BACK;return d;}
+
+/* ---------- sound ---------- */
+let AC=null,noiseBuf=null;
+function ac(){ if(!S.sound)return null; try{ if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();const n=AC.sampleRate*.25;noiseBuf=AC.createBuffer(1,n,AC.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);} if(AC.state==='suspended')AC.resume(); return AC;}catch(e){return null}}
+function sSnap(v=.35,f=2400){const a=ac();if(!a)return;const s=a.createBufferSource();s.buffer=noiseBuf;const bp=a.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=1.2;const g=a.createGain();g.gain.value=v;s.connect(bp).connect(g).connect(a.destination);s.start();}
+function tone(f,d,t='triangle',v=.12,when=0){const a=ac();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type=t;o.frequency.value=f;const t0=a.currentTime+when;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(v,t0+.01);g.gain.exponentialRampToValueAtTime(.001,t0+d);o.connect(g).connect(a.destination);o.start(t0);o.stop(t0+d+.05);}
+function sCut(){tone(660,.12,'square',.05);tone(990,.18,'square',.05,.06);}
+function sWin(){[523,659,784,1047].forEach((f,i)=>tone(f,.35,'triangle',.12,i*.12));}
+function sLose(){[392,330,262].forEach((f,i)=>tone(f,.4,'triangle',.1,i*.15));}
+
+/* ---------- layout ---------- */
+let CW=80,CH=128;
+function resize(){
+  const w=innerWidth,h=innerHeight;
+  CW=Math.round(Math.max(40,Math.min(w*.2,h*(h<500?.115:.135),112)));CH=Math.round(CW*1.6);
+  const r=document.documentElement.style;r.setProperty('--cw',CW+'px');r.setProperty('--ch',CH+'px');r.setProperty('--sw',Math.round(CW*.56)+'px');
+  if(G){renderTrick();}
+}
+addEventListener('resize',resize);
+
+/* ---------- game state ---------- */
+let G=null;
+function alive(g){if(g!==G)throw ABORT;}
+function team(i){return G.n===4?i%2:i;}
+function teamName(t){return G.n===4?(t===0?'Noi':'Ei'):G.players[t].name;}
+function trickPts(){return G.trick?G.trick.plays.filter(x=>isPt(x.c)).length:0;}
+function totalOfRank(r){return (G.n===3&&r==='8')?2:4;}
+function unseen(p,r){return totalOfRank(r)-G.seen[r]-G.players[p].hand.filter(c=>c.r===r).length;}
+function sortHand(h){h.sort((a,b)=>RANKS.indexOf(a.r)-RANKS.indexOf(b.r)||SUITS.indexOf(a.s)-SUITS.indexOf(b.s));}
+function makeDeck(n){const d=[];for(const s of SUITS)for(const r of RANKS){if(n===3&&r==='8'&&(s==='V'||s==='G'))continue;d.push({s,r});}
+  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}return d;}
+
+/* ---------- rendering ---------- */
+function seatPos(i,n){if(i===0)return'bottom';if(n===2)return'top';if(n===3)return i===1?'right':'left';return['bottom','right','top','left'][i];}
+function buildSeats(){
+  const n=G.n;let h='';
+  for(let i=1;i<n;i++){h+=`<div class="seat pos-${seatPos(i,n)}" id="seat${i}"><div class="pinfo"><span class="av" style="background:${PCOL[i]}">${G.players[i].name[0]}</span><span>${G.players[i].name}</span><span class="pts" id="pts${i}">★0</span></div><div class="ohand" id="oh${i}"></div></div>`;}
+  $('#seats').innerHTML=h;
+}
+function renderHands(){
+  const hd=$('#hand');hd.innerHTML='';
+  const me=G.players[0],aw=G.await;
+  hd.classList.toggle('wait',!!aw);
+  me.hand.forEach((c,i)=>{const ok=!aw||aw.valid.includes(c);const e=cardEl(c,aw?(ok?'ok':'no'):'');e.dataset.i=i;hd.appendChild(e);});
+  for(let i=1;i<G.n;i++){const o=$('#oh'+i);o.innerHTML='';G.players[i].hand.forEach(()=>o.appendChild(cardEl(null)));}
+  renderInfo();
+}
+function renderInfo(){
+  const pts=i=>G.players[i].won.filter(isPt).length;
+  for(let i=1;i<G.n;i++){$('#pts'+i).textContent='★'+pts(i);$('#seat'+i).classList.toggle('turn',G.turn===i);}
+  let me=`<span class="pinfo" style="border:0;background:none;padding:0"><span class="av" style="background:${PCOL[0]}">T</span></span><span>Tu</span><span class="pts">★${pts(0)}</span>`;
+  if(G.n===4){const a=pts(0)+pts(2),b=pts(1)+pts(3);me+=`<span style="opacity:.8">· Noi ${a} – ${b} Ei</span>`;}
+  $('#me').innerHTML=me;$('#me').classList.toggle('turn',G.turn===0);
+  const sc=$('#score');
+  if(G.n===4)sc.innerHTML=`<span class="chip">Noi <b>${G.match[0]}</b></span><span class="chip">Ei <b>${G.match[1]}</b></span><span class="chip">până la ${S.target}</span>`;
+  else sc.innerHTML=G.players.map((p,i)=>`<span class="chip">${p.name} <b>${G.match[i]}</b></span>`).join('')+`<span class="chip">/${S.target}</span>`;
+  renderStock();
+}
+function renderStock(){
+  const st=$('#stock'),n=G.deck?G.deck.length:0;
+  st.style.visibility=n?'visible':'hidden';
+  const pile=st.querySelector('.pile');pile.innerHTML='';
+  for(let i=0;i<Math.min(3,Math.ceil(n/6));i++){const e=cardEl(null);e.style.left=(i*2)+'px';e.style.top=(-i*2)+'px';pile.appendChild(e);}
+  st.querySelector('.cnt').textContent=n+' cărți';
+}
+function trickPos(i,count){
+  const box=$('#trick'),W=box.clientWidth,H=box.clientHeight;
+  const step=count>1?Math.min(CW*.62,(W-CW)/(count-1)):0;
+  const total=CW+step*(count-1),x0=(W-total)/2;
+  return{x:x0+i*step,y:(H-CH)/2};
+}
+function renderTrick(hideLast){
+  const box=$('#trick');box.innerHTML='';
+  if(!G.trick||!G.trick.plays.length)return;
+  const pl=G.trick.plays,cnt=pl.length;
+  const rk=document.createElement('div');rk.className='rk';rk.textContent='Se joacă: '+RNAME[G.trick.rank]+(G.trick.rank==='7'?'':' (sau 7)')+(trickPts()?' · ★'+trickPts():'');box.appendChild(rk);
+  pl.forEach((x,i)=>{const p=trickPos(i,cnt);const w=document.createElement('div');w.className='tc'+(x===G.trick.winPlay?' win':'');w.style.left=p.x+'px';w.style.top=p.y+'px';w.style.zIndex=i;
+    w.appendChild(cardEl(x.c));const t=document.createElement('div');t.className='tag';t.style.background=PCOL[x.p];t.textContent=G.players[x.p].name[0];w.appendChild(t);
+    if(hideLast&&i===cnt-1)w.style.visibility='hidden';box.appendChild(w);});
+}
+function setMsg(t){$('#msg').textContent=t||'';}
+let toastT=0;
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('on'),D(1300));}
+function rectFor(el,w,h){const r=el.getBoundingClientRect();return{left:r.left+r.width/2-w/2,top:r.top+r.height/2-h/2,width:w,height:h};}
+function fly(html,from,to,dur){
+  return new Promise(res=>{
+    if(auto){res();return;}
+    const d=document.createElement('div');d.className='card fly'+(html===BACK?' back':'');d.innerHTML=html;
+    Object.assign(d.style,{left:from.left+'px',top:from.top+'px',width:from.width+'px',height:from.height+'px'});
+    document.body.appendChild(d);d.getBoundingClientRect();
+    d.style.transition=`left ${dur}ms cubic-bezier(.3,.7,.3,1),top ${dur}ms cubic-bezier(.3,.7,.3,1),width ${dur}ms,height ${dur}ms`;
+    Object.assign(d.style,{left:to.left+'px',top:to.top+'px',width:to.width+'px',height:to.height+'px'});
+    setTimeout(()=>{d.remove();res();},dur+16);
+  });
+}
+function seatEl(p){return p===0?$('#hand'):$('#oh'+p);}
+
+/* ---------- actions ---------- */
+async function drawOne(g,p){
+  const c=g.deck.pop();
+  const from=rectFor($('#stock .pile'),CW*.55,CH*.55);
+  renderStock();
+  const sw=p===0?CW:CW*.56;
+  await fly(BACK,from,rectFor(seatEl(p),sw,sw*1.6),D(260));alive(g);
+  g.players[p].hand.push(c);if(p===0)sortHand(g.players[0].hand);
+  sSnap(.15,3000);renderHands();
+}
+async function playCard(g,p,c){
+  const hand=g.players[p].hand;
+  let from;
+  if(p===0){const idx=hand.indexOf(c);const el=$('#hand').children[idx];from=el?el.getBoundingClientRect():rectFor($('#hand'),CW,CH);from={left:from.left,top:from.top,width:CW,height:CH};}
+  else from=rectFor(seatEl(p),CW*.56,CW*.56*1.6);
+  hand.splice(hand.indexOf(c),1);
+  const tr=g.trick,play={p,c};
+  tr.plays.push(play);g.seen[c.r]++;
+  let cut=false;
+  if(tr.plays.length===1){tr.rank=c.r;tr.winner=p;tr.winPlay=play;}
+  else if(c.r===tr.rank||c.r==='7'){cut=team(tr.winner)!==team(p);tr.winner=p;tr.winPlay=play;}
+  g.turn=-1;renderHands();renderTrick(true);
+  const tgt=$('#trick').lastChild.getBoundingClientRect();
+  await fly(cardSVG(c),from,{left:tgt.left,top:tgt.top,width:CW,height:CH},D(300));alive(g);
+  sSnap();renderTrick(false);
+  if(tr.plays.length>1&&tr.winPlay===play){
+    const who=p===0?'Tai':g.players[p].name+' taie';
+    toast(c.r==='7'&&tr.rank!=='7'?`${who} cu 7!`:`${who} cu ${RNAME[c.r]}!`);
+    if(cut)sCut();
+  }
+}
+function waitHuman(kind,valid){
+  return new Promise(res=>{
+    G.await={kind,valid,resolve:res};G.turn=0;renderHands();
+    const a=$('#actions');a.innerHTML='';
+    if(kind==='cont'){const b=document.createElement('button');b.className='btn alt';b.textContent='Las mâna';b.onclick=()=>finishHuman(null);a.appendChild(b);}
+  });
+}
+function finishHuman(c){const aw=G.await;if(!aw)return;G.await=null;$('#actions').innerHTML='';aw.resolve(c);}
+$('#hand').addEventListener('click',e=>{
+  const el=e.target.closest('.card');if(!el||!G||!G.await)return;
+  const c=G.players[0].hand[+el.dataset.i];if(c&&G.await.valid.includes(c)){ac();finishHuman(c);}
+});
+
+/* ---------- AI ---------- */
+function minBy(a,f){return a.reduce((x,y)=>f(y)<f(x)?y:x);}
+function aiLead(p){
+  const h=G.players[p].hand,end=G.deck.length===0;let best=null,bs=-1e9;
+  for(const c of h){
+    const dup=h.filter(x=>x!==c&&x.r===c.r).length,sev=h.filter(x=>x!==c&&x.r==='7').length;
+    let s=0;
+    if(c.r==='7')s-=h.every(x=>x.r==='7')?0:9;
+    if(isPt(c))s-=(dup+sev>=2)?0:7;
+    s+=dup*3+sev*.4;
+    s-=unseen(p,c.r)*1.2;
+    if(end&&isPt(c)&&dup+sev>=1)s+=3;
+    s+=Math.random()*.6;
+    if(s>bs){bs=s;best=c;}
+  }
+  return best;
+}
+function aiFollow(p,k){
+  const h=G.players[p].hand,tr=G.trick,n=G.n,pts=trickPts(),end=G.deck.length===0;
+  const take=c=>c.r===tr.rank||c.r==='7';
+  const after=[];for(let j=k+1;j<n;j++)after.push((tr.leader+j)%n);
+  const oppAfter=after.some(q=>team(q)!==team(p));
+  const junk=c=>(isPt(c)?20:0)+(c.r==='7'?14:0)+(take(c)?3:0)+h.filter(x=>x!==c&&x.r===c.r).length*2-unseen(p,c.r)*.3;
+  if(team(tr.winner)===team(p)){
+    if(!oppAfter){const pc=h.filter(isPt);if(pc.length)return pc[0];}
+    return minBy(h,junk);
+  }
+  const matchers=h.filter(c=>c.r===tr.rank&&c.r!=='7'),sevens=h.filter(c=>c.r==='7');
+  if(matchers.length&&(pts>0||end||Math.random()<.7)){
+    const np=matchers.filter(c=>!isPt(c)),pc=matchers.filter(isPt);
+    if(pc.length&&(pts>=1||unseen(p,'7')<=1))return pc[0];
+    return np[0]||pc[0];
+  }
+  if(sevens.length&&pts>=1&&(pts>=2||sevens.length>=2||end||G.deck.length<=n*2))return sevens[0];
+  const nt=h.filter(c=>!take(c));
+  if(nt.length){const j=minBy(nt,junk);if(!isPt(j))return j;if(matchers.length)return matchers[0];if(sevens.length)return sevens[0];return j;}
+  return matchers[0]||sevens[0];
+}
+function aiContinue(p,opts){
+  const pts=trickPts();if(pts===0)return null;
+  const nonS=opts.filter(c=>c.r!=='7'),sev=opts.filter(c=>c.r==='7');
+  if(nonS.length){const np=nonS.filter(c=>!isPt(c));return np[0]||nonS[0];}
+  if(sev.length&&(pts>=2||sev.length>=2||G.deck.length<=G.n*2))return sev[0];
+  return null;
+}
+
+/* ---------- flow ---------- */
+async function getMove(g,p,k){
+  g.turn=p;renderInfo();
+  if(p===0&&!auto){
+    setMsg(k===0?'Începi tu — pune o carte':'Rândul tău — pune o carte');
+    const c=await waitHuman('play',g.players[0].hand.slice());alive(g);setMsg('');return c;
+  }
+  await sleep(D(650));alive(g);
+  return k===0?aiLead(p):aiFollow(p,k);
+}
+async function getContinue(g,L,opts){
+  if(L===0&&!auto){
+    g.turn=0;
+    setMsg(`Ai fost tăiat! Continui cu ${RNAME[g.trick.rank]}${g.trick.rank==='7'?'':' sau 7'}, ori lași mâna.`);
+    const c=await waitHuman('cont',opts);alive(g);setMsg('');return c;
+  }
+  g.turn=L;renderInfo();await sleep(D(700));alive(g);
+  const c=aiContinue(L,opts);
+  toast(c?`${g.players[L].name} continuă`:`${g.players[L].name} lasă mâna`);
+  if(!c)await sleep(D(500));
+  return c;
+}
+async function playTrick(g){
+  const n=g.n,L=g.leader;
+  g.trick={rank:null,plays:[],winner:L,winPlay:null,leader:L};
+  let cont=null;
+  while(true){
+    for(let k=0;k<n;k++){
+      const p=(L+k)%n;
+      const c=(k===0&&cont)?cont:await getMove(g,p,k);alive(g);
+      await playCard(g,p,c);alive(g);
+    }
+    if(team(g.trick.winner)===team(L))break;
+    const opts=g.players[L].hand.filter(c=>c.r===g.trick.rank||c.r==='7');
+    if(!opts.length)break;
+    cont=await getContinue(g,L,opts);alive(g);
+    if(!cont)break;
+  }
+  g.turn=-1;
+  const w=g.trick.winner,pts=trickPts();
+  await sleep(D(pts?900:600));alive(g);
+  toast(`${w===0?'Iei':g.players[w].name+' ia'} mâna${pts?` (+${pts}★)`:''}`);
+  sSnap(.25,1200);
+  const to=rectFor(w===0?$('#me'):$('#seat'+w+' .pinfo'),CW*.5,CH*.5);
+  const els=[...$('#trick').querySelectorAll('.tc')];
+  const fl=els.map((e,i)=>{const r=e.getBoundingClientRect();e.style.visibility='hidden';return fly(cardSVG(g.trick.plays[i].c),{left:r.left,top:r.top,width:CW,height:CH},to,D(380));});
+  await Promise.all(fl);alive(g);
+  g.players[w].won.push(...g.trick.plays.map(x=>x.c));
+  g.trick=null;renderTrick();renderInfo();
+  if(pts&&team(w)===team(0))tone(880,.15,'triangle',.08);
+  // draw back up to 4
+  let p=w;
+  while(g.deck.length&&g.players.some(pl=>pl.hand.length<4)){
+    if(g.players[p].hand.length<4){await drawOne(g,p);alive(g);}
+    p=(p+1)%n;
+  }
+  g.leader=w;
+}
+async function playHand(g){
+  for(const pl of g.players){pl.hand=[];pl.won=[];}
+  g.deck=makeDeck(g.n);g.seen={};RANKS.forEach(r=>g.seen[r]=0);
+  g.leader=g.starter;g.trick=null;g.turn=-1;
+  renderTrick();renderHands();setMsg('Se împart cărțile…');
+  for(let r=0;r<4;r++)for(let k=0;k<g.n;k++){await drawOne(g,(g.leader+k)%g.n);alive(g);}
+  setMsg('');
+  while(g.players[g.leader].hand.length){await playTrick(g);alive(g);}
+  return scoreHand(g);
+}
+function scoreHand(g){
+  const T=g.n===4?2:g.n,pts=new Array(T).fill(0);
+  g.players.forEach((p,i)=>pts[team(i)]+=p.won.filter(isPt).length);
+  const mx=Math.max(...pts),tops=pts.map((v,i)=>v===mx?i:-1).filter(i=>i>=0);
+  let winner=-1,gain=0;
+  if(tops.length===1){winner=tops[0];gain=mx===8?2:1;g.match[winner]+=gain;}
+  return{pts,winner,gain};
+}
+function showEnd(g,res,matchOver){
+  return new Promise(r=>{
+    const T=res.pts.length;let rows='';
+    for(let t=0;t<T;t++)rows+=`<tr><td>${teamName(t)}${g.n===4?(t===0?' (Tu + Maria)':' (Ionel + Vasile)'):''}</td><td>★ ${res.pts[t]}</td></tr>`;
+    let head;
+    if(res.winner<0)head='Egalitate — nimeni nu primește victoria.';
+    else{const me=res.winner===team(0);head=(g.n===4?(me?'Ați câștigat mâna':'Au câștigat mâna'):(me?'Ai câștigat mâna':teamName(res.winner)+' câștigă mâna'))+(res.gain===2?' cu toate punctele! (+2)':'!');}
+    let body=`<p class="big">${head}</p><table class="res">${rows}</table>`;
+    body+=`<p style="text-align:center">Scor meci: ${g.match.map((v,t)=>teamName(t)+' <b>'+v+'</b>').join(' · ')} <span style="opacity:.7">(până la ${S.target})</span></p>`;
+    if(matchOver){const w=g.match.findIndex(v=>v>=S.target);const me=w===team(0);
+      $('#endTitle').textContent=me?'Victorie! 🏆':'Meci pierdut';
+      body=`<p class="big">${g.n===4?(me?'Echipa voastră a câștigat meciul!':'Echipa adversă a câștigat meciul.'):(me?'Ai câștigat meciul!':teamName(w)+' a câștigat meciul.')}</p>`+body;
+      $('#bNext').textContent='Meci nou';(me?sWin:sLose)();
+    }else{$('#endTitle').textContent='Sfârșitul mâinii';$('#bNext').textContent='Mâna următoare';
+      if(res.winner>=0)(res.winner===team(0)?sWin:sLose)();}
+    $('#endBody').innerHTML=body;$('#mEnd').classList.add('on');
+    $('#bNext').onclick=()=>{$('#mEnd').classList.remove('on');r();};
+    if(auto)setTimeout(()=>$('#bNext').onclick(),10);
+  });
+}
+async function runMatch(g){
+  while(true){
+    const res=await playHand(g);alive(g);
+    const over=g.match.some(v=>v>=S.target);
+    window.__log&&window.__log.push({pts:res.pts.slice(),match:g.match.slice()});
+    await showEnd(g,res,over);alive(g);
+    if(over){if(auto){window.__done=true;return;}openStart(false);return;}
+    g.starter=(g.starter+1)%g.n;
+  }
+}
+function newMatch(){
+  const n=S.n;
+  G={n,players:[],match:new Array(n===4?2:n).fill(0),starter:Math.floor(Math.random()*n),turn:-1,deck:[],await:null};
+  for(let i=0;i<n;i++)G.players.push({name:NAMES[i],hand:[],won:[]});
+  $('#trick').innerHTML='';$('#actions').innerHTML='';setMsg('');
+  buildSeats();resize();
+  runMatch(G).catch(e=>{if(e!==ABORT)console.error(e);});
+}
+
+/* ---------- menus ---------- */
+function syncOpts(){document.querySelectorAll('#mStart .opt').forEach(o=>{const k=o.dataset.k;o.querySelectorAll('button').forEach(b=>{const v=k==='fast'?(S.fast?'1':'0'):String(S[k]);b.classList.toggle('sel',b.dataset.v===v);});});}
+document.querySelectorAll('#mStart .opt').forEach(o=>o.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const k=o.dataset.k;S[k]=k==='fast'?b.dataset.v==='1':+b.dataset.v;saveS();syncOpts();}));
+function openStart(canClose){syncOpts();$('#bClose').style.display=canClose?'':'none';$('#mStart').classList.add('on');}
+$('#bStart').onclick=()=>{ac();$('#mStart').classList.remove('on');newMatch();};
+$('#bClose').onclick=()=>$('#mStart').classList.remove('on');
+$('#bMenu').onclick=()=>openStart(!!G);
+$('#bHelp').onclick=$('#bRules2').onclick=()=>$('#mRules').classList.add('on');
+$('#bRulesOk').onclick=()=>$('#mRules').classList.remove('on');
+function sndIcon(){$('#bSnd').textContent=S.sound?'🔊':'🔇';}
+$('#bSnd').onclick=()=>{S.sound=!S.sound;saveS();sndIcon();ac();};
+sndIcon();
+$('#decoCards').innerHTML=[{s:'R',r:'7'},{s:'V',r:'O'},{s:'G',r:'K'},{s:'D',r:'A'},{s:'R',r:'10'}].map(c=>`<div class="card">${cardSVG(c)}</div>`).join('');
+resize();
+if(auto){window.__log=[];newMatch();}else openStart(false);
+</script>
+</body>
+</html>
