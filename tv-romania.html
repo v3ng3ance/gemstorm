@@ -108,6 +108,7 @@ video{width:100%;height:100%;max-height:100%;background:#000}
       <select id="grp" aria-label="Categorie"><option value="">Toate</option><option value="__fav">★ Favorite</option></select>
     </div>
     <div class="tools">
+      <button id="refreshBtn" title="Descarcă din nou lista cu cele mai noi linkuri">↻ Actualizează lista</button>
       <button id="checkBtn">Verifică canalele</button>
       <label><input type="checkbox" id="hideDead"> Ascunde canalele moarte</label>
     </div>
@@ -203,6 +204,7 @@ function parseM3U(text){
       meta = {
         name: l.slice(l.lastIndexOf(",") + 1).trim() || attr("tvg-name"),
         logo: attr("tvg-logo"),
+        id: attr("tvg-id").split("@")[0],
         group: (attr("group-title") || "Altele").split(";")[0],
         ref: attr("http-referrer"), ua: attr("http-user-agent")
       };
@@ -217,21 +219,50 @@ function parseM3U(text){
   return out;
 }
 
+// Sursa „vie” a iptv-org: linkurile corectate de comunitate apar aici imediat,
+// înainte ca lista publicată (cu logo-uri și categorii) să fie regenerată.
+const FRESH_PL = "https://raw.githubusercontent.com/iptv-org/iptv/master/streams/ro.m3u";
+
+async function getText(url){
+  const u = url + (url.includes("?") ? "&" : "?") + "t=" + Date.now();   // ocolește cache-ul
+  const r = await fetch(u, { cache: "no-store" });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.text();
+}
+
 async function loadUrl(url){
   $("count").textContent = "Se încarcă lista…";
   try{
-    const r = await fetch(url);
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    setChannels(parseM3U(await r.text()));
+    let list = parseM3U(await getText(url));
+    if (url === DEFAULT_PL){
+      // îmbinăm cu sursa vie: linkuri noi + metadate (logo, categorie) din lista publicată
+      try{
+        const fresh = parseM3U(await getText(FRESH_PL));
+        const meta = {};
+        list.forEach(c => { if (c.id && !meta[c.id]) meta[c.id] = c; });
+        const freshIds = new Set(fresh.map(c => c.id).filter(Boolean));
+        const merged = fresh.map(c => {
+          const m = meta[c.id];
+          return m ? { ...c, logo: c.logo || m.logo, group: c.group !== "Altele" ? c.group : m.group } : c;
+        });
+        // păstrăm din lista publicată doar canalele care nu mai apar în sursa vie
+        list = merged.concat(list.filter(c => !c.id || !freshIds.has(c.id)));
+      }catch{}
+    }
+    setChannels(list);
     store.set("tvro_pl", url);
+    $("count").textContent += " · actualizat " + new Date().toLocaleTimeString("ro-RO", {hour:"2-digit", minute:"2-digit"});
   }catch(e){
     $("count").textContent = "Nu am putut încărca lista (" + e.message + "). Verifică linkul sau încarcă un fișier .m3u.";
   }
 }
 
+// Panouri IPTV piratate (Xtream Codes: host:port/user/parolă/id) — nu le afișăm
+const PIRATE = /:\d{2,5}\/[^\/?#]+\/[^\/?#]+\/\d+(\.(m3u8|ts))?$/i;
+
 function setChannels(arr){
   const seen = new Set();
-  channels = arr.filter(c => !seen.has(c.url) && seen.add(c.url))
+  channels = arr.filter(c => !PIRATE.test(c.url) && !seen.has(c.url) && seen.add(c.url))
                 .sort((a,b)=>a.name.localeCompare(b.name,"ro"));
   const groups = [...new Set(channels.map(c=>c.group))].sort();
   const sel = $("grp");
@@ -393,7 +424,7 @@ function tickAd(){
 }
 
 function endAd(goBack = true){
-  if (!ad) return;
+  if (!ad){ $("ad").hidden = true; return; }
   const a = ad; ad = null;
   clearInterval(a.timer);
   $("ad").hidden = true;
@@ -417,7 +448,8 @@ function checkCue(frag){
       return toast(`Reclame detectate · am sărit ${fmt(Math.round(j))}`);
     }
     startAd(true);
-    if (dur > 0) ad.end = Date.now() + dur * 1000;   // se termină singură dacă lipsește CUE-IN
+    // se termină singură dacă lipsește CUE-IN; fără durată, maxim 4 minute
+    if (ad) ad.end = Date.now() + (dur > 0 && dur < 600 ? dur : 240) * 1000;
   }
 }
 
@@ -568,6 +600,7 @@ $("adMode").onchange = () => store.set("tvro_admode", $("adMode").value);
 $("adDur").onchange = () => store.set("tvro_addur", +$("adDur").value);
 $("adAuto").onchange = () => { store.set("tvro_adauto", $("adAuto").checked); if (!$("adAuto").checked && ad?.auto) endAd(false); };
 
+$("refreshBtn").onclick = () => loadUrl($("plUrl").value.trim() || DEFAULT_PL);
 $("proxy").value = store.get("tvro_proxy", "");
 $("hideDead").checked = store.get("tvro_hide", false);
 $("plUrl").value = store.get("tvro_pl", DEFAULT_PL);
