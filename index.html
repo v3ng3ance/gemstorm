@@ -32,62 +32,55 @@
   <input id="q" type="search" placeholder="Caută…" autocomplete="off">
 </header>
 
-<main id="list"></main>
+<main>
+<section>
+  <h2>Jocuri arcade</h2>
+  <div class="grid">
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/apex_circuit.html"><div class="ico">🏎️</div><div class="name">Apex Circuit</div><div class="desc">Curse pseudo-3D</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/sky-raptor.html"><div class="ico">✈️</div><div class="name">Sky Raptor</div><div class="desc">Shooter aerian</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/iron-front.html"><div class="ico">🪖</div><div class="name">Iron Front</div><div class="desc">Joc de război</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/iron-front-2.html"><div class="ico">🛡️</div><div class="name">Iron Front 2</div><div class="desc">Continuarea</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/snake.html"><div class="ico">🐍</div><div class="name">Snake</div><div class="desc">Clasicul șarpe</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/zuma-game.html"><div class="ico">🐸</div><div class="name">Zuma</div><div class="desc">Trage bile colorate</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/ultimul-far.html"><div class="ico">🗼</div><div class="name">Ultimul Far</div><div class="desc">Tower defense</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/biliard.html"><div class="ico">🎱</div><div class="name">Biliard</div><div class="desc">Masă de biliard</div></a>
+  </div>
+</section>
+<section>
+  <h2>Puzzle</h2>
+  <div class="grid">
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/gemstorm.html"><div class="ico">💎</div><div class="name">GemStorm</div><div class="desc">Match-3</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/gemblast.html"><div class="ico">✨</div><div class="name">GemBlast</div><div class="desc">Match-3 cu bonusuri</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/candy-crunch.html"><div class="ico">🍬</div><div class="name">Candy Crunch</div><div class="desc">Match-3 cu bomboane</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/mahjong.html"><div class="ico">🀄</div><div class="name">Mahjong</div><div class="desc">Perechi de piese</div></a>
+  </div>
+</section>
+<section>
+  <h2>Cărți & cazino</h2>
+  <div class="grid">
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/septica.html"><div class="ico">🃏</div><div class="name">Șeptică</div><div class="desc">Joc de cărți</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/cruce.html"><div class="ico">♣️</div><div class="name">Cruce</div><div class="desc">Joc de cărți</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/pacanele.html"><div class="ico">🎰</div><div class="name">Păcănele</div><div class="desc">Slot machine</div></a>
+  </div>
+</section>
+<section>
+  <h2>Aplicații</h2>
+  <div class="grid">
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/tv-romania.html"><div class="ico">📺</div><div class="name">TV România Live</div><div class="desc">Posturi TV online</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/ctp-cluj.html"><div class="ico">🚌</div><div class="name">CTP Cluj</div><div class="desc">Autobuze în timp real</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/chordvision_web.html"><div class="ico">🎸</div><div class="name">ChordVision</div><div class="desc">Detectare acorduri</div></a>
+    <a class="card" href="https://v3ng3ance.github.io/gemstorm/gestiune-financiara.html"><div class="ico">💰</div><div class="name">Gestiune financiară</div><div class="desc">Evidență bani</div></a>
+  </div>
+</section>
+</main>
 
 <script>
-const BASE = "https://v3ng3ance.github.io/gemstorm/";
-const groups = [
-  { title: "Jocuri arcade", items: [
-    ["apex_circuit.html", "🏎️", "Apex Circuit", "Curse pseudo-3D"],
-    ["sky-raptor.html", "✈️", "Sky Raptor", "Shooter aerian"],
-    ["iron-front.html", "🪖", "Iron Front", "Joc de război"],
-    ["iron-front-2.html", "🛡️", "Iron Front 2", "Continuarea"],
-    ["snake.html", "🐍", "Snake", "Clasicul șarpe"],
-    ["zuma-game.html", "🐸", "Zuma", "Trage bile colorate"],
-    ["ultimul-far.html", "🗼", "Ultimul Far", "Tower defense"],
-    ["biliard.html", "🎱", "Biliard", "Masă de biliard"],
-  ]},
-  { title: "Puzzle", items: [
-    ["gemstorm.html", "💎", "GemStorm", "Match-3"],
-    ["gemblast.html", "✨", "GemBlast", "Match-3 cu bonusuri"],
-    ["candy-crunch.html", "🍬", "Candy Crunch", "Match-3 cu bomboane"],
-    ["mahjong.html", "🀄", "Mahjong", "Perechi de piese"],
-  ]},
-  { title: "Cărți & cazino", items: [
-    ["septica.html", "🃏", "Șeptică", "Joc de cărți"],
-    ["cruce.html", "♣️", "Cruce", "Joc de cărți"],
-    ["pacanele.html", "🎰", "Păcănele", "Slot machine"],
-  ]},
-  { title: "Aplicații", items: [
-    ["tv-romania.html", "📺", "TV România Live", "Posturi TV online"],
-    ["ctp-cluj.html", "🚌", "CTP Cluj", "Autobuze în timp real"],
-    ["chordvision_web.html", "🎸", "ChordVision", "Detectare acorduri"],
-    ["gestiune-financiara.html", "💰", "Gestiune financiară", "Evidență bani"],
-  ]},
-];
-
-const list = document.getElementById("list");
-for (const g of groups) {
-  const s = document.createElement("section");
-  s.innerHTML = `<h2>${g.title}</h2><div class="grid"></div>`;
-  const grid = s.querySelector(".grid");
-  for (const [file, ico, name, desc] of g.items) {
-    const a = document.createElement("a");
-    a.className = "card";
-    a.href = BASE + file;
-    a.dataset.k = (name + " " + desc + " " + file).toLowerCase();
-    a.innerHTML = `<div class="ico">${ico}</div><div class="name">${name}</div><div class="desc">${desc}</div>`;
-    grid.appendChild(a);
-  }
-  list.appendChild(s);
-}
-
-document.getElementById("q").addEventListener("input", e => {
-  const v = e.target.value.toLowerCase().trim();
-  document.querySelectorAll("section").forEach(sec => {
-    let any = false;
-    sec.querySelectorAll("a.card").forEach(c => {
-      const show = !v || c.dataset.k.includes(v);
+document.getElementById("q").addEventListener("input", function (e) {
+  var v = e.target.value.toLowerCase().trim();
+  document.querySelectorAll("section").forEach(function (sec) {
+    var any = false;
+    sec.querySelectorAll("a.card").forEach(function (c) {
+      var show = !v || c.textContent.toLowerCase().indexOf(v) !== -1;
       c.classList.toggle("hidden", !show);
       if (show) any = true;
     });
