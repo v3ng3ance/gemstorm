@@ -250,6 +250,8 @@ body:is([data-style=flat],[data-style=glass]) #profMenu{border-radius:10px}
 .vc2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 body:is([data-style=flat],[data-style=glass]) #visMenu{border-radius:12px}
 body:is([data-style=flat],[data-style=glass]) #visMenu select{border:0;border-radius:7px}
+/* ---------- version tag ---------- */
+.tb .ver{opacity:.55;font-weight:500;letter-spacing:.06em}
 /* ---------- AI DJ ---------- */
 .djb{flex:1;overflow:auto;padding:6px 8px 8px;display:flex;flex-direction:column;gap:6px;min-height:0}
 .djl{font-size:11px;font-weight:600;letter-spacing:.04em;opacity:.8;margin-top:2px}
@@ -292,7 +294,7 @@ body[data-style=term] .chip{border-radius:0}
 <div id="desk">
 
 <section class="win" id="w-main" data-w="main">
-  <div class="tb"><span class="st"></span><b>NEUROPLAYER</b><span class="st"></span><button class="sb" id="profBtn" title="Listening profile (P)">◉ HOME ▾</button><button class="tbb" data-shade title="Windowshade">–</button></div>
+  <div class="tb"><span class="st"></span><b>NEUROPLAYER <span class="ver">v1.6</span></b><span class="st"></span><button class="sb" id="profBtn" title="Listening profile (P)">◉ HOME ▾</button><button class="tbb" data-shade title="Windowshade">–</button></div>
   <div class="main">
     <div class="lcd ins">
       <svg id="stIco" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10"/></svg>
@@ -459,6 +461,10 @@ body[data-style=term] .chip{border-radius:0}
 
 <script>
 {
+const VERSION='1.6';
+/* every network request gives up after 9 s, so a slow server can never block ⏭ */
+const _fetch=window.fetch.bind(window);
+const fetch=(u,o={})=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),9000);return _fetch(u,{...o,signal:c.signal}).finally(()=>clearTimeout(t))};
 const APP='NeuroPlayer';
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -900,23 +906,23 @@ for(const a of [aA,aB]){
   a.addEventListener('pause',()=>{if(a===player&&!a.ended)setState('pause')});
   a.addEventListener('loadedmetadata',()=>{if(a===player&&isFinite(a.duration)&&cur&&!cur.duration){cur.duration=a.duration;renderPl()}});
 }
-let nextBusy=false;
-/* next: neural radio / AI DJ → shuffle → playlist → the library list you started from → repeat → AI pick of something similar */
+let nextSeq=0;
+/* next: neural radio / AI DJ → shuffle → playlist → the library list you started from → repeat → AI pick of something similar.
+   Every press gets a number; if you press again while a search is running, the newer press wins. */
 async function next(user=true){
-  if(nextBusy)return;nextBusy=true;
-  try{
-    if(radioOn){const t=await radioPick();if(t)return playTrackObj(t)}
-    if(shuffle&&pl.length>1){let i;do i=Math.floor(Math.random()*pl.length);while(i===plIdx);return playIdx(i)}
-    if(plIdx>=0&&plIdx<pl.length-1)return playIdx(plIdx+1);
-    if(cur&&ctxList.length){
-      const j=ctxList.findIndex(x=>x.id===cur.id);
-      const t=j>=0?ctxList.slice(j+1).find(x=>!pl.some(p=>p.id===x.id)):null;
-      if(t)return playTrackObj(t);
-    }
-    if(repeat&&pl.length)return playIdx(0);
-    if(cur){toast(cur.live?'Finding a similar station…':'Finding something similar…');const t=await radioPick();if(t)return playTrackObj(t)}
-    if(user)toast('Nothing to play next — pick something in the Media Library');
-  }finally{nextBusy=false}
+  const my=++nextSeq;
+  const go=t=>{if(my===nextSeq&&t)return playTrackObj(t)};
+  if(radioOn){if(user)setMarq('⏭ Choosing the next one…');const t=await radioPick().catch(()=>null);if(my!==nextSeq)return;if(t)return go(t)}
+  if(shuffle&&pl.length>1){let i;do i=Math.floor(Math.random()*pl.length);while(i===plIdx);return playIdx(i)}
+  if(plIdx>=0&&plIdx<pl.length-1)return playIdx(plIdx+1);
+  if(cur&&ctxList.length){
+    const j=ctxList.findIndex(x=>x.id===cur.id);
+    const t=j>=0?ctxList.slice(j+1).find(x=>!pl.some(p=>p.id===x.id)):null;
+    if(t)return go(t);
+  }
+  if(repeat&&pl.length)return playIdx(0);
+  if(cur){setMarq(cur.live?'⏭ Finding a similar station…':'⏭ Finding something similar…');const t=await radioPick().catch(()=>null);if(my!==nextSeq)return;if(t)return go(t);updateNP()}
+  if(user)toast('Nothing to play next — pick something in the Media Library');
 }
 function playTrackObj(t){let i=pl.findIndex(x=>x.id===t.id);if(i<0){pl.splice(plIdx+1,0,t);i=plIdx+1;savePl()}return playIdx(i)}
 function prev(){
