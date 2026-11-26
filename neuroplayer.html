@@ -747,7 +747,7 @@ function renderMl(){
 }
 $('#mlList').addEventListener('click',e=>{
   const st=e.target.closest('[data-star]');if(st){toggleFav(mlRows[+st.dataset.star]);return}
-  const r=e.target.closest('.row[data-i]');if(!r)return;mlSel=+r.dataset.i;enqueue(mlRows[mlSel],true)});
+  const r=e.target.closest('.row[data-i]');if(!r)return;mlSel=+r.dataset.i;playFromMl(mlSel)});
 /* favorites + history */
 const isFav=t=>lib.favs.some(x=>x.id===t.id);
 function toggleFav(t){
@@ -758,10 +758,12 @@ function toggleFav(t){
 }
 function pushHist(t){lib.hist=[metaOf(t),...lib.hist.filter(x=>x.id!==t.id)].slice(0,150);store.set('np2_hist',lib.hist);renderTree();if(node==='hist')renderMl()}
 $('#mlList').addEventListener('keydown',e=>{
-  if(e.key==='Enter'&&mlSel>=0)enqueue(mlRows[mlSel],true);
+  if(e.key==='Enter'&&mlSel>=0)playFromMl(mlSel);
   else if(e.key==='ArrowDown'||e.key==='ArrowUp'){mlSel=clamp(mlSel+(e.key==='ArrowDown'?1:-1),0,mlRows.length-1);renderMl();e.preventDefault()}
 });
-$('#mlPlay').onclick=()=>{if(mlSel>=0)enqueue(mlRows[mlSel],true);else toast('Select a row first')};
+$('#mlPlay').onclick=()=>{if(mlSel>=0)playFromMl(mlSel);else toast('Select a row first')};
+let ctxList=[];
+function playFromMl(i){ctxList=mlRows.slice();enqueue(mlRows[i],true)}
 $('#mlEnq').onclick=()=>{if(mlSel>=0){enqueue(mlRows[mlSel],false);toast('Added to playlist')}else toast('Select a row first')};
 $('#mlEnqAll').onclick=()=>{const have=new Set(pl.map(t=>t.id));let n=0;for(const t of mlRows)if(!have.has(t.id)){pl.push(t);n++}savePl();renderPl();toast(n+' added to playlist')};
 $('#mlSort').onclick=()=>{mlAi=!mlAi;$('#mlSort').textContent=mlAi?'SORT: NEURAL MATCH':'SORT: RELEVANCE';$('#mlSort').classList.toggle('on',mlAi);if(mlAi&&!trained())toast('Rate a few tracks so the network can rank');renderMl()};
@@ -898,18 +900,30 @@ for(const a of [aA,aB]){
   a.addEventListener('pause',()=>{if(a===player&&!a.ended)setState('pause')});
   a.addEventListener('loadedmetadata',()=>{if(a===player&&isFinite(a.duration)&&cur&&!cur.duration){cur.duration=a.duration;renderPl()}});
 }
+let nextBusy=false;
+/* next: neural radio / AI DJ → shuffle → playlist → the library list you started from → repeat → AI pick of something similar */
 async function next(user=true){
-  if(!pl.length&&!radioOn)return;
-  if(radioOn){const t=await radioPick();if(t){let i=pl.findIndex(x=>x.id===t.id);if(i<0){pl.splice(plIdx+1,0,t);i=plIdx+1;savePl()}return playIdx(i)}}
-  if(shuffle&&pl.length>1){let i;do i=Math.floor(Math.random()*pl.length);while(i===plIdx);return playIdx(i)}
-  if(plIdx<pl.length-1)return playIdx(plIdx+1);
-  if(repeat&&pl.length)return playIdx(0);
-  if(!user&&cur&&!cur.live){const t=await radioPick();if(t){pl.push(t);savePl();return playIdx(pl.length-1)}}
-  setState('stop');
+  if(nextBusy)return;nextBusy=true;
+  try{
+    if(radioOn){const t=await radioPick();if(t)return playTrackObj(t)}
+    if(shuffle&&pl.length>1){let i;do i=Math.floor(Math.random()*pl.length);while(i===plIdx);return playIdx(i)}
+    if(plIdx>=0&&plIdx<pl.length-1)return playIdx(plIdx+1);
+    if(cur&&ctxList.length){
+      const j=ctxList.findIndex(x=>x.id===cur.id);
+      const t=j>=0?ctxList.slice(j+1).find(x=>!pl.some(p=>p.id===x.id)):null;
+      if(t)return playTrackObj(t);
+    }
+    if(repeat&&pl.length)return playIdx(0);
+    if(cur){toast(cur.live?'Finding a similar station…':'Finding something similar…');const t=await radioPick();if(t)return playTrackObj(t)}
+    if(user)toast('Nothing to play next — pick something in the Media Library');
+  }finally{nextBusy=false}
 }
+function playTrackObj(t){let i=pl.findIndex(x=>x.id===t.id);if(i<0){pl.splice(plIdx+1,0,t);i=plIdx+1;savePl()}return playIdx(i)}
 function prev(){
   if(player&&!cur?.live&&player.currentTime>3){player.currentTime=0;return}
-  if(plIdx>0)playIdx(plIdx-1);else if(repeat&&pl.length)playIdx(pl.length-1);
+  if(plIdx>0)return playIdx(plIdx-1);
+  if(cur&&ctxList.length){const j=ctxList.findIndex(x=>x.id===cur.id);if(j>0)return playTrackObj(ctxList[j-1])}
+  if(repeat&&pl.length)playIdx(pl.length-1);
 }
 async function radioPick(){
   if(dj.on)return djPick();
