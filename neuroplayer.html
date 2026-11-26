@@ -250,6 +250,40 @@ body:is([data-style=flat],[data-style=glass]) #profMenu{border-radius:10px}
 .vc2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 body:is([data-style=flat],[data-style=glass]) #visMenu{border-radius:12px}
 body:is([data-style=flat],[data-style=glass]) #visMenu select{border:0;border-radius:7px}
+/* ---------- Tabs layout ---------- */
+body[data-layout=tabs] #desk{display:flex;gap:10px;padding:10px;height:100%}
+body[data-layout=tabs] #colL{width:560px;flex:none;display:flex;flex-direction:column;gap:10px;min-height:0}
+body[data-layout=tabs] #colR{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+body[data-layout=tabs] #desk .win{position:static!important;width:auto!important;height:auto!important;resize:none!important;box-shadow:0 0 0 1px #000,0 8px 22px rgba(0,0,0,.35)}
+body[data-layout=tabs] #colL #w-pl{flex:1;min-height:0}
+body[data-layout=tabs] #colR .win{flex:1;min-height:0}
+body[data-layout=tabs] #colR .win>.tb{display:none}
+body[data-layout=tabs] #colR #w-ml>#sf{padding-top:8px}
+body[data-layout=tabs] #colR .win>.foot{padding-bottom:8px}
+body[data-layout=tabs] .tb{cursor:default}
+body[data-layout=tabs] [data-close],body[data-layout=tabs] .tog [data-show]{display:none}
+body[data-layout=tabs] #w-eq .eqs input[type=range]{height:220px}
+body[data-layout=tabs] #w-eq .eqb{align-content:start;padding:16px}
+body[data-layout=tabs] #w-eq .eqc{min-height:220px}
+body[data-layout=tabs] #w-dj .djb{padding:12px 14px;gap:9px}
+body[data-layout=tabs] #w-dj .pads .chip{padding:6px 14px;font-size:12.5px}
+#tabbar{display:flex;gap:3px;flex:none;overflow-x:auto;scrollbar-width:none;padding-left:2px}
+#tabbar::-webkit-scrollbar{display:none}
+#tabbar button{flex:none;background:linear-gradient(180deg,var(--chrome2),var(--chrome));color:var(--ctxt);border:1px solid;border-color:var(--hi) var(--lo) transparent var(--hi);border-bottom:0;padding:9px 18px 8px;font:600 12px/1 var(--font);letter-spacing:.04em;opacity:.7;cursor:pointer;margin-bottom:-1px}
+#tabbar button:hover{opacity:1}
+#tabbar button.on{opacity:1;color:var(--acc);box-shadow:inset 0 2px 0 var(--acc);position:relative;z-index:2}
+body:is([data-style=flat],[data-style=glass]) #tabbar button{border:0;border-radius:10px 10px 0 0;background:color-mix(in srgb,var(--chrome) 70%,transparent)}
+body:is([data-style=flat],[data-style=glass]) #tabbar button.on{background:var(--chrome);box-shadow:inset 0 2px 0 var(--acc)}
+body[data-style=glass] #tabbar button.on{background:color-mix(in srgb,var(--chrome) 58%,transparent);backdrop-filter:blur(20px)}
+body:is([data-style=flat],[data-style=glass])[data-layout=tabs] #colR .win{border-top-left-radius:0}
+body[data-style=term] #tabbar button{background:#000;border:1px solid var(--hi);border-bottom:0}
+@media(max-width:999px){
+  body[data-layout=tabs]{overflow:auto}
+  body[data-layout=tabs] #desk{flex-direction:column;height:auto}
+  body[data-layout=tabs] #colL{width:auto}
+  body[data-layout=tabs] #colR .win{min-height:72vh;height:auto!important}
+  body[data-layout=tabs] #w-eq .eqs input[type=range]{height:140px}
+}
 /* ---------- version tag ---------- */
 .tb .ver{opacity:.55;font-weight:500;letter-spacing:.06em}
 /* ---------- AI DJ ---------- */
@@ -294,7 +328,7 @@ body[data-style=term] .chip{border-radius:0}
 <div id="desk">
 
 <section class="win" id="w-main" data-w="main">
-  <div class="tb"><span class="st"></span><b>NEUROPLAYER <span class="ver">v1.6</span></b><span class="st"></span><button class="sb" id="profBtn" title="Listening profile (P)">◉ HOME ▾</button><button class="tbb" data-shade title="Windowshade">–</button></div>
+  <div class="tb"><span class="st"></span><b>NEUROPLAYER <span class="ver">v1.8</span></b><span class="st"></span><button class="sb" id="profBtn" title="Listening profile (P)">◉ HOME ▾</button><button class="tbb" data-shade title="Windowshade">–</button></div>
   <div class="main">
     <div class="lcd ins">
       <svg id="stIco" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10"/></svg>
@@ -461,7 +495,7 @@ body[data-style=term] .chip{border-radius:0}
 
 <script>
 {
-const VERSION='1.6';
+const VERSION='1.8';
 /* every network request gives up after 9 s, so a slow server can never block ⏭ */
 const _fetch=window.fetch.bind(window);
 const fetch=(u,o={})=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),9000);return _fetch(u,{...o,signal:c.signal}).finally(()=>clearTimeout(t))};
@@ -498,8 +532,9 @@ const mapAu=t=>({id:'au:'+t.id,src:'audius',_aid:t.id,title:t.title||'Untitled',
 const searchAudius=async q=>(await auFetch('/v1/tracks/search?query='+encodeURIComponent(q))).filter(t=>t.is_streamable!==false).slice(0,30).map(mapAu);
 const trendingAudius=async g=>(await auFetch('/v1/tracks/trending?time=week'+(g?'&genre='+encodeURIComponent(g):''))).slice(0,50).map(mapAu);
 
-async function searchArchive(q){
-  const query=`(${q}) AND mediatype:(audio) AND (collection:(audio_music) OR collection:(netlabels) OR collection:(etree) OR collection:(78rpm) OR collection:(georgeblood))`;
+async function searchArchive(q,strict){
+  const qq=q.replace(/[:()[\]{}"^~*?\\\/!&|+-]/g,' ').trim()||q;
+  const query=(strict?`(creator:(${qq}) OR title:(${qq}))`:`(${qq})`)+` AND mediatype:(audio) AND (collection:(audio_music) OR collection:(netlabels) OR collection:(etree) OR collection:(78rpm) OR collection:(georgeblood))`;
   const j=await (await fetch('https://archive.org/advancedsearch.php?q='+encodeURIComponent(query)+'&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=subject&fl[]=downloads&rows=25&output=json')).json();
   return (j.response?.docs||[]).map(d=>({id:'ia:'+d.identifier,src:'archive',_iid:d.identifier,title:first(d.title)||d.identifier,
     artist:first(d.creator)||'',art:'https://archive.org/services/img/'+encodeURIComponent(d.identifier),duration:0,
@@ -834,22 +869,65 @@ function intentLabel(it){
   const p=[];if(it.labels.length)p.push('genre <b>'+esc(it.labels.join(', '))+'</b>');if(it.cc)p.push('country <b>'+esc(CC_NAME[it.cc]||it.cc)+'</b>');if(it.rest.length)p.push('words <b>'+esc(it.rest.join(' '))+'</b>');
   return p.join(' · ');
 }
+/* how well a result matches a plain search (artist / song name) */
+const nrm=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+function relevance(t,q){
+  const qq=nrm(q);if(!qq)return 0;const a=nrm(t.artist),ti=nrm(t.title),w=x=>(' '+x+' ').includes(' '+qq+' ');
+  if(!t.live&&a===qq)return 5;
+  if(!t.live&&w(a))return 4;
+  if(t.live&&w(ti))return 3;
+  if(w(ti))return 2.5;
+  if(!t.live&&a.split(' ').some(p=>p&&qq.includes(p)&&p.length>2)&&w(ti+' '+a))return 2;
+  if(a.includes(qq)||ti.includes(qq))return 1;
+  return 0;
+}
 async function runSearch(q,opts={}){
   q=q.trim();if(!q)return;
-  const it=parseIntent(q);
+  const it=parseIntent(q),plain=!it.matched&&!opts.radioOnly;
   let srcs=opts.radioOnly||it.radio?['radio']:$$('#srcs input:checked').map(i=>i.value);
   if(!srcs.length)return toast('Select at least one source');
   showWin('ml',true);node='search';mlSel=-1;lib.search=[];renderTree();renderMl();setMl('Searching…');
   const tq=it.matched?[it.labels[0]||'',...it.rest].join(' ').trim()||q:q;
-  const fn={audius:()=>searchAudius(tq),archive:()=>searchArchive(tq),itunes:()=>searchItunes(tq),radio:()=>findStations(q,it)};
-  const res=await Promise.allSettled(srcs.map(s=>fn[s]()));
-  const groups=res.map(r=>r.status==='fulfilled'?r.value:[]),errs=srcs.filter((s,i)=>res[i].status==='rejected');
-  let out=[];
+  const fn={audius:()=>searchAudius(tq),archive:()=>searchArchive(tq,plain),itunes:()=>searchItunes(tq),radio:()=>findStations(q,it)};
+  /* for a plain artist/song search, iTunes is also asked (quietly) so we can tell what the artist is and what genre they play */
+  const probe=plain&&!srcs.includes('itunes')&&!srcs.every(x=>x==='radio');
+  const jobs=srcs.map(x=>fn[x]());if(probe)jobs.push(searchItunes(tq));
+  const res=await Promise.allSettled(jobs);
+  const all=res.map(r=>r.status==='fulfilled'?r.value:[]),groups=all.slice(0,srcs.length),probeRes=probe?all[srcs.length]:[];
+  const errs=srcs.filter((x,i)=>res[i].status==='rejected');
+  let out=[],note='';
   if(it.matched&&srcs.includes('radio')){const ri=srcs.indexOf('radio');out=[...groups[ri]];const others=groups.filter((g,i)=>i!==ri);for(let i=0;i<40;i++)for(const g of others)if(g[i])out.push(g[i])}
+  else if(plain){
+    const mixed=[];for(let i=0;i<80;i++)for(const g of groups)if(g[i])mixed.push(g[i]);
+    const scored=mixed.map((t,i)=>[t,relevance(t,q),i]);
+    const exact=scored.filter(x=>x[1]>=2).sort((a,b)=>b[1]-a[1]||a[2]-b[2]).map(x=>x[0]);
+    const loose=scored.filter(x=>x[1]<2).sort((a,b)=>b[1]-a[1]||a[2]-b[2]).map(x=>x[0]);
+    const fullHits=exact.filter(t=>!t.live&&t.src!=='itunes'&&relevance(t,q)>=4).length;
+    const itunesAll=[...(srcs.includes('itunes')?groups[srcs.indexOf('itunes')]:[]),...probeRes];
+    const artistHits=itunesAll.filter(t=>relevance(t,q)>=4);
+    let previews=[];
+    if(!fullHits&&probe&&artistHits.length)previews=artistHits.slice(0,20);
+    /* the artist's genre → stations of that style */
+    let similar=[],gname='';
+    if(!fullHits&&artistHits.length&&srcs.includes('radio')){
+      const gc={};for(const t of artistHits)if(t.genre)gc[t.genre]=(gc[t.genre]||0)+1;
+      gname=Object.keys(gc).sort((a,b)=>gc[b]-gc[a])[0]||'';
+      const gi=parseIntent(gname);
+      if(gi.tags.length){try{similar=(await findStations(gname,gi)).slice(0,15)}catch(e){}}
+    }
+    const top=[...exact,...previews].map((t,i)=>[t,relevance(t,q),i]).sort((a,b)=>b[1]-a[1]||a[2]-b[2]).map(x=>x[0]);
+    const seen=new Set();out=[...top,...similar,...loose].filter(t=>!seen.has(t.id)&&seen.add(t.id));
+    const nEx=exact.length+previews.length;
+    if(!fullHits&&artistHits.length){
+      note=`No full tracks by <b>${esc(artistHits[0].artist)}</b> on the free sources (Audius / Internet Archive — commercial label music isn't there).`+
+        (previews.length?` Showing <b>${previews.length}</b> 30-second previews from iTunes`:'')+
+        (similar.length?` and <b>${similar.length}</b> ${esc(gname)} stations that play this style`:'')+'. Other loose matches are listed below.';
+    }else note=nEx?`<b>${nEx}</b> exact matches for “${esc(q)}” first, then loose matches.`:`No exact matches for “${esc(q)}” — these are loose matches.`;
+  }
   else for(let i=0;i<80;i++)for(const g of groups)if(g[i])out.push(g[i]);
   lib.search=out;renderTree();renderMl();
   const nSt=out.filter(t=>t.live).length,nTr=out.length-nSt;
-  $('#mlStatus').innerHTML=(it.matched?'Understood: '+intentLabel(it)+' → ':'')+`${nSt} stations, ${nTr} tracks`+(errs.length?` · couldn't reach ${esc(errs.join(', '))}`:'')+(trained()?' · ranked by your taste':'');
+  $('#mlStatus').innerHTML=(it.matched?'Understood: '+intentLabel(it)+' → ':'')+(note?note+' · ':'')+`${nSt} stations, ${nTr} tracks`+(errs.length?` · couldn't reach ${esc(errs.join(', '))}`:'')+(trained()&&!plain?' · ranked by your taste':'');
   libState.search=$('#mlStatus').textContent;
   $$('.chip').forEach(c=>c.classList.toggle('on',c.dataset.q===q));
 }
@@ -1032,6 +1110,7 @@ document.addEventListener('keydown',e=>{
   const k=e.key.toLowerCase();
   if(k==='z')prev();else if(k==='x')play();else if(k==='c')pause();else if(k==='v')stop();else if(k==='b')next(true);
   else if(k==='l')like();else if(k==='d')dislike();else if(k==='s'&&cur)toggleFav(cur);else if(k==='f')openFsv();else if(k==='p')$('#profBtn').click();
+  else if(layoutMode==='tabs'&&/^[1-5]$/.test(k)){const b=$$('#tabbar [data-tab]')[+k-1];if(b)setTab(b.dataset.tab)}
   else if(e.code==='Space'&&!e.target.closest('.lst')){e.preventDefault();state==='stop'?play():pause()}
 });
 
@@ -1043,14 +1122,16 @@ function applySkin(s){const d=SKINS.find(x=>x[0]===s&&x[0]!=='g')||SKINS[1];s=d[
 const FONTS=[['modern','Modern — Manrope + Rajdhani','Manrope'],['clean','Clean — Inter + JetBrains Mono','Inter'],['rounded','Rounded — Nunito','Nunito'],['tech','Tech — Exo 2 + Orbitron','"Exo 2"'],['system','System — Windows / macOS font','system-ui'],['retro','Retro — Tahoma + pixel LCD','Tahoma']];
 let font=store.get('np2_font','modern');
 function applyFont(f){if(!FONTS.some(x=>x[0]===f))f='modern';font=f;document.body.dataset.font=f;store.set('np2_font',f);renderSkinMenu();marqMeasure();setTimeout(marqMeasure,400)}
-function renderSkinMenu(){$('#skinMenu').innerHTML='<div class="grp">FONT</div>'+FONTS.map(([id,n,ff])=>`<button data-f="${id}" class="fnt${id===font?' on':''}" role="menuitem" style="font-family:${ff.replace(/"/g,"'")},sans-serif">${n}</button>`).join('')+SKINS.map(([id,n,,c])=>id==='g'?`<div class="grp">${n.toUpperCase()}</div>`:`<button data-s="${id}" class="${id===skin?'on':''}" role="menuitem"><span class="sw" style="background:${c}"></span>${n}</button>`).join('')}
+function renderSkinMenu(){$('#skinMenu').innerHTML='<div class="grp">LAYOUT</div>'+[['tabs','Tabs — everything on one screen'],['classic','Classic — floating windows']].map(([id,n])=>`<button data-l="${id}" class="${id===(typeof layoutMode==='string'?layoutMode:'tabs')?'on':''}" role="menuitem">${n}</button>`).join('')+'<div class="grp">FONT</div>'+FONTS.map(([id,n,ff])=>`<button data-f="${id}" class="fnt${id===font?' on':''}" role="menuitem" style="font-family:${ff.replace(/"/g,"'")},sans-serif">${n}</button>`).join('')+SKINS.map(([id,n,,c])=>id==='g'?`<div class="grp">${n.toUpperCase()}</div>`:`<button data-s="${id}" class="${id===skin?'on':''}" role="menuitem"><span class="sw" style="background:${c}"></span>${n}</button>`).join('')}
 $('#skinBtn').onclick=e=>{e.stopPropagation();const m=$('#skinMenu'),r=e.target.getBoundingClientRect();m.style.left=Math.min(r.left,innerWidth-180)+'px';m.style.top=(r.bottom+2)+'px';m.classList.toggle('show')};
-$('#skinMenu').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.f){applyFont(b.dataset.f);toast('Font: '+b.textContent)}else{applySkin(b.dataset.s);$('#skinMenu').classList.remove('show')}};
+$('#skinMenu').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.l){setLayout(b.dataset.l);$('#skinMenu').classList.remove('show')}else if(b.dataset.f){applyFont(b.dataset.f);toast('Font: '+b.textContent)}else{applySkin(b.dataset.s);$('#skinMenu').classList.remove('show')}};
 document.addEventListener('click',e=>{if(!e.target.closest('#skinMenu'))$('#skinMenu').classList.remove('show')});
 document.body.dataset.skin=skin;document.body.dataset.font=font;
 
 /* ================= Windows: drag, snap, shade, show/hide ================= */
-const floating=()=>innerWidth>=1000;
+let layoutMode=store.get('np2_layout','tabs'),tab=store.get('np2_tab','ml');
+const floating=()=>layoutMode==='classic'&&innerWidth>=1000;
+const narrowTabs=()=>innerWidth<1000;
 let pos=store.get('np2_pos',{}),vis=store.get('np2_wvis',{pl:true,ml:true,nn:true,eq:true,dj:true}),zTop=10;if(vis.eq===undefined)vis.eq=true;if(vis.dj===undefined)vis.dj=true;
 const W=id=>$('#w-'+id);
 function defaults(){
@@ -1060,7 +1141,38 @@ function defaults(){
   return{main:{x:16,y:16,w:mw},eq:{x:16,y:16+mh,w:mw},pl:{x:16,y:16+mh+eh,w:mw,h:Math.max(200,innerHeight-mh-eh-32)},
     ml:{x:x2,y:16,w:rw,h:mlH},dj:{x:x2,y:16+mlH,w:rw,h:djH},nn:{x:x2,y:16+mlH+djH,w:rw,h:nnH2}};
 }
+/* "Tabs" layout: player + playlist on the left, one big panel on the right chosen with tabs. "Classic": floating windows. */
+const TABS=[['pl','Playlist'],['ml','Library'],['dj','AI DJ'],['eq','Equalizer'],['nn','Neural']];
+let shellNarrow=null;
+function buildShell(){
+  const desk=$('#desk'),ids=['main','eq','pl','ml','dj','nn'];
+  document.body.dataset.layout=layoutMode;
+  if(layoutMode==='tabs'){
+    let L=$('#colL'),R=$('#colR');
+    if(!L){L=document.createElement('div');L.id='colL';R=document.createElement('div');R.id='colR';R.innerHTML='<nav id="tabbar" role="tablist" aria-label="Panels"></nav>';desk.append(L,R)}
+    const nar=narrowTabs();shellNarrow=nar;
+    L.append(W('main'));if(!nar)L.append(W('pl'));
+    for(const id of [...(nar?['pl']:[]),'ml','dj','eq','nn'])R.append(W(id));
+    if(!nar&&tab==='pl')tab='ml';
+    $('#tabbar').innerHTML=TABS.filter(([id])=>nar||id!=='pl').map(([id,n],i)=>`<button role="tab" data-tab="${id}" title="${n} (${i+1})">${n}</button>`).join('');
+  }else{
+    for(const id of ids)desk.append(W(id));
+    $('#colL')?.remove();$('#colR')?.remove();shellNarrow=null;
+  }
+}
+function setTab(id){tab=id;store.set('np2_tab',id);layout();if(id==='eq')setTimeout(drawEqCurve,30)}
+$('#desk').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)setTab(b.dataset.tab)});
 function layout(){
+  if(layoutMode==='tabs'){
+    if(shellNarrow!==narrowTabs())buildShell();
+    const nar=narrowTabs();
+    for(const id of ['main','eq','pl','ml','dj','nn']){
+      const w=W(id);w.style.left=w.style.top=w.style.width=w.style.height='';w.style.zIndex='';
+      w.hidden=id==='main'||(id==='pl'&&!nar)?false:id!==tab;
+    }
+    $$('#tabbar [data-tab]').forEach(b=>{b.classList.toggle('on',b.dataset.tab===tab);b.setAttribute('aria-selected',b.dataset.tab===tab)});
+    return;
+  }
   const fl=floating();
   for(const id of ['main','eq','pl','ml','dj','nn']){
     const w=W(id);w.hidden=id!=='main'&&!vis[id];
@@ -1076,7 +1188,10 @@ function layout(){
   }
 }
 function front(w){$$('.win').forEach(x=>x.classList.remove('act'));w.classList.add('act');w.style.zIndex=++zTop}
-function showWin(id,on){vis[id]=on===undefined?!vis[id]:on;store.set('np2_wvis',vis);layout();if(vis[id])front(W(id))}
+function showWin(id,on){
+  if(layoutMode==='tabs'){if(id==='main'||(id==='pl'&&!narrowTabs()))return;if(on!==false)setTab(id);return}
+  vis[id]=on===undefined?!vis[id]:on;store.set('np2_wvis',vis);layout();if(vis[id])front(W(id))}
+function setLayout(m){layoutMode=m==='classic'?'classic':'tabs';store.set('np2_layout',layoutMode);$$('.win').forEach(w=>w.classList.remove('shade'));buildShell();layout();renderSkinMenu();toast(layoutMode==='tabs'?'Layout: Tabs — everything on one screen':'Layout: Classic floating windows')}
 $$('[data-show]').forEach(b=>b.onclick=()=>showWin(b.dataset.show));
 $$('[data-close]').forEach(b=>b.onclick=()=>showWin(b.dataset.close,false));
 $$('[data-shade]').forEach(b=>b.onclick=()=>b.closest('.win').classList.toggle('shade'));
@@ -1622,7 +1737,7 @@ function checkSchedule(){
 setInterval(checkSchedule,30000);
 
 /* ================= Boot ================= */
-document.body.dataset.font=font;applySkin(skin);updateProfBtn();setState('stop');layout();renderTree();renderPl();renderMl();drawStats();updateNP();front(W('main'));
+document.body.dataset.font=font;applySkin(skin);updateProfBtn();setState('stop');buildShell();layout();renderTree();renderPl();renderMl();drawStats();updateNP();front(W('main'));
 requestAnimationFrame(frame);
 setMl('Loading trending tracks…');
 checkSchedule();
