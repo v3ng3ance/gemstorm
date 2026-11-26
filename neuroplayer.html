@@ -435,12 +435,11 @@ const savePl=()=>store.set('np2_pl',pl.map(metaOf));
 function renderPl(){
   const tr=trained();
   $('#plList').innerHTML=pl.length?pl.map((t,i)=>`<div class="row${i===plSel?' sel':''}${i===plIdx?' cur':''}" data-i="${i}"><span class="n">${i+1}.</span><span class="t">${esc(t.artist?t.artist+' - '+t.title:t.title)}</span>${tr?`<span class="mt">${Math.round(score(t)*100)}%</span>`:''}<span class="r">${t.live?'LIVE':t.duration?fmt(t.duration):''}</span></div>`).join('')
-    :'<div class="row" style="opacity:.6">Playlist is empty — double-click something in the Media Library.</div>';
+    :'<div class="row" style="opacity:.6">Playlist is empty — click something in the Media Library.</div>';
   const tot=pl.reduce((a,t)=>a+(t.live?0:t.duration||0),0);
   $('#plInfo').textContent=(plIdx>=0?fmt(player?.currentTime||0):'00:00')+'/'+fmt(tot);
 }
-$('#plList').addEventListener('click',e=>{const r=e.target.closest('.row[data-i]');if(!r)return;plSel=+r.dataset.i;if(touch)playIdx(plSel);else renderPl()});
-$('#plList').addEventListener('dblclick',e=>{const r=e.target.closest('.row[data-i]');if(r)playIdx(+r.dataset.i)});
+$('#plList').addEventListener('click',e=>{const r=e.target.closest('.row[data-i]');if(r)playIdx(+r.dataset.i)});
 $('#plList').addEventListener('keydown',e=>{
   if(e.key==='Delete'){removeSel();e.preventDefault()}
   else if(e.key==='Enter'&&plSel>=0)playIdx(plSel);
@@ -493,8 +492,7 @@ function renderMl(){
     <span class="mt">${tr?Math.round(score(t)*100)+'%':'--'}</span></div>`).join('')
     :`<div class="row" style="opacity:.6">${node==='search'?'Type above and press Search.':node==='liked'?'Liked tracks and stations collect here.':'Nothing here yet.'}</div>`;
 }
-$('#mlList').addEventListener('click',e=>{const r=e.target.closest('.row[data-i]');if(!r)return;mlSel=+r.dataset.i;if(touch)enqueue(mlRows[mlSel],true);else renderMl()});
-$('#mlList').addEventListener('dblclick',e=>{const r=e.target.closest('.row[data-i]');if(r)enqueue(mlRows[+r.dataset.i],true)});
+$('#mlList').addEventListener('click',e=>{const r=e.target.closest('.row[data-i]');if(!r)return;mlSel=+r.dataset.i;enqueue(mlRows[mlSel],true)});
 $('#mlList').addEventListener('keydown',e=>{
   if(e.key==='Enter'&&mlSel>=0)enqueue(mlRows[mlSel],true);
   else if(e.key==='ArrowDown'||e.key==='ArrowUp'){mlSel=clamp(mlSel+(e.key==='ArrowDown'?1:-1),0,mlRows.length-1);renderMl();e.preventDefault()}
