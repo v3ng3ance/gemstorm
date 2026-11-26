@@ -236,6 +236,20 @@ body:not([data-font=clean]):not([data-font=system]):not([data-font=retro]) #time
 body:is([data-style=flat],[data-style=glass]) .pdb :is(input:not([type=checkbox]),select){border:0;border-radius:8px}
 body:is([data-style=flat],[data-style=glass]) #profMenu{border-radius:10px}
 #dlgShade{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1400;display:none}#dlgShade.show{display:block}
+/* ---------- visualizer settings ---------- */
+#visCfgBtn{position:absolute;right:4px;top:4px;width:20px;height:20px;padding:0;border:0;background:transparent;color:var(--lcdtxt);opacity:.35;font-size:13px;line-height:20px;cursor:pointer}
+#visCfgBtn:hover,.lcd:hover #visCfgBtn{opacity:.9}
+#visMenu{position:fixed;z-index:999;display:none;flex-direction:column;gap:9px;width:270px;padding:10px 12px 12px;background:var(--chrome);color:var(--ctxt);border:1px solid;border-color:var(--hi) var(--lo) var(--lo) var(--hi);box-shadow:0 10px 26px rgba(0,0,0,.55)}
+#visMenu.show{display:flex}
+#visMenu .grp{font-size:10px;font-weight:bold;letter-spacing:.1em;opacity:.6}
+#visMenu label{display:grid;gap:3px;font-size:11.5px}
+#visMenu label b{position:absolute;right:12px;font-weight:600;color:var(--acc)}
+#visMenu label:not(.ck){position:relative}
+#visMenu label:not(.ck) b{position:absolute;right:0;top:0}
+#visMenu select{height:28px;background:var(--list);color:var(--listtxt);border:1px solid var(--lo);font-size:12.5px;font-family:var(--font)}
+.vc2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+body:is([data-style=flat],[data-style=glass]) #visMenu{border-radius:12px}
+body:is([data-style=flat],[data-style=glass]) #visMenu select{border:0;border-radius:7px}
 /* ---------- AI DJ ---------- */
 .djb{flex:1;overflow:auto;padding:6px 8px 8px;display:flex;flex-direction:column;gap:6px;min-height:0}
 .djl{font-size:11px;font-weight:600;letter-spacing:.04em;opacity:.8;margin-top:2px}
@@ -283,7 +297,8 @@ body[data-style=term] .chip{border-radius:0}
     <div class="lcd ins">
       <svg id="stIco" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10"/></svg>
       <div id="timeGhost" aria-hidden="true">88:88</div><div id="time" title="Click: elapsed / remaining">00:00</div>
-      <canvas id="vis" title="Click: change visualizer"></canvas>
+      <canvas id="vis" title="Click: change style · right-click: settings"></canvas>
+      <button id="visCfgBtn" title="Visualizer settings">⚙</button>
     </div>
     <div class="info">
       <div class="marq ins"><span id="marq"></span></div>
@@ -400,6 +415,16 @@ body[data-style=term] .chip{border-radius:0}
 
 <div id="skinMenu" role="menu"></div>
 <div id="profMenu" role="menu"></div>
+<div id="visMenu" role="dialog" aria-label="Visualizer settings">
+  <div class="grp">VISUALIZER</div>
+  <div class="vc2"><label>Style<select id="vcMode"></select></label><label>Colors<select id="vcTheme"></select></label></div>
+  <label>Bars <b id="vcBarsV">auto</b><input type="range" id="vcBars" min="0" max="96" step="2"></label>
+  <label>Sensitivity <b id="vcGainV">100%</b><input type="range" id="vcGain" min="50" max="200" step="5"></label>
+  <label>Smoothing <b id="vcSmoothV">55%</b><input type="range" id="vcSmooth" min="0" max="90" step="5"></label>
+  <label>Peak fall <b id="vcFallV">medium</b><input type="range" id="vcFall" min="3" max="40"></label>
+  <label class="ck"><input type="checkbox" id="vcPeaks"> Show peaks</label>
+  <div class="pdf"><button class="sb" id="vcReset">RESET</button><span class="sp"></span><button class="sb" id="vcFs">FULLSCREEN ⛶</button></div>
+</div>
 <div id="dlgShade"></div>
 <section class="win" id="profDlg" hidden role="dialog" aria-modal="true" aria-label="Edit profile">
   <div class="tb"><span class="st"></span><b id="pdTitle">PROFILE</b><span class="st"></span><button class="tbb" id="pdX" title="Close">×</button></div>
@@ -422,6 +447,8 @@ body[data-style=term] .chip{border-radius:0}
   <div id="fsvBar">
     <button class="sb" id="fsvPrev" title="Previous mode (←)">◀ MODE</button>
     <button class="sb" id="fsvNext" title="Next mode (→)">MODE ▶</button>
+    <button class="sb" id="fsvColDn" title="Previous colors (↓)">▼ COLORS</button>
+    <button class="sb" id="fsvColUp" title="Next colors (↑ or mouse wheel)">COLORS ▲</button>
     <button class="sb" id="fsvTrack" title="Next track (B)">NEXT TRACK</button>
     <button class="sb" id="fsvClose" title="Exit (Esc / F)">EXIT ✕</button>
   </div>
@@ -616,7 +643,7 @@ function ensureCtx(){
   if(ctx)return;
   try{
     ctx=new (window.AudioContext||window.webkitAudioContext)();
-    const src=ctx.createMediaElementSource(aA);analyser=ctx.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=.55;
+    const src=ctx.createMediaElementSource(aA);analyser=ctx.createAnalyser();analyser.fftSize=2048;analyser.smoothingTimeConstant=(visCfg?.smooth??55)/100;
     panner=ctx.createStereoPanner?ctx.createStereoPanner():null;
     preNode=ctx.createGain();
     eqNodes=EQF.map((f,i)=>{const b=ctx.createBiquadFilter();b.type=i===0?'lowshelf':i===EQF.length-1?'highshelf':'peaking';b.frequency.value=f;b.Q.value=1.4;return b});
@@ -1088,32 +1115,73 @@ function waveAt(i,n,tm){
   if(real)return tbuf[Math.floor(i/n*tbuf.length)];
   return player&&!player.paused?.14*Math.sin(tm/120+i*.4)+.06*Math.sin(tm/47+i*1.3):0;
 }
+/* color themes shared by both visualizers; 'Skin colors' follows the current skin */
+const VTHEMES=[['Skin colors',null],['Rainbow','rainbow'],['Fire',['#3a0000','#ff3000','#ffb000','#fff6c0']],['Ice',['#002040','#0066ff','#5fd4ff','#ffffff']],
+  ['Neon',['#7a00ff','#ff00d4','#00e5ff']],['Sunset',['#3d0a4f','#ff3c6e','#ff9e3d','#ffe29a']],['Matrix',['#004d1a','#00a83a','#3dff7a','#d9ffe6']],
+  ['Aurora',['#0b2d5a','#00c9a7','#6a5bff','#d27bff']],['Vaporwave',['#b967ff','#ff71ce','#01cdfe','#05ffa1']],['Ocean',['#003a5c','#0077b6','#00b4d8','#caf0f8']],
+  ['Gold',['#5a3a00','#c88a00','#ffcc33','#fff4cc']],['Blood',['#3a0000','#8a0000','#ff1f1f','#ffd0d0']],['Mint',['#00332a','#00b894','#7affd4','#eafff8']],['Mono',['#555555','#aaaaaa','#ffffff']]];
+const hexRgb=h=>{h=String(h||'').trim();if(/^#[0-9a-f]{3}$/i.test(h))h='#'+[...h.slice(1)].map(c=>c+c).join('');const m=/^#([0-9a-f]{6})$/i.exec(h);
+  if(!m){const r=/rgba?\(([^)]+)\)/.exec(h);if(r){const q=r[1].split(',').map(Number);return [q[0],q[1],q[2]]}return [200,200,200]}const n=parseInt(m[1],16);return [n>>16&255,n>>8&255,n&255]};
+const stopCache={};
+function themeRgb(i){const t=VTHEMES[i]||VTHEMES[0],src=t[1]===null?[cssv.v1,cssv.v2,cssv.v3]:t[1],k=i+'|'+src.join();return stopCache[k]||(stopCache[k]=src.map(hexRgb))}
+function tcol(i,x,a=1,tm=0,light=0){
+  const t=VTHEMES[i]||VTHEMES[0];
+  if(t[1]==='rainbow')return `hsla(${((tm/60)+clamp(x)*300)%360},90%,${55+light*30}%,${a})`;
+  const st=themeRgb(i),p=clamp(x)*(st.length-1),k=Math.min(st.length-2,Math.floor(p)),f=p-k;
+  const c=st[k].map((v,j)=>{const u=v+(st[k+1][j]-v)*f;return Math.round(light>0?u+(255-u)*light*.5:u)});
+  return `rgba(${c.join(',')},${a})`;
+}
+function tgrad(g,i,x0,y0,x1,y1,tm){const q=g.createLinearGradient(x0,y0,x1,y1);for(let k=0;k<=4;k++)q.addColorStop(k/4,tcol(i,k/4,1,tm));return q}
+const tri=x=>1-Math.abs((((x%2)+2)%2)-1);
 const VIS_MODES=['Bars','Thin bars','Fine bars','Mirror','Peak dots','Line','Scope','Off'];
-let peakArr=new Float32Array(80);
+const VIS_DEF={theme:0,bars:0,gain:100,smooth:55,fall:12,peaks:true};
+let visCfg=Object.assign({},VIS_DEF,store.get('np2_viscfg',{}));
+let peakArr=new Float32Array(128);
 function drawVis(tm){
   const [w,h,d]=fit(visC),g=visC.getContext('2d');g.clearRect(0,0,w,h);
   const mode=VIS_MODES[visMode]||'Bars';if(mode==='Off')return;
-  const grad=g.createLinearGradient(0,h,0,0);grad.addColorStop(0,cssv.v1);grad.addColorStop(.6,cssv.v2);grad.addColorStop(1,cssv.v3);
+  const th=visCfg.theme,grad=tgrad(g,th,0,h,0,0,tm),gain=visCfg.gain/100,fall=visCfg.fall/1000;
+  const solid=th===0?cssv.lcdtxt:tcol(th,.75,1,tm),pk=th===0?(cssv.listtxt||'#ccc'):tcol(th,1,1,tm,.6);
   if(mode==='Scope'){
-    g.strokeStyle=cssv.lcdtxt;g.lineWidth=d;g.beginPath();
-    for(let i=0;i<76;i++){const v=waveAt(i,76,tm),x=i/75*w,y=h/2-v*h*.9;i?g.lineTo(x,y):g.moveTo(x,y)}
+    g.strokeStyle=solid;g.lineWidth=d*1.2;g.beginPath();
+    for(let i=0;i<96;i++){const v=clamp(waveAt(i,96,tm)*gain,-1,1),x=i/95*w,y=h/2-v*h*.9;i?g.lineTo(x,y):g.moveTo(x,y)}
     g.stroke();return;
   }
-  const n=mode==='Bars'?20:mode==='Thin bars'?40:mode==='Mirror'?38:mode==='Line'?60:76,B=bandsOf(n,tm),bw=w/n;
-  for(let i=0;i<n;i++)peakArr[i]=Math.max(B[i],peakArr[i]-.012);
+  const def=mode==='Bars'?20:mode==='Thin bars'?40:mode==='Mirror'?38:mode==='Line'?60:76;
+  const n=Math.max(6,Math.min(96,visCfg.bars||def)),B=bandsOf(n,tm).map(v=>clamp(v*gain)),bw=w/n;
+  for(let i=0;i<n;i++)peakArr[i]=Math.max(B[i],peakArr[i]-fall);
   if(mode==='Line'){
     g.strokeStyle=grad;g.lineWidth=1.5*d;g.beginPath();
     for(let i=0;i<n;i++){const x=(i+.5)*bw,y=h-B[i]*h*.95;i?g.lineTo(x,y):g.moveTo(x,y)}g.stroke();
     g.lineTo(w,h);g.lineTo(0,h);g.closePath();g.globalAlpha=.18;g.fillStyle=grad;g.fill();g.globalAlpha=1;return;
   }
-  const gap=mode==='Bars'?2*d:d,pk=cssv.listtxt||'#ccc';
+  const gap=n<=24?2*d:n<=60?d:Math.max(.5,d*.6);
   for(let i=0;i<n;i++){
-    const v=B[i],x=i*bw+gap/2,bwi=Math.max(d,bw-gap);
+    const v=B[i],x=i*bw+gap/2,bwi=Math.max(d*.6,bw-gap);
     if(mode==='Mirror'){const hh=v*h/2;g.fillStyle=grad;g.fillRect(x,h/2-hh,bwi,hh*2);continue}
     if(mode!=='Peak dots'){g.fillStyle=grad;g.fillRect(x,h-v*h,bwi,v*h)}
-    g.fillStyle=mode==='Peak dots'?cssv.lcdtxt:pk;g.globalAlpha=mode==='Peak dots'?.95:.8;g.fillRect(x,h-peakArr[i]*h-d,bwi,d*(mode==='Peak dots'?2:1.5));g.globalAlpha=1;
+    if(visCfg.peaks||mode==='Peak dots'){g.fillStyle=mode==='Peak dots'?solid:pk;g.globalAlpha=mode==='Peak dots'?.95:.85;g.fillRect(x,h-peakArr[i]*h-d,bwi,d*(mode==='Peak dots'?2:1.5));g.globalAlpha=1}
   }
 }
+/* small visualizer settings panel (gear in the LCD, or right-click the visualizer) */
+function saveVis(){store.set('np2_viscfg',visCfg);if(analyser)analyser.smoothingTimeConstant=visCfg.smooth/100;syncVisMenu()}
+function syncVisMenu(){
+  $('#vcMode').value=visMode;$('#vcTheme').value=visCfg.theme;$('#vcBars').value=visCfg.bars;$('#vcBarsV').textContent=visCfg.bars?visCfg.bars:'auto';
+  $('#vcGain').value=visCfg.gain;$('#vcGainV').textContent=visCfg.gain+'%';$('#vcSmooth').value=visCfg.smooth;$('#vcSmoothV').textContent=visCfg.smooth+'%';
+  $('#vcFall').value=visCfg.fall;$('#vcFallV').textContent=visCfg.fall<9?'slow':visCfg.fall<20?'medium':'fast';$('#vcPeaks').checked=visCfg.peaks;
+}
+$('#vcMode').innerHTML=VIS_MODES.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+$('#vcTheme').innerHTML=VTHEMES.map((t,i)=>`<option value="${i}">${t[0]}</option>`).join('');
+$('#vcMode').onchange=e=>{visMode=+e.target.value;store.set('np2_vis',visMode)};
+$('#vcTheme').onchange=e=>{visCfg.theme=+e.target.value;saveVis()};
+for(const [id,k] of [['vcBars','bars'],['vcGain','gain'],['vcSmooth','smooth'],['vcFall','fall']])$('#'+id).oninput=e=>{visCfg[k]=+e.target.value;saveVis()};
+$('#vcPeaks').onchange=e=>{visCfg.peaks=e.target.checked;saveVis()};
+$('#vcReset').onclick=()=>{visCfg={...VIS_DEF};visMode=1;store.set('np2_vis',1);saveVis()};
+$('#vcFs').onclick=()=>{$('#visMenu').classList.remove('show');openFsv()};
+function openVisMenu(x,y){syncVisMenu();const m=$('#visMenu');m.classList.add('show');m.style.left=Math.max(4,Math.min(x,innerWidth-m.offsetWidth-6))+'px';m.style.top=Math.max(4,Math.min(y,innerHeight-m.offsetHeight-6))+'px'}
+$('#visCfgBtn').onclick=e=>{e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();if($('#visMenu').classList.contains('show'))$('#visMenu').classList.remove('show');else openVisMenu(r.left,r.bottom+4)};
+$('#vis').addEventListener('contextmenu',e=>{e.preventDefault();openVisMenu(e.clientX,e.clientY)});
+document.addEventListener('click',e=>{if(!e.target.closest('#visMenu,#visCfgBtn'))$('#visMenu').classList.remove('show')});
 function drawNet(){
   if(W('nn').hidden||W('nn').classList.contains('shade'))return;
   const [w,h,d]=fit(netC),g=netC.getContext('2d');g.clearRect(0,0,w,h);
@@ -1259,7 +1327,7 @@ $('#plFile').onchange=async e=>{
 
 /* ================= Fullscreen visualizer ================= */
 const FSV_MODES=['Thin bars','Mirror bars','Spectrum line','Tunnel','Ring','Starfield','Ribbons'];
-let fsvOn=false,fsvMode=store.get('np2_fsv',0),fsvIdle=0,fsvInfoT=0,stars=[];
+let fsvOn=false,fsvMode=store.get('np2_fsv',0),fsvTheme=store.get('np2_fsvtheme',1),fsvIdle=0,fsvInfoT=0,stars=[];
 const fsvC=$('#fsvC'),fsvB=document.createElement('canvas');
 function openFsv(){
   if(fsvOn)return closeFsv();
@@ -1273,10 +1341,12 @@ function closeFsv(){
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&fsvOn)closeFsv()});
 function setFsvMode(m){
   fsvMode=(m+FSV_MODES.length)%FSV_MODES.length;store.set('np2_fsv',fsvMode);
-  $('#fsvMode').textContent=`${fsvMode+1}/${FSV_MODES.length}  ${FSV_MODES[fsvMode]}   ← → change · F / Esc exit`;
+  fsvLabel();
   const g=fsvC.getContext('2d');g.fillStyle='#000';g.fillRect(0,0,fsvC.width,fsvC.height);
   fsvB.getContext('2d').clearRect(0,0,fsvB.width,fsvB.height);
 }
+function fsvLabel(){$('#fsvMode').textContent=`${FSV_MODES[fsvMode]} (${fsvMode+1}/${FSV_MODES.length}) · Colors: ${VTHEMES[fsvTheme][0]}   ← → mode · ↑ ↓ colors · F / Esc exit`}
+function setFsvTheme(i){fsvTheme=(i+VTHEMES.length)%VTHEMES.length;store.set('np2_fsvtheme',fsvTheme);fsvLabel();$('#fsv').classList.remove('idle');fsvIdle=performance.now()}
 function showFsvInfo(){
   const i=$('#fsvInfo');
   i.innerHTML=cur?`${esc(cur.title)}<small>${esc(cur.artist||'')}${cur.live?' · LIVE':''}${!useWA&&player?' · simulated (stream blocks analysis)':''}</small>`:'NeuroPlayer<small>nothing playing</small>';
@@ -1290,23 +1360,27 @@ document.addEventListener('keydown',e=>{
   if(!fsvOn)return;
   if(e.key==='ArrowRight'){setFsvMode(fsvMode+1);e.preventDefault()}
   else if(e.key==='ArrowLeft'){setFsvMode(fsvMode-1);e.preventDefault()}
+  else if(e.key==='ArrowUp'){setFsvTheme(fsvTheme+1);e.preventDefault()}
+  else if(e.key==='ArrowDown'){setFsvTheme(fsvTheme-1);e.preventDefault()}
   else if(e.key==='Escape')closeFsv();
 },true);
+$('#fsv').addEventListener('wheel',e=>{e.preventDefault();setFsvTheme(fsvTheme+(e.deltaY>0?1:-1))},{passive:false});
+$('#fsvColUp').onclick=()=>setFsvTheme(fsvTheme+1);$('#fsvColDn').onclick=()=>setFsvTheme(fsvTheme-1);
 function drawFsv(tm){
   const r=fsvC.getBoundingClientRect(),dpr=Math.min(1.5,devicePixelRatio||1),w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);
   if(fsvC.width!==w||fsvC.height!==h){fsvC.width=fsvB.width=w;fsvC.height=fsvB.height=h}
   if(performance.now()-fsvIdle>2500)$('#fsv').classList.add('idle');
   const g=fsvC.getContext('2d'),mode=FSV_MODES[fsvMode],cx=w/2,cy=h/2,hue=(tm/60)%360;
   const B=bandsOf(96,tm),bass=(B[0]+B[1]+B[2]+B[3])/4,mid=B.slice(20,50).reduce((a,b)=>a+b,0)/30,treb=B.slice(60).reduce((a,b)=>a+b,0)/36;
-  const grad=()=>{const q=g.createLinearGradient(0,h,0,0);q.addColorStop(0,cssv.v1);q.addColorStop(.55,cssv.v2);q.addColorStop(1,cssv.v3);return q};
+  const ft=fsvTheme,grad=()=>tgrad(g,ft,0,h,0,0,tm);
   if(mode==='Thin bars'||mode==='Mirror bars'||mode==='Spectrum line'){
     g.fillStyle='rgba(0,0,0,.35)';g.fillRect(0,0,w,h);
     const n=mode==='Spectrum line'?96:mode==='Mirror bars'?72:96,bw=w/n,q=grad();
     if(mode==='Spectrum line'){
-      g.strokeStyle=q;g.lineWidth=3*dpr;g.shadowColor=cssv.v2;g.shadowBlur=16;g.beginPath();
+      g.strokeStyle=q;g.lineWidth=3*dpr;g.shadowColor=tcol(ft,.6,1,tm);g.shadowBlur=16;g.beginPath();
       for(let i=0;i<n;i++){const x=(i+.5)*bw,y=h*.85-B[i]*h*.65;i?g.lineTo(x,y):g.moveTo(x,y)}g.stroke();g.shadowBlur=0;
       g.lineTo(w,h);g.lineTo(0,h);g.closePath();g.globalAlpha=.15;g.fillStyle=q;g.fill();g.globalAlpha=1;
-      g.strokeStyle=cssv.v3;g.globalAlpha=.35;g.lineWidth=1.5*dpr;g.beginPath();
+      g.strokeStyle=tcol(ft,1,1,tm,.4);g.globalAlpha=.35;g.lineWidth=1.5*dpr;g.beginPath();
       for(let i=0;i<200;i++){const x=i/199*w,y=h*.85+waveAt(i,200,tm)*h*.1;i?g.lineTo(x,y):g.moveTo(x,y)}g.stroke();g.globalAlpha=1;
       return;
     }
@@ -1325,11 +1399,11 @@ function drawFsv(tm){
     g.translate(-cx,-cy);g.globalAlpha=mode==='Tunnel'?.93:.9;g.drawImage(fsvB,0,0);g.restore();g.globalAlpha=1;
     g.globalCompositeOperation='lighter';
     if(mode==='Tunnel'){
-      const R=Math.min(w,h)*(.12+bass*.12);g.lineWidth=2.5*dpr;g.strokeStyle=`hsl(${hue},90%,${45+treb*30}%)`;g.beginPath();
+      const R=Math.min(w,h)*(.12+bass*.12);g.lineWidth=2.5*dpr;g.strokeStyle=tcol(ft,tri(tm/3000),1,tm,treb*.6);g.beginPath();
       for(let i=0;i<=128;i++){const a=i/128*Math.PI*2,v=waveAt(i%128,128,tm),rr=R*(1+v*1.4);const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr;i?g.lineTo(x,y):g.moveTo(x,y)}
       g.stroke();
     }else{
-      for(let k=0;k<3;k++){g.strokeStyle=`hsla(${(hue+k*90)%360},90%,60%,.7)`;g.lineWidth=(2+k)*dpr;g.beginPath();
+      for(let k=0;k<3;k++){g.strokeStyle=tcol(ft,tri(k*.45+tm/4000),.75,tm+k*1500);g.lineWidth=(2+k)*dpr;g.beginPath();
         for(let i=0;i<160;i++){const x=i/159*w,y=cy+(k-1)*h*.12+waveAt((i+k*13)%160,160,tm)*h*(.35+mid*.4)+Math.sin(tm/700+i/20+k)*h*.04;i?g.lineTo(x,y):g.moveTo(x,y)}
         g.stroke()}
     }
@@ -1340,11 +1414,11 @@ function drawFsv(tm){
     const n=96,R=Math.min(w,h)*(.2+bass*.06);
     for(let i=0;i<n;i++){
       const v=B[i],a=i/n*Math.PI*2-Math.PI/2,len=v*Math.min(w,h)*.28;
-      g.strokeStyle=`hsl(${(hue+i*3)%360},85%,${50+v*25}%)`;g.lineWidth=Math.max(1.5,Math.PI*2*R/n*.5);
+      g.strokeStyle=tcol(ft,tri(i/n*2+tm/6000),1,tm+i*40,v*.5);g.lineWidth=Math.max(1.5,Math.PI*2*R/n*.5);
       g.beginPath();g.moveTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);g.lineTo(cx+Math.cos(a)*(R+len),cy+Math.sin(a)*(R+len));g.stroke();
       g.beginPath();g.moveTo(cx+Math.cos(a)*R*.96,cy+Math.sin(a)*R*.96);g.lineTo(cx+Math.cos(a)*(R*.96-len*.25),cy+Math.sin(a)*(R*.96-len*.25));g.stroke();
     }
-    g.beginPath();g.arc(cx,cy,R*.8*(1+bass*.15),0,7);g.fillStyle=`hsla(${hue},80%,50%,${.08+bass*.25})`;g.fill();
+    g.beginPath();g.arc(cx,cy,R*.8*(1+bass*.15),0,7);g.fillStyle=tcol(ft,.5,.03+bass*.1,tm);g.fill();
     return;
   }
   /* Starfield */
@@ -1354,7 +1428,7 @@ function drawFsv(tm){
   for(const st of stars){
     const pz=st.z;st.z-=sp;if(st.z<1){st.x=(Math.random()-.5)*w;st.y=(Math.random()-.5)*h;st.z=w;continue}
     const k=w*.5/st.z,pk=w*.5/pz,x=cx+st.x*k,y=cy+st.y*k,px=cx+st.x*pk,py=cy+st.y*pk;
-    g.strokeStyle=`hsla(${(hue+st.z/w*120)%360},90%,${60+treb*30}%,${1-st.z/w})`;g.lineWidth=Math.max(1,(1-st.z/w)*3*dpr);
+    g.strokeStyle=tcol(ft,1-st.z/w,1-st.z/w,tm+st.z*2,treb*.5);g.lineWidth=Math.max(1,(1-st.z/w)*3*dpr);
     g.beginPath();g.moveTo(px,py);g.lineTo(x,y);g.stroke();
   }
 }
