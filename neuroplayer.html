@@ -261,7 +261,7 @@ body[data-layout=tabs] #colR .win>.tb{display:none}
 body[data-layout=tabs] #colR #w-ml>#sf{padding-top:8px}
 body[data-layout=tabs] #colR .win>.foot{padding-bottom:8px}
 body[data-layout=tabs] .tb{cursor:default}
-body[data-layout=tabs] [data-close],body[data-layout=tabs] .tog [data-show]{display:none}
+body[data-layout=tabs] [data-close],body[data-layout=tabs] [data-shade],body[data-layout=tabs] .tog [data-show]{display:none}
 body[data-layout=tabs] #w-eq .eqs input[type=range]{height:220px}
 body[data-layout=tabs] #w-eq .eqb{align-content:start;padding:16px}
 body[data-layout=tabs] #w-eq .eqc{min-height:220px}
@@ -277,12 +277,18 @@ body:is([data-style=flat],[data-style=glass]) #tabbar button.on{background:var(-
 body[data-style=glass] #tabbar button.on{background:color-mix(in srgb,var(--chrome) 58%,transparent);backdrop-filter:blur(20px)}
 body:is([data-style=flat],[data-style=glass])[data-layout=tabs] #colR .win{border-top-left-radius:0}
 body[data-style=term] #tabbar button{background:#000;border:1px solid var(--hi);border-bottom:0}
-@media(max-width:999px){
+@media(max-width:1099px){
   body[data-layout=tabs]{overflow:auto}
   body[data-layout=tabs] #desk{flex-direction:column;height:auto}
   body[data-layout=tabs] #colL{width:auto}
   body[data-layout=tabs] #colR .win{min-height:72vh;height:auto!important}
   body[data-layout=tabs] #w-eq .eqs input[type=range]{height:140px}
+}
+@media(min-width:1100px) and (max-height:700px){
+  body[data-layout=tabs]{overflow:auto}
+  body[data-layout=tabs] #desk{height:auto;min-height:100%}
+  body[data-layout=tabs] #colL #w-pl{min-height:260px}
+  body[data-layout=tabs] #colR{min-height:640px}
 }
 /* ---------- version tag ---------- */
 .tb .ver{opacity:.55;font-weight:500;letter-spacing:.06em}
@@ -328,7 +334,7 @@ body[data-style=term] .chip{border-radius:0}
 <div id="desk">
 
 <section class="win" id="w-main" data-w="main">
-  <div class="tb"><span class="st"></span><b>NEUROPLAYER <span class="ver">v1.9</span></b><span class="st"></span><button class="sb" id="profBtn" title="Listening profile (P)">◉ HOME ▾</button><button class="tbb" data-shade title="Windowshade">–</button></div>
+  <div class="tb"><span class="st"></span><b>NEUROPLAYER <span class="ver">v2.0</span></b><span class="st"></span><button class="sb" id="profBtn" title="Listening profile (P)">◉ HOME ▾</button><button class="tbb" data-shade title="Windowshade">–</button></div>
   <div class="main">
     <div class="lcd ins">
       <svg id="stIco" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10"/></svg>
@@ -444,7 +450,7 @@ body[data-style=term] .chip{border-radius:0}
     <div class="nnc ins"><canvas id="net"></canvas><span id="score">--</span></div>
     <div class="feat"><div>Brightness<b><i id="f0"></i></b></div><div>Energy<b><i id="f1"></i></b></div><div>Bass<b><i id="f2"></i></b></div><div>Pulse<b><i id="f3"></i></b></div></div>
     <div id="stats"></div>
-    <div style="display:flex;gap:4px"><button class="sb" id="nnReset">RESET NETWORK</button><button class="sb" id="layoutReset">RESET WINDOWS</button></div>
+    <div style="display:flex;gap:4px"><button class="sb" id="nnReset">RESET NETWORK</button></div>
   </div>
 </section>
 </div>
@@ -498,7 +504,7 @@ body[data-style=term] .chip{border-radius:0}
 
 <script>
 {
-const VERSION='1.9';
+const VERSION='2.0';
 /* every network request gives up after 9 s, so a slow server can never block ⏭ */
 const _fetch=window.fetch.bind(window);
 const fetch=(u,o={})=>{const c=new AbortController(),t=setTimeout(()=>c.abort(),9000);return _fetch(u,{...o,signal:c.signal}).finally(()=>clearTimeout(t))};
@@ -1125,16 +1131,17 @@ function applySkin(s){const d=SKINS.find(x=>x[0]===s&&x[0]!=='g')||SKINS[1];s=d[
 const FONTS=[['modern','Modern — Manrope + Rajdhani','Manrope'],['clean','Clean — Inter + JetBrains Mono','Inter'],['rounded','Rounded — Nunito','Nunito'],['tech','Tech — Exo 2 + Orbitron','"Exo 2"'],['system','System — Windows / macOS font','system-ui'],['retro','Retro — Tahoma + pixel LCD','Tahoma']];
 let font=store.get('np2_font','modern');
 function applyFont(f){if(!FONTS.some(x=>x[0]===f))f='modern';font=f;document.body.dataset.font=f;store.set('np2_font',f);renderSkinMenu();marqMeasure();setTimeout(marqMeasure,400)}
-function renderSkinMenu(){$('#skinMenu').innerHTML='<div class="grp">LAYOUT</div>'+[['tabs','Tabs — everything on one screen'],['classic','Classic — floating windows']].map(([id,n])=>`<button data-l="${id}" class="${id===(typeof layoutMode==='string'?layoutMode:'tabs')?'on':''}" role="menuitem">${n}</button>`).join('')+'<div class="grp">FONT</div>'+FONTS.map(([id,n,ff])=>`<button data-f="${id}" class="fnt${id===font?' on':''}" role="menuitem" style="font-family:${ff.replace(/"/g,"'")},sans-serif">${n}</button>`).join('')+SKINS.map(([id,n,,c])=>id==='g'?`<div class="grp">${n.toUpperCase()}</div>`:`<button data-s="${id}" class="${id===skin?'on':''}" role="menuitem"><span class="sw" style="background:${c}"></span>${n}</button>`).join('')}
+function renderSkinMenu(){$('#skinMenu').innerHTML='<div class="grp">FONT</div>'+FONTS.map(([id,n,ff])=>`<button data-f="${id}" class="fnt${id===font?' on':''}" role="menuitem" style="font-family:${ff.replace(/"/g,"'")},sans-serif">${n}</button>`).join('')+SKINS.map(([id,n,,c])=>id==='g'?`<div class="grp">${n.toUpperCase()}</div>`:`<button data-s="${id}" class="${id===skin?'on':''}" role="menuitem"><span class="sw" style="background:${c}"></span>${n}</button>`).join('')}
 $('#skinBtn').onclick=e=>{e.stopPropagation();const m=$('#skinMenu'),r=e.target.getBoundingClientRect();m.style.left=Math.min(r.left,innerWidth-180)+'px';m.style.top=(r.bottom+2)+'px';m.classList.toggle('show')};
 $('#skinMenu').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.l){setLayout(b.dataset.l);$('#skinMenu').classList.remove('show')}else if(b.dataset.f){applyFont(b.dataset.f);toast('Font: '+b.textContent)}else{applySkin(b.dataset.s);$('#skinMenu').classList.remove('show')}};
 document.addEventListener('click',e=>{if(!e.target.closest('#skinMenu'))$('#skinMenu').classList.remove('show')});
 document.body.dataset.skin=skin;document.body.dataset.font=font;
 
 /* ================= Windows: drag, snap, shade, show/hide ================= */
-let layoutMode=store.get('np2_layout','tabs'),tab=store.get('np2_tab','ml');
+/* static layout only — windows never float or overlap */
+const layoutMode='tabs';store.set('np2_layout',null);let tab=store.get('np2_tab','ml');
 const floating=()=>layoutMode==='classic'&&innerWidth>=1000;
-const narrowTabs=()=>innerWidth<1000;
+const narrowTabs=()=>innerWidth<1100;
 let pos=store.get('np2_pos',{}),vis=store.get('np2_wvis',{pl:true,ml:true,nn:true,eq:true,dj:true}),zTop=10;if(vis.eq===undefined)vis.eq=true;if(vis.dj===undefined)vis.dj=true;
 const W=id=>$('#w-'+id);
 function defaults(){
@@ -1194,14 +1201,14 @@ function front(w){$$('.win').forEach(x=>x.classList.remove('act'));w.classList.a
 function showWin(id,on){
   if(layoutMode==='tabs'){if(id==='main'||(id==='pl'&&!narrowTabs()))return;if(on!==false)setTab(id);return}
   vis[id]=on===undefined?!vis[id]:on;store.set('np2_wvis',vis);layout();if(vis[id])front(W(id))}
-function setLayout(m){layoutMode=m==='classic'?'classic':'tabs';store.set('np2_layout',layoutMode);$$('.win').forEach(w=>w.classList.remove('shade'));buildShell();layout();renderSkinMenu();toast(layoutMode==='tabs'?'Layout: Tabs — everything on one screen':'Layout: Classic floating windows')}
+function setLayout(m){$$('.win').forEach(w=>w.classList.remove('shade'));buildShell();layout();renderSkinMenu();toast(layoutMode==='tabs'?'Layout: Tabs — everything on one screen':'Layout: Classic floating windows')}
 $$('[data-show]').forEach(b=>b.onclick=()=>showWin(b.dataset.show));
 $$('[data-close]').forEach(b=>b.onclick=()=>showWin(b.dataset.close,false));
 $$('[data-shade]').forEach(b=>b.onclick=()=>b.closest('.win').classList.toggle('shade'));
 $$('.win').forEach(w=>{
   const id=w.dataset.w,tb=w.querySelector('.tb');if(!id)return;
   w.addEventListener('pointerdown',()=>front(w));
-  tb.addEventListener('dblclick',e=>{if(!e.target.closest('button'))w.classList.toggle('shade')});
+
   tb.addEventListener('pointerdown',e=>{
     if(!floating()||e.target.closest('button'))return;
     const r=w.getBoundingClientRect(),ox=e.clientX-r.left,oy=e.clientY-r.top;tb.setPointerCapture(e.pointerId);
@@ -1226,7 +1233,7 @@ function savePos(id,sizeOnly){
   if(id!=='main'&&!w.classList.contains('shade'))pos[id].h=w.offsetHeight;
   clearTimeout(posT);posT=setTimeout(()=>store.set('np2_pos',pos),300);
 }
-$('#layoutReset').onclick=()=>{pos={};vis={pl:true,ml:true,nn:true,eq:true,dj:true};store.set('np2_pos',null);store.set('np2_wvis',vis);$$('.win').forEach(w=>w.classList.remove('shade'));layout()};
+const _unusedReset=()=>{pos={};vis={pl:true,ml:true,nn:true,eq:true,dj:true};store.set('np2_pos',null);store.set('np2_wvis',vis);$$('.win').forEach(w=>w.classList.remove('shade'));layout()};
 addEventListener('resize',()=>layout());
 $('#nnReset').onclick=()=>{if(!confirm(`Forget what the “${curProf().name}” profile has learned? (Other profiles, favorites and playlist stay.)`))return;
   net=new MLP(SIZES);samples=[];lastLoss=null;['np2_net_','np2_samples_','np2_loss_'].forEach(k=>store.set(k+prof,null));retrain();toast('Network reset for '+curProf().name)};
