@@ -6,7 +6,7 @@
 <title>NeuroPlayer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&family=Rajdhani:wght@500;600;700&family=Inter:wght@400..700&family=JetBrains+Mono:wght@300..600&family=Nunito:wght@400..800&family=Exo+2:wght@400..700&family=Orbitron:wght@400..700&family=VT323&display=swap" rel="stylesheet">
 <style>
 /* NeuroPlayer — classic 2000s desktop player look, skinnable.
    Windows: Main · Playlist Editor · Media Library · Neural.
@@ -53,9 +53,9 @@ button{cursor:pointer}
 #time{position:absolute;left:28px;top:-2px;font:300 44px/1 var(--mono);letter-spacing:-.02em;color:var(--lcdtxt);cursor:pointer;text-shadow:0 0 6px color-mix(in srgb,var(--lcdtxt) 40%,transparent)}
 #vis{position:absolute;left:6px;right:6px;bottom:5px;height:38px;width:calc(100% - 12px);cursor:pointer}
 .info{display:flex;flex-direction:column;gap:6px}
-.marq{height:30px;background:var(--lcd);color:var(--lcdtxt);font:400 15px/30px var(--mono);white-space:pre;overflow:hidden;padding:0 6px}
+.marq{height:30px;background:var(--lcd);color:var(--lcdtxt);font:var(--marqw) var(--marqsz)/30px var(--mono);white-space:pre;overflow:hidden;padding:0 6px}
 .kh{display:flex;gap:10px;align-items:center;font-size:11px;flex-wrap:wrap}
-.kh span b{display:inline-block;min-width:30px;background:var(--lcd);color:var(--lcdtxt);font:500 12px/16px var(--mono);padding:1px 4px;margin-right:3px;text-align:right}
+.kh span b{display:inline-block;min-width:30px;background:var(--lcd);color:var(--lcdtxt);font:500 calc(12px*var(--ms)) / 16px var(--mono);padding:1px 4px;margin-right:3px;text-align:right}
 .ms{color:var(--lcddim);font-weight:bold;letter-spacing:.04em}.ms.on{color:var(--lcdtxt);text-shadow:0 0 4px var(--lcdtxt)}
 .sl{display:grid;grid-template-columns:minmax(0,1fr) 90px;gap:10px;align-items:center}
 input[type=range]{-webkit-appearance:none;appearance:none;height:10px;background:var(--lcd);border:1px solid;border-color:var(--lo) var(--hi) var(--hi) var(--lo);width:100%;margin:0}
@@ -84,7 +84,7 @@ input[type=range]:disabled{opacity:.4}
 .foot{flex:none;display:flex;gap:4px;align-items:center;padding:6px;flex-wrap:wrap}
 .foot .sp{flex:1}
 .foot .sb{padding:5px 7px}
-.foot .lcdm{background:var(--lcd);color:var(--lcdtxt);font:400 13px/20px var(--mono);padding:1px 8px;white-space:nowrap}
+.foot .lcdm{background:var(--lcd);color:var(--lcdtxt);font:400 calc(13px*var(--ms)) / 20px var(--mono);padding:1px 8px;white-space:nowrap}
 /* media library */
 .mlb{flex:1;display:grid;grid-template-columns:170px minmax(0,1fr);gap:6px;padding:0 6px;min-height:0}
 .tree{background:var(--list);color:var(--listtxt);overflow:auto;font:13px/1.15 var(--font);padding:4px 0}
@@ -106,7 +106,7 @@ input[type=range]:disabled{opacity:.4}
 .nnb{padding:6px;display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}
 .nnc{position:relative;flex:1;min-height:150px;background:var(--lcd)}
 #net{position:absolute;inset:0;width:100%;height:100%}
-#score{position:absolute;right:8px;top:2px;font:300 28px/1 var(--mono);color:var(--lcdtxt)}
+#score{position:absolute;right:8px;top:2px;font:var(--timew) calc(28px*var(--ms)) / 1 var(--mono);color:var(--lcdtxt)}
 .feat{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;font-size:11px}
 .feat b{display:block;height:6px;background:var(--lcd);margin-top:3px;overflow:hidden}
 .feat b i{display:block;height:100%;width:0;background:var(--lcdtxt)}
@@ -133,7 +133,7 @@ input[type=range]:disabled{opacity:.4}
 .tr.on,.sb.on{box-shadow:inset 0 0 0 1px var(--acc),0 0 8px color-mix(in srgb,var(--acc) 45%,transparent)}
 .tr svg{filter:drop-shadow(0 1px 0 rgba(0,0,0,.5))}
 .lcd,.marq,.lcdm,.kh span b,.nnc,.eqc{background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px),radial-gradient(ellipse at 50% 30%,color-mix(in srgb,var(--lcd) 85%,var(--lcdtxt) 15%),var(--lcd) 70%);box-shadow:inset 0 0 14px rgba(0,0,0,.85)}
-#time,#timeGhost{position:absolute;left:30px;top:6px;font:300 50px/1 var(--mono);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+#time,#timeGhost{position:absolute;left:30px;top:var(--timetop);font:var(--timew) var(--timesz)/1 var(--mono);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
 #timeGhost{color:var(--lcddim);opacity:.55;pointer-events:none}
 #marq{text-shadow:0 0 6px color-mix(in srgb,var(--lcdtxt) 55%,transparent)}
 input[type=range]::-webkit-slider-thumb{background:linear-gradient(180deg,color-mix(in srgb,var(--btn) 60%,#fff),var(--btn));box-shadow:0 1px 2px rgba(0,0,0,.5)}
@@ -166,7 +166,7 @@ input[type=range]::-webkit-slider-thumb{background:linear-gradient(180deg,color-
 #fsvInfo small{display:block;font-size:.55em;opacity:.8}
 #fsvBar{position:absolute;top:14px;right:14px;display:flex;gap:6px;transition:opacity .4s}
 #fsv.idle #fsvBar{opacity:0}#fsv.idle{cursor:none}
-#fsvMode{position:absolute;top:18px;left:18px;color:#fff;font:400 13px var(--mono);opacity:.75;transition:opacity .4s}
+#fsvMode{position:absolute;top:18px;left:18px;color:#fff;font:400 calc(13px*var(--ms)) var(--mono);opacity:.75;transition:opacity .4s}
 #fsv.idle #fsvMode{opacity:0}
 /* ---------- modern skin shapes ---------- */
 body{background:var(--deskbg,var(--desk));background-attachment:fixed}
@@ -196,10 +196,68 @@ body[data-style=term] .tb b::before{content:'> '}
 body[data-style=term] :is(.tr,.sb,.tbb){background:#000;border:1px solid var(--hi);box-shadow:none}
 body[data-style=term] :is(.tr,.sb):hover{background:var(--listsel)}
 body[data-style=term] :is(.lcd,.marq,.lcdm,.kh span b,.nnc,.eqc,.lst,.tree){background:#000;box-shadow:none;border:1px solid var(--hi)}
-body[data-style=term] #time{font-size:46px}
 body[data-style=term] #timeGhost{display:none}
 #skinMenu .grp{padding:6px 10px 2px;font-size:10px;font-weight:bold;letter-spacing:.1em;opacity:.6}
 #skinMenu .sw{display:inline-block;width:10px;height:10px;margin-right:8px;vertical-align:-1px;border:1px solid rgba(0,0,0,.4)}
+/* ---------- font sets (SKIN menu → FONT) ---------- */
+body{--timesz:60px;--timew:500;--timetop:0px;--marqsz:20px;--marqw:600;--ms:1.2}
+body[data-font=modern]{--font:Manrope,"Segoe UI",system-ui,sans-serif;--mono:Rajdhani,"Segoe UI",sans-serif;--timesz:60px;--timew:500;--timetop:0px;--marqsz:20px;--marqw:600;--ms:1.2}
+body[data-font=clean]{--font:Inter,"Segoe UI",system-ui,sans-serif;--mono:"JetBrains Mono",Consolas,monospace;--timesz:50px;--timew:300;--timetop:6px;--marqsz:15px;--marqw:400;--ms:1}
+body[data-font=rounded]{--font:Nunito,"Segoe UI",system-ui,sans-serif;--mono:Nunito,"Segoe UI",sans-serif;--timesz:52px;--timew:700;--timetop:2px;--marqsz:17px;--marqw:700;--ms:1.08}
+body[data-font=tech]{--font:"Exo 2","Segoe UI",system-ui,sans-serif;--mono:Orbitron,"Segoe UI",sans-serif;--timesz:40px;--timew:500;--timetop:12px;--marqsz:14px;--marqw:500;--ms:.88}
+body[data-font=system]{--font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:"Cascadia Mono",Consolas,"SF Mono",ui-monospace,monospace;--timesz:48px;--timew:300;--timetop:6px;--marqsz:15px;--marqw:400;--ms:1}
+body[data-font=retro]{--font:Tahoma,Verdana,"Segoe UI",sans-serif;--mono:VT323,monospace;--timesz:58px;--timew:400;--timetop:-2px;--marqsz:24px;--marqw:400;--ms:1.45}
+#skinMenu .fnt{font-size:14px}
+/* ---------- profiles ---------- */
+#profBtn{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;height:16px;padding:0 8px;font-size:10px;line-height:14px;flex:none}
+body:is([data-style=flat],[data-style=glass]) #profBtn{height:20px;line-height:20px;border-radius:10px}
+body:not([data-font=clean]):not([data-font=system]):not([data-font=retro]) #timeGhost{display:none}
+#profMenu{position:fixed;z-index:999;display:none;flex-direction:column;min-width:250px;max-width:330px;background:var(--chrome);border:1px solid;border-color:var(--hi) var(--lo) var(--lo) var(--hi);box-shadow:0 8px 20px rgba(0,0,0,.5);padding:3px}
+#profMenu.show{display:flex}
+#profMenu button{text-align:left;background:none;border:0;padding:8px 10px;color:var(--ctxt);display:block;width:100%}
+#profMenu button small{display:block;opacity:.65;font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#profMenu button:hover,#profMenu button.on{background:var(--listsel);color:var(--listcur)}
+#profMenu hr{border:0;border-top:1px solid var(--lo);margin:3px 0}
+#profDlg{position:fixed!important;left:50%!important;top:50%!important;transform:translate(-50%,-50%);width:min(440px,94vw)!important;height:auto!important;z-index:1500;resize:none}
+#profDlg .tb{cursor:default}
+.pdb{padding:14px;display:grid;gap:10px}
+.pdb label{display:grid;gap:4px;font-size:12px}
+.pdb label small{opacity:.6}
+.pdb input:not([type=checkbox]),.pdb select{height:32px;background:var(--list);color:var(--listtxt);border:1px solid;border-color:var(--lo) var(--hi) var(--hi) var(--lo);padding:0 9px;font-size:14px;font-family:var(--font)}
+.pd2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pdhint{font-size:11.5px;min-height:15px;opacity:.85}.pdhint b{color:var(--acc)}
+.pdb fieldset{border:1px solid var(--lo);padding:8px 10px 10px;display:grid;gap:8px;margin:0}
+.pdb legend{padding:0 4px}
+.ck{display:flex!important;align-items:center;gap:6px;font-size:12.5px!important}
+.ck input{accent-color:var(--acc)}
+.days{display:flex;gap:4px;flex-wrap:wrap}
+.days button{min-width:38px}
+.pdf{display:flex;gap:6px;align-items:center}.pdf .sp{flex:1}
+body:is([data-style=flat],[data-style=glass]) .pdb :is(input:not([type=checkbox]),select){border:0;border-radius:8px}
+body:is([data-style=flat],[data-style=glass]) #profMenu{border-radius:10px}
+#dlgShade{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1400;display:none}#dlgShade.show{display:block}
+/* ---------- AI DJ ---------- */
+.djb{flex:1;overflow:auto;padding:6px 8px 8px;display:flex;flex-direction:column;gap:6px;min-height:0}
+.djl{font-size:11px;font-weight:600;letter-spacing:.04em;opacity:.8;margin-top:2px}
+.pads{display:flex;flex-wrap:wrap;gap:5px}
+.pads .chip{padding:4px 11px}
+.djr{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.djr input[type=range]{flex:1;min-width:120px}
+#djEv{font:500 calc(14px*var(--ms)) var(--mono);color:var(--acc);min-width:40px;text-align:right}
+.seg{display:flex;gap:0}.seg .sb{border-radius:0}
+body:is([data-style=flat],[data-style=glass]) .seg .sb:first-child{border-radius:8px 0 0 8px}body:is([data-style=flat],[data-style=glass]) .seg .sb:last-child{border-radius:0 8px 8px 0}
+.djr .sp{flex:1}
+.djgo{padding:6px 12px!important;font-size:11.5px!important}
+.djgo.on{background:var(--acc)!important;color:var(--chrome)!important}
+#djStatus{font-size:11.5px;min-height:16px;opacity:.9}#djStatus b{color:var(--acc);font-weight:600}
+/* ---------- station finder ---------- */
+.chips{display:flex;gap:5px;padding:2px 6px 6px;overflow-x:auto;scrollbar-width:none;flex:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;background:var(--list);color:var(--listtxt);border:1px solid var(--lo);border-radius:999px;padding:3px 10px;font:500 11.5px/1.3 var(--font);cursor:pointer;white-space:nowrap}
+.chip:hover{border-color:var(--acc);color:var(--listcur)}
+.chip.on{background:var(--listsel);color:var(--listcur);border-color:var(--acc)}
+body[data-style=term] .chip{border-radius:0}
+#mlStatus b{color:var(--acc);font-weight:600}
 @media(max-width:999px){
   body{overflow:auto}
   #desk{height:auto;display:flex;flex-direction:column;gap:10px;padding:10px}
@@ -220,7 +278,7 @@ body[data-style=term] #timeGhost{display:none}
 <div id="desk">
 
 <section class="win" id="w-main" data-w="main">
-  <div class="tb"><span class="st"></span><b>NEUROPLAYER</b><span class="st"></span><button class="tbb" data-shade title="Windowshade">–</button></div>
+  <div class="tb"><span class="st"></span><b>NEUROPLAYER</b><span class="st"></span><button class="sb" id="profBtn" title="Listening profile (P)">◉ HOME ▾</button><button class="tbb" data-shade title="Windowshade">–</button></div>
   <div class="main">
     <div class="lcd ins">
       <svg id="stIco" viewBox="0 0 14 14"><rect x="2" y="2" width="10" height="10"/></svg>
@@ -236,7 +294,8 @@ body[data-style=term] #timeGhost{display:none}
         <button class="sb on" data-show="ml" title="Media library">ML</button>
         <button class="sb on" data-show="eq" title="Equalizer">EQ</button>
         <button class="sb on" data-show="nn" title="Neural network">NN</button>
-        <button class="sb" id="fsBtn" title="Fullscreen visualizer (F)">VIS ⛶</button>
+        <button class="sb on" data-show="dj" title="AI DJ — mood mixer">DJ</button>
+        <button class="sb" id="fsBtn" title="Fullscreen visualizer (F)">⛶</button>
         <button class="sb" id="skinBtn" title="Change skin">SKIN ▾</button>
       </div>
     </div>
@@ -293,13 +352,14 @@ body[data-style=term] #timeGhost{display:none}
 
 <section class="win rs" id="w-ml" data-w="ml">
   <div class="tb"><span class="st"></span><b>MEDIA LIBRARY</b><span class="st"></span><button class="tbb" data-shade title="Windowshade">–</button><button class="tbb" data-close="ml" title="Close">×</button></div>
-  <form id="sf" role="search"><input id="q" class="ins" type="search" placeholder="Search songs, artists, genres, radio stations…" autocomplete="off" aria-label="Search"><button class="sb" type="submit">SEARCH</button></form>
+  <form id="sf" role="search"><input id="q" class="ins" type="search" placeholder="Search songs or describe a mood: “jazz relaxant”, “rock românesc”, “ceva liniștit”…" autocomplete="off" aria-label="Search"><button class="sb" type="submit">SEARCH</button></form>
   <div class="srcs" id="srcs">
     <label><input type="checkbox" value="audius" checked>Audius</label>
     <label><input type="checkbox" value="archive" checked>Internet Archive</label>
     <label><input type="checkbox" value="itunes">iTunes (30 s)</label>
     <label><input type="checkbox" value="radio" checked>Radio stations</label>
   </div>
+  <div class="chips" id="chips" aria-label="Quick genres"></div>
   <div class="mlb">
     <div class="tree ins" id="tree"></div>
     <div class="mlr">
@@ -316,6 +376,17 @@ body[data-style=term] #timeGhost{display:none}
   </div>
 </section>
 
+<section class="win rs" id="w-dj" data-w="dj">
+  <div class="tb"><span class="st"></span><b>AI DJ — MOOD MIXER</b><span class="st"></span><button class="tbb" data-shade title="Windowshade">–</button><button class="tbb" data-close="dj" title="Close">×</button></div>
+  <div class="djb">
+    <div class="djl">How do you feel?</div><div class="pads" id="djMoods"></div>
+    <div class="djl">Style</div><div class="pads" id="djStyles"></div>
+    <div class="djr"><span class="djl" style="margin:0">Calm</span><input type="range" id="djEnergy" min="0" max="100" value="50" aria-label="Energy"><span class="djl" style="margin:0">Alert</span><b id="djEv">50%</b></div>
+    <div class="djr"><div class="seg" id="djSrc"><button class="sb" data-v="radio">RADIO</button><button class="sb" data-v="tracks">TRACKS</button><button class="sb" data-v="both">BOTH</button></div><span class="sp"></span><button class="sb" id="djClear">CLEAR</button><button class="sb djgo" id="djGo">▶ START AI DJ</button></div>
+    <div id="djStatus"></div>
+  </div>
+</section>
+
 <section class="win rs" id="w-nn" data-w="nn">
   <div class="tb"><span class="st"></span><b>NEURAL TASTE NETWORK</b><span class="st"></span><button class="tbb" data-shade title="Windowshade">–</button><button class="tbb" data-close="nn" title="Close">×</button></div>
   <div class="nnb">
@@ -328,6 +399,22 @@ body[data-style=term] #timeGhost{display:none}
 </div>
 
 <div id="skinMenu" role="menu"></div>
+<div id="profMenu" role="menu"></div>
+<div id="dlgShade"></div>
+<section class="win" id="profDlg" hidden role="dialog" aria-modal="true" aria-label="Edit profile">
+  <div class="tb"><span class="st"></span><b id="pdTitle">PROFILE</b><span class="st"></span><button class="tbb" id="pdX" title="Close">×</button></div>
+  <form class="pdb" id="pdForm">
+    <label>Name<input id="pdName" maxlength="24" required placeholder="e.g. Work, Gym, Evening"></label>
+    <label>Genres &amp; moods <small>(plain words, RO or EN)</small><input id="pdGenres" placeholder="lofi, chill jazz, classical music"></label>
+    <div class="pdhint" id="pdHint"></div>
+    <div class="pd2"><label>EQ preset<select id="pdEq"></select></label><label>Skin<select id="pdSkin"></select></label></div>
+    <fieldset><legend><label class="ck"><input type="checkbox" id="pdAuto"> Switch to this profile automatically</label></legend>
+      <div class="days" id="pdDays"></div>
+      <div class="pd2"><label>From<input type="time" id="pdFrom"></label><label>To<input type="time" id="pdTo"></label></div>
+    </fieldset>
+    <div class="pdf"><button type="button" class="sb" id="pdDel">DELETE</button><span class="sp"></span><button type="button" class="sb" id="pdCancel">CANCEL</button><button class="sb on" type="submit">SAVE</button></div>
+  </form>
+</section>
 <div id="fsv" aria-label="Fullscreen visualizer">
   <canvas id="fsvC"></canvas>
   <div id="fsvMode"></div>
@@ -409,7 +496,7 @@ async function rbFetch(path){
 }
 const mapRadio=s=>({id:'rb:'+s.stationuuid,src:'radio',live:true,title:(s.name||'Station').trim(),
   artist:[s.state,s.country].filter(Boolean).join(', ')||s.countrycode||'',art:s.favicon||'',duration:0,
-  genre:(s.tags||'').split(',')[0].trim(),mood:'',plays:s.clickcount||0,url:s.url_resolved||s.url,link:s.homepage||'',bitrate:s.bitrate||0,codec:s.codec||''});
+  genre:(s.tags||'').split(',')[0].trim(),tags:','+(s.tags||'').toLowerCase()+',',votes:s.votes||0,mood:'',plays:s.clickcount||0,url:s.url_resolved||s.url,link:s.homepage||'',bitrate:s.bitrate||0,codec:s.codec||''});
 const okStation=s=>(s.url_resolved||s.url)&&!s.hls&&!/m3u8/i.test(s.url_resolved||'')&&(!HTTPS||/^https:/i.test(s.url_resolved||s.url));
 const rbList=async p=>{const seen=new Set();return (await rbFetch(p)).filter(okStation).map(mapRadio).filter(s=>{const k=s.title.toLowerCase();if(seen.has(k))return false;seen.add(k);return true})};
 const RBQ='&hidebroken=true&order=clickcount&reverse=true&limit=100';
@@ -469,8 +556,19 @@ class MLP{
   }
 }
 const SIZES=[38,16,8,1];
-let net=new MLP(SIZES,store.get('np2_net',null));
-let samples=store.get('np2_samples',[]),lastLoss=store.get('np2_loss',null),fps=store.get('np2_fp',{}),meanFp=null;
+/* listening profiles: each has its own taste network, genres, EQ and optional skin + schedule */
+let profiles=store.get('np2_profiles',null);
+if(!Array.isArray(profiles)||!profiles.length){
+  profiles=[{id:'home',name:'Home',genres:'',eq:'',skin:'',sched:{on:false,days:[0,6],from:'10:00',to:'23:00'}},
+            {id:'work',name:'Work',genres:'lofi, ambient, chill jazz, classical music',eq:'Soft',skin:'',sched:{on:false,days:[1,2,3,4,5],from:'09:00',to:'17:00'}}];
+  const on=store.get('np2_net',null),os=store.get('np2_samples',null);
+  if(on)store.set('np2_net_home',on);if(os)store.set('np2_samples_home',os);if(os)store.set('np2_loss_home',store.get('np2_loss',null));
+  store.set('np2_profiles',profiles);
+}
+let prof=store.get('np2_prof','home');if(!profiles.some(p=>p.id===prof))prof=profiles[0].id;
+const curProf=()=>profiles.find(p=>p.id===prof)||profiles[0];
+let net=new MLP(SIZES,store.get('np2_net_'+prof,null));
+let samples=store.get('np2_samples_'+prof,[]),lastLoss=store.get('np2_loss_'+prof,null),fps=store.get('np2_fp',{}),meanFp=null;
 const hash=s=>{let h=2166136261;for(const c of String(s).toLowerCase())h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0};
 const oneHot=(v,h,n)=>{for(let i=0;i<n;i++)v.push(i===h%n?1:0)};
 function computeMean(){const k=Object.values(fps);if(!k.length){meanFp=null;return}meanFp=k[0].map((_,i)=>k.reduce((a,v)=>a+v[i],0)/k.length);meanFp[11]=0}
@@ -500,7 +598,7 @@ function addSample(t,y,w){
 function retrain(){
   if(samples.length){
     lastLoss=net.train(samples.map(s=>({x:feats(s.t),y:s.y,w:s.w})),Math.min(120,40+samples.length*4));
-    store.set('np2_net',{W:net.W,b:net.b});store.set('np2_samples',samples);store.set('np2_loss',lastLoss);
+    store.set('np2_net_'+prof,{W:net.W,b:net.b});store.set('np2_samples_'+prof,samples);store.set('np2_loss_'+prof,lastLoss);
   }
   renderPl();renderMl();drawStats();
 }
@@ -641,17 +739,95 @@ $('#mlEnq').onclick=()=>{if(mlSel>=0){enqueue(mlRows[mlSel],false);toast('Added 
 $('#mlEnqAll').onclick=()=>{const have=new Set(pl.map(t=>t.id));let n=0;for(const t of mlRows)if(!have.has(t.id)){pl.push(t);n++}savePl();renderPl();toast(n+' added to playlist')};
 $('#mlSort').onclick=()=>{mlAi=!mlAi;$('#mlSort').textContent=mlAi?'SORT: NEURAL MATCH':'SORT: RELEVANCE';$('#mlSort').classList.toggle('on',mlAi);if(mlAi&&!trained())toast('Rate a few tracks so the network can rank');renderMl()};
 
-$('#sf').addEventListener('submit',async e=>{
-  e.preventDefault();const q=$('#q').value.trim();if(!q)return;
-  const srcs=$$('#srcs input:checked').map(i=>i.value);if(!srcs.length)return toast('Select at least one source');
-  node='search';lib.search=[];renderTree();renderMl();setMl('Searching…');
-  const fn={audius:searchAudius,archive:searchArchive,itunes:searchItunes,radio:searchRadio};
-  const res=await Promise.allSettled(srcs.map(s=>fn[s](q)));
+/* ================= Station finder: plain-language search (RO + EN) ================= */
+const GENRES=[
+ ['anii ?80|80s|eighties|optzeci','80s'],['anii ?90|90s|nineties|nouazeci','90s'],['anii ?70|70s|seventies','70s'],['anii ?60|60s|sixties','60s'],['anii 2000|2000s','2000s'],
+ ['rock clasic|classic rock','classic rock'],['hard rock','hard rock'],['drum (and|n|&) ?bass|dnb','drum and bass'],['hip ?hop|rap|trap','hip hop|rap'],
+ ['muzica populara|populara|folclor(ica)?|lautareasca|lautari|etno|traditionala','folclor|populara|folk'],['manele|manea','manele'],['turbo ?folk','turbo folk'],['balkan|balcanica?','balkan'],
+ ['heavy metal|metal(core)?','metal|heavy metal'],['rock|roc','rock'],['punk','punk'],['grunge','grunge'],['indie','indie'],['alternativ[ae]?|alternative','alternative'],
+ ['muzica clasica|clasica|clasic|classical|simfonica|simfonic|orchestra|baroc|opera','classical'],
+ ['pop|hituri|hits|top ?40|comerciala|comercial','pop|hits|top 40'],['jazz|jaz','jazz|smooth jazz'],['blues','blues'],['soul','soul'],['funk','funk'],['r&b|rnb|r ?n ?b','rnb'],
+ ['deep house|house','house'],['techno','techno'],['trance','trance'],['dubstep','dubstep'],['synthwave|retrowave|outrun','synthwave'],['disco','disco'],
+ ['edm|electronica|electronic|electro','electronic'],['dance|dans','dance'],
+ ['lo ?-?fi','lofi'],['chill ?out|chill|relax(are|ant|anta|ing)?|linistit[aei]?|liniste|calm[aei]?|soft|lounge|lejer[aei]?','chillout|lounge'],
+ ['ambient(al)?|atmosferic[aă]?','ambient'],['meditat(ie|ion|e)|yoga|zen','meditation'],['somn|sleep|adorm(it|ire)','sleep|ambient'],
+ ['studiu|invatat|focus|concentrare|lucru|munca|work|study|coding|programare|birou','lofi|ambient|classical'],
+ ['petrecere|party|chef|distractie|club','dance|party'],['sala|gym|workout|antrenament|alergat|running','workout|edm'],
+ ['romantic[aei]?|dragoste|iubire|love','love songs|romantic'],['reggae|ska','reggae'],['latino|latin|salsa|bachata|reggaeton','latin'],['country','country'],['folk','folk'],
+ ['gospel|crestin[aei]?|christian|religioas[aă]|religios|biserica|worship|ortodox[aă]?','christian'],
+ ['stiri|news|actualitate','news'],['talk|dezbateri|discutii','talk'],['sport|fotbal','sports'],['copii|kids|children','kids'],
+ ['soundtrack|coloana sonora|filme?','soundtrack'],['instrumental[aă]?','instrumental'],['pian|piano','piano'],['acustic[aă]?|acoustic','acoustic'],
+ ['k ?-?pop','k-pop'],['j ?-?pop|anime','j-pop|anime'],['chiptune|8 ?bit|gaming|jocuri','chiptune|video game'],['oldies|retro|vechi|vintage|de altadata','oldies']];
+const COUNTRIES=[['romani[ae]|romania|romanesc|romaneasca|romanesti|romaneste','RO'],['moldov(a|enesc|eneasca)','MD'],['german[aăe]?|germania|deutsch|nemtesc|nemteasca','DE'],['austria|austriac[aă]?','AT'],
+ ['franta|frantuzesc|frantuzeasca|franceza|francez|french','FR'],['italia|italian[aă]?|italieneasca|italienesc','IT'],['spania|spaniol[aă]?|spanish','ES'],['anglia|uk|british|englez[aă]?|engleza','GB'],
+ ['america|usa|sua|american[aă]?','US'],['grecia|greceasca|grecesc|grecesti|greek','GR'],['ungaria|unguresc|ungureasca|maghiar[aă]?|hungarian','HU'],['turcia|turceasca|turkish','TR'],
+ ['serbia|sarbesc|sarbeasca','RS'],['bulgaria|bulgaresc|bulgareasca','BG'],['olanda|dutch|netherlands','NL'],['brazilia|brazil','BR'],['japonia|japonez[aă]?|japan','JP'],
+ ['irlanda|irish','IE'],['polonia|polonez[aă]?|polish','PL'],['cehia|czech','CZ'],['croatia','HR'],['portugalia|portughez[aă]?','PT'],['canada','CA'],['jamaica','JM'],['cuba','CU'],['mexic','MX']];
+const STOP=new Set('vreau sa ascult ascultam asculta muzica muzici ceva un o niste de din pentru si sau cu la mai care imi mi place plac bun buna bune buni fain faina tare radio radiouri statie statii statia posturi postul post fm online live gen genul stil stilul tip i want to listen some music something for the a an of with play find me please good best station stations channel like any te rog da gaseste cauta pune'.split(' '));
+const norm=t=>(' '+t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9&+\s-]/g,' ')+' ').replace(/\s+/g,' ');
+function parseIntent(q){
+  let t=norm(q);const tags=[],labels=[];let cc=null;
+  for(const [re,tg] of GENRES){const R=new RegExp('(^|\\s)('+re+')(?=\\s)','g');if(R.test(t)){for(const x of tg.split('|'))if(!tags.includes(x))tags.push(x);labels.push(tg.split('|')[0]);t=t.replace(R,' ')}}
+  for(const [re,c] of COUNTRIES){const R=new RegExp('(^|\\s)('+re+')(?=\\s)','g');if(R.test(t)){cc=cc||c;t=t.replace(R,' ')}}
+  const radioWord=/(^|\s)(radio|radiouri|statie|statii|statia|posturi|post|station|stations|fm)(?=\s)/.test(norm(q));
+  const rest=t.split(' ').filter(w=>w.length>1&&!STOP.has(w));
+  return {tags,labels,cc,rest,radio:radioWord,matched:tags.length>0||!!cc};
+}
+const CC_NAME={RO:'România',MD:'Moldova',DE:'Germany',AT:'Austria',FR:'France',IT:'Italy',ES:'Spain',GB:'UK',US:'USA',GR:'Greece',HU:'Hungary',TR:'Turkey',RS:'Serbia',BG:'Bulgaria',NL:'Netherlands',BR:'Brazil',JP:'Japan',IE:'Ireland',PL:'Poland',CZ:'Czechia',HR:'Croatia',PT:'Portugal',CA:'Canada',JM:'Jamaica',CU:'Cuba',MX:'Mexico'};
+async function findStations(q,it){
+  const cc=it.cc?'&countrycode='+it.cc:'',Q='&hidebroken=true&order=clickcount&reverse=true';
+  const jobs=[];
+  for(const tg of it.tags.slice(0,5))jobs.push(rbList('/json/stations/search?tag='+encodeURIComponent(tg)+cc+Q+'&limit=60'));
+  if(!it.tags.length&&it.cc&&!it.rest.length)jobs.push(rbList('/json/stations/search?countrycode='+it.cc+Q+'&limit=100'));
+  const rest=it.rest.join(' ');
+  if(rest){jobs.push(rbList('/json/stations/search?name='+encodeURIComponent(rest)+cc+Q+'&limit=40'));jobs.push(rbList('/json/stations/search?tag='+encodeURIComponent(rest)+cc+Q+'&limit=40'))}
+  if(!jobs.length)jobs.push(searchRadio(q));
+  const res=await Promise.allSettled(jobs);
+  if(res.every(r=>r.status==='rejected'))throw Error('radio offline');
+  const seen=new Map();
+  for(const r of res)if(r.status==='fulfilled')for(const t of r.value){const k=t.title.toLowerCase();if(!seen.has(k))seen.set(k,t)}
+  const tr=trained(),rl=rest.toLowerCase();
+  const ranked=[...seen.values()].map(t=>{
+    let rel=0;for(const tg of it.tags)if((t.tags||'').includes(','+tg+',')||(t.tags||'').includes(tg))rel+=1;
+    if(rl&&t.title.toLowerCase().includes(rl))rel+=1.5;
+    const pop=Math.log10(1+(t.plays||0))/5+Math.log10(1+(t.votes||0))/8;
+    return [t,rel+pop*.6+(tr?score(t)*1.2:0)];
+  }).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  return ranked.slice(0,80);
+}
+function intentLabel(it){
+  const p=[];if(it.labels.length)p.push('genre <b>'+esc(it.labels.join(', '))+'</b>');if(it.cc)p.push('country <b>'+esc(CC_NAME[it.cc]||it.cc)+'</b>');if(it.rest.length)p.push('words <b>'+esc(it.rest.join(' '))+'</b>');
+  return p.join(' · ');
+}
+async function runSearch(q,opts={}){
+  q=q.trim();if(!q)return;
+  const it=parseIntent(q);
+  let srcs=opts.radioOnly||it.radio?['radio']:$$('#srcs input:checked').map(i=>i.value);
+  if(!srcs.length)return toast('Select at least one source');
+  showWin('ml',true);node='search';mlSel=-1;lib.search=[];renderTree();renderMl();setMl('Searching…');
+  const tq=it.matched?[it.labels[0]||'',...it.rest].join(' ').trim()||q:q;
+  const fn={audius:()=>searchAudius(tq),archive:()=>searchArchive(tq),itunes:()=>searchItunes(tq),radio:()=>findStations(q,it)};
+  const res=await Promise.allSettled(srcs.map(s=>fn[s]()));
   const groups=res.map(r=>r.status==='fulfilled'?r.value:[]),errs=srcs.filter((s,i)=>res[i].status==='rejected');
-  const out=[];for(let i=0;i<40;i++)for(const g of groups)if(g[i])out.push(g[i]);
+  let out=[];
+  if(it.matched&&srcs.includes('radio')){const ri=srcs.indexOf('radio');out=[...groups[ri]];const others=groups.filter((g,i)=>i!==ri);for(let i=0;i<40;i++)for(const g of others)if(g[i])out.push(g[i])}
+  else for(let i=0;i<80;i++)for(const g of groups)if(g[i])out.push(g[i]);
   lib.search=out;renderTree();renderMl();
-  setMl(`${out.length} results for “${q}”`+(errs.length?` · couldn't reach ${errs.join(', ')}`:''));
-});
+  const nSt=out.filter(t=>t.live).length,nTr=out.length-nSt;
+  $('#mlStatus').innerHTML=(it.matched?'Understood: '+intentLabel(it)+' → ':'')+`${nSt} stations, ${nTr} tracks`+(errs.length?` · couldn't reach ${esc(errs.join(', '))}`:'')+(trained()?' · ranked by your taste':'');
+  libState.search=$('#mlStatus').textContent;
+  $$('.chip').forEach(c=>c.classList.toggle('on',c.dataset.q===q));
+}
+$('#sf').addEventListener('submit',e=>{e.preventDefault();runSearch($('#q').value)});
+const CHIPS=[['Rock','rock'],['Pop & hits','pop hituri'],['Jazz','jazz'],['Lo-fi','lofi'],['Chill','ceva linistit'],['Dance','dance'],['Electronic','electronic'],['Hip-hop','hip hop'],['Metal','metal'],
+ ['Classical','muzica clasica'],['Folclor','muzica populara'],['Manele','manele'],['80s','anii 80'],['90s','anii 90'],['Românești','radio romanesc'],['Focus / work','ceva pentru lucru'],['Sleep','somn'],['Party','petrecere'],['News','stiri']];
+function renderChips(){
+  const P=curProf(),mine=P.genres.split(',').map(x=>x.trim()).filter(Boolean);
+  $('#chips').innerHTML=(mine.length?`<button class="chip on" data-q="${esc(P.genres)}" title="All of this profile's genres">◉ ${esc(P.name)} mix</button>`+mine.map(g=>`<button class="chip" data-q="${esc(g)}">${esc(g)}</button>`).join(''):'')+
+    CHIPS.map(([l,q])=>`<button class="chip" data-q="${esc(q)}">${esc(l)}</button>`).join('');
+}
+renderChips();
+$('#chips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;$('#q').value=c.dataset.q;runSearch(c.dataset.q,{radioOnly:true})});
 
 /* ================= Playback ================= */
 function stopAll(){for(const a of [aA,aB]){a.pause();a.removeAttribute('src');a.load()}}
@@ -709,12 +885,17 @@ function prev(){
   if(plIdx>0)playIdx(plIdx-1);else if(repeat&&pl.length)playIdx(pl.length-1);
 }
 async function radioPick(){
+  if(dj.on)return djPick();
   const wantLive=!!cur?.live,seen=new Set([...recent.slice(0,wantLive?5:60),cur?.id]),uniq=new Map();
   const all=[...pl,...lib.search,...lib.trending,...lib.liked,...radioPool,...Object.keys(lib).filter(k=>k.startsWith('r:')).flatMap(k=>lib[k])];
   const add=()=>{for(const t of all.concat(radioPool))if(!!t.live===wantLive&&!seen.has(t.id)&&!uniq.has(t.id))uniq.set(t.id,t)};
   add();
   if(uniq.size<10){await refillRadio(wantLive);add()}
-  const pool=[...uniq.values()];if(!pool.length)return null;
+  let pool=[...uniq.values()];if(!pool.length)return null;
+  const P=curProf();
+  if(P.genres.trim()){const it=parseIntent(P.genres),tags=it.tags,labs=it.labels.map(x=>x.toLowerCase());
+    const fit=pool.filter(t=>t.live?tags.some(tg=>(t.tags||'').includes(tg)):labs.some(l=>(t.genre||'').toLowerCase().includes(l)));
+    if(fit.length>=4)pool=fit;}
   if(!trained())return pool[Math.floor(Math.random()*pool.length)];
   const sc=pool.map(score),mx=Math.max(...sc),ex=sc.map(s=>Math.exp((s-mx)/.08)),sum=ex.reduce((a,b)=>a+b,0);
   let r=Math.random()*sum;for(let i=0;i<pool.length;i++){r-=ex[i];if(r<=0)return pool[i]}
@@ -725,7 +906,12 @@ async function refillRadio(wantLive){
   for(const s of samples)if(s.y>.5&&!!s.t.live===wantLive){if(s.t.genre)G[s.t.genre]=(G[s.t.genre]||0)+1;if(s.t.artist)A[s.t.artist]=(A[s.t.artist]||0)+1}
   const pick=o=>{const k=Object.keys(o).sort((a,b)=>o[b]-o[a]);return k.length?k[Math.floor(Math.random()*Math.min(3,k.length))]:null};
   const g=pick(G),a=pick(A);let got=[];
-  try{
+  const P=curProf();
+  if(P.genres.trim()){
+    const it=parseIntent(P.genres),lab=it.labels[Math.floor(Math.random()*Math.max(1,it.labels.length))]||P.genres;
+    try{got=wantLive?await findStations(P.genres,it):(await Promise.all([searchAudius(lab).catch(()=>[]),trendingAudius().catch(()=>[])])).flat()}catch(e){}
+  }
+  if(!got.length)try{
     if(wantLive)got=g?await radioTag(g.toLowerCase()):await radioTop();
     else got=(await Promise.all([trendingAudius(g).catch(()=>[]),a?searchAudius(a).catch(()=>[]):[]])).flat();
   }catch(e){}
@@ -738,7 +924,10 @@ let state='stop',remain=false,visMode=store.get('np2_vis',1),marqText='',marqPos
 const ICONS={play:'<path d="M3 2v10l9-5z"/>',pause:'<path d="M2 2h4v10H2zm6 0h4v10H8z"/>',stop:'<rect x="2" y="2" width="10" height="10"/>'};
 function setState(s){state=s;$('#stIco').innerHTML=ICONS[s];$('#stereo').classList.toggle('on',s==='play');if('mediaSession' in navigator)navigator.mediaSession.playbackState=s==='play'?'playing':s==='pause'?'paused':'none'}
 function setMarq(t){marqText=t+'   ***   ';marqPos=0}
-setInterval(()=>{if(!marqText)return;const w=Math.max(10,Math.floor(($('.marq').clientWidth-12)/9.05));const s=marqText.length<=w?marqText:marqText.slice(marqPos)+marqText.slice(0,marqPos);$('#marq').textContent=s.slice(0,w);marqPos=(marqPos+1)%marqText.length},220);
+let marqCW=9;
+function marqMeasure(){try{const cs=getComputedStyle($('#marq')),c=document.createElement('canvas').getContext('2d');c.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;marqCW=c.measureText('NeuroPlayer — Midnight Drive 01:23').width/34||9}catch(e){}}
+if(document.fonts){document.fonts.ready.then(marqMeasure);document.fonts.addEventListener?.('loadingdone',marqMeasure)}
+setInterval(()=>{if(!marqText)return;const w=Math.max(10,Math.floor(($('.marq').clientWidth-12)/marqCW));const s=marqText.length<=w?marqText:marqText.slice(marqPos)+marqText.slice(0,marqPos);$('#marq').textContent=s.slice(0,w);marqPos=(marqPos+1)%marqText.length},220);
 function updateNP(){
   if(!cur){setMarq('NEUROPLAYER — open the Media Library, search, or pick a radio station');return}
   setMarq(`${plIdx+1}. ${cur.artist?cur.artist+' - ':''}${cur.title}${cur.live?' [LIVE]':''}${cur.src==='itunes'?' (30 s preview)':''}${player&&!useWA?' · no visualisation for this stream':''}`);
@@ -781,7 +970,7 @@ $('#bEject').onclick=()=>{showWin('ml',true);$('#q').focus()};
 $('#bShuf').onclick=()=>{shuffle=!shuffle;store.set('np2_shuf',shuffle);$('#bShuf').classList.toggle('on',shuffle)};
 $('#bRep').onclick=()=>{repeat=!repeat;store.set('np2_rep',repeat);$('#bRep').classList.toggle('on',repeat)};
 $('#bShuf').classList.toggle('on',shuffle);$('#bRep').classList.toggle('on',repeat);
-$('#bAI').onclick=()=>{radioOn=!radioOn;$('#bAI').classList.toggle('on',radioOn);toast(radioOn?'Neural radio ON — the network picks what plays next':'Neural radio OFF');if(radioOn&&state!=='play')next(false)};
+$('#bAI').onclick=()=>{radioOn=!radioOn;if(!radioOn&&dj.on){dj.on=false;renderDj();djStatus('AI DJ stopped.')}$('#bAI').classList.toggle('on',radioOn);toast(radioOn?'Neural radio ON — the network picks what plays next':'Neural radio OFF');if(radioOn&&state!=='play')next(false)};
 $('#time').onclick=()=>remain=!remain;
 $('#vis').onclick=()=>{visMode=(visMode+1)%VIS_MODES.length;store.set('np2_vis',visMode);toast('Visualizer: '+VIS_MODES[visMode])};
 $('#vol').oninput=e=>{aA.volume=aB.volume=+e.target.value;store.set('np2_vol',+e.target.value)};
@@ -795,7 +984,7 @@ document.addEventListener('keydown',e=>{
   if(e.target.matches('input,select,textarea'))return;
   const k=e.key.toLowerCase();
   if(k==='z')prev();else if(k==='x')play();else if(k==='c')pause();else if(k==='v')stop();else if(k==='b')next(true);
-  else if(k==='l')like();else if(k==='d')dislike();else if(k==='s'&&cur)toggleFav(cur);else if(k==='f')openFsv();
+  else if(k==='l')like();else if(k==='d')dislike();else if(k==='s'&&cur)toggleFav(cur);else if(k==='f')openFsv();else if(k==='p')$('#profBtn').click();
   else if(e.code==='Space'&&!e.target.closest('.lst')){e.preventDefault();state==='stop'?play():pause()}
 });
 
@@ -804,33 +993,36 @@ const SKINS=[['g','Classic'],['classic','Classic Gunmetal','','#38384c'],['amber
   ['g','Modern'],['bento','Modern Dark','flat','#ff7a1a'],['paper','Paper Light','flat','#fbfaf7'],['glass','Aurora Glass','glass','#3a6cf0'],['vapor','Vaporwave','glass','#ff71ce'],['term','Terminal','term','#33ff66']];
 let skin=store.get('np2_skin','classic'),cssv={};
 function applySkin(s){const d=SKINS.find(x=>x[0]===s&&x[0]!=='g')||SKINS[1];s=d[0];skin=s;document.body.dataset.skin=s;document.body.dataset.style=d[2]||'';store.set('np2_skin',s);const cs=getComputedStyle(document.body);for(const k of ['v1','v2','v3','lcdtxt','lcddim','acc','listtxt','lcd'])cssv[k]=cs.getPropertyValue('--'+k).trim();renderSkinMenu();if(typeof drawEqCurve==='function')drawEqCurve()}
-function renderSkinMenu(){$('#skinMenu').innerHTML=SKINS.map(([id,n,,c])=>id==='g'?`<div class="grp">${n.toUpperCase()}</div>`:`<button data-s="${id}" class="${id===skin?'on':''}" role="menuitem"><span class="sw" style="background:${c}"></span>${n}</button>`).join('')}
+const FONTS=[['modern','Modern — Manrope + Rajdhani','Manrope'],['clean','Clean — Inter + JetBrains Mono','Inter'],['rounded','Rounded — Nunito','Nunito'],['tech','Tech — Exo 2 + Orbitron','"Exo 2"'],['system','System — Windows / macOS font','system-ui'],['retro','Retro — Tahoma + pixel LCD','Tahoma']];
+let font=store.get('np2_font','modern');
+function applyFont(f){if(!FONTS.some(x=>x[0]===f))f='modern';font=f;document.body.dataset.font=f;store.set('np2_font',f);renderSkinMenu();marqMeasure();setTimeout(marqMeasure,400)}
+function renderSkinMenu(){$('#skinMenu').innerHTML='<div class="grp">FONT</div>'+FONTS.map(([id,n,ff])=>`<button data-f="${id}" class="fnt${id===font?' on':''}" role="menuitem" style="font-family:${ff.replace(/"/g,"'")},sans-serif">${n}</button>`).join('')+SKINS.map(([id,n,,c])=>id==='g'?`<div class="grp">${n.toUpperCase()}</div>`:`<button data-s="${id}" class="${id===skin?'on':''}" role="menuitem"><span class="sw" style="background:${c}"></span>${n}</button>`).join('')}
 $('#skinBtn').onclick=e=>{e.stopPropagation();const m=$('#skinMenu'),r=e.target.getBoundingClientRect();m.style.left=Math.min(r.left,innerWidth-180)+'px';m.style.top=(r.bottom+2)+'px';m.classList.toggle('show')};
-$('#skinMenu').onclick=e=>{const b=e.target.closest('button');if(b){applySkin(b.dataset.s);$('#skinMenu').classList.remove('show')}};
+$('#skinMenu').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.f){applyFont(b.dataset.f);toast('Font: '+b.textContent)}else{applySkin(b.dataset.s);$('#skinMenu').classList.remove('show')}};
 document.addEventListener('click',e=>{if(!e.target.closest('#skinMenu'))$('#skinMenu').classList.remove('show')});
-document.body.dataset.skin=skin;
+document.body.dataset.skin=skin;document.body.dataset.font=font;
 
 /* ================= Windows: drag, snap, shade, show/hide ================= */
 const floating=()=>innerWidth>=1000;
-let pos=store.get('np2_pos',{}),vis=store.get('np2_wvis',{pl:true,ml:true,nn:true,eq:true}),zTop=10;if(vis.eq===undefined)vis.eq=true;
+let pos=store.get('np2_pos',{}),vis=store.get('np2_wvis',{pl:true,ml:true,nn:true,eq:true,dj:true}),zTop=10;if(vis.eq===undefined)vis.eq=true;if(vis.dj===undefined)vis.dj=true;
 const W=id=>$('#w-'+id);
 function defaults(){
   const mh=W('main').offsetHeight||240,mw=560,x2=16+mw+8,rw=Math.max(420,Math.min(innerWidth-x2-16,820));
-  const nnH=Math.min(300,Math.max(220,innerHeight-16-430-24));
+  const avail=innerHeight-32,djH=vis.dj?250:0,nnH2=vis.nn?Math.max(170,Math.round(avail*.24)):0,mlH=Math.max(260,avail-djH-nnH2),nnH=nnH2;
   const eh=vis.eq?(W('eq').offsetHeight||150):0;
   return{main:{x:16,y:16,w:mw},eq:{x:16,y:16+mh,w:mw},pl:{x:16,y:16+mh+eh,w:mw,h:Math.max(200,innerHeight-mh-eh-32)},
-    ml:{x:x2,y:16,w:rw,h:Math.max(300,innerHeight-nnH-40)},nn:{x:x2,y:Math.max(316,innerHeight-nnH-16),w:rw,h:nnH}};
+    ml:{x:x2,y:16,w:rw,h:mlH},dj:{x:x2,y:16+mlH,w:rw,h:djH},nn:{x:x2,y:16+mlH+djH,w:rw,h:nnH2}};
 }
 function layout(){
   const fl=floating();
-  for(const id of ['main','eq','pl','ml','nn']){
+  for(const id of ['main','eq','pl','ml','dj','nn']){
     const w=W(id);w.hidden=id!=='main'&&!vis[id];
     $$(`[data-show="${id}"]`).forEach(b=>b.classList.toggle('on',!w.hidden));
     if(!fl){w.style.left=w.style.top=w.style.width=w.style.height='';continue}
   }
   if(!fl)return;
   const d=defaults();
-  for(const id of ['main','eq','pl','ml','nn']){
+  for(const id of ['main','eq','pl','ml','dj','nn']){
     const p={...d[id],...(pos[id]||{})},w=W(id);
     w.style.left=clamp(p.x,-200,innerWidth-80)+'px';w.style.top=clamp(p.y,0,innerHeight-24)+'px';w.style.width=p.w+'px';
     if(id!=='main'&&id!=='eq'&&p.h)w.style.height=p.h+'px';
@@ -842,7 +1034,7 @@ $$('[data-show]').forEach(b=>b.onclick=()=>showWin(b.dataset.show));
 $$('[data-close]').forEach(b=>b.onclick=()=>showWin(b.dataset.close,false));
 $$('[data-shade]').forEach(b=>b.onclick=()=>b.closest('.win').classList.toggle('shade'));
 $$('.win').forEach(w=>{
-  const id=w.dataset.w,tb=w.querySelector('.tb');
+  const id=w.dataset.w,tb=w.querySelector('.tb');if(!id)return;
   w.addEventListener('pointerdown',()=>front(w));
   tb.addEventListener('dblclick',e=>{if(!e.target.closest('button'))w.classList.toggle('shade')});
   tb.addEventListener('pointerdown',e=>{
@@ -869,14 +1061,14 @@ function savePos(id,sizeOnly){
   if(id!=='main'&&!w.classList.contains('shade'))pos[id].h=w.offsetHeight;
   clearTimeout(posT);posT=setTimeout(()=>store.set('np2_pos',pos),300);
 }
-$('#layoutReset').onclick=()=>{pos={};vis={pl:true,ml:true,nn:true,eq:true};store.set('np2_pos',null);store.set('np2_wvis',vis);$$('.win').forEach(w=>w.classList.remove('shade'));layout()};
+$('#layoutReset').onclick=()=>{pos={};vis={pl:true,ml:true,nn:true,eq:true,dj:true};store.set('np2_pos',null);store.set('np2_wvis',vis);$$('.win').forEach(w=>w.classList.remove('shade'));layout()};
 addEventListener('resize',()=>layout());
-$('#nnReset').onclick=()=>{if(!confirm('Forget everything the network has learned? (Liked list and playlist stay.)'))return;
-  net=new MLP(SIZES);samples=[];lastLoss=null;fps={};meanFp=null;['np2_net','np2_samples','np2_loss','np2_fp'].forEach(k=>store.set(k,null));retrain();toast('Network reset')};
+$('#nnReset').onclick=()=>{if(!confirm(`Forget what the “${curProf().name}” profile has learned? (Other profiles, favorites and playlist stay.)`))return;
+  net=new MLP(SIZES);samples=[];lastLoss=null;['np2_net_','np2_samples_','np2_loss_'].forEach(k=>store.set(k+prof,null));retrain();toast('Network reset for '+curProf().name)};
 function drawStats(){
   const p=samples.filter(s=>s.y>.5).length;
-  $('#stats').textContent=samples.length?`${samples.length} lessons (${p} liked, ${samples.length-p} skipped) · ${Object.keys(fps).length} tracks heard · loss ${lastLoss!=null?lastLoss.toFixed(3):'--'}`
-    :'Untrained. Like, dislike, skip or listen through tracks and stations — the network learns your taste and ranks everything by match.';
+  $('#stats').textContent='Profile “'+curProf().name+'”: '+(samples.length?`${samples.length} lessons (${p} liked, ${samples.length-p} skipped) · ${Object.keys(fps).length} tracks heard · loss ${lastLoss!=null?lastLoss.toFixed(3):'--'}`
+    :'Untrained. Like, dislike, skip or listen through tracks and stations — the network learns your taste and ranks everything by match.');
 }
 
 /* ================= Visuals ================= */
@@ -1167,10 +1359,179 @@ function drawFsv(tm){
   }
 }
 
+/* ================= AI DJ — mood mixer ================= */
+const MOODS={Chill:'chillout|lounge|downtempo',Focus:'lofi|ambient|classical|instrumental',Happy:'pop|hits|funk|disco',Energetic:'dance|edm|rock',Party:'dance|house|party|hits',
+  Romantic:'love songs|romantic|soul|rnb',Melancholic:'blues|indie|acoustic',Sleep:'sleep|ambient|meditation',Workout:'workout|edm|drum and bass|hip hop',Dark:'darkwave|industrial|techno|gothic'};
+const MOOD_E={Chill:.25,Focus:.3,Happy:.6,Energetic:.8,Party:.85,Romantic:.35,Melancholic:.3,Sleep:.1,Workout:.9,Dark:.6};
+const STYLES={House:['house|deep house','House'],Techno:['techno|minimal','Techno'],Trance:['trance','Trance'],'Drum & Bass':['drum and bass|dnb','Drum & Bass'],Dubstep:['dubstep','Dubstep'],
+  'Lo-fi':['lofi|lo-fi','Lo-Fi'],Jazz:['jazz|smooth jazz','Jazz'],Rock:['rock|classic rock','Rock'],Metal:['metal|heavy metal','Metal'],Pop:['pop|hits','Pop'],'Hip-hop':['hip hop|rap','Hip-Hop/Rap'],
+  Classical:['classical','Classical'],Ambient:['ambient','Ambient'],Synthwave:['synthwave|retrowave','Electronic'],Latin:['latin|reggaeton','Latin'],Reggae:['reggae','Reggae'],
+  'R&B / Soul':['rnb|soul','R&B/Soul'],Folclor:['folclor|populara|folk','Folk'],Manele:['manele',''],'80s':['80s',''],'90s':['90s','']};
+let dj=Object.assign({moods:[],styles:[],energy:50,src:'both'},store.get('np2_dj',{}),{on:false}),djPool=[],djBusy=false;
+const saveDj=()=>store.set('np2_dj',{moods:dj.moods,styles:dj.styles,energy:dj.energy,src:dj.src});
+function djTags(){
+  const t=[];const add=str=>{for(const x of str.split('|'))if(!t.includes(x))t.push(x)};
+  for(const k of dj.styles)if(STYLES[k])add(STYLES[k][0]);
+  for(const k of dj.moods)if(MOODS[k])add(MOODS[k]);
+  if(!t.length)add(dj.energy<35?'chillout|ambient|lofi':dj.energy>70?'dance|edm|techno':'pop|indie|hits');
+  return t;
+}
+function djDesc(){const p=[...dj.moods,...dj.styles];return (p.length?p.join(' · '):'any style')+' · energy '+dj.energy+'%'}
+function renderDj(){
+  $('#djMoods').innerHTML=Object.keys(MOODS).map(k=>`<button class="chip${dj.moods.includes(k)?' on':''}" data-mood="${esc(k)}">${esc(k)}</button>`).join('');
+  $('#djStyles').innerHTML=Object.keys(STYLES).map(k=>`<button class="chip${dj.styles.includes(k)?' on':''}" data-style="${esc(k)}">${esc(k)}</button>`).join('');
+  $('#djEnergy').value=dj.energy;$('#djEv').textContent=dj.energy+'%';
+  $$('#djSrc .sb').forEach(b=>b.classList.toggle('on',b.dataset.v===dj.src));
+  $('#djGo').classList.toggle('on',dj.on);$('#djGo').textContent=dj.on?'■ STOP AI DJ':'▶ START AI DJ';
+}
+let djT;
+function djChanged(){saveDj();renderDj();djPool=[];if(dj.on){clearTimeout(djT);djT=setTimeout(()=>{djStatus('Mood changed: <b>'+esc(djDesc())+'</b> — the next pick follows it. Press ⏭ to switch now.');djRefill()},400)}}
+$('#djMoods').onclick=e=>{const b=e.target.closest('[data-mood]');if(!b)return;const k=b.dataset.mood;dj.moods=dj.moods.includes(k)?dj.moods.filter(x=>x!==k):[...dj.moods,k];
+  if(dj.moods.length&&dj.moods.includes(k)){const avg=dj.moods.reduce((a,m)=>a+(MOOD_E[m]??.5),0)/dj.moods.length;dj.energy=Math.round(avg*100)}djChanged()};
+$('#djStyles').onclick=e=>{const b=e.target.closest('[data-style]');if(!b)return;const k=b.dataset.style;dj.styles=dj.styles.includes(k)?dj.styles.filter(x=>x!==k):[...dj.styles,k];djChanged()};
+$('#djEnergy').oninput=e=>{dj.energy=+e.target.value;$('#djEv').textContent=dj.energy+'%'};
+$('#djEnergy').onchange=djChanged;
+$('#djSrc').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;dj.src=b.dataset.v;djChanged()};
+$('#djClear').onclick=()=>{dj.moods=[];dj.styles=[];dj.energy=50;djChanged()};
+function djStatus(h){$('#djStatus').innerHTML=h}
+async function djRefill(){
+  if(djBusy)return;djBusy=true;
+  const tags=djTags(),jobs=[];
+  try{
+    if(dj.src!=='tracks')jobs.push(findStations('',{tags:tags.slice(0,6),labels:[],cc:null,rest:[]}).catch(()=>[]));
+    if(dj.src!=='radio'){
+      const g=dj.styles.map(k=>STYLES[k][1]).filter(Boolean);
+      for(const x of g.slice(0,3))jobs.push(trendingAudius(x).catch(()=>[]));
+      const words=[...dj.styles.filter(k=>!STYLES[k][1]),...dj.moods].slice(0,3);
+      for(const w of words)jobs.push(searchAudius(w).catch(()=>[]));
+      if(!g.length&&!words.length)jobs.push(searchAudius(tags[0]).catch(()=>[]));
+    }
+    const got=(await Promise.all(jobs)).flat(),have=new Set(djPool.map(t=>t.id));
+    djPool=[...djPool,...got.filter(t=>!have.has(t.id))].slice(-400);
+  }finally{djBusy=false}
+}
+/* how the DJ scores a candidate: mood/style match + your learned taste + measured energy */
+function djScore(t){
+  const tags=djTags(),hay=t.live?(t.tags||''):(','+(t.genre||'')+','+(t.title||'')+',').toLowerCase();
+  let hits=0;for(const tg of tags)if(hay.includes(tg))hits++;
+  const sty=dj.styles.map(k=>STYLES[k][1].toLowerCase()).filter(Boolean);
+  if(!t.live&&sty.some(g=>(t.genre||'').toLowerCase()===g))hits+=2;
+  const match=Math.min(1,.35+hits*.25);
+  const taste=trained()?score(t):.5;
+  const f=fps[t.id];let efit=.5,eMeas=null;
+  if(f){eMeas=clamp(f[3]*.45+f[10]*.4+f[0]*.15);efit=clamp(1-Math.abs(eMeas-dj.energy/100)*1.6)}
+  return {total:.42*match+.38*taste+.2*efit,match,taste,efit,eMeas};
+}
+async function djPick(){
+  const seen=new Set([...recent.slice(0,40),cur?.id]);
+  let pool=djPool.filter(t=>!seen.has(t.id)&&(dj.src==='both'||(dj.src==='radio')===!!t.live));
+  if(pool.length<6){djStatus('Looking for <b>'+esc(djDesc())+'</b>…');await djRefill();pool=djPool.filter(t=>!seen.has(t.id)&&(dj.src==='both'||(dj.src==='radio')===!!t.live))}
+  if(!pool.length){djStatus("Couldn't find anything for this mood right now — try another style or source.");return null}
+  const sc=pool.map(djScore),mx=Math.max(...sc.map(x=>x.total)),ex=sc.map(x=>Math.exp((x.total-mx)/.06)),sum=ex.reduce((a,b)=>a+b,0);
+  let r=Math.random()*sum,i=0;for(;i<pool.length-1;i++){r-=ex[i];if(r<=0)break}
+  const t=pool[i],x=sc[i],why=[`mood/style ${Math.round(x.match*100)}%`,trained()?`your taste ${Math.round(x.taste*100)}%`:'taste: still learning',x.eMeas!=null?`energy ${Math.round(x.eMeas*100)}% (wanted ${dj.energy}%)`:'energy: not measured yet'];
+  djStatus(`AI DJ picked <b>${esc(t.title)}</b>${t.artist?' — '+esc(t.artist):''} · ${why.join(' · ')}`);
+  return t;
+}
+async function djStart(){
+  if(dj.on){dj.on=false;radioOn=false;$('#bAI').classList.remove('on');renderDj();djStatus('AI DJ stopped.');return}
+  dj.on=true;radioOn=true;$('#bAI').classList.add('on');renderDj();djPool=[];
+  djStatus('Warming up for <b>'+esc(djDesc())+'</b>…');
+  const t=await djPick();if(!t){dj.on=false;radioOn=false;$('#bAI').classList.remove('on');renderDj();return}
+  enqueue(t,true);
+}
+$('#djGo').onclick=djStart;
+renderDj();
+
+/* ================= Profiles ================= */
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const saveProfiles=()=>store.set('np2_profiles',profiles);
+function updateProfBtn(){const P=curProf();$('#profBtn').textContent='◉ '+P.name.toUpperCase()+' ▾';}
+function switchProfile(id,why){
+  if(id===prof||!profiles.some(p=>p.id===id))return;
+  prof=id;store.set('np2_prof',id);
+  net=new MLP(SIZES,store.get('np2_net_'+id,null));samples=store.get('np2_samples_'+id,[]);lastLoss=store.get('np2_loss_'+id,null);
+  radioPool=[];
+  const P=curProf();
+  if(P.eq&&PRESETS[P.eq]){eq.g=[...PRESETS[P.eq]];eq.preset=P.eq;buildEq();applyEq()}
+  if(P.skin)applySkin(P.skin);
+  updateProfBtn();renderChips();renderPl();renderMl();drawStats();
+  toast('Profile: '+P.name+(why?' · '+why:''));
+}
+const schedTxt=P=>P.sched?.on?`auto ${P.sched.days.map(d=>DAYS[d]).join(' ')} ${P.sched.from}–${P.sched.to}`:'';
+function renderProfMenu(){
+  $('#profMenu').innerHTML='<div class="grp" style="padding:6px 10px 2px;font-size:10px;font-weight:bold;letter-spacing:.1em;opacity:.6">LISTENING PROFILE</div>'+
+    profiles.map(P=>`<button data-p="${esc(P.id)}" class="${P.id===prof?'on':''}">${P.id===prof?'◉':'○'} ${esc(P.name)}<small>${esc([P.genres||'any genre',P.eq?'EQ '+P.eq:'',schedTxt(P)].filter(Boolean).join(' · '))}</small></button>`).join('')+
+    `<hr><button data-act="play">▶ Play “${esc(curProf().name)}” now<small>Neural radio with this profile's genres</small></button><button data-act="edit">✎ Edit “${esc(curProf().name)}”…</button><button data-act="new">＋ New profile…</button>`;
+}
+$('#profBtn').onclick=e=>{e.stopPropagation();renderProfMenu();const m=$('#profMenu'),r=e.currentTarget.getBoundingClientRect();m.style.left=Math.max(4,Math.min(r.left,innerWidth-340))+'px';m.style.top=(r.bottom+2)+'px';m.classList.toggle('show')};
+document.addEventListener('click',e=>{if(!e.target.closest('#profMenu,#profBtn'))$('#profMenu').classList.remove('show')});
+$('#profMenu').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;$('#profMenu').classList.remove('show');
+  if(b.dataset.p){autoHold=true;switchProfile(b.dataset.p)}
+  else if(b.dataset.act==='play')playProfile();
+  else if(b.dataset.act==='edit')openProfDlg(prof);
+  else if(b.dataset.act==='new')openProfDlg(null);
+};
+async function playProfile(){
+  const P=curProf();radioOn=true;$('#bAI').classList.add('on');
+  if(!P.genres.trim()){toast('Neural radio on — add genres to “'+P.name+'” to steer it');return next(false)}
+  $('#q').value=P.genres;await runSearch(P.genres,{radioOnly:true});
+  if(lib.search.length)enqueue(lib.search[0],true);else toast('No stations found for this profile right now');
+}
+let editing=null,pdDays=[];
+function openProfDlg(id){
+  editing=id;const P=id?profiles.find(p=>p.id===id):{name:'',genres:'',eq:'',skin:'',sched:{on:false,days:[1,2,3,4,5],from:'09:00',to:'17:00'}};
+  $('#pdTitle').textContent=id?'EDIT PROFILE':'NEW PROFILE';
+  $('#pdName').value=P.name;$('#pdGenres').value=P.genres;
+  $('#pdEq').innerHTML='<option value="">Keep current EQ</option>'+Object.keys(PRESETS).map(k=>`<option${k===P.eq?' selected':''}>${k}</option>`).join('');
+  $('#pdSkin').innerHTML='<option value="">Keep current skin</option>'+SKINS.filter(x=>x[0]!=='g').map(([k,n])=>`<option value="${k}"${k===P.skin?' selected':''}>${n}</option>`).join('');
+  $('#pdAuto').checked=!!P.sched?.on;pdDays=[...(P.sched?.days||[])];$('#pdFrom').value=P.sched?.from||'09:00';$('#pdTo').value=P.sched?.to||'17:00';
+  renderDays();pdHint();$('#pdDel').hidden=!id||profiles.length<2;
+  $('#profDlg').hidden=false;$('#dlgShade').classList.add('show');setTimeout(()=>$('#pdName').focus(),30);
+}
+function closeProfDlg(){$('#profDlg').hidden=true;$('#dlgShade').classList.remove('show')}
+function renderDays(){$('#pdDays').innerHTML=[1,2,3,4,5,6,0].map(d=>`<button type="button" class="sb${pdDays.includes(d)?' on':''}" data-d="${d}">${DAYS[d]}</button>`).join('')}
+$('#pdDays').onclick=e=>{const b=e.target.closest('[data-d]');if(!b)return;const d=+b.dataset.d;pdDays=pdDays.includes(d)?pdDays.filter(x=>x!==d):[...pdDays,d];renderDays()};
+function pdHint(){const v=$('#pdGenres').value.trim();if(!v){$('#pdHint').textContent='Empty = the network learns freely from everything you play.';return}const it=parseIntent(v);$('#pdHint').innerHTML=it.matched||it.rest.length?'Understood: '+intentLabel(it):'—'}
+$('#pdGenres').oninput=pdHint;
+$('#pdX').onclick=$('#pdCancel').onclick=closeProfDlg;$('#dlgShade').onclick=closeProfDlg;
+$('#pdForm').onsubmit=e=>{
+  e.preventDefault();const name=$('#pdName').value.trim().slice(0,24);if(!name)return;
+  const data={name,genres:$('#pdGenres').value.trim().slice(0,200),eq:$('#pdEq').value,skin:$('#pdSkin').value,sched:{on:$('#pdAuto').checked,days:pdDays.sort(),from:$('#pdFrom').value||'00:00',to:$('#pdTo').value||'23:59'}};
+  if(data.sched.on&&!data.sched.days.length)return toast('Pick at least one day for the schedule');
+  if(editing){Object.assign(profiles.find(p=>p.id===editing),data);saveProfiles();closeProfDlg();
+    const P=curProf();if(editing===prof){if(P.eq&&PRESETS[P.eq]){eq.g=[...PRESETS[P.eq]];eq.preset=P.eq;buildEq();applyEq()}if(P.skin)applySkin(P.skin);updateProfBtn();renderChips();drawStats();radioPool=[]}
+    toast('Profile saved')}
+  else{const id='p'+Date.now().toString(36);profiles.push({id,...data});saveProfiles();closeProfDlg();switchProfile(id,'new — it starts with a fresh network')}
+  lastAuto=null;checkSchedule();
+};
+$('#pdDel').onclick=()=>{
+  if(!editing||profiles.length<2)return;const P=profiles.find(p=>p.id===editing);
+  if(!confirm(`Delete profile “${P.name}” and what it learned?`))return;
+  profiles=profiles.filter(p=>p.id!==editing);saveProfiles();['np2_net_','np2_samples_','np2_loss_'].forEach(k=>store.set(k+editing,null));
+  closeProfDlg();if(prof===editing){prof='';switchProfile(profiles[0].id)}
+};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#profDlg').hidden)closeProfDlg()});
+/* automatic switching by day + time; a manual pick holds until the schedule's answer changes */
+let lastAuto=null,autoHold=false;
+const toMin=t=>{const [h,m]=String(t||'0:0').split(':').map(Number);return (h||0)*60+(m||0)};
+function checkSchedule(){
+  const auto=profiles.filter(P=>P.sched?.on);if(!auto.length)return;
+  const now=new Date(),d=now.getDay(),m=now.getHours()*60+now.getMinutes();
+  const hit=auto.find(P=>{const a=toMin(P.sched.from),b=toMin(P.sched.to);return P.sched.days.includes(d)&&(a<=b?m>=a&&m<b:m>=a||m<b)});
+  const target=hit?hit.id:(profiles.find(P=>!P.sched?.on)||profiles[0]).id;
+  if(target===lastAuto)return;
+  lastAuto=target;if(autoHold){autoHold=false}
+  if(target!==prof)switchProfile(target,hit?'auto, '+schedTxt(hit).replace('auto ',''):'auto');
+}
+setInterval(checkSchedule,30000);
+
 /* ================= Boot ================= */
-applySkin(skin);setState('stop');layout();renderTree();renderPl();renderMl();drawStats();updateNP();front(W('main'));
+document.body.dataset.font=font;applySkin(skin);updateProfBtn();setState('stop');layout();renderTree();renderPl();renderMl();drawStats();updateNP();front(W('main'));
 requestAnimationFrame(frame);
 setMl('Loading trending tracks…');
+checkSchedule();
 trendingAudius().then(L=>{lib.trending=L;renderTree();if(node==='trending'){renderMl();setMl('Trending on Audius this week — full tracks')}})
   .catch(()=>{if(node==='trending')setMl("Couldn't reach Audius — try Search or a radio category")});
 }
