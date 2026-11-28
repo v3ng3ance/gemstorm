@@ -107,6 +107,7 @@ select,input[type=number]{background:#222831;color:#fff;border:1px solid #778;pa
 <div id="intro"><div class="box">
   <h1>TRANSPORT MAGNAT</h1>
   <p>Anul 1950. Ai un împrumut de la bancă și o hartă plină de orașe, mine, păduri și fabrici.<br>Construiește drumuri, căi ferate și stații, cumpără autobuze, camioane și trenuri și transformă-le în profit.</p>
+  <div class="row"><span>🌐 Limba:</span><span id="introLang"></span></div>
   <div class="row"><label>Seed hartă: <input type="number" id="seedIn" style="width:110px"></label></div>
   <div class="row"><button class="btn" id="bNew">🆕 Joc nou</button><button class="btn" id="bCont">📂 Continuă salvarea</button><button class="btn" onclick="A.help()">❓ Cum se joacă</button><button class="btn" id="bBack" style="display:none" onclick="$('intro').style.display='none'">↩ Înapoi la joc</button></div><div style="color:#9ab;font-size:12px;margin-top:10px">Joc original inspirat de clasicele jocuri de transport (gen Transport Tycoon). Toată grafica e desenată din cod.</div>
 </div></div>
@@ -199,7 +200,493 @@ const R=()=>rng(), RI=(a,b)=>a+Math.floor(R()*(b-a+1));
 const MR=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
 const shadeCache=new Map();
 function shade(hex,f){const k=hex+f;let s=shadeCache.get(k);if(s)return s;let h=hex.replace('#','');if(h.length===3)h=h.split('').map(c=>c+c).join('');const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);const cl=v=>Math.max(0,Math.min(255,Math.round(v*f)));s=`rgb(${cl(r)},${cl(g)},${cl(b)})`;shadeCache.set(k,s);return s;}
-const fmt=n=>(n<0?'-':'')+Math.abs(Math.round(n)).toLocaleString('ro-RO')+' lei';
+// ================= LIMBI =================
+const LANGS={ro:'🇷🇴 Română',en:'🇬🇧 English',fr:'🇫🇷 Français',de:'🇩🇪 Deutsch',es:'🇪🇸 Español',it:'🇮🇹 Italiano',pt:'🇵🇹 Português'};
+const LCODES=['ro','en','fr','de','es','it','pt'];
+const LOCALES={ro:'ro-RO',en:'en-GB',fr:'fr-FR',de:'de-DE',es:'es-ES',it:'it-IT',pt:'pt-PT'};
+const MONTHS={ro:['Ian','Feb','Mar','Apr','Mai','Iun','Iul','Aug','Sep','Oct','Noi','Dec'],en:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],fr:['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'],de:['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'],es:['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'],it:['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'],pt:['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez']};
+const I18N_SRC=`(altă apă?).|(different water?).|(autre plan d'eau ?).|(anderes Gewässer?).|(¿otra masa de agua?).|(altro specchio d'acqua?).|(outra massa de água?).
+(așteaptă încărcare completă)|(waiting for full load)|(attend le chargement complet)|(wartet auf volle Ladung)|(esperando carga completa)|(attende carico completo)|(aguarda carga completa)
+(clonă a|(clone of|(clone de|(Klon von|(clon de|(clone di|(clone de
+(dobândă 4%/an)|(interest 4%/year)|(intérêts 4 %/an)|(Zinsen 4 %/Jahr)|(interés 4 %/año)|(interesse 4%/anno)|(juros 4%/ano)
+(două linii paralele) sau|(two parallel tracks) or|(deux voies parallèles) ou|(zwei parallele Gleise) oder|(dos vías paralelas) o|(due binari paralleli) o|(duas linhas paralelas) ou
+(pantă)|(slope)|(pente)|(Hang)|(pendiente)|(pendio)|(declive)
+(prea multe vagoane pentru această locomotivă — max|(too many wagons for this locomotive — max|(trop de wagons pour cette locomotive — max|(zu viele Wagen für diese Lok — max|(demasiados vagones para esta locomotora — máx|(troppi vagoni per questa locomotiva — max|(demasiados vagões para esta locomotiva — máx
+(⧉). În fereastra unui vehicul, traseul apare desenat pe hartă.|(⧉). In a vehicle window, its route is drawn on the map.|(⧉). Dans la fenêtre d'un véhicule, son itinéraire est tracé sur la carte.|(⧉). Im Fahrzeugfenster wird die Route auf der Karte angezeigt.|(⧉). En la ventana de un vehículo, su ruta se dibuja en el mapa.|(⧉). Nella finestra di un veicolo, il percorso appare sulla mappa.|(⧉). Na janela de um veículo, a rota aparece desenhada no mapa.
+1. 🚏 Pune o|1. 🚏 Place a|1. 🚏 Placez un|1. 🚏 Setze eine|1. 🚏 Coloca una|1. 🚏 Metti una|1. 🚏 Coloca uma
+10.000 rambursează|10,000 repay|10 000 rembourser|10.000 tilgen|10.000 devolver|10.000 rimborsa|10.000 reembolsar
+10.000 împrumut|10,000 loan|10 000 emprunt|10.000 Kredit|10.000 préstamo|10.000 prestito|10.000 empréstimo
+2. 🛣 Leagă orașele cu|2. 🛣 Connect the towns with a|2. 🛣 Reliez les villes par une|2. 🛣 Verbinde die Städte mit einer|2. 🛣 Une las ciudades con una|2. 🛣 Collega le città con una|2. 🛣 Liga as cidades com uma
+3. 🚌 Pune un|3. 🚌 Place a|3. 🚌 Placez un|3. 🚌 Setze ein|3. 🚌 Coloca un|3. 🚌 Metti un|3. 🚌 Coloca um
+3×3 dale plate, la aceeași înălțime (25.000 lei). Avioanele se cumpără din fereastra aeroportului (hangar).|3×3 flat tiles at the same height (25,000 lei). Planes are bought from the airport window (hangar).|3×3 cases plates à la même hauteur (25 000 lei). Les avions s'achètent depuis la fenêtre de l'aéroport (hangar).|3×3 flache Felder auf gleicher Höhe (25.000 lei). Flugzeuge kauft man im Flughafenfenster (Hangar).|3×3 casillas llanas a la misma altura (25.000 lei). Los aviones se compran en la ventana del aeropuerto (hangar).|3×3 caselle piane alla stessa altezza (25.000 lei). Gli aerei si comprano dalla finestra dell'aeroporto (hangar).|3×3 quadrados planos à mesma altura (25.000 lei). Os aviões compram-se na janela do aeroporto (hangar).
+4. În fereastra depoului cumpără un autobuz, apoi dă click pe cele două stații (ordine) și apasă|4. In the depot window buy a bus, then click both stops (orders) and press|4. Dans la fenêtre du dépôt achetez un bus, cliquez sur les deux arrêts (ordres) puis appuyez sur|4. Kaufe im Depotfenster einen Bus, klicke beide Haltestellen an (Aufträge) und drücke|4. En la ventana del depósito compra un autobús, haz clic en las dos paradas (órdenes) y pulsa|4. Nella finestra del deposito compra un autobus, clicca le due fermate (ordini) e premi|4. Na janela do depósito compra um autocarro, clica nas duas paragens (ordens) e carrega em
+a ajuns în depou.|has arrived at the depot.|est arrivé au dépôt.|ist im Depot angekommen.|ha llegado al depósito.|è arrivato al deposito.|chegou ao depósito.
+a decolat.|has taken off.|a décollé.|ist gestartet.|ha despegado.|è decollato.|descolou.
+A depou auto|A road depot|A dépôt routier|A Straßendepot|A depósito de carretera|A deposito stradale|A depósito rodoviário
+a fost demolată.|has been demolished.|a été démolie.|wurde abgerissen.|ha sido demolida.|è stata demolita.|foi demolida.
+a fost desființată.|has been closed.|a été supprimée.|wurde aufgelöst.|ha sido eliminada.|è stata soppressa.|foi encerrada.
+a intrat în hangar.|has entered the hangar.|est entré au hangar.|ist im Hangar.|ha entrado en el hangar.|è entrato nell'hangar.|entrou no hangar.
+a pornit din|has left|est parti de|ist abgefahren aus|ha salido de|è partito da|partiu de
+a sosit în|has arrived at|est arrivé à|ist angekommen in|ha llegado a|è arrivato a|chegou a
+a început. Profitul anului trecut:|has begun. Last year's profit:|a commencé. Bénéfice de l'an dernier :|hat begonnen. Gewinn im Vorjahr:|ha comenzado. Beneficio del año pasado:|è iniziato. Profitto dell'anno scorso:|começou. Lucro do ano passado:
+Abur „Mocănița” 230|Steam „Mocănița” 230|Vapeur „Mocănița” 230|Dampf „Mocănița” 230|Vapor „Mocănița” 230|Vapore „Mocănița” 230|Vapor „Mocănița” 230
+Abur „Pacific” 231|Steam „Pacific” 231|Vapeur „Pacific” 231|Dampf „Pacific” 231|Vapor „Pacific” 231|Vapore „Pacific” 231|Vapor „Pacific” 231
+acceptă|accepts|accepte|nimmt an|acepta|accetta|aceita
+Acceptă|Accepts|Accepte|Nimmt an|Acepta|Accetta|Aceita
+adaugă întâi ordine (stații).|add orders (stations) first.|ajoutez d'abord des ordres (stations).|füge zuerst Aufträge (Stationen) hinzu.|añade primero órdenes (estaciones).|aggiungi prima degli ordini (stazioni).|adiciona primeiro ordens (estações).
+Aerodrom|Airfield|Aérodrome|Flugplatz|Aeródromo|Aerodromo|Aeródromo
+Aeroport|Airport|Aéroport|Flughafen|Aeropuerto|Aeroporto|Aeroporto
+aeroport|airport|aéroport|Flughafen|aeropuerto|aeroporto|aeroporto
+Aeroportul (3×3) cere teren plat, liber, la aceeași înălțime — folosește ⛰ Nivelare|The airport (3×3) needs flat, free land at one height — use ▭ Level|L'aéroport (3×3) exige un terrain plat, libre, à une seule hauteur — utilisez ▭ Niveler|Der Flughafen (3×3) braucht freies, flaches Land auf einer Höhe — nutze ▭ Einebnen|El aeropuerto (3×3) necesita terreno llano y libre a una misma altura — usa ▭ Nivelar|L'aeroporto (3×3) richiede terreno piano e libero alla stessa altezza — usa ▭ Livella|O aeroporto (3×3) exige terreno plano e livre à mesma altura — usa ▭ Nivelar
+Aeroportul de bază nu mai există.|The home airport no longer exists.|L'aéroport d'attache n'existe plus.|Der Heimatflughafen existiert nicht mehr.|El aeropuerto base ya no existe.|L'aeroporto base non esiste più.|O aeroporto base já não existe.
+aeroportul de destinație nu mai există!|the destination airport no longer exists!|l'aéroport de destination n'existe plus !|der Zielflughafen existiert nicht mehr!|¡el aeropuerto de destino ya no existe!|l'aeroporto di destinazione non esiste più!|o aeroporto de destino já não existe!
+Ai nevoie de un depou pentru a clona.|You need a depot to clone.|Il vous faut un dépôt pour cloner.|Zum Klonen brauchst du ein Depot.|Necesitas un depósito para clonar.|Serve un deposito per clonare.|Precisas de um depósito para clonar.
+Ajungi la 15 vehicule|Reach 15 vehicles|Atteindre 15 véhicules|Erreiche 15 Fahrzeuge|Llega a 15 vehículos|Raggiungi 15 veicoli|Chega a 15 veículos
+Ajutor|Help|Aide|Hilfe|Ayuda|Aiuto|Ajuda
+Alege vehiculul din|Choose the vehicle in|Choisissez le véhicule dans|Wähle das Fahrzeug in|Elige el vehículo en|Scegli il veicolo in|Escolhe o veículo em
+Alege 🚏 Stație auto (jos) și dă click pe un drum din centrul unui oraș.|Pick 🚏 Road stop (bottom) and click a road in a town centre.|Choisissez 🚏 Arrêt routier (en bas) et cliquez sur une route au centre d'une ville.|Wähle 🚏 Haltestelle (unten) und klicke auf eine Straße im Stadtzentrum.|Elige 🚏 Parada (abajo) y haz clic en una calle del centro de una ciudad.|Scegli 🚏 Fermata (in basso) e clicca su una strada del centro di una città.|Escolhe 🚏 Paragem (em baixo) e clica numa estrada no centro de uma cidade.
+An trecut|Last year|Année passée|Vorjahr|Año pasado|Anno scorso|Ano passado
+Antreprenor de transport|Transport entrepreneur|Entrepreneur de transport|Transportunternehmer|Empresario del transporte|Imprenditore dei trasporti|Empresário de transportes
+Anul|Year|L'année|Das Jahr|El año|L'anno|O ano
+Anul 1950. Ai un împrumut de la bancă și o hartă plină de orașe, mine, păduri și fabrici.|The year is 1950. You have a bank loan and a map full of towns, mines, forests and factories.|Nous sommes en 1950. Vous avez un prêt bancaire et une carte pleine de villes, mines, forêts et usines.|Wir schreiben 1950. Du hast einen Bankkredit und eine Karte voller Städte, Minen, Wälder und Fabriken.|Es 1950. Tienes un préstamo bancario y un mapa lleno de ciudades, minas, bosques y fábricas.|È il 1950. Hai un prestito bancario e una mappa piena di città, miniere, foreste e fabbriche.|Estamos em 1950. Tens um empréstimo bancário e um mapa cheio de cidades, minas, florestas e fábricas.
+anul trecut:|last year:|année passée :|Vorjahr:|año pasado:|anno scorso:|ano passado:
+Apasă ❓ în meniu pentru ajutor.|Press ❓ in the menu for help.|Appuyez sur ❓ dans le menu pour l'aide.|Drücke ❓ im Menü für Hilfe.|Pulsa ❓ en el menú para ayuda.|Premi ❓ nel menu per l'aiuto.|Carrega em ❓ no menu para ajuda.
+Arată|Show|Afficher|Zeige|Mostrar|Mostra|Mostrar
+Arde cărbunele livrat (nu produce marfă).|Burns the delivered coal (produces no cargo).|Brûle le charbon livré (ne produit pas de marchandise).|Verbrennt die gelieferte Kohle (keine Fracht).|Quema el carbón entregado (no produce carga).|Brucia il carbone consegnato (non produce merci).|Queima o carvão entregue (não produz carga).
+Ascunde|Hide|Masquer|Verstecke|Ocultar|Nascondi|Ocultar
+Atenție: contul este pe minus! Ia un împrumut sau redu cheltuielile.|Warning: your account is overdrawn! Take a loan or cut costs.|Attention : votre compte est à découvert ! Empruntez ou réduisez les dépenses.|Achtung: Dein Konto ist im Minus! Nimm einen Kredit auf oder senke die Kosten.|¡Atención: la cuenta está en negativo! Pide un préstamo o reduce gastos.|Attenzione: il conto è in rosso! Prendi un prestito o riduci le spese.|Atenção: a conta está a negativo! Pede um empréstimo ou corta despesas.
+Autobuz|Bus|Bus|Bus|Autobús|Autobus|Autocarro
+Autobuz Bucegi 30|Bus Bucegi 30|Bus Bucegi 30|Bus Bucegi 30|Autobús Bucegi 30|Autobus Bucegi 30|Autocarro Bucegi 30
+Autobuz Metropol|Bus Metropol|Bus Metropol|Bus Metropol|Autobús Metropol|Autobus Metropol|Autocarro Metropol
+Autobuz Rapid 60|Bus Rapid 60|Bus Rapid 60|Bus Rapid 60|Autobús Rapid 60|Autobus Rapid 60|Autocarro Rapid 60
+Autobuze|Buses|Bus|Busse|Autobuses|Autobus|Autocarros
+automat dacă cele două capete sunt la aceeași înălțime. Pe pante, drumul și șina merg doar de-a lungul pantei — altfel folosește ⛰ 🕳 ▭ ca să modelezi terenul.|automatically if both ends are at the same height. On slopes, roads and rails only run along the slope — otherwise use ⛰ 🕳 ▭ to shape the land.|automatiquement si les deux extrémités sont à la même hauteur. Sur les pentes, routes et rails ne suivent que le sens de la pente — sinon utilisez ⛰ 🕳 ▭ pour modeler le terrain.|automatisch, wenn beide Enden gleich hoch liegen. Am Hang verlaufen Straße und Gleis nur entlang des Hangs — sonst forme das Gelände mit ⛰ 🕳 ▭.|automáticamente si ambos extremos están a la misma altura. En pendientes, carreteras y vías solo siguen la pendiente — si no, usa ⛰ 🕳 ▭ para modelar el terreno.|automaticamente se le due estremità sono alla stessa altezza. Sui pendii strade e binari seguono solo la pendenza — altrimenti usa ⛰ 🕳 ▭ per modellare il terreno.|automaticamente se as duas pontas estiverem à mesma altura. Em declives, estradas e linhas só seguem o declive — caso contrário usa ⛰ 🕳 ▭ para moldar o terreno.
+Avioane|Aircraft|Avions|Flugzeuge|Aviones|Aerei|Aviões
+Avion|Plane|Avion|Flugzeug|Avión|Aereo|Avião
+Avion Albatros|Plane Albatros|Avion Albatros|Flugzeug Albatros|Avión Albatros|Aereo Albatros|Avião Albatros
+Avion poștal Rândunica|Mail plane Rândunica|Avion postal Rândunica|Postflugzeug Rândunica|Avión postal Rândunica|Aereo postale Rândunica|Avião postal Rândunica
+Avionul pornește din acest aeroport, care îi devine primul ordin. Adaugă un al doilea aeroport ca destinație.|The plane starts from this airport, which becomes its first order. Add a second airport as destination.|L'avion part de cet aéroport, qui devient son premier ordre. Ajoutez un second aéroport comme destination.|Das Flugzeug startet hier; dieser Flughafen wird sein erster Auftrag. Füge einen zweiten Flughafen als Ziel hinzu.|El avión parte de este aeropuerto, que será su primera orden. Añade un segundo aeropuerto como destino.|L'aereo parte da questo aeroporto, che diventa il suo primo ordine. Aggiungi un secondo aeroporto come destinazione.|O avião parte deste aeroporto, que passa a ser a primeira ordem. Adiciona um segundo aeroporto como destino.
+așteaptă|waiting|attend|wartet|esperando|in attesa|à espera
+așteaptă de mult: linia sau peronul sunt ocupate. Fă o linie de evitare sau încă un peron.|has been waiting long: the line or platform is busy. Build a passing loop or another platform.|attend depuis longtemps : la voie ou le quai est occupé. Construisez un évitement ou un autre quai.|wartet schon lange: Strecke oder Bahnsteig belegt. Baue ein Ausweichgleis oder einen weiteren Bahnsteig.|espera desde hace mucho: la vía o el andén están ocupados. Construye un apartadero u otro andén.|aspetta da molto: binario o banchina occupati. Costruisci un binario di incrocio o un'altra banchina.|espera há muito: a linha ou a plataforma estão ocupadas. Faz um desvio ou outra plataforma.
+Așteaptă linie liberă|Waiting for a free line|Attend une voie libre|Wartet auf freie Strecke|Espera vía libre|Attende binario libero|À espera de linha livre
+așteaptă:|waiting:|en attente :|wartet:|esperando:|in attesa:|à espera:
+Bancă|Bank|Banque|Bank|Banco|Banca|Banco
+Bine ai venit, director! Ai|Welcome, director! You have|Bienvenue, directeur ! Vous avez|Willkommen, Direktor! Du hast|¡Bienvenido, director! Tienes|Benvenuto, direttore! Hai|Bem-vindo, diretor! Tens
+Biserică|Church|Église|Kirche|Iglesia|Chiesa|Igreja
+Bloc de locuințe|Apartment block|Immeuble|Wohnblock|Bloque de pisos|Condominio|Prédio de habitação
+bunuri|goods|marchandises|Güter|mercancías|merci|mercadorias
+Bunuri|Goods|Marchandises|Güter|Mercancías|Merci|Mercadorias
+C cale ferată|C railway|C voie ferrée|C Schiene|C ferrocarril|C ferrovia|C ferrovia
+cale ferată|railway|voie ferrée|Schiene|vía férrea|ferrovia|via férrea
+Cale ferată|Railway|Voie ferrée|Schiene|Ferrocarril|Ferrovia|Ferrovia
+Camioane|Trucks|Camions|Lastwagen|Camiones|Camion|Camiões
+Camion|Truck|Camion|Lkw|Camión|Camion|Camião
+Camion Carpați 10t|Truck Carpați 10t|Camion Carpați 10t|Lkw Carpați 10t|Camión Carpați 10t|Camion Carpați 10t|Camião Carpați 10t
+Camion Carpați 5t|Truck Carpați 5t|Camion Carpați 5t|Lkw Carpați 5t|Camión Carpați 5t|Camion Carpați 5t|Camião Carpați 5t
+Camion Titan|Truck Titan|Camion Titan|Lkw Titan|Camión Titan|Camion Titan|Camião Titan
+Cantitate|Amount|Quantité|Menge|Cantidad|Quantità|Quantidade
+Capacitate:|Capacity:|Capacité :|Kapazität:|Capacidad:|Capacità:|Capacidade:
+Cargou Delta|Freighter Delta|Cargo Delta|Frachter Delta|Carguero Delta|Mercantile Delta|Cargueiro Delta
+Casă|House|Maison|Haus|Casa|Casa|Casa
+Casă mică|Small house|Petite maison|Kleines Haus|Casa pequeña|Casetta|Casa pequena
+Cel mai profitabil vehicul|Most profitable vehicle|Véhicule le plus rentable|Profitabelstes Fahrzeug|Vehículo más rentable|Veicolo più redditizio|Veículo mais lucrativo
+Centrală|Power Plant|Centrale|Kraftwerk|Central|Centrale|Central
+Centrează|Center|Centrer|Zentrieren|Centrar|Centra|Centrar
+Centru|Centre|Centre|Zentrum|Centro|Centro|Centro
+cereale|grain|céréales|Getreide|cereales|cereali|cereais
+Cereale|Grain|Céréales|Getreide|Cereales|Cereali|Cereais
+Cereale/Oțel → Fabrică → Bunuri|Grain/Steel → Factory → Goods|Céréales/Acier → Usine → Marchandises|Getreide/Stahl → Fabrik → Güter|Cereales/Acero → Fábrica → Mercancías|Cereali/Acciaio → Fabbrica → Merci|Cereais/Aço → Fábrica → Mercadorias
+Cherestea|Sawmill|Scierie|Sägewerk|Aserradero|Segheria|Serração
+click pe o dală de apă (6.000 lei). Aici cumperi nave.|click a water tile (6,000 lei). Ships are bought here.|cliquez sur une case d'eau (6 000 lei). On y achète des navires.|klicke auf ein Wasserfeld (6.000 lei). Hier kaufst du Schiffe.|haz clic en una casilla de agua (6.000 lei). Aquí se compran barcos.|clicca su una casella d'acqua (6.000 lei). Qui compri le navi.|clica num quadrado de água (6.000 lei). Aqui compras navios.
+click pe o dală plată de pe mal, lângă apă (4.000 lei). Navele acostează lângă el.|click a flat shore tile next to water (4,000 lei). Ships dock beside it.|cliquez sur une case plate du rivage, au bord de l'eau (4 000 lei). Les navires accostent à côté.|klicke auf ein flaches Uferfeld am Wasser (4.000 lei). Schiffe legen daneben an.|haz clic en una casilla llana de la orilla junto al agua (4.000 lei). Los barcos atracan al lado.|clicca su una casella piana della riva vicino all'acqua (4.000 lei). Le navi attraccano accanto.|clica num quadrado plano da margem junto à água (4.000 lei). Os navios atracam ao lado.
+click pe o dală sau trage o zonă.|click a tile or drag an area.|cliquez sur une case ou tracez une zone.|klicke auf ein Feld oder ziehe einen Bereich.|haz clic en una casilla o arrastra una zona.|clicca una casella o trascina un'area.|clica num quadrado ou arrasta uma área.
+Click pe o stație!|Click a station!|Cliquez sur une station !|Klicke auf eine Station!|¡Haz clic en una estación!|Clicca su una stazione!|Clica numa estação!
+click pe stații în ordinea traseului. Trage cu mouse-ul ca să muți harta.|click the stations in route order. Drag with the mouse to move the map.|cliquez sur les stations dans l'ordre du trajet. Faites glisser pour déplacer la carte.|klicke die Stationen in Routenreihenfolge an. Ziehen verschiebt die Karte.|haz clic en las estaciones en el orden de la ruta. Arrastra para mover el mapa.|clicca le stazioni nell'ordine del percorso. Trascina per spostare la mappa.|clica nas estações pela ordem da rota. Arrasta para mover o mapa.
+click pe teren liber lângă o șină (săgeata galbenă arată ieșirea).|click free land next to a track (the yellow arrow shows the exit).|cliquez sur un terrain libre près d'une voie (la flèche jaune indique la sortie).|klicke auf freies Land neben einem Gleis (gelber Pfeil = Ausfahrt).|haz clic en terreno libre junto a una vía (la flecha amarilla indica la salida).|clicca su terreno libero vicino a un binario (la freccia gialla indica l'uscita).|clica em terreno livre junto a uma linha (a seta amarela mostra a saída).
+click pe teren liber lângă un drum (săgeata galbenă arată ieșirea).|click free land next to a road (the yellow arrow shows the exit).|cliquez sur un terrain libre près d'une route (la flèche jaune indique la sortie).|klicke auf freies Land neben einer Straße (gelber Pfeil = Ausfahrt).|haz clic en terreno libre junto a una carretera (la flecha amarilla indica la salida).|clicca su terreno libero vicino a una strada (la freccia gialla indica l'uscita).|clica em terreno livre junto a uma estrada (a seta amarela mostra a saída).
+click pe un drum drept sau pe teren liber. Zona luminată arată ce clădiri/industrii deservește.|click a straight road or free land. The lit area shows which buildings/industries it serves.|cliquez sur une route droite ou un terrain libre. La zone éclairée montre ce qui est desservi.|klicke auf eine gerade Straße oder freies Land. Der helle Bereich zeigt das Einzugsgebiet.|haz clic en una carretera recta o terreno libre. La zona iluminada muestra a qué da servicio.|clicca su una strada dritta o terreno libero. L'area illuminata mostra cosa serve.|clica numa estrada reta ou terreno livre. A área iluminada mostra o que serve.
+click pentru a cumpăra vehicule|click to buy vehicles|cliquez pour acheter des véhicules|klicken, um Fahrzeuge zu kaufen|haz clic para comprar vehículos|clicca per comprare veicoli|clica para comprar veículos
+click sau trage o zonă: o coboară cu un nivel.|click or drag an area: lowers it one level.|cliquez ou tracez une zone : l'abaisse d'un niveau.|klicke oder ziehe einen Bereich: senkt ihn um eine Stufe.|haz clic o arrastra una zona: la baja un nivel.|clicca o trascina un'area: la abbassa di un livello.|clica ou arrasta uma área: baixa-a um nível.
+click sau trage o zonă: o ridică cu un nivel (250 lei / colț).|click or drag an area: raises it one level (250 lei / corner).|cliquez ou tracez une zone : l'élève d'un niveau (250 lei / coin).|klicke oder ziehe einen Bereich: hebt ihn um eine Stufe (250 lei / Ecke).|haz clic o arrastra una zona: la sube un nivel (250 lei / esquina).|clicca o trascina un'area: la alza di un livello (250 lei / angolo).|clica ou arrasta uma área: sobe-a um nível (250 lei / canto).
+Clonează|Clone|Cloner|Klonen|Clonar|Clona|Clonar
+Clonează vehiculele profitabile cu butonul ⧉ din fereastra lor.|Clone profitable vehicles with the ⧉ button in their window.|Clonez les véhicules rentables avec le bouton ⧉ de leur fenêtre.|Klone profitable Fahrzeuge mit der ⧉-Taste in ihrem Fenster.|Clona los vehículos rentables con el botón ⧉ de su ventana.|Clona i veicoli redditizi con il pulsante ⧉ nella loro finestra.|Clona os veículos lucrativos com o botão ⧉ na janela deles.
+Clădiri|Buildings|Bâtiments|Gebäude|Edificios|Edifici|Edifícios
+Clădiri:|Buildings:|Bâtiments :|Gebäude:|Edificios:|Edifici:|Edifícios:
+Coboară teren|Lower land|Abaisser|Absenken|Bajar terreno|Abbassa|Baixar terreno
+Compania ta este considerată|Your company is regarded as|Votre compagnie est considérée comme|Deine Firma gilt als|Tu empresa es considerada|La tua compagnia è considerata|A tua empresa é considerada
+Companie regională|Regional company|Compagnie régionale|Regionalfirma|Empresa regional|Compagnia regionale|Empresa regional
+Construcții|Construction|Construction|Bau|Construcción|Costruzioni|Construção
+Construiește drumuri, căi ferate și stații, cumpără autobuze, camioane și trenuri și transformă-le în profit.|Build roads, railways and stations, buy buses, trucks and trains and turn them into profit.|Construisez routes, voies ferrées et stations, achetez bus, camions et trains et transformez-les en profit.|Baue Straßen, Bahnen und Stationen, kaufe Busse, Lkw und Züge und mache Gewinn.|Construye carreteras, vías y estaciones, compra autobuses, camiones y trenes y conviértelos en beneficio.|Costruisci strade, ferrovie e stazioni, compra autobus, camion e treni e trasformali in profitto.|Constrói estradas, ferrovias e estações, compra autocarros, camiões e comboios e transforma-os em lucro.
+Construiește prima stație|Build your first station|Construisez votre première station|Baue deine erste Station|Construye tu primera estación|Costruisci la prima stazione|Constrói a primeira estação
+Construiește ⚓ porturi pe malul aceluiași lac, un 🛠 șantier naval pe apă și cumpără o navă.|Build ⚓ docks on the shore of the same lake, a 🛠 shipyard on the water and buy a ship.|Construisez des ⚓ ports sur la rive d'un même lac, un 🛠 chantier naval sur l'eau et achetez un navire.|Baue ⚓ Häfen am Ufer desselben Sees, eine 🛠 Werft auf dem Wasser und kaufe ein Schiff.|Construye ⚓ puertos en la orilla del mismo lago, un 🛠 astillero en el agua y compra un barco.|Costruisci ⚓ porti sulla riva dello stesso lago, un 🛠 cantiere navale sull'acqua e compra una nave.|Constrói ⚓ portos na margem do mesmo lago, um 🛠 estaleiro na água e compra um navio.
+Construiește ✈ două aeroporturi în orașe mari (nivelează terenul dacă e nevoie) și cumpără un avion din hangar.|Build ✈ two airports in big towns (level the land if needed) and buy a plane from the hangar.|Construisez ✈ deux aéroports dans de grandes villes (nivelez si besoin) et achetez un avion au hangar.|Baue ✈ zwei Flughäfen in großen Städten (bei Bedarf einebnen) und kaufe ein Flugzeug im Hangar.|Construye ✈ dos aeropuertos en ciudades grandes (nivela si hace falta) y compra un avión en el hangar.|Costruisci ✈ due aeroporti in città grandi (livella se serve) e compra un aereo nell'hangar.|Constrói ✈ dois aeroportos em cidades grandes (nivela se preciso) e compra um avião no hangar.
+Construiește 🚉|Build 🚉|Construisez des 🚉|Baue 🚉|Construye 🚉|Costruisci 🚉|Constrói 🚉
+Continuă salvarea|Continue saved game|Continuer la partie|Spielstand fortsetzen|Continuar partida|Continua partita|Continuar jogo
+Cost:|Cost:|Coût :|Kosten:|Coste:|Costo:|Custo:
+Costuri de funcționare|Running costs|Frais de fonctionnement|Betriebskosten|Costes de funcionamiento|Costi di esercizio|Custos de funcionamento
+Cum se joacă|How to play|Comment jouer|Spielanleitung|Cómo jugar|Come si gioca|Como jogar
+cumpărat. Click pe gări pentru ordine, apoi Pornește.|bought. Click stations for orders, then Start.|acheté. Cliquez sur les gares pour les ordres, puis Démarrer.|gekauft. Klicke Bahnhöfe für Aufträge an, dann Starten.|comprado. Haz clic en las estaciones para las órdenes y luego Arrancar.|acquistato. Clicca le stazioni per gli ordini, poi Avvia.|comprado. Clica nas estações para as ordens e depois Arrancar.
+cumpărat. Click pe stații pentru a-i da ordine, apoi Pornește.|bought. Click stations to give it orders, then Start.|acheté. Cliquez sur les stations pour lui donner des ordres, puis Démarrer.|gekauft. Klicke Stationen für Aufträge an, dann Starten.|comprado. Haz clic en las estaciones para darle órdenes y luego Arrancar.|acquistato. Clicca le stazioni per dargli ordini, poi Avvia.|comprado. Clica nas estações para lhe dar ordens e depois Arrancar.
+cumpărat. Click pe încă un aeroport ca destinație, apoi Pornește.|bought. Click another airport as destination, then Start.|acheté. Cliquez sur un autre aéroport comme destination, puis Démarrer.|gekauft. Klicke einen weiteren Flughafen als Ziel an, dann Starten.|comprado. Haz clic en otro aeropuerto como destino y luego Arrancar.|acquistato. Clicca un altro aeroporto come destinazione, poi Avvia.|comprado. Clica noutro aeroporto como destino e depois Arrancar.
+cumpărată. Click pe porturi pentru ordine, apoi Pornește.|bought. Click docks for orders, then Start.|acheté. Cliquez sur les ports pour les ordres, puis Démarrer.|gekauft. Klicke Häfen für Aufträge an, dann Starten.|comprado. Haz clic en los puertos para las órdenes y luego Arrancar.|acquistata. Clicca i porti per gli ordini, poi Avvia.|comprado. Clica nos portos para as ordens e depois Arrancar.
+Cumpără|Buy|Acheter|Kaufen|Comprar|Compra|Comprar
+Cumpără tren|Buy train|Acheter le train|Zug kaufen|Comprar tren|Compra treno|Comprar comboio
+cărbune|coal|charbon|Kohle|carbón|carbone|carvão
+Cărbune|Coal|Charbon|Kohle|Carbón|Carbone|Carvão
+Cărbune → Termocentrală|Coal → Power station|Charbon → Centrale|Kohle → Kraftwerk|Carbón → Central térmica|Carbone → Centrale|Carvão → Central térmica
+D drum|D road|D route|D Straße|D carretera|D strada|D estrada
+Deal|Hill|Colline|Hügel|Colina|Collina|Colina
+Debarcader|Pier|Embarcadère|Anleger|Embarcadero|Pontile|Cais
+Demolare|Demolish|Démolir|Abriss|Demoler|Demolisci|Demolir
+Depinde de cantitate, distanța dintre stații și cât de repede livrezi.|Depends on amount, distance between stations and delivery speed.|Dépend de la quantité, de la distance entre stations et de la rapidité de livraison.|Hängt von Menge, Entfernung der Stationen und Liefergeschwindigkeit ab.|Depende de la cantidad, la distancia entre estaciones y la rapidez de entrega.|Dipende da quantità, distanza tra stazioni e velocità di consegna.|Depende da quantidade, da distância entre estações e da rapidez de entrega.
+depou|depot|dépôt|Depot|depósito|deposito|depósito
+Depou|Depot|Dépôt|Depot|Depósito|Deposito|Depósito
+Depou auto|Road depot|Dépôt routier|Straßendepot|Depósito carretera|Deposito stradale|Depósito rodoviário
+depou auto|road depot|dépôt routier|Straßendepot|depósito de carretera|deposito stradale|depósito rodoviário
+Depou de trenuri|Train depot|Dépôt ferroviaire|Zugdepot|Depósito de trenes|Deposito treni|Depósito de comboios
+Depou tren|Train depot|Dépôt ferroviaire|Zugdepot|Depósito trenes|Deposito treni|Depósito comboios
+Depoul are vehicule înăuntru|The depot has vehicles inside|Le dépôt contient des véhicules|Im Depot stehen Fahrzeuge|El depósito tiene vehículos dentro|Il deposito ha veicoli dentro|O depósito tem veículos dentro
+Depoul se pune pe teren liber, lângă drum/șină|Place the depot on free land next to a road/track|Placez le dépôt sur un terrain libre près d'une route/voie|Depot auf freies Land neben Straße/Gleis setzen|Coloca el depósito en terreno libre junto a carretera/vía|Metti il deposito su terreno libero vicino a strada/binario|Coloca o depósito em terreno livre junto a estrada/linha
+Depoul trebuie pe teren plat|The depot needs flat land|Le dépôt doit être sur terrain plat|Das Depot braucht flaches Land|El depósito necesita terreno llano|Il deposito richiede terreno piano|O depósito precisa de terreno plano
+Deschide o linie aeriană|Open an air route|Ouvrir une ligne aérienne|Eröffne eine Fluglinie|Abre una ruta aérea|Apri una linea aerea|Abre uma linha aérea
+Deservește 4 orașe cu pasageri|Serve 4 towns with passengers|Desservir 4 villes en passagers|Bediene 4 Städte mit Passagieren|Da servicio de pasajeros a 4 ciudades|Servi 4 città con passeggeri|Serve 4 cidades com passageiros
+destinație|destination|destination|Ziel|destino|destinazione|destino
+Devino magnat! Reinvestește profitul în trenuri rapide.|Become a tycoon! Reinvest profit in fast trains.|Devenez un magnat ! Réinvestissez dans des trains rapides.|Werde Magnat! Investiere den Gewinn in schnelle Züge.|¡Hazte magnate! Reinvierte en trenes rápidos.|Diventa un magnate! Reinvesti in treni veloci.|Torna-te magnata! Reinveste em comboios rápidos.
+Din fereastra unei stații poți cumpăra direct un vehicul care pornește de acolo. Vehiculele profitabile se pot|From a station window you can buy a vehicle that starts there. Profitable vehicles can be|Depuis la fenêtre d'une station vous pouvez acheter un véhicule qui en part. Les véhicules rentables peuvent être|Im Stationsfenster kannst du direkt ein Fahrzeug kaufen, das dort startet. Profitable Fahrzeuge kann man|Desde la ventana de una estación puedes comprar un vehículo que salga de allí. Los vehículos rentables se pueden|Dalla finestra di una stazione puoi comprare un veicolo che parte da lì. I veicoli redditizi si possono|Na janela de uma estação podes comprar um veículo que parte dali. Os veículos lucrativos podem ser
+din marfa livrată.|from delivered cargo.|à partir des marchandises livrées.|aus gelieferter Fracht.|a partir de la carga entregada.|dalle merci consegnate.|a partir da carga entregue.
+din maxim|of max.|sur max.|von max.|de máx.|su max|de máx.
+Dobândă împrumut|Loan interest|Intérêts d'emprunt|Kreditzinsen|Intereses del préstamo|Interessi sul prestito|Juros do empréstimo
+Două 🚉 gări legate cu 🛤 cale ferată și un 🚂 depou lângă șină.|Two 🚉 stations linked by 🛤 rail and a 🚂 depot next to the track.|Deux 🚉 gares reliées par 🛤 voie ferrée et un 🚂 dépôt près de la voie.|Zwei 🚉 Bahnhöfe mit 🛤 Schienen verbinden und ein 🚂 Depot ans Gleis.|Dos 🚉 estaciones unidas por 🛤 vía y un 🚂 depósito junto a la vía.|Due 🚉 stazioni collegate da 🛤 binari e un 🚂 deposito vicino al binario.|Duas 🚉 estações ligadas por 🛤 linha e um 🚂 depósito junto à linha.
+Drum|Road|Route|Straße|Carretera|Strada|Estrada
+Du lemn la cherestea, petrol la rafinărie sau cereale la fabrică, apoi bunurile produse într-un oraș mare.|Take wood to the sawmill, oil to the refinery or grain to the factory, then the goods to a big town.|Apportez du bois à la scierie, du pétrole à la raffinerie ou des céréales à l'usine, puis les marchandises dans une grande ville.|Bringe Holz zum Sägewerk, Öl zur Raffinerie oder Getreide zur Fabrik, dann die Güter in eine große Stadt.|Lleva madera al aserradero, petróleo a la refinería o cereales a la fábrica, y luego las mercancías a una ciudad grande.|Porta legname alla segheria, petrolio alla raffineria o cereali alla fabbrica, poi le merci in una grande città.|Leva madeira à serração, petróleo à refinaria ou cereais à fábrica e depois as mercadorias para uma cidade grande.
+Dube poștale|Mail vans|Fourgons postaux|Postwagen|Furgonetas de correo|Furgoni postali|Carrinhas postais
+Dubă|Van|Fourgon|Postwagen|Furgoneta|Furgone|Carrinha
+Dubă poștală Expres|Mail van Express|Fourgon postal Express|Postwagen Express|Furgoneta postal Express|Furgone postale Express|Carrinha postal Express
+Dubă poștală P1|Mail van P1|Fourgon postal P1|Postwagen P1|Furgoneta postal P1|Furgone postale P1|Carrinha postal P1
+Eroare la salvare:|Save error:|Erreur de sauvegarde :|Speicherfehler:|Error al guardar:|Errore di salvataggio:|Erro ao guardar:
+Esc anulează.|Esc cancels.|Échap annule.|Esc bricht ab.|Esc cancela.|Esc annulla.|Esc cancela.
+Est|East|Est|Ost|Este|Est|Este
+Fabrica|Factory|Usine|Fabrik|Fábrica|Fabbrica|Fábrica
+Fabrica de cherestea|Sawmill|Scierie|Sägewerk|Aserradero|Segheria|Serração
+Fabrică|Factory|Usine|Fabrik|Fábrica|Fabbrica|Fábrica
+Feribot Dunărea|Ferry Dunărea|Ferry Dunărea|Fähre Dunărea|Ferry Dunărea|Traghetto Dunărea|Ferry Dunărea
+Ferma|Farm|Ferme|Bauernhof|Granja|Fattoria|Quinta
+Fermă|Farm|Ferme|Bauernhof|Granja|Fattoria|Quinta
+Fiecare tren își rezervă linia până la destinație și așteaptă (⏳) dacă e ocupată. Pentru trafic mare fă|Each train reserves its line to the destination and waits (⏳) if it is busy. For heavy traffic build|Chaque train réserve sa voie jusqu'à destination et attend (⏳) si elle est occupée. Pour un trafic dense construisez|Jeder Zug reserviert seine Strecke bis zum Ziel und wartet (⏳), wenn sie belegt ist. Für viel Verkehr baue|Cada tren reserva su vía hasta el destino y espera (⏳) si está ocupada. Para mucho tráfico construye|Ogni treno prenota il binario fino alla destinazione e aspetta (⏳) se è occupato. Per molto traffico costruisci|Cada comboio reserva a linha até ao destino e espera (⏳) se estiver ocupada. Para muito tráfego faz
+Finanțe|Finances|Finances|Finanzen|Finanzas|Finanze|Finanças
+Firmă la început de drum|Fledgling company|Jeune entreprise|Junges Unternehmen|Empresa novata|Azienda agli inizi|Empresa em início
+Fonduri insuficiente! Necesari|Insufficient funds! Required|Fonds insuffisants ! Requis|Nicht genug Geld! Benötigt|¡Fondos insuficientes! Se necesitan|Fondi insufficienti! Servono|Fundos insuficientes! Necessário
+Furnizează (în zonă)|Supplies (in area)|Fournit (dans la zone)|Liefert (im Gebiet)|Suministra (en la zona)|Fornisce (nella zona)|Fornece (na zona)
+fără drum|no route|sans itinéraire|keine Route|sin ruta|nessun percorso|sem rota
+Fără ordine|No orders|Sans ordres|Keine Aufträge|Sin órdenes|Nessun ordine|Sem ordens
+fără ordine|no orders|sans ordres|keine Aufträge|sin órdenes|nessun ordine|sem ordens
+G gară|G station|G gare|G Bahnhof|G estación|G stazione|G estação
+Gară|Station|Gare|Bahnhof|Estación|Stazione|Estação
+Gară lângă o mină de cărbune și gară lângă o termocentrală. Bifează „încarcă complet” la mină.|A station by a coal mine and one by a power station. Tick „full load” at the mine.|Une gare près d'une mine de charbon et une près d'une centrale. Cochez „chargement complet” à la mine.|Ein Bahnhof an einer Kohlemine und einer am Kraftwerk. Hake „volle Ladung“ an der Mine an.|Una estación junto a una mina de carbón y otra junto a una central. Marca „carga completa” en la mina.|Una stazione vicino a una miniera di carbone e una vicino a una centrale. Spunta „carico completo” alla miniera.|Uma estação junto a uma mina de carvão e outra junto a uma central. Marca „carga completa” na mina.
+gol|empty|vide|leer|vacío|vuoto|vazio
+Graficul apare după prima lună încheiată.|The chart appears after the first full month.|Le graphique apparaît après le premier mois complet.|Das Diagramm erscheint nach dem ersten vollen Monat.|El gráfico aparece tras el primer mes completo.|Il grafico appare dopo il primo mese completo.|O gráfico aparece após o primeiro mês completo.
+Grilă: DA|Grid: ON|Grille : OUI|Raster: AN|Cuadrícula: SÍ|Griglia: SÌ|Grelha: SIM
+Grilă: NU|Grid: OFF|Grille : NON|Raster: AUS|Cuadrícula: NO|Griglia: NO|Grelha: NÃO
+gări|stations|gares|Bahnhöfe|estaciones|stazioni|estações
+H grilă|H grid|H grille|H Raster|H cuadrícula|H griglia|H grelha
+Hangar|Hangar|Hangar|Hangar|Hangar|Hangar|Hangar
+Hangar – avioane|Hangar – aircraft|Hangar – avions|Hangar – Flugzeuge|Hangar – aviones|Hangar – aerei|Hangar – aviões
+Hidrobuz Rapid|Hydrobus Rapid|Hydrobus Rapid|Wasserbus Rapid|Hidrobús Rapid|Idrobus Rapid|Hidrobus Rapid
+iar la gări pune|and at stations add|et dans les gares ajoutez des|und an Bahnhöfen|y en las estaciones pon|e nelle stazioni metti|e nas estações põe
+Imposibil|Impossible|Impossible|Unmöglich|Imposible|Impossibile|Impossível
+Industriaș|Industrialist|Industriel|Industrieller|Industrial|Industriale|Industrial
+Industrii|Industries|Industries|Industrien|Industrias|Industrie|Indústrias
+Joc nou|New game|Nouvelle partie|Neues Spiel|Partida nueva|Nuova partita|Novo jogo
+Joc original inspirat de clasicele jocuri de transport (gen Transport Tycoon). Toată grafica e desenată din cod.|An original game inspired by classic transport games (like Transport Tycoon). All graphics are drawn in code.|Jeu original inspiré des classiques du transport (comme Transport Tycoon). Tous les graphismes sont dessinés en code.|Ein eigenständiges Spiel, inspiriert von klassischen Transportspielen (wie Transport Tycoon). Alle Grafiken sind per Code gezeichnet.|Juego original inspirado en los clásicos de transporte (como Transport Tycoon). Todos los gráficos se dibujan con código.|Gioco originale ispirato ai classici dei trasporti (come Transport Tycoon). Tutta la grafica è disegnata in codice.|Jogo original inspirado nos clássicos de transportes (como Transport Tycoon). Todos os gráficos são desenhados em código.
+Joc salvat.|Game saved.|Partie sauvegardée.|Spiel gespeichert.|Partida guardada.|Partita salvata.|Jogo guardado.
+Joc încărcat.|Game loaded.|Partie chargée.|Spiel geladen.|Partida cargada.|Partita caricata.|Jogo carregado.
+La depou|To depot|Au dépôt|Ins Depot|Al depósito|Al deposito|Ao depósito
+La hangar|To hangar|Au hangar|In den Hangar|Al hangar|All'hangar|Ao hangar
+la mină.|at the mine.|à la mine.|an der Mine an.|en la mina.|alla miniera.|na mina.
+La șantier|To shipyard|Au chantier|Zur Werft|Al astillero|Al cantiere|Ao estaleiro
+Lanțuri economice|Production chains|Chaînes économiques|Produktionsketten|Cadenas productivas|Catene produttive|Cadeias produtivas
+Leagă cu drum două orașe mari și pune 2–3 autobuze între ele.|Link two big towns by road and run 2–3 buses between them.|Reliez deux grandes villes par la route et mettez 2–3 bus entre elles.|Verbinde zwei große Städte per Straße und setze 2–3 Busse ein.|Une dos ciudades grandes por carretera y pon 2–3 autobuses entre ellas.|Collega due grandi città con una strada e metti 2–3 autobus.|Liga duas cidades grandes por estrada e põe 2–3 autocarros entre elas.
+Legendă a transporturilor|Transport legend|Légende du transport|Transportlegende|Leyenda del transporte|Leggenda dei trasporti|Lenda dos transportes
+Lemn|Wood|Bois|Holz|Madera|Legname|Madeira
+lemn|wood|bois|Holz|madera|legname|madeira
+Lemn → Cherestea → Bunuri|Wood → Sawmill → Goods|Bois → Scierie → Marchandises|Holz → Sägewerk → Güter|Madera → Aserradero → Mercancías|Legname → Segheria → Merci|Madeira → Serração → Mercadorias
+Limba|Language|Langue|Sprache|Idioma|Lingua|Idioma
+Limita de împrumut atinsă.|Loan limit reached.|Plafond d'emprunt atteint.|Kreditlimit erreicht.|Límite de préstamo alcanzado.|Limite di prestito raggiunto.|Limite de empréstimo atingido.
+linie dublă|double track|double voie|Doppelgleis|vía doble|binario doppio|via dupla
+linii de evitare|passing loops|voies d'évitement|Ausweichgleise|apartaderos|binari di incrocio|desvios
+lipite — trenul alege singur peronul liber.|side by side — the train picks a free platform itself.|côte à côte — le train choisit seul un quai libre.|nebeneinander — der Zug wählt selbst einen freien Bahnsteig.|contiguos — el tren elige solo un andén libre.|affiancate — il treno sceglie da solo una banchina libera.|lado a lado — o comboio escolhe sozinho uma plataforma livre.
+Livadă|Orchard|Verger|Obstgarten|Huerto|Frutteto|Pomar
+Livrează 1.000 t de cărbune|Deliver 1,000 t of coal|Livrer 1 000 t de charbon|Liefere 1.000 t Kohle|Entrega 1.000 t de carbón|Consegna 1.000 t di carbone|Entrega 1.000 t de carvão
+Livrează 300 de lăzi de bunuri|Deliver 300 crates of goods|Livrer 300 caisses de marchandises|Liefere 300 Kisten Güter|Entrega 300 cajas de mercancías|Consegna 300 casse di merci|Entrega 300 caixas de mercadorias
+Locomotivă nouă disponibilă:|New locomotive available:|Nouvelle locomotive disponible :|Neue Lok verfügbar:|Nueva locomotora disponible:|Nuova locomotiva disponibile:|Nova locomotiva disponível:
+Locomotivă:|Locomotive:|Locomotive :|Lok:|Locomotora:|Locomotiva:|Locomotiva:
+Locuitorii sărbătoresc!|Citizens celebrate!|Les habitants font la fête !|Die Bürger feiern!|¡Los vecinos lo celebran!|I cittadini festeggiano!|Os habitantes festejam!
+Luna trecută|Last month|Mois dernier|Letzter Monat|Mes pasado|Mese scorso|Mês passado
+lună|month|mois|Monat|mes|mese|mês
+lângă drum.|next to a road.|près d'une route.|neben eine Straße.|junto a la carretera.|vicino alla strada.|junto à estrada.
+Lângă el există deja un aeroport|There is already an airport nearby|Il y a déjà un aéroport à côté|Daneben ist schon ein Flughafen|Ya hay un aeropuerto al lado|C'è già un aeroporto vicino|Já existe um aeroporto ao lado
+lângă o mină și lângă o termocentrală, leagă-le cu 🛤|by a mine and by a power station, link them with 🛤|près d'une mine et d'une centrale, reliez-les par 🛤|an einer Mine und an einem Kraftwerk, verbinde sie mit 🛤|junto a una mina y a una central, únelas con 🛤|vicino a una miniera e a una centrale, collegale con 🛤|junto a uma mina e a uma central, liga-as com 🛤
+lăzi|crates|caisses|Kisten|cajas|casse|caixas
+Magazine|Shops|Magasins|Geschäfte|Tiendas|Negozi|Lojas
+Magnat al transporturilor|Transport tycoon|Magnat du transport|Transportmagnat|Magnate del transporte|Magnate dei trasporti|Magnata dos transportes
+Mai multe trenuri pe aceeași rețea|Several trains on one network|Plusieurs trains sur un même réseau|Mehrere Züge im selben Netz|Varios trenes en la misma red|Più treni sulla stessa rete|Vários comboios na mesma rede
+Marfă livrată pe lună|Cargo delivered per month|Marchandises livrées par mois|Gelieferte Fracht pro Monat|Carga entregada por mes|Merci consegnate al mese|Carga entregue por mês
+Marfă livrată în|Cargo delivered in|Marchandises livrées en|Gelieferte Fracht|Carga entregada en|Merci consegnate nel|Carga entregue em
+Marfă pentru cargou:|Freighter cargo:|Marchandise du cargo :|Fracht für Frachter:|Carga del carguero:|Merce del mercantile:|Carga do cargueiro:
+Marfă în așteptare|Cargo waiting|Marchandises en attente|Wartende Fracht|Carga en espera|Merci in attesa|Carga em espera
+Marfă:|Cargo:|Marchandise :|Fracht:|Carga:|Merce:|Carga:
+max|max|max|max|máx|max|máx
+Meniu|Menu|Menu|Menü|Menú|Menu|Menu
+merge|moving|en route|fährt|en marcha|in viaggio|a andar
+Merge la depou|Heading to depot|Va au dépôt|Fährt ins Depot|Va al depósito|Va al deposito|Vai para o depósito
+mii l|k l|k l|Tsd. l|miles l|mila l|mil l
+Mina de cărbune|Coal Mine|Mine de charbon|Kohlemine|Mina de carbón|Miniera di carbone|Mina de carvão
+Mina de fier|Iron Mine|Mine de fer|Eisenerzmine|Mina de hierro|Miniera di ferro|Mina de ferro
+Minereu de fier|Iron ore|Minerai de fer|Eisenerz|Mineral de hierro|Minerale di ferro|Minério de ferro
+minereu de fier|iron ore|minerai de fer|Eisenerz|mineral de hierro|minerale di ferro|minério de ferro
+Minereu → Oțelărie → Oțel|Ore → Steel mill → Steel|Minerai → Aciérie → Acier|Erz → Stahlwerk → Stahl|Mineral → Acería → Acero|Minerale → Acciaieria → Acciaio|Minério → Siderurgia → Aço
+Mină|Mine|Mine|Mine|Mina|Miniera|Mina
+Mină Fier|Iron Mine|Mine de fer|Eisenmine|Mina Hierro|Miniera Ferro|Mina Ferro
+Model|Model|Modèle|Modell|Modelo|Modello|Modelo
+Nave|Ships|Navires|Schiffe|Barcos|Navi|Navios
+Nave și avioane|Ships and aircraft|Navires et avions|Schiffe und Flugzeuge|Barcos y aviones|Navi e aerei|Navios e aviões
+Navă|Ship|Navire|Schiff|Barco|Nave|Navio
+Navă nouă de aici|New ship from here|Nouveau navire d'ici|Neues Schiff von hier|Barco nuevo desde aquí|Nuova nave da qui|Novo navio daqui
+Nicio marfă încă — trimite un vehicul să încarce aici.|No cargo yet — send a vehicle to load here.|Aucune marchandise — envoyez un véhicule charger ici.|Noch keine Fracht — schicke ein Fahrzeug zum Laden.|Aún no hay carga — envía un vehículo a cargar aquí.|Ancora nessuna merce — manda un veicolo a caricare qui.|Ainda sem carga — envia um veículo para carregar aqui.
+Nicio stație încă.|No stations yet.|Aucune station.|Noch keine Stationen.|Aún no hay estaciones.|Nessuna stazione.|Ainda sem estações.
+Nicio știre.|No news.|Aucune nouvelle.|Keine Nachrichten.|Sin noticias.|Nessuna notizia.|Sem notícias.
+Niciun ordin. Apasă „+ Ordin” și dă click pe stații.|No orders. Press „+ Order” and click stations.|Aucun ordre. Appuyez sur „+ Ordre” et cliquez sur des stations.|Keine Aufträge. Drücke „+ Auftrag“ und klicke Stationen an.|Sin órdenes. Pulsa „+ Orden” y haz clic en estaciones.|Nessun ordine. Premi „+ Ordine” e clicca le stazioni.|Sem ordens. Carrega em „+ Ordem” e clica nas estações.
+Nivelează|Level land|Niveler|Einebnen|Nivelar|Livella|Nivelar
+Nord|North|Nord|Nord|Norte|Nord|Norte
+Nu ai bani să rambursezi.|Not enough money to repay.|Pas assez d'argent pour rembourser.|Nicht genug Geld zum Tilgen.|No tienes dinero para devolver.|Non hai soldi per rimborsare.|Não tens dinheiro para reembolsar.
+Nu ai niciun depou auto. Construiește unul lângă drum.|You have no road depot. Build one next to a road.|Vous n'avez aucun dépôt routier. Construisez-en un près d'une route.|Du hast kein Straßendepot. Baue eins an einer Straße.|No tienes depósito de carretera. Construye uno junto a una carretera.|Non hai un deposito stradale. Costruiscine uno vicino a una strada.|Não tens depósito rodoviário. Constrói um junto a uma estrada.
+Nu ai niciun depou de trenuri. Construiește unul lângă șină.|You have no train depot. Build one next to a track.|Vous n'avez aucun dépôt ferroviaire. Construisez-en un près d'une voie.|Du hast kein Zugdepot. Baue eins an ein Gleis.|No tienes depósito de trenes. Construye uno junto a una vía.|Non hai un deposito treni. Costruiscine uno vicino a un binario.|Não tens depósito de comboios. Constrói um junto a uma linha.
+Nu ai niciun șantier naval. Construiește unul pe apă.|You have no shipyard. Build one on water.|Vous n'avez aucun chantier naval. Construisez-en un sur l'eau.|Du hast keine Werft. Baue eine auf dem Wasser.|No tienes astillero. Construye uno en el agua.|Non hai un cantiere navale. Costruiscine uno sull'acqua.|Não tens estaleiro. Constrói um na água.
+Nu ai vehicule. Construiește un depou și cumpără unul.|You have no vehicles. Build a depot and buy one.|Vous n'avez aucun véhicule. Construisez un dépôt et achetez-en un.|Du hast keine Fahrzeuge. Baue ein Depot und kaufe eins.|No tienes vehículos. Construye un depósito y compra uno.|Non hai veicoli. Costruisci un deposito e comprane uno.|Não tens veículos. Constrói um depósito e compra um.
+Nu am putut genera harta.|Could not generate the map.|Impossible de générer la carte.|Karte konnte nicht erzeugt werden.|No se pudo generar el mapa.|Impossibile generare la mappa.|Não foi possível gerar o mapa.
+nu are|has no|n'a pas de|hat kein(e)|no tiene|non ha|não tem
+Nu există salvare|No saved game|Aucune sauvegarde|Kein Spielstand|No hay partida guardada|Nessun salvataggio|Sem jogo guardado
+Nu există salvare.|No saved game.|Aucune sauvegarde.|Kein Spielstand.|No hay partida guardada.|Nessun salvataggio.|Sem jogo guardado.
+nu găsește drum spre|can't find a route to|ne trouve pas de chemin vers|findet keinen Weg nach|no encuentra ruta hacia|non trova la strada per|não encontra caminho para
+Nu găsește drum!|No route found!|Aucun itinéraire !|Kein Weg gefunden!|¡Sin ruta!|Nessun percorso!|Sem rota!
+nu poate naviga până la|cannot sail to|ne peut pas naviguer jusqu'à|kann nicht fahren nach|no puede navegar hasta|non può navigare fino a|não consegue navegar até
+Nu se poate coborî sub nivelul apei|Cannot go below water level|Impossible de descendre sous le niveau de l'eau|Nicht unter Wasserniveau möglich|No se puede bajar del nivel del agua|Impossibile scendere sotto il livello dell'acqua|Não é possível descer abaixo do nível da água
+Obiectiv îndeplinit:|Goal completed:|Objectif atteint :|Ziel erreicht:|Objetivo cumplido:|Obiettivo raggiunto:|Objetivo cumprido:
+Obiective|Goals|Objectifs|Ziele|Objetivos|Obiettivi|Objetivos
+Oprește|Stop|Arrêter|Anhalten|Detener|Ferma|Parar
+oprit|stopped|arrêté|gestoppt|detenido|fermo|parado
+Oprit în depou|Stopped in depot|Arrêté au dépôt|Im Depot gestoppt|Detenido en el depósito|Fermo nel deposito|Parado no depósito
+Oraș|Town|Ville|Stadt|Ciudad|Città|Cidade
+Orașe|Towns|Villes|Städte|Ciudades|Città|Cidades
+Orașele cresc mai repede când au stații deservite regulat.|Towns grow faster when their stations are served regularly.|Les villes grandissent plus vite quand leurs stations sont desservies régulièrement.|Städte wachsen schneller, wenn ihre Stationen regelmäßig bedient werden.|Las ciudades crecen más rápido con estaciones servidas a menudo.|Le città crescono più in fretta se le stazioni sono servite regolarmente.|As cidades crescem mais depressa com estações servidas regularmente.
+Ordin|Order|Ordre|Auftrag|Orden|Ordine|Ordem
+Ordine|Orders|Ordres|Aufträge|Órdenes|Ordini|Ordens
+Oțel|Steel|Acier|Stahl|Acero|Acciaio|Aço
+oțel|steel|acier|Stahl|acero|acciaio|aço
+Oțelăria|Steel Mill|Aciérie|Stahlwerk|Acería|Acciaieria|Siderurgia
+Oțelărie|Steel Mill|Aciérie|Stahlwerk|Acería|Acciaieria|Siderurgia
+panoul „Următorul obiectiv”|the „Next goal” panel|le panneau „Objectif suivant”|das Feld „Nächstes Ziel“|el panel „Siguiente objetivo”|il pannello „Prossimo obiettivo”|o painel „Próximo objetivo”
+Pantă nepotrivită — nivelează terenul (⛰) sau fă tunel: capetele la aceeași înălțime, cu dealul între ele|Unsuitable slope — level the land (▭) or make a tunnel: both ends at the same height with the hill between|Pente inadaptée — nivelez (▭) ou faites un tunnel : extrémités à la même hauteur, colline entre elles|Ungeeigneter Hang — ebne ein (▭) oder baue einen Tunnel: beide Enden gleich hoch, Hügel dazwischen|Pendiente no válida — nivela (▭) o haz un túnel: extremos a la misma altura con la colina entre ellos|Pendio non adatto — livella (▭) o fai un tunnel: estremità alla stessa altezza con la collina in mezzo|Declive inadequado — nivela (▭) ou faz um túnel: pontas à mesma altura com a colina no meio
+Pantă — trage o linie de-a lungul pantei|Slope — drag a line along the slope|Pente — tracez une ligne dans le sens de la pente|Hang — ziehe eine Linie entlang des Hangs|Pendiente — arrastra una línea a lo largo de la pendiente|Pendio — trascina una linea lungo la pendenza|Declive — arrasta uma linha ao longo do declive
+Parc|Park|Parc|Park|Parque|Parco|Parque
+Pasageri|Passengers|Passagers|Passagiere|Pasajeros|Passeggeri|Passageiros
+pasageri|passengers|passagers|Passagiere|pasajeros|passeggeri|passageiros
+Pauză (Space)|Pause (Space)|Pause (Espace)|Pause (Leertaste)|Pausa (Espacio)|Pausa (Spazio)|Pausa (Espaço)
+Pe teren sunt construcții — demolează-le întâi|There are buildings on the land — demolish them first|Il y a des constructions — démolissez-les d'abord|Auf dem Gelände stehen Bauten — erst abreißen|Hay construcciones — demuélelas primero|Ci sono costruzioni — demoliscile prima|Há construções no terreno — demole-as primeiro
+pe un drum din centrul unui oraș și alta în alt oraș.|on a road in a town centre and another in another town.|sur une route au centre d'une ville et un autre dans une autre ville.|auf eine Straße im Stadtzentrum und eine in einer anderen Stadt.|en una calle del centro de una ciudad y otra en otra ciudad.|su una strada del centro di una città e un'altra in un'altra città.|numa estrada do centro de uma cidade e outra noutra cidade.
+peroane paralele|parallel platforms|des quais parallèles|parallele Bahnsteige|andenes paralelos|banchine parallele|plataformas paralelas
+peron de tren|train platform|quai de gare|Bahnsteig|andén|banchina|plataforma
+Peron maxim 8 dale|Platform max 8 tiles|Quai de 8 cases max|Bahnsteig max. 8 Felder|Andén máx. 8 casillas|Banchina max 8 caselle|Plataforma máx. 8 quadrados
+petrol|oil|pétrole|Öl|petróleo|petrolio|petróleo
+Petrol|Oil|Pétrole|Öl|Petróleo|Petrolio|Petróleo
+Petrol → Rafinărie → Bunuri. Bunurile se livrează în orașe mari.|Oil → Refinery → Goods. Goods are delivered to big towns.|Pétrole → Raffinerie → Marchandises. Les marchandises vont dans les grandes villes.|Öl → Raffinerie → Güter. Güter werden in große Städte geliefert.|Petróleo → Refinería → Mercancías. Las mercancías van a ciudades grandes.|Petrolio → Raffineria → Merci. Le merci vanno nelle grandi città.|Petróleo → Refinaria → Mercadorias. As mercadorias vão para cidades grandes.
+Petrolier Marea Neagră|Tanker Marea Neagră|Pétrolier Marea Neagră|Tanker Marea Neagră|Petrolero Marea Neagră|Petroliera Marea Neagră|Petroleiro Marea Neagră
+Piață|Square|Place|Marktplatz|Plaza|Piazza|Praça
+Plata|Payment|Paiement|Bezahlung|Pago|Pagamento|Pagamento
+Pod|Bridge|Pont|Brücke|Puente|Ponte|Ponte
+Podul trebuie să înceapă și să se termine pe uscat|A bridge must start and end on land|Un pont doit commencer et finir sur la terre ferme|Eine Brücke muss an Land beginnen und enden|El puente debe empezar y acabar en tierra|Il ponte deve iniziare e finire sulla terraferma|A ponte tem de começar e acabar em terra
+Poduri și tuneluri|Bridges and tunnels|Ponts et tunnels|Brücken und Tunnel|Puentes y túneles|Ponti e gallerie|Pontes e túneis
+Populație|Population|Population|Einwohner|Población|Popolazione|População
+Populație:|Population:|Population :|Einwohner:|Población:|Popolazione:|População:
+Pornește|Start|Démarrer|Starten|Arrancar|Avvia|Arrancar
+Pornește primul vehicul|Start your first vehicle|Faites partir votre premier véhicule|Starte dein erstes Fahrzeug|Pon en marcha tu primer vehículo|Avvia il tuo primo veicolo|Põe o primeiro veículo a andar
+Port|Dock|Port|Hafen|Puerto|Porto|Porto
+Portul se pune pe mal: teren plat și liber, lângă apă|A dock goes on the shore: flat free land next to water|Un port se place sur la rive : terrain plat et libre au bord de l'eau|Ein Hafen gehört ans Ufer: flaches, freies Land am Wasser|El puerto va en la orilla: terreno llano y libre junto al agua|Il porto va sulla riva: terreno piano e libero vicino all'acqua|O porto vai na margem: terreno plano e livre junto à água
+Porturi pe mal + 🛠 șantier naval pe apă → nave (lente, dar cu capacitate mare). ✈ Aeroporturi 3×3 pe teren plat → avioane din hangarul aeroportului (rapide, foarte profitabile pe distanțe mari).|Docks on the shore + 🛠 shipyard on water → ships (slow but high capacity). ✈ 3×3 airports on flat land → planes from the airport hangar (fast, very profitable over long distances).|Ports sur la rive + 🛠 chantier sur l'eau → navires (lents mais grande capacité). ✈ Aéroports 3×3 sur terrain plat → avions du hangar (rapides, très rentables sur de longues distances).|Häfen am Ufer + 🛠 Werft auf dem Wasser → Schiffe (langsam, aber große Kapazität). ✈ 3×3-Flughäfen auf flachem Land → Flugzeuge aus dem Hangar (schnell, auf langen Strecken sehr profitabel).|Puertos en la orilla + 🛠 astillero en el agua → barcos (lentos pero de gran capacidad). ✈ Aeropuertos 3×3 en terreno llano → aviones del hangar (rápidos, muy rentables en distancias largas).|Porti sulla riva + 🛠 cantiere sull'acqua → navi (lente ma capienti). ✈ Aeroporti 3×3 su terreno piano → aerei dall'hangar (veloci, molto redditizi sulle lunghe distanze).|Portos na margem + 🛠 estaleiro na água → navios (lentos mas com grande capacidade). ✈ Aeroportos 3×3 em terreno plano → aviões do hangar (rápidos, muito lucrativos em longas distâncias).
+Poștă|Mail|Courrier|Post|Correo|Posta|Correio
+poștă|mail|courrier|Post|correo|posta|correio
+Prima dubă poștală|The first mail van|Le premier fourgon postal|Der erste Postwagen|La primera furgoneta de correo|Il primo furgone postale|A primeira carrinha postal
+Prima navă|The first ship|Le premier navire|Das erste Schiff|El primer barco|La prima nave|O primeiro navio
+Prima stație va fi|The first stop will be|Le premier arrêt sera|Die erste Station ist|La primera parada será|La prima fermata sarà|A primeira paragem será
+Primul autobuz|The first bus|Le premier bus|Der erste Bus|El primer autobús|Il primo autobus|O primeiro autocarro
+Primul autobuz (pas cu pas)|Your first bus (step by step)|Votre premier bus (pas à pas)|Dein erster Bus (Schritt für Schritt)|Tu primer autobús (paso a paso)|Il primo autobus (passo per passo)|O primeiro autocarro (passo a passo)
+Primul avion|The first plane|Le premier avion|Das erste Flugzeug|El primer avión|Il primo aereo|O primeiro avião
+Primul camion|The first truck|Le premier camion|Der erste Lkw|El primer camión|Il primo camion|O primeiro camião
+Primul tren|The first train|Le premier train|Der erste Zug|El primer tren|Il primo treno|O primeiro comboio
+Produce|Produces|Produit|Erzeugt|Produce|Produce|Produz
+Producție luna trecută|Production last month|Production du mois dernier|Produktion letzter Monat|Producción del mes pasado|Produzione del mese scorso|Produção do mês passado
+Profit an|Profit this year|Bénéfice an|Gewinn Jahr|Beneficio año|Profitto anno|Lucro ano
+Profit anual de 150.000 lei|Annual profit of 150,000 lei|Bénéfice annuel de 150 000 lei|Jahresgewinn von 150.000 lei|Beneficio anual de 150.000 lei|Profitto annuo di 150.000 lei|Lucro anual de 150.000 lei
+Profit anul acesta:|Profit this year:|Bénéfice cette année :|Gewinn dieses Jahr:|Beneficio este año:|Profitto quest'anno:|Lucro este ano:
+Profit net|Net profit|Bénéfice net|Nettogewinn|Beneficio neto|Utile netto|Lucro líquido
+Pune o navă pe apă|Put a ship on the water|Mettre un navire à l'eau|Bring ein Schiff aufs Wasser|Pon un barco en el agua|Metti una nave in acqua|Põe um navio na água
+Pune stații și autobuze în cât mai multe orașe.|Put stops and buses in as many towns as possible.|Placez arrêts et bus dans le plus de villes possible.|Setze Haltestellen und Busse in möglichst viele Städte.|Pon paradas y autobuses en tantas ciudades como puedas.|Metti fermate e autobus in quante più città possibile.|Põe paragens e autocarros no máximo de cidades.
+Pune un tren în circulație|Run a train|Mettre un train en service|Lass einen Zug fahren|Pon un tren en circulación|Metti in servizio un treno|Põe um comboio a circular
+pune un 🚂 depou lângă șină, cumpără un tren cu vagoane de cărbune. Bifează|place a 🚂 depot by the track, buy a train with coal wagons. Tick|placez un 🚂 dépôt près de la voie, achetez un train avec des wagons à charbon. Cochez|setze ein 🚂 Depot ans Gleis, kaufe einen Zug mit Kohlewagen. Hake|pon un 🚂 depósito junto a la vía, compra un tren con vagones de carbón. Marca|metti un 🚂 deposito vicino al binario, compra un treno con vagoni per carbone. Spunta|põe um 🚂 depósito junto à linha, compra um comboio com vagões de carvão. Marca
+Pune 🚌 un depou lângă drum, cumpără un autobuz, dă click pe 2 stații, apoi ▶ Pornește.|Place a 🚌 depot by a road, buy a bus, click 2 stops, then ▶ Start.|Placez un 🚌 dépôt près d'une route, achetez un bus, cliquez 2 arrêts puis ▶ Démarrer.|Setze ein 🚌 Depot an eine Straße, kaufe einen Bus, klicke 2 Haltestellen an, dann ▶ Starten.|Pon un 🚌 depósito junto a una carretera, compra un autobús, haz clic en 2 paradas y luego ▶ Arrancar.|Metti un 🚌 deposito vicino a una strada, compra un autobus, clicca 2 fermate, poi ▶ Avvia.|Põe um 🚌 depósito junto a uma estrada, compra um autocarro, clica em 2 paragens e depois ▶ Arrancar.
+Pădure|Forest|Forêt|Wald|Bosque|Foresta|Floresta
+Pădurea|Forest|Forêt|Wald|Bosque|Foresta|Floresta
+Rafinăria|Oil Refinery|Raffinerie|Raffinerie|Refinería|Raffineria|Refinaria
+Rafinărie|Refinery|Raffinerie|Raffinerie|Refinería|Raffineria|Refinaria
+Rang:|Rank:|Rang :|Rang:|Rango:|Grado:|Categoria:
+Raport anual|Annual report|Rapport annuel|Jahresbericht|Informe anual|Rapporto annuale|Relatório anual
+Rating|Rating|Note|Bewertung|Valoración|Valutazione|Avaliação
+Recompense obiective|Goal rewards|Récompenses d'objectifs|Zielprämien|Premios de objetivos|Premi obiettivi|Prémios de objetivos
+Recompensă:|Reward:|Récompense :|Prämie:|Premio:|Premio:|Prémio:
+Redenumește|Rename|Renommer|Umbenennen|Renombrar|Rinomina|Mudar o nome
+Ridică teren|Raise land|Élever|Anheben|Subir terreno|Alza|Subir terreno
+Ritm de producție: ~|Production rate: ~|Rythme de production : ~|Produktionsrate: ~|Ritmo de producción: ~|Ritmo di produzione: ~|Ritmo de produção: ~
+Rutele lungi și încărcarea completă la marfă aduc cei mai mulți bani.|Long routes and full loads for cargo bring the most money.|Les longs trajets et le chargement complet des marchandises rapportent le plus.|Lange Strecken und volle Ladung bei Fracht bringen am meisten.|Las rutas largas y la carga completa dan más dinero.|Percorsi lunghi e carico completo delle merci rendono di più.|Rotas longas e carga completa dão mais dinheiro.
+Răscruce|Crossroads|Carrefour|Kreuzung|Cruce|Crocevia|Encruzilhada
+S stație auto|S road stop|S arrêt routier|S Haltestelle|S parada|S fermata|S paragem
+saci|bags|sacs|Säcke|sacas|sacchi|sacos
+Salvează|Save|Sauvegarder|Speichern|Guardar|Salva|Guardar
+Sari la următorul|Skip to next|Passer au suivant|Zum nächsten|Saltar al siguiente|Salta al prossimo|Saltar para o seguinte
+Scurtături|Shortcuts|Raccourcis|Tastenkürzel|Atajos|Scorciatoie|Atalhos
+Seed hartă|Map seed|Graine de carte|Karten-Seed|Semilla del mapa|Seme mappa|Semente do mapa
+Seed hartă:|Map seed:|Graine de carte :|Karten-Seed:|Semilla del mapa:|Seme mappa:|Semente do mapa:
+Selectează|Select|Sélection|Auswählen|Seleccionar|Seleziona|Selecionar
+Sfaturi|Tips|Conseils|Tipps|Consejos|Consigli|Dicas
+Sold:|Balance:|Solde :|Kontostand:|Saldo:|Saldo:|Saldo:
+Sonde|Oil Wells|Puits|Ölquellen|Pozos|Pozzi|Poços
+Sondele de petrol|Oil Wells|Puits de pétrole|Ölquellen|Pozos de petróleo|Pozzi petroliferi|Poços de petróleo
+Space pauză|Space pause|Espace pause|Leertaste Pause|Espacio pausa|Spazio pausa|Espaço pausa
+Spre|To|Vers|Nach|Hacia|Verso|Para
+Stare|Status|État|Status|Estado|Stato|Estado
+Stare:|Status:|État :|Status:|Estado:|Stato:|Estado:
+Stația|Station|Station|Station|Estación|Stazione|Estação
+Stația auto trebuie pusă pe un drum drept sau pe teren liber|A road stop goes on a straight road or free land|Un arrêt se place sur une route droite ou un terrain libre|Haltestelle auf gerade Straße oder freies Land setzen|La parada va en una carretera recta o terreno libre|La fermata va su una strada dritta o terreno libero|A paragem vai numa estrada reta ou terreno livre
+Stația e deja ultimul ordin.|That station is already the last order.|Cette station est déjà le dernier ordre.|Die Station ist bereits der letzte Auftrag.|La estación ya es la última orden.|La stazione è già l'ultimo ordine.|A estação já é a última ordem.
+Stația trebuie pe teren plat|The station needs flat land|La station doit être sur terrain plat|Die Station braucht flaches Land|La estación necesita terreno llano|La stazione richiede terreno piano|A estação precisa de terreno plano
+stație|station|station|Station|estación|stazione|estação
+stație auto|road stop|arrêt routier|Haltestelle|parada|fermata|paragem
+Stație auto|Road stop|Arrêt routier|Haltestelle|Parada|Fermata|Paragem
+Stații|Stations|Stations|Stationen|Estaciones|Stazioni|Estações
+Sud|South|Sud|Süd|Sur|Sud|Sul
+Sunet: DA|Sound: ON|Son : OUI|Ton: AN|Sonido: SÍ|Suono: SÌ|Som: SIM
+Sunet: NU|Sound: OFF|Son : NON|Ton: AUS|Sonido: NO|Suono: NO|Som: NÃO
+T depou tren|T train depot|T dépôt ferroviaire|T Zugdepot|T depósito de trenes|T deposito treni|T depósito de comboios
+Teren|Land|Terrain|Gelände|Terreno|Terreno|Terreno
+Teren ocupat|Land occupied|Terrain occupé|Gelände belegt|Terreno ocupado|Terreno occupato|Terreno ocupado
+Teren ocupat sau nepotrivit|Land occupied or unsuitable|Terrain occupé ou inadapté|Gelände belegt oder ungeeignet|Terreno ocupado o no válido|Terreno occupato o non adatto|Terreno ocupado ou inadequado
+Terenul are deja această înălțime|The land is already at this height|Le terrain est déjà à cette hauteur|Das Gelände hat bereits diese Höhe|El terreno ya tiene esta altura|Il terreno è già a questa altezza|O terreno já tem esta altura
+Termocentrala|Power Station|Centrale thermique|Kraftwerk|Central térmica|Centrale termica|Central térmica
+Tip|Type|Type|Art|Tipo|Tipo|Tipo
+Total livrat:|Total delivered:|Total livré :|Insgesamt geliefert:|Total entregado:|Totale consegnato:|Total entregue:
+Trage drumul sau calea ferată peste apă: podul se face automat. Prin deal se face|Drag a road or railway over water: the bridge is built automatically. Through a hill you get a|Tracez une route ou une voie au-dessus de l'eau : le pont se fait automatiquement. À travers une colline on obtient un|Ziehe Straße oder Schiene über Wasser: die Brücke entsteht automatisch. Durch einen Hügel entsteht ein|Arrastra una carretera o vía sobre el agua: el puente se hace solo. A través de una colina se hace un|Trascina una strada o ferrovia sull'acqua: il ponte si crea da solo. Attraverso una collina si crea una|Arrasta uma estrada ou linha sobre a água: a ponte faz-se automaticamente. Através de uma colina faz-se um
+trage o zonă pornind de pe dala cu înălțimea dorită: totul ajunge la acel nivel.|drag an area starting on the tile with the wanted height: everything goes to that level.|tracez une zone en partant de la case à la hauteur voulue : tout passe à ce niveau.|ziehe einen Bereich ab dem Feld mit der gewünschten Höhe: alles kommt auf diese Höhe.|arrastra una zona empezando en la casilla con la altura deseada: todo queda a ese nivel.|trascina un'area partendo dalla casella con l'altezza voluta: tutto va a quel livello.|arrasta uma área a partir do quadrado com a altura desejada: tudo fica a esse nível.
+trage pe lungime (max 8 dale). Un peron lipit de altul se unește cu aceeași gară.|drag lengthwise (max 8 tiles). A platform next to another joins the same station.|tracez en longueur (8 cases max). Un quai collé à un autre rejoint la même gare.|der Länge nach ziehen (max. 8 Felder). Ein angrenzender Bahnsteig gehört zum selben Bahnhof.|arrastra a lo largo (máx. 8 casillas). Un andén junto a otro se une a la misma estación.|trascina in lunghezza (max 8 caselle). Una banchina accanto a un'altra si unisce alla stessa stazione.|arrasta ao comprido (máx. 8 quadrados). Uma plataforma junto a outra junta-se à mesma estação.
+Trage pentru a construi șine|Drag to build tracks|Faites glisser pour construire des rails|Ziehen, um Gleise zu bauen|Arrastra para construir vías|Trascina per costruire binari|Arrasta para construir linhas
+trage în linie dreaptă (400 lei/dală). Colțurile se fac din două segmente. Peste apă se face pod automat.|drag in a straight line (400 lei/tile). Corners are made of two segments. Over water a bridge is built automatically.|tracez en ligne droite (400 lei/case). Les virages se font en deux segments. Au-dessus de l'eau un pont se fait automatiquement.|in gerader Linie ziehen (400 lei/Feld). Kurven aus zwei Abschnitten. Über Wasser entsteht automatisch eine Brücke.|arrastra en línea recta (400 lei/casilla). Las esquinas se hacen con dos tramos. Sobre el agua se hace un puente solo.|trascina in linea retta (400 lei/casella). Le curve si fanno con due tratti. Sull'acqua il ponte si crea da solo.|arrasta em linha reta (400 lei/quadrado). As curvas fazem-se com dois troços. Sobre a água faz-se ponte automaticamente.
+trage în linie dreaptă (700 lei/dală). Pornește un segment nou din capătul altuia pentru curbe și ramificații.|drag in a straight line (700 lei/tile). Start a new segment from the end of another for curves and junctions.|tracez en ligne droite (700 lei/case). Partez de l'extrémité d'un segment pour les courbes et embranchements.|in gerader Linie ziehen (700 lei/Feld). Für Kurven und Abzweige vom Ende eines Abschnitts neu beginnen.|arrastra en línea recta (700 lei/casilla). Empieza un tramo nuevo desde el extremo de otro para curvas y desvíos.|trascina in linea retta (700 lei/casella). Inizia un nuovo tratto dalla fine di un altro per curve e diramazioni.|arrasta em linha reta (700 lei/quadrado). Começa um troço novo na ponta de outro para curvas e ramais.
+transportat|transported|transporté|befördert|transportado|trasportato|transportado
+transportată|transported|transporté|befördert|transportado|trasportata|transportado
+transportați|transported|transportés|befördert|transportados|trasportati|transportados
+Transportă 500 de pasageri|Carry 500 passengers|Transporter 500 passagers|Befördere 500 Passagiere|Transporta 500 pasajeros|Trasporta 500 passeggeri|Transporta 500 passageiros
+Tren|Train|Train|Zug|Tren|Treno|Comboio
+Tren nou|New train|Nouveau train|Neuer Zug|Tren nuevo|Nuovo treno|Comboio novo
+Tren nou de aici|New train from here|Nouveau train d'ici|Neuer Zug von hier|Tren nuevo desde aquí|Nuovo treno da qui|Comboio novo daqui
+Trenuri și marfă|Trains and cargo|Trains et marchandises|Züge und Fracht|Trenes y carga|Treni e merci|Comboios e carga
+Tunel|Tunnel|Tunnel|Tunnel|Túnel|Galleria|Túnel
+Turn de birouri|Office tower|Tour de bureaux|Büroturm|Torre de oficinas|Torre per uffici|Torre de escritórios
+unități|units|unités|Einheiten|unidades|unità|unidades
+unități (marfă la alegere)|units (cargo of your choice)|unités (marchandise au choix)|Einheiten (Fracht nach Wahl)|unidades (carga a elegir)|unità (merce a scelta)|unidades (carga à escolha)
+Urmărește|Follow|Suivre|Folgen|Seguir|Segui|Seguir
+vagoane|wagons|wagons|Wagen|vagones|vagoni|vagões
+Vagoane:|Wagons:|Wagons :|Wagen:|Vagones:|Vagoni:|Vagões:
+Vale|Valley|Vallée|Tal|Valle|Valle|Vale
+Valoarea companiei|Company value|Valeur de la compagnie|Firmenwert|Valor de la empresa|Valore della compagnia|Valor da empresa
+Valoarea companiei:|Company value:|Valeur de la compagnie :|Firmenwert:|Valor de la empresa:|Valore della compagnia:|Valor da empresa:
+Valoarea companiei: 2.000.000 lei|Company value: 2,000,000 lei|Valeur de la compagnie : 2 000 000 lei|Firmenwert: 2.000.000 lei|Valor de la empresa: 2.000.000 lei|Valore della compagnia: 2.000.000 lei|Valor da empresa: 2.000.000 lei
+Vehicul|Vehicle|Véhicule|Fahrzeug|Vehículo|Veicolo|Veículo
+Vehicul nou de aici|New vehicle from here|Nouveau véhicule d'ici|Neues Fahrzeug von hier|Vehículo nuevo desde aquí|Nuovo veicolo da qui|Veículo novo daqui
+Vehicul nou disponibil:|New vehicle available:|Nouveau véhicule disponible :|Neues Fahrzeug verfügbar:|Nuevo vehículo disponible:|Nuovo veicolo disponibile:|Novo veículo disponível:
+Vehicule|Vehicles|Véhicules|Fahrzeuge|Vehículos|Veicoli|Veículos
+Vehicule care deservesc stația (|Vehicles serving this station (|Véhicules desservant la station (|Fahrzeuge an dieser Station (|Vehículos que sirven la estación (|Veicoli che servono la stazione (|Veículos que servem a estação (
+Vehicule noi|New vehicles|Nouveaux véhicules|Neue Fahrzeuge|Vehículos nuevos|Nuovi veicoli|Veículos novos
+Venituri din transport|Transport income|Recettes de transport|Transporteinnahmen|Ingresos por transporte|Ricavi dai trasporti|Receitas de transporte
+Venituri transport aerian|Air transport income|Recettes aériennes|Einnahmen Luftverkehr|Ingresos transporte aéreo|Ricavi trasporto aereo|Receitas transporte aéreo
+Venituri transport feroviar|Rail transport income|Recettes ferroviaires|Einnahmen Schiene|Ingresos ferrocarril|Ricavi ferrovia|Receitas ferroviárias
+Venituri transport naval|Ship transport income|Recettes maritimes|Einnahmen Schifffahrt|Ingresos transporte marítimo|Ricavi navali|Receitas transporte marítimo
+Venituri transport rutier|Road transport income|Recettes routières|Einnahmen Straße|Ingresos carretera|Ricavi trasporto stradale|Receitas rodoviárias
+Venituri și cheltuieli pe lună|Monthly income and expenses|Recettes et dépenses mensuelles|Einnahmen und Ausgaben pro Monat|Ingresos y gastos mensuales|Entrate e uscite mensili|Receitas e despesas mensais
+Vest|West|Ouest|West|Oeste|Ovest|Oeste
+Vinde|Sell|Vendre|Verkaufen|Vender|Vendi|Vender
+Vinde (|Sell (|Vendre (|Verkaufen (|Vender (|Vendi (|Vender (
+Vinde întâi avioanele care au hangarul în acest aeroport|First sell the planes based at this airport|Vendez d'abord les avions basés dans cet aéroport|Verkaufe zuerst die hier stationierten Flugzeuge|Vende primero los aviones con base en este aeropuerto|Vendi prima gli aerei con base in questo aeroporto|Vende primeiro os aviões com base neste aeroporto
+Viteză normală|Normal speed|Vitesse normale|Normale Geschwindigkeit|Velocidad normal|Velocità normale|Velocidade normal
+Viteză x2|Speed x2|Vitesse x2|Tempo x2|Velocidad x2|Velocità x2|Velocidade x2
+Viteză x4|Speed x4|Vitesse x4|Tempo x4|Velocidad x4|Velocità x4|Velocidade x4
+Viteză x8|Speed x8|Vitesse x8|Tempo x8|Velocidad x8|Velocità x8|Velocidade x8
+Viteză:|Speed:|Vitesse :|Tempo:|Velocidad:|Velocità:|Velocidade:
+X demolare|X demolish|X démolir|X Abriss|X demoler|X demolisci|X demolir
+Zonă prea mare|Area too large|Zone trop grande|Bereich zu groß|Zona demasiado grande|Area troppo grande|Área demasiado grande
+Zonă prea mare (max 15×15)|Area too large (max 15×15)|Zone trop grande (15×15 max)|Bereich zu groß (max. 15×15)|Zona demasiado grande (máx. 15×15)|Area troppo grande (max 15×15)|Área demasiado grande (máx. 15×15)
+Împrumut:|Loan:|Emprunt :|Kredit:|Préstamo:|Prestito:|Empréstimo:
+În depou (|In depot (|Au dépôt (|Im Depot (|En el depósito (|Nel deposito (|No depósito (
+În hangar (|In hangar (|Au hangar (|Im Hangar (|En el hangar (|Nell'hangar (|No hangar (
+Înapoi la joc|Back to game|Retour au jeu|Zurück zum Spiel|Volver al juego|Torna al gioco|Voltar ao jogo
+Încarcă|Load|Charger|Laden|Cargar|Carica|Carregar
+Încarcă complet|Full load|Chargement complet|Volle Ladung|Carga completa|Carico completo|Carga completa
+încarcă complet|full load|chargement complet|volle Ladung|carga completa|carico completo|carga completa
+Încarcă/descarcă la|Loading/unloading at|Charge/décharge à|Lädt/entlädt in|Cargando/descargando en|Carica/scarica a|A carregar/descarregar em
+Încărcătură:|Load:|Chargement :|Ladung:|Carga:|Carico:|Carga:
+Îndeplinit în|Completed in|Atteint en|Erreicht|Cumplido en|Raggiunto nel|Cumprido em
+îndeplinite|completed|atteints|erreicht|cumplidos|raggiunti|cumpridos
+Întreținere:|Upkeep:|Entretien :|Unterhalt:|Mantenimiento:|Manutenzione:|Manutenção:
+Înălțime maximă atinsă|Maximum height reached|Hauteur maximale atteinte|Maximale Höhe erreicht|Altura máxima alcanzada|Altezza massima raggiunta|Altura máxima atingida
+își dublează producția!|doubles its production!|double sa production !|verdoppelt die Produktion!|¡duplica su producción!|raddoppia la produzione!|duplica a produção!
+își înjumătățește producția.|halves its production.|réduit sa production de moitié.|halbiert die Produktion.|reduce su producción a la mitad.|dimezza la produzione.|reduz a produção para metade.
+șantier|shipyard|chantier|Werft|astillero|cantiere|estaleiro
+Șantier naval|Shipyard|Chantier naval|Werft|Astillero|Cantiere navale|Estaleiro
+Șantierul naval se pune pe apă|A shipyard goes on water|Le chantier naval se place sur l'eau|Eine Werft gehört aufs Wasser|El astillero va en el agua|Il cantiere navale va sull'acqua|O estaleiro vai na água
+Știri|News|Nouvelles|Nachrichten|Noticias|Notizie|Notícias
+„încarcă complet”|„full load”|„chargement complet”|„volle Ladung“|„carga completa”|„carico completo”|„carga completa”
+Toată compania|Whole company|Toute la compagnie|Ganze Firma|Toda la empresa|Tutta la compagnia|Toda a empresa
+Cameră|Camera|Caméra|Kamera|Cámara|Visuale|Câmara
+Trage cu click stânga (cu 🔍) sau click dreapta ca să te miști. Rotița / ciupire = zoom. Click pe minihartă = salt.|Drag with left click (with 🔍) or right click to move. Wheel / pinch = zoom. Click the minimap to jump.|Faites glisser avec le clic gauche (avec 🔍) ou droit pour bouger. Molette / pincement = zoom. Clic sur la mini-carte = saut.|Mit Linksklick (mit 🔍) oder Rechtsklick ziehen zum Bewegen. Mausrad / Zwei-Finger = Zoom. Klick auf Minikarte = Sprung.|Arrastra con clic izquierdo (con 🔍) o derecho para moverte. Rueda / pellizco = zoom. Clic en el minimapa = salto.|Trascina con clic sinistro (con 🔍) o destro per muoverti. Rotella / pizzico = zoom. Clic sulla minimappa = salto.|Arrasta com clique esquerdo (com 🔍) ou direito para mover. Roda / pinça = zoom. Clique no minimapa = salto.
+Ordine pentru|Orders for|Ordres pour|Aufträge für|Órdenes para|Ordini per|Ordens para
+Esc / click dreapta = gata|Esc / right click = done|Échap / clic droit = terminé|Esc / Rechtsklick = fertig|Esc / clic derecho = listo|Esc / clic destro = fatto|Esc / clique direito = pronto
+Recompensă: |Reward: |Récompense : |Prämie: |Premio: |Premio: |Prémio:
+Altitudine|Altitude|Altitude|Höhe|Altitud|Altitudine|Altitude
+Teren · altitudine|Land · altitude|Terrain · altitude|Gelände · Höhe|Terreno · altitud|Terreno · altitudine|Terreno · altitude
+produce|produces|produit|erzeugt|produce|produce|produz
+Pasageri și poștă|Passengers and mail|Passagers et courrier|Passagiere und Post|Pasajeros y correo|Passeggeri e posta|Passageiros e correio
+Galerie|Gallery|Galerie|Galerie|Galería|Galleria|Galeria
+tunel|tunnel|tunnel|Tunnel|túnel|galleria|túnel
+drum|road|route|Straße|carretera|strada|estrada
+clona|cloned|clonés|klonen|clonar|clonare|clonados
+
+(trage în linie dreaptă; colțurile se fac din 2 segmente).|(drag in a straight line; corners are made of 2 segments).|(tracez en ligne droite ; les virages se font en 2 segments).|(in gerader Linie ziehen; Kurven aus 2 Abschnitten).|(arrastra en línea recta; las esquinas son 2 tramos).|(trascina in linea retta; le curve sono 2 tratti).|(arrasta em linha reta; as curvas são 2 troços).
+/an|/year|/an|/Jahr|/año|/anno|/ano
+/lună|/month|/mois|/Monat|/mes|/mese|/mês`;
+let LANG='ro',LOC='ro-RO',TRX=null,TRMAP=null;const trMemo=new Map();
+function tr(s){if(!TRX||s==null)return s;s=String(s);if(s.length<80){const m=trMemo.get(s);if(m!==undefined)return m;}const r=s.replace(TRX,m=>{const v=TRMAP.get(m);return v==null?m:v;});if(s.length<80)trMemo.set(s,r);return r;}
+function mon(m){return(MONTHS[LANG]||MONTHS.ro)[m];}
+const staticOrig=new WeakMap();
+function translateStatic(){for(const root of document.querySelectorAll('#top,#tools,#intro')){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode())){if(n.parentNode&&n.parentNode.tagName==='OPTION')continue;if(!staticOrig.has(n))staticOrig.set(n,n.nodeValue);n.nodeValue=tr(staticOrig.get(n));}
+   for(const el of root.querySelectorAll('[title]')){if(!el.dataset.roTitle)el.dataset.roTitle=el.title;el.title=tr(el.dataset.roTitle);}}}
+function setLang(l){LANG=LANGS[l]?l:'ro';LOC=LOCALES[LANG];try{localStorage.setItem('tmagnat_lang',LANG);}catch(e){}trMemo.clear();
+ if(LANG==='ro'){TRX=null;TRMAP=null;}else{const col=LCODES.indexOf(LANG);TRMAP=new Map();for(const line of I18N_SRC.split('\n')){if(!line)continue;const p=line.split('|');if(p[col])TRMAP.set(p[0],p[col]);}
+   const keys=[...TRMAP.keys()].sort((a,b)=>b.length-a.length).map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
+   const kl=keys.filter(k=>/^\p{L}/u.test(k)),kn=keys.filter(k=>!/^\p{L}/u.test(k));
+   TRX=new RegExp('(?:(?<![\\p{L}\\p{N}])(?:'+kl.join('|')+')|(?:'+kn.join('|')+'))(?![\\p{L}])','gu');}
+ document.documentElement.lang=LANG;translateStatic();{const ne=$('news');if(ne&&ne.dataset.raw)ne.textContent=tr(ne.dataset.raw);}
+ for(const sel of document.querySelectorAll('.langSel'))sel.value=LANG;
+ if(typeof wins!=='undefined')for(const k in wins)refreshWin(k);
+ if(typeof showHint==='function')showHint();if(typeof goalHtml!=='undefined'){goalHtml='';}if(G&&typeof updHud==='function'){updHud();updGoalPanel();}}
+function langSelect(){return '<select class="langSel" onchange="setLang(this.value)" style="font-size:14px;padding:3px">'+LCODES.map(c=>`<option value="${c}" ${c===LANG?'selected':''}>${LANGS[c]}</option>`).join('')+'</select>';}
+const fmt=n=>(n<0?'-':'')+Math.abs(Math.round(n)).toLocaleString(LOC)+' lei';
 const idx=(x,y)=>y*MW+x;
 const inb=(x,y)=>x>=0&&y>=0&&x<MW&&y<MH;
 const ix=i=>i%MW, iy=i=>(i/MW)|0;
@@ -1160,10 +1647,10 @@ function render(){
  // etichete (in coordonate ecran)
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.font='bold 12px Trebuchet MS';ctx.textAlign='center';ctx.textBaseline='middle';
  const toS=(fx,fy,zz)=>{const [a,b]=WP(fx,fy,zz+heightAt(fx,fy)*HS);return[(a-cam.x)*z+CW/2,(b-cam.y)*z+CH/2];};
- for(const t of G.towns){const [sx,sy]=toS(t.x+0.5,t.y+0.5,40);if(sx<-100||sx>CW+100||sy<-30||sy>CH+30)continue;label(t.name+' ('+t.pop.toLocaleString('ro-RO')+')',sx,sy,'rgba(30,40,60,.82)','#fff');}
+ for(const t of G.towns){const [sx,sy]=toS(t.x+0.5,t.y+0.5,40);if(sx<-100||sx>CW+100||sy<-30||sy>CH+30)continue;label(t.name+' ('+t.pop.toLocaleString(LOC)+')',sx,sy,'rgba(30,40,60,.82)','#fff');}
  if(selV)selV.orders.forEach((o,k)=>{const s=G.stations[o.st];if(!s)return;const [sx,sy]=toS(s.x+0.5,s.y+0.5,0);ctx.fillStyle=k===selV.cur?'#ffde3a':'#fff';ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx-26,sy-30,9,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#000';ctx.fillText(k+1,sx-26,sy-29.5);});
- if(z>=0.55)for(const s of G.stations){if(!s)continue;const lx=s.ap?s.ap.x+1.5:s.x+0.5,ly=s.ap?s.ap.y+1.5:s.y+0.5;const [sx,sy]=toS(lx,ly,s.ap?40:22);if(sx<-100||sx>CW+100||sy<-30||sy>CH+30)continue;label((s.ap?'✈ ':'')+s.name,sx,sy,UI.sel&&UI.sel.k==='st'&&UI.sel.id===s.id?'rgba(200,140,20,.95)':'rgba(140,30,30,.88)','#fff',11);}
- if(z>=0.8)for(const ind of G.inds){if(!ind)continue;const [sx,sy]=toS(ind.x+ind.w/2,ind.y+ind.h/2,0);if(sx<-100||sx>CW+100||sy<-30||sy>CH+30)continue;label(ind.name,sx,sy+18,'rgba(0,0,0,.55)','#ffd76a',10);}
+ if(z>=0.55)for(const s of G.stations){if(!s)continue;const lx=s.ap?s.ap.x+1.5:s.x+0.5,ly=s.ap?s.ap.y+1.5:s.y+0.5;const [sx,sy]=toS(lx,ly,s.ap?40:22);if(sx<-100||sx>CW+100||sy<-30||sy>CH+30)continue;label(tr((s.ap?'✈ ':'')+s.name),sx,sy,UI.sel&&UI.sel.k==='st'&&UI.sel.id===s.id?'rgba(200,140,20,.95)':'rgba(140,30,30,.88)','#fff',11);}
+ if(z>=0.8)for(const ind of G.inds){if(!ind)continue;const [sx,sy]=toS(ind.x+ind.w/2,ind.y+ind.h/2,0);if(sx<-100||sx>CW+100||sy<-30||sy>CH+30)continue;label(tr(ind.name),sx,sy+18,'rgba(0,0,0,.55)','#ffd76a',10);}
 }
 function drawArea(x0,y0,x1,y1,col){const hz=heightAt((x0+x1+1)/2,(y0+y1+1)/2)*HS;const a=WP(x0,y0,hz),b=WP(x1+1,y0,hz),c=WP(x1+1,y1+1,hz),d=WP(x0,y1+1,hz);poly(ctx,[a,b,c,d],col,'rgba(255,255,255,.5)',1/cam.z);}
 function label(txt,x,y,bg,fg,fs){ctx.font='bold '+(fs||12)+'px Trebuchet MS';const w=ctx.measureText(txt).width+10;ctx.fillStyle=bg;ctx.fillRect(x-w/2,y-8,w,16);ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1;ctx.strokeRect(x-w/2+0.5,y-7.5,w-1,15);ctx.fillStyle=fg;ctx.fillText(txt,x,y+0.5);}
@@ -1349,14 +1836,14 @@ const HINTS={road:'🛣 <b>Drum</b> — trage în linie dreaptă (400 lei/dală)
  lower:'🕳 <b>Coboară teren</b> — click sau trage o zonă: o coboară cu un nivel.',
  level:'▭ <b>Nivelează</b> — trage o zonă pornind de pe dala cu înălțimea dorită: totul ajunge la acel nivel.',
  order:'📍 <b>Ordine pentru {v}</b> — click pe stații în ordinea traseului. Trage cu mouse-ul ca să muți harta.'};
-function showHint(){const h=$('hint');if(!h)return;let t=HINTS[UI.tool];if(UI.tool==='order'){const v=G&&G.veh.find(q=>q.id===UI.orderFor);t=HINTS.order.replace('{v}',v?v.name:'');}if(!t){h.style.display='none';return;}h.innerHTML=t+' <span style="color:#9ab">· Esc / click dreapta = gata</span>';h.style.display='block';}
+function showHint(){const h=$('hint');if(!h)return;let t=HINTS[UI.tool];if(UI.tool==='order'){const v=G&&G.veh.find(q=>q.id===UI.orderFor);t=HINTS.order.replace('{v}',v?v.name:'');}if(!t){h.style.display='none';return;}h.innerHTML=tr(t+' <span style="color:#9ab">· Esc / click dreapta = gata</span>');h.style.display='block';}
 cv.addEventListener('pointerleave',()=>{$('tip').style.display='none';UI.hover=-1;});
 function updateTip(x,y){const tip=$('tip');let txt='';
  if(preview&&preview.cost!=null&&UI.drag)txt=(preview.ok?'Cost: ':'✖ ')+(preview.ok?fmt(preview.cost):(preview.msg||'Imposibil'));
  else if(UI.tool==='order'){const i=screenTile(x,y);const t=i>=0&&G.tiles[i];txt=t&&t.st>=0?'➕ '+G.stations[t.st].name:'';}
  else if(UI.tool==='info'&&G&&!(pan&&pan.moved)&&!UI.drag)txt=hoverInfo(x,y);
  else if(UI.tool!=='info'&&UI.hover>=0){const p=planFor(UI.tool,UI.hover,UI.hover);if(p&&UI.tool!=='rail')txt=(p.ok?fmt(p.cost):(p.msg||''));}
- if(txt){tip.style.display='block';tip.textContent=txt;tip.style.left=(x+16)+'px';tip.style.top=(y+16)+'px';}else tip.style.display='none';}
+ if(txt){tip.style.display='block';tip.textContent=tr(txt);tip.style.left=(x+16)+'px';tip.style.top=(y+16)+'px';}else tip.style.display='none';}
 function setTool(t){UI.tool=t;preview=null;UI.drag=null;document.querySelectorAll('#tools .btn').forEach(b=>b.classList.toggle('on',b.dataset.tool===t||(t==='order'&&b.dataset.tool==='info')));if(t!=='order')UI.orderFor=null;$('tip').style.display='none';showHint();}
 document.querySelectorAll('#tools .btn').forEach(b=>b.addEventListener('click',()=>{audioInit();setTool(UI.tool===b.dataset.tool&&b.dataset.tool!=='info'?'info':b.dataset.tool);}));
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;const k=e.key.toLowerCase();
@@ -1396,8 +1883,8 @@ function openWin(key,title,fn,opt){opt=opt||{};let w=wins[key];
    el.addEventListener('pointerdown',()=>el.style.zIndex=++zTop);
    el.querySelector('.x').addEventListener('click',()=>closeWin(key));
    w=wins[key]={el,body:el.querySelector('.bd'),tt:el.querySelector('.tt')};}
- w.fn=fn;w.live=opt.live!==false;w.onClose=opt.onClose;w.tt.textContent=title;w.el.style.zIndex=++zTop;refreshWin(key);return w;}
-function refreshWin(key){const w=wins[key];if(!w)return;const h=w.fn();if(h==null){closeWin(key);return;}const sc=w.body.scrollTop;w.body.innerHTML=h;w.body.scrollTop=sc;}
+ w.fn=fn;w.live=opt.live!==false;w.onClose=opt.onClose;w.title=title;w.tt.textContent=tr(title);w.el.style.zIndex=++zTop;refreshWin(key);return w;}
+function refreshWin(key){const w=wins[key];if(!w)return;const h=w.fn();if(h==null){closeWin(key);return;}const sc=w.body.scrollTop;if(w.title)w.tt.textContent=tr(w.title);w.body.innerHTML=tr(h);w.body.scrollTop=sc;}
 function closeWin(key){const w=wins[key];if(!w)return;w.el.remove();delete wins[key];if(w.onClose)w.onClose();}
 function refreshAll(){for(const k in wins)if(wins[k].live)refreshWin(k);}
 setInterval(()=>{for(const k in wins)if(wins[k].live)refreshWin(k);},600);
@@ -1423,7 +1910,7 @@ const A={
    if(ind.type==='power')h+='<div style="margin-top:4px;color:#bcd">Arde cărbunele livrat (nu produce marfă).</div>';
    h+=`<div class="row"><button class="btn sm" onclick="A.goto(${ind.x+ind.w/2},${ind.y+ind.h/2})">👁 Centrează</button></div>`;return h;});},
  town(id){const t=G.towns[id];openWin('town'+id,'🏘 '+t.name,()=>{const t=G.towns[id];const g=t.pm.gen,tr=t.pm.tr;
-   return `<div>Populație: <b>${t.pop.toLocaleString('ro-RO')}</b> · Clădiri: ${t.houses}</div><h4>Luna trecută</h4><table><tr><td>Pasageri</td><td class="r">max ${g.P||0}</td><td class="r">transportați ${tr.P||0}</td></tr><tr><td>Poștă</td><td class="r">max ${g.M||0}</td><td class="r">transportată ${tr.M||0}</td></tr></table><div style="color:#bcd;margin-top:6px">Orașele cresc mai repede când au stații deservite regulat.</div><div class="row"><button class="btn sm" onclick="A.goto(${t.x+0.5},${t.y+0.5})">👁 Centrează</button></div>`;});},
+   return `<div>Populație: <b>${t.pop.toLocaleString(LOC)}</b> · Clădiri: ${t.houses}</div><h4>Luna trecută</h4><table><tr><td>Pasageri</td><td class="r">max ${g.P||0}</td><td class="r">transportați ${tr.P||0}</td></tr><tr><td>Poștă</td><td class="r">max ${g.M||0}</td><td class="r">transportată ${tr.M||0}</td></tr></table><div style="color:#bcd;margin-top:6px">Orașele cresc mai repede când au stații deservite regulat.</div><div class="row"><button class="btn sm" onclick="A.goto(${t.x+0.5},${t.y+0.5})">👁 Centrează</button></div>`;});},
  depot(id){const d=G.depots[id];if(!d)return;openWin('dep'+id,({road:'🚌 ',rail:'🚂 ',ship:'🛠 '}[d.kind])+d.name,()=>{const d=G.depots[id];if(!d)return null;let h='';
    const avail=m=>G.year>=m.y0&&G.year<m.y1;
    if(d.kind==='ship'){
@@ -1510,7 +1997,7 @@ const A={
    openWin('annual','📜 Raport anual '+year,()=>`<div style="text-align:center"><div style="font-size:12px;color:#bcd">Compania ta este considerată</div><div style="font-size:22px;color:#ffd76a;font-weight:bold;margin:4px 0 8px">${companyTitle(val)}</div></div>
    <table><tr><td>Venituri din transport</td><td class="r pos">${fmt(inc)}</td></tr><tr><td>Profit net</td><td class="r ${prof>=0?'pos':'neg'}">${fmt(prof)}</td></tr><tr><td>Valoarea companiei</td><td class="r">${fmt(val)}</td></tr><tr><td>Vehicule</td><td class="r">${G.veh.length}</td></tr></table>
    ${best&&best.pLY>0?`<h4>🏆 Cel mai profitabil vehicul</h4><div><span class="lnk" onclick="A.veh(${best.id})">${best.name}</span>: <b class="pos">${fmt(best.pLY)}</b></div>`:''}
-   <h4>Marfă livrată în ${year}</h4><div>${CORDER.filter(c=>yd[c]).map(c=>`${CARGO[c].n}: <b>${yd[c].toLocaleString('ro-RO')}</b> ${CARGO[c].u}`).join('<br>')||'<i>Nimic livrat.</i>'}</div>`,{live:false});sfx('fanfare');},
+   <h4>Marfă livrată în ${year}</h4><div>${CORDER.filter(c=>yd[c]).map(c=>`${CARGO[c].n}: <b>${yd[c].toLocaleString(LOC)}</b> ${CARGO[c].u}`).join('<br>')||'<i>Nimic livrat.</i>'}</div>`,{live:false});sfx('fanfare');},
  loan(d){if(d===9){const x=G.maxLoan-G.loan;G.loan+=x;G.money+=x;}else if(d>0){if(G.loan+10000>G.maxLoan){news('Limita de împrumut atinsă.');return;}G.loan+=10000;G.money+=10000;}else{if(G.loan<=0)return;if(G.money<10000){news('Nu ai bani să rambursezi.');return;}G.loan-=10000;G.money-=10000;}refreshAll();},
  vehList(){openWin('vl','🚍 Vehicule',()=>{if(!G.veh.length)return'<i>Nu ai vehicule. Construiește un depou și cumpără unul.</i>';
    let h='<table><tr><th>Vehicul</th><th>Stare</th><th class="r">Profit an</th><th class="r">An trecut</th></tr>';
@@ -1519,10 +2006,10 @@ const A={
  stList(){openWin('sl','🚉 Stații',()=>{const ss=G.stations.filter(Boolean);if(!ss.length)return'<i>Nicio stație încă.</i>';let h='<table>';
    for(const s of ss){const w=CORDER.filter(c=>s.cg[c]&&s.cg[c].act).map(c=>`${Math.floor(s.cg[c].w)} ${CARGO[c].n.toLowerCase()}`).join(', ');h+=`<tr><td><span class="lnk" onclick="A.station(${s.id});A.goto(${s.x+0.5},${s.y+0.5})">${s.name}</span></td><td>${w||'—'}</td></tr>`;}
    return h+'</table>';});},
- townList(){openWin('tl','🏘 Orașe',()=>{let h='<table><tr><th>Oraș</th><th class="r">Populație</th></tr>';for(const t of G.towns.slice().sort((a,b)=>b.pop-a.pop))h+=`<tr><td><span class="lnk" onclick="A.town(${t.id});A.goto(${t.x+0.5},${t.y+0.5})">${t.name}</span></td><td class="r">${t.pop.toLocaleString('ro-RO')}</td></tr>`;h+='</table><h4>Industrii</h4><table>';
+ townList(){openWin('tl','🏘 Orașe',()=>{let h='<table><tr><th>Oraș</th><th class="r">Populație</th></tr>';for(const t of G.towns.slice().sort((a,b)=>b.pop-a.pop))h+=`<tr><td><span class="lnk" onclick="A.town(${t.id});A.goto(${t.x+0.5},${t.y+0.5})">${t.name}</span></td><td class="r">${t.pop.toLocaleString(LOC)}</td></tr>`;h+='</table><h4>Industrii</h4><table>';
    for(const ind of G.inds.filter(Boolean))h+=`<tr><td><span class="lnk" onclick="A.industry(${ind.id});A.goto(${ind.x+ind.w/2},${ind.y+ind.h/2})">${ind.name}</span></td></tr>`;return h+'</table>';});},
  newsLog(){openWin('news','📰 Știri',()=>G.news.length?G.news.slice().reverse().map(n=>`<div style="border-bottom:1px solid #4a5260;padding:3px 0"><small style="color:#ffd76a">${n.d}</small> ${n.x!=null?`<span class="lnk" onclick="A.goto(${n.x},${n.y})">${n.t}</span>`:n.t}</div>`).join(''):'<i>Nicio știre.</i>');},
- menu(){openWin('menu','☰ Meniu',()=>`<div class="row"><button class="btn" onclick="A.save()">💾 Salvează</button><button class="btn" onclick="A.load()">📂 Încarcă</button></div><div class="row"><button class="btn" onclick="A.restart()">🆕 Joc nou</button><button class="btn" onclick="A.help()">❓ Ajutor</button><button class="btn" onclick="UI.grid=!UI.grid;refreshWin('menu')">${UI.grid?'▦ Grilă: DA':'▢ Grilă: NU'}</button><button class="btn" onclick="UI.sound=!UI.sound;refreshWin('menu')">${UI.sound?'🔊 Sunet: DA':'🔇 Sunet: NU'}</button></div><div style="color:#bcd">Seed hartă: ${G.seed}</div>`);},
+ menu(){openWin('menu','☰ Meniu',()=>`<div class="row">🌐 Limba / Language: ${langSelect()}</div><div class="row"><button class="btn" onclick="A.save()">💾 Salvează</button><button class="btn" onclick="A.load()">📂 Încarcă</button></div><div class="row"><button class="btn" onclick="A.restart()">🆕 Joc nou</button><button class="btn" onclick="A.help()">❓ Ajutor</button><button class="btn" onclick="UI.grid=!UI.grid;refreshWin('menu')">${UI.grid?'▦ Grilă: DA':'▢ Grilă: NU'}</button><button class="btn" onclick="UI.sound=!UI.sound;refreshWin('menu')">${UI.sound?'🔊 Sunet: DA':'🔇 Sunet: NU'}</button></div><div style="color:#bcd">Seed hartă: ${G.seed}</div>`,{live:false});},
  save(){try{localStorage.setItem('tmagnat_save',JSON.stringify(G));news('💾 Joc salvat.');}catch(e){news('Eroare la salvare: '+e.message);}},
  load(){const s=LS('tmagnat_save')||LS('tmagnat_auto');if(!s){news('Nu există salvare.');return;}loadState(JSON.parse(s));news('📂 Joc încărcat.');},
  restart(){for(const k in wins)closeWin(k);$('bBack').style.display='';$('bCont').style.display=(LS('tmagnat_save')||LS('tmagnat_auto'))?'':'none';$('intro').style.display='flex';$('seedIn').value=Math.floor(Math.random()*999999);},
@@ -1543,8 +2030,8 @@ function togglePause(){UI.paused=!UI.paused;updSpeedBtns();}
 function updSpeedBtns(){$('bPause').classList.toggle('on',UI.paused);document.querySelectorAll('[data-spd]').forEach(b=>b.classList.toggle('on',!UI.paused&&+b.dataset.spd===UI.speed));}
 $('bPause').onclick=togglePause;document.querySelectorAll('[data-spd]').forEach(b=>b.onclick=()=>{UI.speed=+b.dataset.spd;UI.paused=false;updSpeedBtns();});
 let newsTimer=0;
-function news(t,x,y){if(!G)return;const n={t,d:G.day+' '+LUNI[G.month]+' '+G.year,x,y};G.news.push(n);if(G.news.length>80)G.news.shift();const el=$('news');el.textContent=t;el.style.display='block';el.onclick=()=>{if(x!=null)A.goto(x,y);};newsTimer=6;if(wins.news)refreshWin('news');}
-function updHud(){$('date').textContent=G.day+' '+LUNI[G.month]+' '+G.year;const m=$('money');m.textContent=fmt(G.money);m.classList.toggle('neg',G.money<0);}
+function news(t,x,y){if(!G)return;const n={t,d:G.day+' '+mon(G.month)+' '+G.year,x,y};G.news.push(n);if(G.news.length>80)G.news.shift();const el=$('news');el.dataset.raw=t;el.textContent=tr(t);el.style.display='block';el.onclick=()=>{if(x!=null)A.goto(x,y);};newsTimer=6;if(wins.news)refreshWin('news');}
+function updHud(){$('date').textContent=G.day+' '+mon(G.month)+' '+G.year;const m=$('money');m.textContent=fmt(G.money);m.classList.toggle('neg',G.money<0);}
 
 // ================= OBIECTIVE / STATISTICI =================
 function companyValue(){return G.money-G.loan+G.veh.reduce((s,v)=>s+v.value*0.6,0);}
@@ -1569,7 +2056,7 @@ let goalHtml='';
 function updGoalPanel(){const el=$('goal');if(!G||$('intro').style.display!=='none'){el.style.display='none';return;}const done=GOALS.filter(g=>G.goalsDone[g.id]).length;$('bGoals').innerHTML='🎯<span class="t"> '+done+'/'+GOALS.length+'</span>';
  const g=GOALS.find(q=>!G.goalsDone[q.id]);if(!g||UI.hideGoal){el.style.display='none';return;}
  const h=`<span style="float:right;color:#9ab" onclick="event.stopPropagation();UI.hideGoal=true;">✕</span><div class="gt">🎯 ${g.t}</div><div class="gh">${g.h}</div><div class="pb"><i style="width:${Math.round(Math.max(0,Math.min(1,g.f()))*100)}%"></i></div><div style="color:#9f9;margin-top:3px;font-size:11px">Recompensă: ${fmt(g.r)} · ${done}/${GOALS.length} îndeplinite</div>`;
- if(h!==goalHtml){el.innerHTML=h;goalHtml=h;}el.style.display='block';}
+ if(h!==goalHtml){el.innerHTML=tr(h);goalHtml=h;}el.style.display='block';}
 const shortN=v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?Math.round(v/1e3)+'k':String(Math.round(v));
 function chartSVG(data,series,H){H=H||130;const W=420,pad=34,n=data.length;if(!n)return'<div style="color:#9ab;font-size:12px"><i>Graficul apare după prima lună încheiată.</i></div>';
  let mx=1,mn=0;for(const d of data)for(const s of series){mx=Math.max(mx,d[s.k]);mn=Math.min(mn,d[s.k]);}
@@ -1577,9 +2064,9 @@ function chartSVG(data,series,H){H=H||130;const W=420,pad=34,n=data.length;if(!n
  let o=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="background:#262c35;border:1px solid #555;display:block">`;
  for(let k=0;k<=2;k++){const v=mn+(mx-mn)*k/2;o+=`<line x1="${pad}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="#3d4450"/><text x="${pad-3}" y="${y(v)+3}" fill="#9ab" font-size="9" text-anchor="end">${shortN(v)}</text>`;}
  const bars=series.filter(s=>s.type==='bar');
- bars.forEach((s,si)=>data.forEach((d,i)=>{const bwi=(bw-2)/bars.length;const x=pad+i*bw+1+si*bwi;const y0=y(0),y1=y(d[s.k]);o+=`<rect x="${x.toFixed(1)}" y="${Math.min(y0,y1).toFixed(1)}" width="${Math.max(1,bwi-0.5).toFixed(1)}" height="${Math.max(0.5,Math.abs(y1-y0)).toFixed(1)}" fill="${s.col}"><title>${LUNI[d.m]} ${d.y}: ${Math.round(d[s.k]).toLocaleString('ro-RO')}</title></rect>`;}));
+ bars.forEach((s,si)=>data.forEach((d,i)=>{const bwi=(bw-2)/bars.length;const x=pad+i*bw+1+si*bwi;const y0=y(0),y1=y(d[s.k]);o+=`<rect x="${x.toFixed(1)}" y="${Math.min(y0,y1).toFixed(1)}" width="${Math.max(1,bwi-0.5).toFixed(1)}" height="${Math.max(0.5,Math.abs(y1-y0)).toFixed(1)}" fill="${s.col}"><title>${mon(d.m)} ${d.y}: ${Math.round(d[s.k]).toLocaleString(LOC)}</title></rect>`;}));
  series.filter(s=>s.type==='line').forEach(s=>{o+=`<polyline fill="none" stroke="${s.col}" stroke-width="2" points="${data.map((d,i)=>(pad+i*bw+bw/2).toFixed(1)+','+y(d[s.k]).toFixed(1)).join(' ')}"/>`;});
- data.forEach((d,i)=>{if(d.m%3===0)o+=`<text x="${pad+i*bw+bw/2}" y="${H-4}" fill="#9ab" font-size="9" text-anchor="middle">${LUNI[d.m]}${d.m===0?" '"+String(d.y).slice(2):''}</text>`;});
+ data.forEach((d,i)=>{if(d.m%3===0)o+=`<text x="${pad+i*bw+bw/2}" y="${H-4}" fill="#9ab" font-size="9" text-anchor="middle">${mon(d.m)}${d.m===0?" '"+String(d.y).slice(2):''}</text>`;});
  return o+'</svg>';}
 // mașini în orașe (ambient) și nori
 const amb=[],clouds=[];const AMBC=['#c0392b','#2980b9','#ecf0f1','#f1c40f','#16a085','#7f8c8d','#2c3e50','#d35400','#8e44ad'];
@@ -1630,10 +2117,12 @@ function startNew(seed){genMap(seed);amb.length=0;resv=new Map();for(const k in 
  news('Bine ai venit, director! Ai '+fmt(G.money)+'. Apasă ❓ în meniu pentru ajutor.');setTool('info');}
 resize();buildSprites();
 $('seedIn').value=Math.floor(Math.random()*999999);
-$('bNew').onclick=()=>{audioInit();let sd=+$('seedIn').value||1;for(let k=0;k<5;k++){try{startNew(sd);return;}catch(e){console.error(e);sd++;}}alert('Nu am putut genera harta.');};
+$('bNew').onclick=()=>{audioInit();let sd=+$('seedIn').value||1;for(let k=0;k<5;k++){try{startNew(sd);return;}catch(e){console.error(e);sd++;}}alert(tr('Nu am putut genera harta.'));};
 $('bCont').onclick=()=>{audioInit();const s=LS('tmagnat_save')||LS('tmagnat_auto');if(!s){$('bCont').textContent='Nu există salvare';return;}loadState(JSON.parse(s));};
 if(!LS('tmagnat_save')&&!LS('tmagnat_auto'))$('bCont').style.display='none';
 updSpeedBtns();
+$('introLang').innerHTML=langSelect();
+{let l0=LS('tmagnat_lang');if(!l0){const n=(navigator.language||'ro').slice(0,2).toLowerCase();l0=LANGS[n]?n:'ro';}setLang(l0);}
 requestAnimationFrame(frame);
 Object.assign(window,{planAirport,applyAirport,planTerra,applyTerra,planDock,applyDock,planDepot,applyDepot,makePlane,makeShip});
 window.__T={get G(){return G},planLine,applyLine,planRoadStop,applyRoadStop,planRailSt,applyRailSt,planDepot,applyDepot,doBuild,makeRV,makeTrain,startVeh,vehUpdate,dayTick,idx,cam,startNew,astar,UI,A};
