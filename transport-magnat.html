@@ -287,6 +287,7 @@ function genMap(seed){
  rng=Math.random;
 }
 function layRoad(x0,y0,x1,y1,tn){ // linie dreapta (axa) pentru generare
+ const cl=(v,m)=>Math.max(0,Math.min(m-1,v));x0=cl(x0,MW);x1=cl(x1,MW);y0=cl(y0,MH);y1=cl(y1,MH);
  const d=x1>x0?1:x1<x0?3:y1>y0?2:0;const n=Math.max(Math.abs(x1-x0),Math.abs(y1-y0));
  let px=x0,py=y0;
  for(let k=0;k<n;k++){const nx=px+DX[d],ny=py+DY[d];if(!inb(nx,ny))break;const a=G.tiles[idx(px,py)],b=G.tiles[idx(nx,ny)];
@@ -1629,7 +1630,7 @@ function startNew(seed){genMap(seed);amb.length=0;resv=new Map();for(const k in 
  news('Bine ai venit, director! Ai '+fmt(G.money)+'. Apasă ❓ în meniu pentru ajutor.');setTool('info');}
 resize();buildSprites();
 $('seedIn').value=Math.floor(Math.random()*999999);
-$('bNew').onclick=()=>{audioInit();startNew(+$('seedIn').value||1);};
+$('bNew').onclick=()=>{audioInit();let sd=+$('seedIn').value||1;for(let k=0;k<5;k++){try{startNew(sd);return;}catch(e){console.error(e);sd++;}}alert('Nu am putut genera harta.');};
 $('bCont').onclick=()=>{audioInit();const s=LS('tmagnat_save')||LS('tmagnat_auto');if(!s){$('bCont').textContent='Nu există salvare';return;}loadState(JSON.parse(s));};
 if(!LS('tmagnat_save')&&!LS('tmagnat_auto'))$('bCont').style.display='none';
 updSpeedBtns();
