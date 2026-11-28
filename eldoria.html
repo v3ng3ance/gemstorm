@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Cronicile Eldoriei</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Alegreya+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: high-fantasy JRPG/ARPG, warm and adventurous
+   IDEA: an illuminated adventurer's journal framing a living world
+   PICTURE: the game world itself, full screen, procedurally drawn
+   COLOUR and TYPE: deep plum leather + gilded gold, Cinzel Decorative titles, Alegreya Sans text
+   LAYOUT: full-bleed canvas, HUD in corners, panels as gilded parchment-dark cards */
+*{box-sizing:border-box;margin:0;padding:0;min-width:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#07050b;font-family:'Alegreya Sans',system-ui,sans-serif;color:#f3ead7;user-select:none;-webkit-user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent}
+#c{position:fixed;inset:0;display:block}
+.hide{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+.gild{background:linear-gradient(160deg,#2c2138f2,#17111ff2);border:2px solid #c9a24a;border-radius:12px;box-shadow:0 0 0 1px #3a2a10,0 0 0 4px #c9a24a22,0 12px 40px #000c}
+#hud{position:fixed;left:12px;top:12px;display:flex;gap:10px;align-items:center;pointer-events:none;z-index:5}
+#lvlB{width:54px;height:54px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffeeb5,#d39b32 55%,#6b4512);border:3px solid #2a1d0c;box-shadow:0 0 0 2px #e6c36a,0 4px 10px #0008;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#2a1a05;font-weight:800;font-size:21px;line-height:1}
+#lvlB small{font-size:9px;letter-spacing:.5px}
+.bar{position:relative;width:min(220px,42vw);height:17px;background:#140e1acc;border:2px solid #2a1d0c;border-radius:9px;overflow:hidden;box-shadow:0 0 0 1px #c9a24a99;margin-bottom:4px}
+.bar i{position:absolute;left:0;top:0;bottom:0;width:100%;transition:width .12s}
+.bar.hp i{background:linear-gradient(#ff8a78,#c4262c 60%,#7e1217)}
+.bar.mp i{background:linear-gradient(#8fd2ff,#2b68d4 60%,#163a86)}
+.bar.xp{height:9px}.bar.xp i{background:linear-gradient(#ffe896,#d9a020)}
+.bar span{position:absolute;inset:0;text-align:center;font-size:12px;font-weight:800;line-height:13px;text-shadow:0 1px 2px #000,0 0 3px #000}
+#goldRow{font-weight:800;font-size:14px;text-shadow:0 1px 2px #000;color:#ffd770}
+#mmWrap{position:fixed;right:12px;top:12px;z-index:5;display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none}
+#mapName{font-family:'Cinzel Decorative',serif;font-size:13px;color:#ffe0a0;text-shadow:0 1px 3px #000;padding:2px 10px;background:#140e1acc;border:1px solid #c9a24a88;border-radius:20px}
+#mm{width:160px;height:118px;border:2px solid #c9a24a;border-radius:8px;background:#000;box-shadow:0 4px 14px #000a;image-rendering:pixelated}
+#tracker{max-width:220px;font-size:13px;text-align:right;text-shadow:0 1px 2px #000,0 0 4px #000}
+#tracker div{margin-top:4px;line-height:1.2}
+#tracker b{color:#ffd770;display:block;font-size:13px}
+#tracker .ok{color:#8dff8d}
+#topBtns{position:fixed;right:184px;flex-wrap:wrap;max-width:240px;justify-content:flex-end;top:12px;z-index:6;display:flex;gap:6px}
+#topBtns button{width:40px;height:40px;border-radius:10px;font-size:19px;background:#1c1424dd;border:2px solid #c9a24a99;box-shadow:0 3px 8px #0008}
+#topBtns button:hover{border-color:#ffd770}
+#bossBar{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:5;width:min(460px,60vw);text-align:center;pointer-events:none}
+#bossName{font-family:'Cinzel Decorative',serif;font-size:16px;color:#ffb0a0;text-shadow:0 2px 4px #000}
+.bb{height:14px;border:2px solid #2a0a0a;border-radius:8px;background:#1a0808;overflow:hidden;box-shadow:0 0 0 1px #c9443a,0 0 18px #ff3a2055}
+.bb i{display:block;height:100%;background:linear-gradient(#ff6a4a,#a01818);transition:width .15s}
+#skillbar{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:5;display:flex;gap:6px;padding:7px;border-radius:14px;background:#140e1acc;border:2px solid #c9a24a88}
+.slot{position:relative;width:50px;height:50px;border-radius:10px;background:radial-gradient(circle at 40% 30%,#3d2f4d,#1a1222);border:2px solid #6b5530;display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;cursor:pointer;touch-action:none}
+.slot .key{position:absolute;left:3px;top:1px;font-size:11px;font-weight:800;color:#ffd770;text-shadow:0 1px 2px #000}
+.slot .cnt{position:absolute;right:3px;bottom:1px;font-size:12px;font-weight:800;text-shadow:0 1px 2px #000}
+.slot .cdv{position:absolute;left:0;right:0;bottom:0;background:#000a;height:0}
+.slot .lock{position:absolute;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#bbb}
+.slot.nomp{border-color:#3060c0}
+.slot.sep{margin-left:8px}
+#toasts{position:fixed;left:50%;top:84px;transform:translateX(-50%);z-index:7;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.toast{padding:7px 16px;border-radius:20px;background:#1a1222e6;border:1px solid #c9a24a99;font-weight:700;font-size:15px;text-shadow:0 1px 2px #000;animation:tin .25s ease-out}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}}
+#banner{position:fixed;left:0;right:0;top:30%;text-align:center;z-index:6;pointer-events:none;font-family:'Cinzel Decorative',serif;font-size:clamp(28px,5vw,52px);color:#ffe3a3;text-shadow:0 0 18px #c9a24a,0 3px 6px #000;opacity:0;transition:opacity .6s}
+#banner small{display:block;font-family:'Alegreya Sans';font-size:16px;letter-spacing:2px;color:#e8d8b8;margin-top:6px}
+#banner.show{opacity:1}
+#prompt{position:fixed;z-index:6;transform:translate(-50%,-100%);padding:4px 10px;border-radius:8px;background:#140e1ae6;border:1px solid #ffd770;font-size:14px;font-weight:700;pointer-events:none;white-space:nowrap}
+#prompt kbd{background:#ffd770;color:#2a1a05;border-radius:4px;padding:0 5px;margin-right:5px;font-family:inherit}
+#dialog{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(780px,96vw);z-index:9;display:flex;gap:14px;padding:14px}
+#portrait{width:96px;height:96px;flex:none;border-radius:10px;border:2px solid #c9a24a;background:#2a1f36}
+.dbody{flex:1;display:flex;flex-direction:column;gap:8px}
+#dName{font-family:'Cinzel Decorative',serif;color:#ffd770;font-size:17px}
+#dText{font-size:18px;line-height:1.4;white-space:pre-line;min-height:52px;cursor:pointer}
+#dOpts{display:flex;flex-wrap:wrap;gap:8px}
+#dOpts button,.btn{padding:9px 16px;min-height:44px;border-radius:9px;background:linear-gradient(#4a3760,#2a1e38);border:1.5px solid #c9a24a;font-weight:700;font-size:15px}
+#dOpts button:hover,.btn:hover{background:linear-gradient(#5e4778,#352648);border-color:#ffe08a}
+#panel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(760px,96vw);max-height:88vh;z-index:9;display:flex;flex-direction:column}
+.ptitle{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #c9a24a66;font-family:'Cinzel Decorative',serif;font-size:19px;color:#ffd770}
+.ptitle button{width:40px;height:40px;border-radius:8px;background:#0004;border:1px solid #c9a24a88;font-size:18px}
+#pBody{padding:14px 16px;overflow:auto}
+.invg{display:grid;grid-template-columns:minmax(0,230px) minmax(0,1fr);gap:16px}
+@media(max-width:620px){.invg{grid-template-columns:minmax(0,1fr)}#topBtns{right:12px;top:auto;bottom:auto;top:150px;flex-direction:column}#mm{width:120px;height:90px}.bar{width:38vw}}
+.eqs{display:flex;flex-direction:column;gap:6px}
+.eq{display:flex;align-items:center;gap:8px;padding:6px;border-radius:9px;background:#0003;border:1px solid #6b5530;cursor:pointer;min-height:44px}
+.eq .ic{font-size:24px;width:32px;text-align:center}
+.eq small{display:block;color:#bba;font-size:12px}
+.stats{margin-top:10px;font-size:14px;line-height:1.6}
+.stats div{display:flex;justify-content:space-between;border-bottom:1px dashed #ffffff18}
+.stats b{color:#ffd770}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:6px}
+.it{position:relative;aspect-ratio:1;border-radius:9px;background:radial-gradient(circle at 40% 30%,#3d2f4d,#1a1222);border:1.5px solid #6b5530;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer}
+.it:hover{border-color:#ffd770}
+.it span{position:absolute;right:4px;bottom:1px;font-size:12px;font-weight:800;text-shadow:0 1px 2px #000}
+.info{margin-top:10px;min-height:46px;padding:8px 10px;border-radius:8px;background:#0003;font-size:14px;color:#e8dcc4}
+.row{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid #ffffff14}
+.row .ic{font-size:26px;width:36px;text-align:center}
+.row .nm{flex:1}.row .nm small{display:block;color:#bba;font-size:13px}
+.row .pr{color:#ffd770;font-weight:800;white-space:nowrap}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{padding:8px 16px;min-height:40px;border-radius:8px;background:#0003;border:1px solid #6b5530;font-weight:700}
+.tabs button.on{background:#4a3760;border-color:#ffd770}
+.q{padding:10px;border-radius:9px;background:#0003;border:1px solid #6b5530;margin-bottom:8px}
+.q b{color:#ffd770;font-size:16px}.q p{font-size:14px;color:#e0d4bc;margin:3px 0}
+.q .pg{font-weight:800}.q.done{opacity:.55}
+#overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#0a061088,#05030aee);padding:16px}
+.ocard{text-align:center;max-width:620px;padding:28px 24px}
+.ocard h1{font-family:'Cinzel Decorative',serif;font-weight:900;font-size:clamp(34px,7vw,58px);line-height:1.05;color:#ffe3a3;text-shadow:0 0 24px #c9a24a88,0 4px 8px #000;text-wrap:balance}
+.ocard h2{font-family:'Cinzel Decorative',serif;font-size:18px;color:#d9b8ff;margin:8px 0 18px}
+.ocard p{font-size:16px;color:#e4d8c2;line-height:1.5;margin-bottom:16px}
+.ocard .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
+.ocard .btn{font-size:17px;padding:12px 26px}
+.hn{display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:700;color:#ffd770;margin:0 auto 16px;max-width:280px}
+.hn input{width:100%;min-height:44px;font:inherit;font-size:18px;text-align:center;color:#fff;background:#0006;border:1.5px solid #c9a24a;border-radius:9px;padding:6px 10px;outline:none}
+.hn input:focus{border-color:#ffe08a;box-shadow:0 0 0 3px #c9a24a44}
+.langs{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:16px}
+.lb{display:flex;align-items:center;gap:6px;min-height:40px;padding:6px 12px;border-radius:20px;background:#0004;border:1px solid #6b5530;font-weight:700;font-size:14px}
+.lb .fl{font-size:18px}
+.lb.on{background:#4a3760;border-color:#ffd770;color:#ffe08a}
+.help{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px;text-align:left;font-size:14px;color:#cfc2a8}
+.help kbd{display:inline-block;min-width:22px;text-align:center;background:#ffd77022;border:1px solid #c9a24a88;border-radius:4px;padding:0 5px;margin-right:6px;color:#ffd770;font-family:inherit;font-weight:700}
+#fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:15;transition:opacity .3s}
+/* touch */
+#joyZone{position:fixed;left:0;bottom:0;width:50vw;height:65vh;z-index:4;touch-action:none}
+#joy{position:fixed;width:120px;height:120px;border-radius:50%;border:2px solid #ffffff44;background:#ffffff12;transform:translate(-50%,-50%);pointer-events:none;z-index:4}
+#knob{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px;border-radius:50%;background:#ffd77088;border:2px solid #ffd770}
+#tAtk,#tE{position:fixed;z-index:6;border-radius:50%;border:3px solid #c9a24a;background:radial-gradient(circle at 40% 30%,#6a4a7a,#2a1a36);font-size:34px;touch-action:none}
+#tAtk{right:22px;bottom:26px;width:86px;height:86px}
+#tE{right:120px;bottom:120px;width:60px;height:60px;font-size:24px}
+body.touch #skillbar{left:auto;right:118px;bottom:16px;transform:none;flex-wrap:wrap;width:auto;max-width:200px;justify-content:flex-end;gap:5px;padding:5px;background:transparent;border:0}
+body.touch .slot{width:46px;height:46px}
+body.touch .slot.sep{margin-left:0}
+body.touch #hud{transform:scale(.9);transform-origin:left top}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" class="hide">
+  <div id="lvlB"><small>NIVEL</small><span id="lvlT">1</span></div>
+  <div>
+    <div class="bar hp"><i id="hpF"></i><span id="hpT"></span></div>
+    <div class="bar mp"><i id="mpF"></i><span id="mpT"></span></div>
+    <div class="bar xp"><i id="xpF"></i></div>
+    <div id="goldRow"><span id="heroT" style="color:#fff2d0;margin-right:10px"></span>🪙 <span id="goldT">0</span></div>
+  </div>
+</div>
+<div id="mmWrap" class="hide"><div id="mapName"></div><canvas id="mm" width="160" height="118"></canvas><div id="tracker"></div></div>
+<div id="topBtns" class="hide">
+  <button data-a="inv" title="Inventar (I)">🎒</button>
+  <button data-a="quests" title="Misiuni (Q)">📜</button>
+  <button data-a="sound" id="sndB" title="Sunet">🔊</button>
+  <button data-a="save" title="Salvează">💾</button>
+  <button data-a="lang" title="Limbă">🌐</button>
+</div>
+<div id="bossBar" class="hide"><div id="bossName"></div><div class="bb"><i id="bossF"></i></div></div>
+<div id="skillbar" class="hide"></div>
+<div id="toasts"></div>
+<div id="banner"></div>
+<div id="prompt" class="hide"></div>
+<div id="dialog" class="gild hide"><canvas id="portrait" width="96" height="96"></canvas><div class="dbody"><div id="dName"></div><div id="dText"></div><div id="dOpts"></div></div></div>
+<div id="panel" class="gild hide"><div class="ptitle"><span id="pTitle"></span><button id="pClose" aria-label="Închide">✕</button></div><div id="pBody"></div></div>
+<div id="joyZone" class="hide"></div>
+<div id="joy" class="hide"><div id="knob"></div></div>
+<button id="tAtk" class="hide" aria-label="Atac">⚔️</button>
+<button id="tE" class="hide" aria-label="Interacțiune">💬</button>
+<div id="overlay"></div>
+<div id="fade"></div>
+
+<script>
+{
+'use strict';
+// ================= SETUP =================
+const TS=32,$=id=>document.getElementById(id);
+const cv=$('c'),ctx=cv.getContext('2d');
+const lc=document.createElement('canvas'),lx=lc.getContext('2d');
+let W=0,H=0,DPR=1,ZOOM=1;
+const TOUCH=matchMedia('(pointer:coarse)').matches||('ontouchstart' in window);
+function resize(){DPR=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;cv.style.width=W+'px';cv.style.height=H+'px';lc.width=cv.width;lc.height=cv.height;ZOOM=Math.max(1,Math.min(2.3,Math.min(W/(TS*19),H/(TS*12))));}
+addEventListener('resize',resize);resize();
+const mulberry=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const rnd=(a,b)=>a+Math.random()*(b-a),rint=(a,b)=>Math.floor(rnd(a,b+1)),pick=a=>a[(Math.random()*a.length)|0];
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const angDiff=(a,b)=>{let d=a-b;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;return Math.abs(d)};
+function ell(c,x,y,rx,ry){c.beginPath();c.ellipse(x,y,Math.max(.1,rx),Math.max(.1,ry),0,0,7);c.fill()}
+function circ(c,x,y,r){c.beginPath();c.arc(x,y,Math.max(.1,r),0,7);c.fill()}
+function rr(c,x,y,w,h,r){c.beginPath();if(c.roundRect)c.roundRect(x,y,w,h,r);else c.rect(x,y,w,h);c.fill()}
+let FL=false;const K=col=>FL?'#ffffff':col;
+function shade(hex,a){const n=parseInt(hex.slice(1),16);let r=(n>>16)+a,g=(n>>8&255)+a,b=(n&255)+a;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return'#'+((1<<24)|(r<<16)|(g<<8)|b).toString(16).slice(1)}
+function mkGlow(rgb){const g=document.createElement('canvas');g.width=g.height=128;const c=g.getContext('2d');const gr=c.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,`rgba(${rgb},1)`);gr.addColorStop(.35,`rgba(${rgb},.75)`);gr.addColorStop(1,`rgba(${rgb},0)`);c.fillStyle=gr;c.fillRect(0,0,128,128);return g}
+const GLOW=mkGlow('0,0,0'),GL_FIRE=mkGlow('255,140,50'),GL_CYAN=mkGlow('90,220,255'),GL_GOLD=mkGlow('255,220,120'),GL_RED=mkGlow('255,60,40');
+
+// ================= AUDIO =================
+let AC=null,master=null,muted=false,musNext=0,musStep=0,musIdx=4;
+function initAudio(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.45;master.connect(AC.destination)}catch(e){AC=null}}
+function toneAt(f,d,type,v,t,slide){if(!AC||muted)return;const o=AC.createOscillator(),g=AC.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d);g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05)}
+function tone(f,d,type,v,slide,delay){if(AC)toneAt(f,d,type,v,AC.currentTime+(delay||0),slide)}
+let NB=null;
+function noise(d,v,freq){if(!AC||muted)return;if(!NB){NB=AC.createBuffer(1,AC.sampleRate,AC.sampleRate);const a=NB.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1}const s=AC.createBufferSource();s.buffer=NB;const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=1.2;const g=AC.createGain();const t=AC.currentTime;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f);f.connect(g);g.connect(master);s.start(t);s.stop(t+d+.02)}
+const SFX={
+ swing:()=>noise(.12,.18,2200),
+ hit:()=>{tone(200,.09,'square',.08,-90);noise(.07,.18,700)},
+ fire:()=>{noise(.35,.14,900);tone(320,.25,'sawtooth',.05,-220)},
+ boom:()=>{noise(.7,.35,250);tone(90,.5,'sine',.25,-50)},
+ coin:()=>{tone(988,.07,'square',.06);tone(1319,.14,'square',.06,0,.06)},
+ lvl:()=>[523,659,784,1047,1319].forEach((f,i)=>tone(f,.3,'triangle',.13,0,i*.09)),
+ hurt:()=>tone(150,.22,'sawtooth',.12,-70),
+ heal:()=>[660,880,1100].forEach((f,i)=>tone(f,.3,'sine',.1,0,i*.07)),
+ quest:()=>[392,523,659,784].forEach((f,i)=>tone(f,.25,'triangle',.11,0,i*.11)),
+ talk:()=>tone(520+Math.random()*260,.035,'square',.025),
+ pick:()=>tone(740,.1,'triangle',.1,300),
+ err:()=>tone(160,.15,'square',.06),
+ die:()=>[392,330,262,196].forEach((f,i)=>tone(f,.4,'triangle',.13,0,i*.2)),
+ dash:()=>noise(.18,.15,1400),
+ chest:()=>[523,784,1047].forEach((f,i)=>tone(f,.2,'square',.06,0,i*.08)),
+ thunder:()=>{noise(.9,.3,180)}
+};
+const MUS={sat:{root:262,sc:[0,2,4,7,9],tp:.3,w:'triangle'},padure:{root:220,sc:[0,3,5,7,10],tp:.34,w:'triangle'},pestera:{root:147,sc:[0,1,5,7,8],tp:.48,w:'sine'},ruine:{root:165,sc:[0,1,4,5,7,8,11],tp:.26,w:'sawtooth'}};
+function musicTick(){if(!AC||muted||!CM)return;const mz=MUS[CM.id];if(!mz)return;if(musNext<AC.currentTime)musNext=AC.currentTime+.05;while(musNext<AC.currentTime+.25){const st=musStep++;if(st%8===0){const bi=mz.sc[(st/8|0)%3===2?3:0];toneAt(mz.root/2*Math.pow(2,bi/12),mz.tp*7,'sine',.05,musNext)}if(Math.random()<.62){musIdx=Math.max(0,Math.min(11,musIdx+rint(-2,2)));const L=mz.sc.length;const f=mz.root*Math.pow(2,(mz.sc[musIdx%L]+12*Math.floor(musIdx/L))/12);toneAt(f,mz.tp*1.6,mz.w,mz.w==='sawtooth'?.012:.028,musNext)}musNext+=mz.tp}}
+
+// ================= DATA =================
+const ITEMS={
+ potion_s:{n:'Poțiune mică',t:'use',ic:'🧪',heal:60,price:15},
+ potion_l:{n:'Poțiune mare',t:'use',ic:'⚗️',heal:200,price:50},
+ ether:{n:'Elixir de mană',t:'use',ic:'💧',mana:50,price:25},
+ sword_wood:{n:'Sabie de lemn',t:'weapon',ic:'🪵',atk:3,price:10,col:'#b08a5a',len:14},
+ sword_iron:{n:'Sabie de fier',t:'weapon',ic:'🗡️',atk:9,price:120,col:'#c9ccd2',len:17},
+ sword_steel:{n:'Sabie de oțel',t:'weapon',ic:'⚔️',atk:16,price:380,col:'#eef3f8',len:19},
+ sword_crystal:{n:'Lama de cristal',t:'weapon',ic:'💎',atk:26,mp:20,price:900,col:'#8ff0ff',len:21},
+ sword_flame:{n:'Flamberge',t:'weapon',ic:'🔥',atk:38,price:1600,col:'#ff9a4a',len:23},
+ tunic:{n:'Tunică de pânză',t:'armor',ic:'👕',def:1,price:6},
+ leather:{n:'Armură de piele',t:'armor',ic:'🦺',def:4,price:90},
+ chain:{n:'Zale de fier',t:'armor',ic:'🛡️',def:9,hp:20,price:320},
+ plate:{n:'Armură de plăci',t:'armor',ic:'🏰',def:16,hp:50,price:1000},
+ ring_hp:{n:'Inelul vitalității',t:'acc',ic:'💍',hp:40,price:220},
+ amulet_mp:{n:'Amuleta arcană',t:'acc',ic:'📿',mp:40,atk:2,price:260},
+ talisman:{n:'Talismanul norocos',t:'acc',ic:'🍀',atk:3,hp:25,crit:.08,price:300},
+ mushroom:{n:'Ciupercă lunară',t:'quest',ic:'🍄',d:'Strălucește slab în întuneric. Ilinca are nevoie de ele.'},
+ shard:{n:'Ciob de cristal',t:'quest',ic:'🔷',d:'Rece și vibrant. Fierarul Dorin le caută.'}
+};
+function itemDesc(id){const it=ITEMS[id];if(it.d)return it.d;const st=L().st,f=(k,v)=>st[k].replace('{0}',v),p=[];if(it.heal)p.push(f('heal',it.heal));if(it.mana)p.push(f('mana',it.mana));if(it.atk)p.push(f('atk',it.atk));if(it.def)p.push(f('def',it.def));if(it.hp)p.push(f('hp',it.hp));if(it.mp)p.push(f('mp',it.mp));if(it.crit)p.push(f('crit',Math.round(it.crit*100)));return p.join(' · ')}
+const SKILLS=[
+ {k:'1',n:'Minge de foc',ic:'🔥',lvl:1,mp:6,cd:.55,d:'Proiectil care explodează la impact.'},
+ {k:'2',n:'Vindecare',ic:'✨',lvl:3,mp:14,cd:6,d:'Reface aproximativ o treime din viață.'},
+ {k:'3',n:'Vârtej de oțel',ic:'🌀',lvl:5,mp:18,cd:3.5,d:'Lovește toți inamicii din jurul tău.'},
+ {k:'4',n:'Meteor',ic:'☄️',lvl:8,mp:30,cd:8,d:'Un meteor devastator cade asupra țintei.'}];
+const MON={
+ slime:{n:'Slime',hp:32,atk:7,def:0,spd:45,xp:12,gold:[1,4],r:12,ai:'hop',aggro:170,col:'#5fd35f',col2:'#24863a',hi:'#d4ffb8'},
+ wolf:{n:'Lup cenușiu',hp:75,atk:13,def:3,spd:100,xp:30,gold:[3,9],r:14,ai:'chase',aggro:220,loot:[['leather',.03]]},
+ bat:{n:'Liliac',hp:50,atk:16,def:2,spd:115,xp:40,gold:[2,7],r:10,ai:'erratic',aggro:230,drop:['shard',.35]},
+ skeleton:{n:'Schelet',hp:130,atk:23,def:8,spd:62,xp:62,gold:[5,14],r:13,ai:'chase',aggro:240,drop:['shard',.5],loot:[['sword_steel',.025],['potion_l',.05]]},
+ golem:{n:'Golemul de Cristal',hp:1300,atk:34,def:12,spd:48,xp:700,gold:[150,200],r:30,ai:'golem',aggro:330,boss:1},
+ imp:{n:'Spiriduș de foc',hp:160,atk:30,def:10,spd:85,xp:90,gold:[8,18],r:12,ai:'ranged',aggro:280,loot:[['amulet_mp',.02],['potion_l',.06]]},
+ demon:{n:'Demon de lavă',hp:340,atk:44,def:15,spd:72,xp:170,gold:[15,30],r:17,ai:'chase',aggro:260,loot:[['plate',.025],['sword_flame',.01],['potion_l',.08]]},
+ dragon:{n:'Ignis, Dragonul de Foc',hp:3600,atk:56,def:18,spd:55,xp:3000,gold:[800,1000],r:44,ai:'dragon',aggro:360,boss:1}
+};
+const QUESTS={
+ slimes:{n:'Invazia slimilor',giver:'mirel',type:'kill',target:'slime',need:6,xp:80,gold:40,items:[['potion_s',3]],
+  desc:'Ucide 6 slimi în Pădurea Șoaptelor, la est de sat.',
+  offer:'Ah, un suflet tânăr cu sabie la brâu! Slimii din Pădurea Șoaptelor ne devorează recoltele. Poți să ucizi șase dintre ei?',
+  prog:'Pădurea e la est, pe drumul mare. Slimii sunt lenți, dar nu-i subestima.',
+  done:'Minunat! Satul îți e dator. Primește aceste monede și câteva poțiuni.'},
+ mush:{n:'Ciupercile lunare',giver:'ilinca',type:'collect',target:'mushroom',need:5,xp:90,gold:30,items:[['potion_l',2],['ether',2]],
+  desc:'Adună 5 ciuperci lunare din Pădurea Șoaptelor.',
+  offer:'Am nevoie de ciuperci lunare pentru un leac puternic. Cresc prin poienile pădurii și strălucesc albastru. Îmi aduci cinci?',
+  prog:'Caută lumina albăstruie printre copaci.',
+  done:'Perfecte, încă umede de rouă! Ia poțiunile astea, le-am făcut cu drag.'},
+ cat:{n:'Pisica pierdută',giver:'nelu',type:'find',target:'cat',need:1,xp:60,gold:0,items:[['talisman',1]],
+  desc:'Găsește-o pe Mitzi, pisica lui Nelu, undeva în pădure.',
+  offer:'Mitzi a fugit în pădure după un fluture și nu s-a mai întors! E portocalie și pufoasă... Mă ajuți s-o găsești? 😢',
+  prog:'Mitzi îi place să stea prin poienile luminoase. Te rog, găsește-o!',
+  done:'MITZI! Mulțumesc, mulțumesc! Ia talismanul meu norocos, ție îți trebuie mai mult decât mie.'},
+ wolves:{n:'Haita din răsărit',giver:'mirel',req:'slimes',type:'kill',target:'wolf',need:5,xp:180,gold:90,items:[['potion_s',2]],
+  desc:'Ucide 5 lupi cenușii dincolo de râul din pădure.',
+  offer:'Vânătorii spun că o haită de lupi a trecut râul și se apropie de sat. Oprește-i înainte să atace oamenii — cinci lupi ar trebui să-i sperie pe ceilalți.',
+  prog:'Lupii vânează în partea de est a pădurii, după podul de lemn.',
+  done:'Ai inima unui erou adevărat. Dar mă tem că lupii fugeau de ceva mai rău...'},
+ crystal:{n:'Cristale pentru fierar',giver:'dorin',type:'collect',target:'shard',need:6,xp:250,gold:60,items:[['sword_crystal',1]],
+  desc:'Adu-i lui Dorin 6 cioburi de cristal din Peștera de Cristal.',
+  offer:'Vreau să forjez o lamă de cristal, cum făcea bunicul meu. Liliecii și scheleții din peșteră poartă cioburi de cristal. Adu-mi șase și lama e a ta!',
+  prog:'Peștera e la capătul estic al pădurii. Ia-ți poțiuni, acolo e întuneric beznă.',
+  done:'Uite-o... Lama de cristal! Cântă când tai aerul cu ea. Poart-o cu cinste.'},
+ golem:{n:'Inima peșterii',giver:'mirel',req:'wolves',type:'kill',target:'golem',need:1,xp:400,gold:250,items:[['ring_hp',1]],
+  desc:'Învinge Golemul de Cristal din adâncul peșterii.',
+  offer:'Am aflat de ce fug animalele. Un Golem de Cristal s-a trezit în adâncul peșterii și otrăvește pământul. E o misiune grea... dar tu ești singura noastră speranță.',
+  prog:'Golemul stă în sala cea mare, la capătul estic al peșterii. Ferește-te când ridică brațele!',
+  done:'Golemul a căzut! Pământul respiră din nou. Străjerul Radu îți va deschide acum poarta de nord.'},
+ imps:{n:'Spiridușii de foc',giver:'radu',req:'golem',type:'kill',target:'imp',need:8,xp:500,gold:200,items:[['potion_l',3]],
+  desc:'Ucide 8 spiriduși de foc în Ruinele de Foc.',
+  offer:'Acum că poarta e deschisă, spiridușii de foc vin noaptea să ne ardă hambarele. Du-te în ruine și ucide opt dintre ei.',
+  prog:'Spiridușii aruncă cu foc de la distanță. Apropie-te repede de ei!',
+  done:'Niciun hambar ars de trei nopți! Ia astea, o să-ți trebuiască în fața dragonului.'},
+ dragon:{n:'Umbra lui Ignis',giver:'mirel',req:'golem',type:'kill',target:'dragon',need:1,xp:2000,gold:1000,items:[],
+  desc:'Învinge-l pe Ignis, Dragonul de Foc, în arena din nordul ruinelor.',
+  offer:'Acum știu adevărul: Ignis, dragonul străvechi, s-a trezit sub ruine. El l-a trezit pe Golem. Până nu cade Ignis, Eldoria nu va cunoaște pacea. Mergi, copile.',
+  prog:'Arena lui Ignis e în nordul Ruinelor de Foc. Când inspiră adânc, fugi din calea flăcărilor!',
+  done:'Ignis... a fost învins? Clopotele vor bate în toată Eldoria! Numele tău va fi cântat de bărzi o mie de ani.'}
+};
+const need=l=>Math.floor(40*Math.pow(l,1.6));
+const I18N={
+ro:{flag:"🇷🇴",label:"Română",title:"Cronicile Eldoriei",sub:"Umbra lui Vorthrax",
+ intro:"Un dragon străvechi s-a trezit sub ruinele din nord, iar întunericul se întinde peste Valea Verde. Ajută sătenii, explorează pădurea, peștera și ruinele — și înfruntă-l pe Vorthrax.",
+ ui:{newG:"✦ Joc nou",cont:"▶ Continuă",heroName:"Numele eroului",lang:"Limba",
+  qReady:"✔ {0} — întoarce-te la {1}",qNew:"📜 Misiune nouă: {0}",qDone:"🏆 Misiune îndeplinită: {0}",newSk:"✨ Abilitate nouă: {0}",skLock:"{0} se deblochează la nivelul {1}",noMana:"Mană insuficientă!",fullHp:"Ai viața plină.",noPot:"Nu ai poțiuni de viață!",noEther:"Nu ai elixir de mană!",equipped:"Echipat: {0}",noWeapon:"Nu poți lupta fără armă!",lostGold:"Ai pierdut {0} monede de aur...",summon:"🔥 Vorthrax cheamă spiriduși în ajutor!",found:"Ai găsit: {0}",fountain:"💧 Apa fântânii te reîmprospătează complet.",healed:"Te simți complet refăcut!",bought:"Ai cumpărat: {0}",hint:"💬 Bătrânul Eldrin te așteaptă în piața satului.",saved:"💾 Joc salvat",noSave:"Salvarea nu e disponibilă în acest browser.",welcome:"Bine ai revenit, {0}!",lvl:"Nivelul {0}",lvlSub:"Viață și mană refăcute",defeated:"{0} a fost învins!",reward:"Recompensă",gold:"aur",
+  catFound:"Miau! 🐾 Mochi se freacă de piciorul tău, apoi o ia la fugă spre sat. Se pare că știe drumul spre casă.",catGo:"Fugi acasă, Mochi!",catIdle:["Miau?","Purrrr... 🐾","Mochi se tăvălește fericită la soare."],catBye:"Pa, pisicuțo",
+  shop:"🛒 Magazin",heal:"✨ Vindecă-mă",bye:"La revedere",thanks:"Mulțumesc!",accept:"✔ Accept misiunea",later:"Poate mai târziu",next:"Continuă",
+  invT:"Inventar & Echipament",invHint:"Atinge un obiect pentru a-l folosi sau echipa.",qT:"Jurnal de misiuni",shopT:"{0} — Magazin",weapon:"Armă",armor:"Armură",acc:"Accesoriu",empty:"gol",
+  sLvl:"Nivel",sHp:"Viață",sMp:"Mană",sAtk:"Atac",sDef:"Apărare",sCrit:"Critic",sXp:"Experiență",sGold:"Aur",bagEmpty:"Rucsacul e gol.",skills:"Abilități",lv:"niv.",
+  qReadyP:"✔ Gata! Întoarce-te la {0}",progress:"Progres",noQ:"Nicio misiune activă. Vorbește cu personajele marcate cu",doneH:"Îndeplinite",buy:"Cumpără",sell:"Vinde",have:"ai",nothingSell:"Nu ai nimic de vândut.",
+  potHp:"Poțiune de viață",potMp:"Elixir de mană",dodge:"Eschivă",lock:"Niv. {0}",trReturn:"✔ Întoarce-te la {0}",open:"Deschide cufărul",drink:"Bea din fântână",talk:"Vorbește cu {0}",
+  deny:"Străjerul Garrick: „Nimeni nu trece spre ruine până nu cade Kragmor, golemul din peșteră!”",
+  deadT:"Ai căzut...",deadP:"Dar legendele nu mor atât de ușor. Te vei trezi lângă fântâna din sat, puțin mai sărac.",respawn:"✦ Renaște",victory:"Victorie!",victorySub:"Eldoria este liberă",victoryP:"Vorthrax a căzut, focul din ruine se stinge, iar clopotele bat în toată valea. {0}, ai terminat aventura la nivelul <b>{1}</b>, cu <b>{2}</b> misiuni îndeplinite.",goOn:"Continuă explorarea",
+  level:"NIVEL",invB:"Inventar (I)",qB:"Misiuni (Q)",sndB:"Sunet",saveB:"Salvează",langB:"Limbă"},
+ help:["<kbd>WASD</kbd>mers","<kbd>Click</kbd>/<kbd>Space</kbd>atac","<kbd>1-4</kbd>abilități","<kbd>Click dr.</kbd>minge de foc","<kbd>E</kbd>vorbește / deschide","<kbd>Shift</kbd>eschivă","<kbd>R</kbd>poțiune viață","<kbd>F</kbd>elixir mană","<kbd>I</kbd>inventar","<kbd>Q</kbd>misiuni"],
+ helpT:["🕹️ Joystick stânga — mers","⚔️ — atac","🔥✨🌀☄️ — abilități","💬 — vorbește / deschide","🧪💧 — poțiuni","💨 — eschivă"],
+ map:{sat:["Satul Valea Verde","Acasă"],padure:["Pădurea Șoaptelor","Slimi · Lupi"],pestera:["Peștera de Cristal","Lilieci · Schelete · Kragmor"],ruine:["Ruinele de Foc","Spiriduși · Demoni · Vorthrax"]},
+ npc:{mirel:["Bătrânul Eldrin",["Satul nostru a fost liniștit odată... până când întunericul s-a trezit sub pământ.","Bătrânii spun că un dragon doarme sub Ruinele de Foc. Sper să nu fie adevărat."]],
+  dorin:["Fierarul Brom",["Oțelul bun nu minte niciodată. Ai nevoie de o lamă nouă?","Ciocanul meu a bătut mai multe săbii decât ai văzut tu răsărituri."]],
+  ilinca:["Vindecătoarea Selene",["Ierburile vindecă trupul. Sufletul... asta e altă poveste.","Ai grijă de tine, {hero}. Poțiunile nu cresc în copaci. Ei bine, unele da."]],
+  nelu:["Micul Pip",["Când o să fiu mare, o să fiu erou ca tine!","Știai că peștii din iaz vorbesc? Doar că foarte încet."]],
+  radu:["Străjerul Garrick",["Dincolo de poarta asta sunt Ruinele de Foc. Puțini s-au mai întors.","Stau de strajă zi și noapte. Măcar am o priveliște frumoasă."]],
+  ana:["Lyra",["Ai auzit? Se zice că noaptea se vede foc deasupra munților din nord!","Fântâna din piață are apă vindecătoare. Bea, că e gratis!"]],
+  toma:["Odo",["Recolta e slabă anul ăsta. Blestemații ăia de slimi...","Fierarul Brom face cele mai bune săbii din tot ținutul."]],
+  mitzi:["Mochi",[]],mitzi_f:["Mochi",[]],fountain:["Fântâna vindecătoare",[]],
+  vasile:["Pădurarul Fennick",["Pădurea are ochi, străine. Lupii vânează în est, după râu.","Ciupercile lunare cresc doar unde ajunge lumina lunii prin frunze.","Vând poțiuni drumeților. Prețuri cinstite, pe cuvânt de pădurar."]],
+  gica:["Minerul Durgan",["M-am rătăcit acum trei zile... sau trei săptămâni? Aici nu răsare soarele.","Kragmor, golemul de cristal, păzește sala cea mare. Când ridică brațele, fugi!","Am câteva poțiuni în rucsac. Ți le dau ieftin, doar să scapi de monștri."]],
+  spirit:["Spiritul Regelui Aurelian",["Eu am fost regele acestor ținuturi. Vorthrax mi-a ars tronul și cetatea.","Lavă curge unde odinioară erau grădini. Răzbună-mi poporul, {hero}.","Vino la mine oricând. Puterea străbunilor te va vindeca."]]},
+ items:{potion_s:["Poțiune mică"],potion_l:["Poțiune mare"],ether:["Elixir de mană"],sword_wood:["Sabie de lemn"],sword_iron:["Sabie de fier"],sword_steel:["Sabie de oțel"],sword_crystal:["Lama de cristal"],sword_flame:["Flamberge"],tunic:["Tunică de pânză"],leather:["Armură de piele"],chain:["Zale de fier"],plate:["Armură de plăci"],ring_hp:["Inelul vitalității"],amulet_mp:["Amuleta arcană"],talisman:["Talismanul norocos"],mushroom:["Ciupercă lunară","Strălucește slab în întuneric. Selene are nevoie de ele."],shard:["Ciob de cristal","Rece și vibrant. Fierarul Brom le caută."]},
+ st:{heal:"Reface {0} HP",mana:"Reface {0} MP",atk:"+{0} Atac",def:"+{0} Apărare",hp:"+{0} HP max",mp:"+{0} MP max",crit:"+{0}% critic"},
+ mon:{slime:"Slime",wolf:"Lup cenușiu",bat:"Liliac",skeleton:"Schelet",golem:"Kragmor, Golemul de Cristal",imp:"Spiriduș de foc",demon:"Demon de lavă",dragon:"Vorthrax, Dragonul de Foc"},
+ sk:[["Minge de foc","Proiectil care explodează la impact."],["Vindecare","Reface aproximativ o treime din viață."],["Vârtej de oțel","Lovește toți inamicii din jurul tău."],["Meteor","Un meteor devastator cade asupra țintei."]],
+ q:{slimes:{n:"Invazia slimilor",desc:"Ucide 6 slimi în Pădurea Șoaptelor, la est de sat.",offer:"Bine ai venit, {hero}! Slimii din Pădurea Șoaptelor ne devorează recoltele. Poți să ucizi șase dintre ei?",prog:"Pădurea e la est, pe drumul mare. Slimii sunt lenți, dar nu-i subestima.",done:"Minunat! Satul îți e dator. Primește aceste monede și câteva poțiuni."},
+  mush:{n:"Ciupercile lunare",desc:"Adună 5 ciuperci lunare din Pădurea Șoaptelor.",offer:"Am nevoie de ciuperci lunare pentru un leac puternic. Cresc prin poienile pădurii și strălucesc albastru. Îmi aduci cinci?",prog:"Caută lumina albăstruie printre copaci.",done:"Perfecte, încă umede de rouă! Ia poțiunile astea, le-am făcut cu drag."},
+  cat:{n:"Pisica pierdută",desc:"Găsește-o pe Mochi, pisica lui Pip, undeva în pădure.",offer:"Mochi a fugit în pădure după un fluture și nu s-a mai întors! E portocalie și pufoasă... Mă ajuți s-o găsești? 😢",prog:"Lui Mochi îi place să stea prin poienile luminoase. Te rog, găsește-o!",done:"MOCHI! Mulțumesc, {hero}! Ia talismanul meu norocos, ție îți trebuie mai mult decât mie."},
+  wolves:{n:"Haita din răsărit",desc:"Ucide 5 lupi cenușii dincolo de râul din pădure.",offer:"Vânătorii spun că o haită de lupi a trecut râul și se apropie de sat. Oprește-i înainte să atace oamenii — cinci lupi ar trebui să-i sperie pe ceilalți.",prog:"Lupii vânează în partea de est a pădurii, după podul de lemn.",done:"Ai inima unui erou adevărat. Dar mă tem că lupii fugeau de ceva mai rău..."},
+  crystal:{n:"Cristale pentru fierar",desc:"Adu-i lui Brom 6 cioburi de cristal din Peștera de Cristal.",offer:"Vreau să forjez o lamă de cristal, cum făcea bunicul meu. Liliecii și scheleții din peșteră poartă cioburi de cristal. Adu-mi șase și lama e a ta!",prog:"Peștera e la capătul estic al pădurii. Ia-ți poțiuni, acolo e întuneric beznă.",done:"Uite-o... Lama de cristal! Cântă când tai aerul cu ea. Poart-o cu cinste, {hero}."},
+  golem:{n:"Inima peșterii",desc:"Învinge-l pe Kragmor, Golemul de Cristal, din adâncul peșterii.",offer:"Am aflat de ce fug animalele. Kragmor, un golem de cristal, s-a trezit în adâncul peșterii și otrăvește pământul. E o misiune grea... dar tu ești singura noastră speranță.",prog:"Kragmor stă în sala cea mare, la capătul estic al peșterii. Ferește-te când ridică brațele!",done:"Kragmor a căzut! Pământul respiră din nou. Străjerul Garrick îți va deschide acum poarta de nord."},
+  imps:{n:"Spiridușii de foc",desc:"Ucide 8 spiriduși de foc în Ruinele de Foc.",offer:"Acum că poarta e deschisă, spiridușii de foc vin noaptea să ne ardă hambarele. Du-te în ruine și ucide opt dintre ei.",prog:"Spiridușii aruncă cu foc de la distanță. Apropie-te repede de ei!",done:"Niciun hambar ars de trei nopți! Ia astea, o să-ți trebuiască în fața dragonului."},
+  dragon:{n:"Umbra lui Vorthrax",desc:"Învinge-l pe Vorthrax, Dragonul de Foc, în arena din nordul ruinelor.",offer:"Acum știu adevărul: Vorthrax, dragonul străvechi, s-a trezit sub ruine. El l-a trezit pe Kragmor. Până nu cade Vorthrax, Eldoria nu va cunoaște pacea. Mergi, {hero}.",prog:"Arena lui Vorthrax e în nordul Ruinelor de Foc. Când inspiră adânc, fugi din calea flăcărilor!",done:"Vorthrax... a fost învins? Clopotele vor bate în toată Eldoria! Numele de {hero} va fi cântat de bărzi o mie de ani."}}},
+
+en:{flag:"🇬🇧",label:"English",title:"Chronicles of Eldoria",sub:"The Shadow of Vorthrax",
+ intro:"An ancient dragon has awakened beneath the northern ruins, and darkness is spreading over Greenvale. Help the villagers, explore the woods, the cavern and the ruins — and face Vorthrax.",
+ ui:{newG:"✦ New game",cont:"▶ Continue",heroName:"Hero name",lang:"Language",
+  qReady:"✔ {0} — return to {1}",qNew:"📜 New quest: {0}",qDone:"🏆 Quest complete: {0}",newSk:"✨ New skill: {0}",skLock:"{0} unlocks at level {1}",noMana:"Not enough mana!",fullHp:"Your health is full.",noPot:"No health potions!",noEther:"No mana elixirs!",equipped:"Equipped: {0}",noWeapon:"You can't fight without a weapon!",lostGold:"You lost {0} gold coins...",summon:"🔥 Vorthrax summons imps to aid him!",found:"Found: {0}",fountain:"💧 The fountain's water fully restores you.",healed:"You feel completely restored!",bought:"Bought: {0}",hint:"💬 Elder Eldrin is waiting for you in the village square.",saved:"💾 Game saved",noSave:"Saving isn't available in this browser.",welcome:"Welcome back, {0}!",lvl:"Level {0}",lvlSub:"Health and mana restored",defeated:"{0} has been defeated!",reward:"Reward",gold:"gold",
+  catFound:"Meow! 🐾 Mochi rubs against your leg, then dashes off toward the village. Looks like she knows the way home.",catGo:"Run home, Mochi!",catIdle:["Meow?","Purrrr... 🐾","Mochi rolls happily in the sun."],catBye:"Bye, kitty",
+  shop:"🛒 Shop",heal:"✨ Heal me",bye:"Farewell",thanks:"Thank you!",accept:"✔ Accept quest",later:"Maybe later",next:"Continue",
+  invT:"Inventory & Equipment",invHint:"Tap an item to use or equip it.",qT:"Quest log",shopT:"{0} — Shop",weapon:"Weapon",armor:"Armor",acc:"Accessory",empty:"empty",
+  sLvl:"Level",sHp:"Health",sMp:"Mana",sAtk:"Attack",sDef:"Defense",sCrit:"Critical",sXp:"Experience",sGold:"Gold",bagEmpty:"Your bag is empty.",skills:"Skills",lv:"lv.",
+  qReadyP:"✔ Done! Return to {0}",progress:"Progress",noQ:"No active quests. Talk to characters marked with",doneH:"Completed",buy:"Buy",sell:"Sell",have:"owned",nothingSell:"You have nothing to sell.",
+  potHp:"Health potion",potMp:"Mana elixir",dodge:"Dodge",lock:"Lv. {0}",trReturn:"✔ Return to {0}",open:"Open chest",drink:"Drink from the fountain",talk:"Talk to {0}",
+  deny:"Guard Garrick: “No one passes to the ruins until Kragmor, the cavern golem, falls!”",
+  deadT:"You have fallen...",deadP:"But legends don't die that easily. You'll wake up by the village fountain, a little poorer.",respawn:"✦ Rise again",victory:"Victory!",victorySub:"Eldoria is free",victoryP:"Vorthrax has fallen, the fire in the ruins dies down and bells ring across the valley. {0}, you finished the adventure at level <b>{1}</b> with <b>{2}</b> quests completed.",goOn:"Keep exploring",
+  level:"LEVEL",invB:"Inventory (I)",qB:"Quests (Q)",sndB:"Sound",saveB:"Save",langB:"Language"},
+ help:["<kbd>WASD</kbd>move","<kbd>Click</kbd>/<kbd>Space</kbd>attack","<kbd>1-4</kbd>skills","<kbd>Right click</kbd>fireball","<kbd>E</kbd>talk / open","<kbd>Shift</kbd>dodge","<kbd>R</kbd>health potion","<kbd>F</kbd>mana elixir","<kbd>I</kbd>inventory","<kbd>Q</kbd>quests"],
+ helpT:["🕹️ Left joystick — move","⚔️ — attack","🔥✨🌀☄️ — skills","💬 — talk / open","🧪💧 — potions","💨 — dodge"],
+ map:{sat:["Greenvale Village","Home"],padure:["Whispering Woods","Slimes · Wolves"],pestera:["Crystal Cavern","Bats · Skeletons · Kragmor"],ruine:["Ember Ruins","Imps · Demons · Vorthrax"]},
+ npc:{mirel:["Elder Eldrin",["Our village was peaceful once... until the darkness woke beneath the earth.","The old ones say a dragon sleeps under the Ember Ruins. I hope it isn't true."]],
+  dorin:["Brom the Smith",["Good steel never lies. Need a new blade?","My hammer has forged more swords than you've seen sunrises."]],
+  ilinca:["Selene the Healer",["Herbs heal the body. The soul... that's another story.","Take care of yourself, {hero}. Potions don't grow on trees. Well, some do."]],
+  nelu:["Little Pip",["When I grow up, I'll be a hero just like you!","Did you know the fish in the pond can talk? Just very, very quietly."]],
+  radu:["Guard Garrick",["Beyond this gate lie the Ember Ruins. Few have returned.","I stand guard day and night. At least the view is nice."]],
+  ana:["Lyra",["Have you heard? They say fire glows above the northern mountains at night!","The fountain in the square has healing water. Drink up, it's free!"]],
+  toma:["Odo",["The harvest is poor this year. Those cursed slimes...","Brom the Smith makes the finest swords in the whole land."]],
+  mitzi:["Mochi",[]],mitzi_f:["Mochi",[]],fountain:["Healing fountain",[]],
+  vasile:["Fennick the Forester",["The forest has eyes, stranger. Wolves hunt in the east, past the river.","Moon mushrooms only grow where moonlight slips through the leaves.","I sell potions to travelers. Honest prices, on my forester's word."]],
+  gica:["Durgan the Miner",["I got lost three days ago... or three weeks? The sun never rises down here.","Kragmor, the crystal golem, guards the great hall. When he raises his arms — run!","I've got a few potions in my pack. Cheap, just get rid of these monsters."]],
+  spirit:["Spirit of King Aurelian",["I was king of these lands. Vorthrax burned my throne and my citadel.","Lava flows where gardens once bloomed. Avenge my people, {hero}.","Come to me whenever you wish. The strength of the ancestors will heal you."]]},
+ items:{potion_s:["Small potion"],potion_l:["Large potion"],ether:["Mana elixir"],sword_wood:["Wooden sword"],sword_iron:["Iron sword"],sword_steel:["Steel sword"],sword_crystal:["Crystal blade"],sword_flame:["Flamberge"],tunic:["Cloth tunic"],leather:["Leather armor"],chain:["Iron chainmail"],plate:["Plate armor"],ring_hp:["Ring of vitality"],amulet_mp:["Arcane amulet"],talisman:["Lucky talisman"],mushroom:["Moon mushroom","Glows faintly in the dark. Selene needs these."],shard:["Crystal shard","Cold and humming. Brom the Smith is looking for these."]},
+ st:{heal:"Restores {0} HP",mana:"Restores {0} MP",atk:"+{0} Attack",def:"+{0} Defense",hp:"+{0} max HP",mp:"+{0} max MP",crit:"+{0}% critical"},
+ mon:{slime:"Slime",wolf:"Grey wolf",bat:"Bat",skeleton:"Skeleton",golem:"Kragmor, the Crystal Golem",imp:"Fire imp",demon:"Lava demon",dragon:"Vorthrax, the Fire Dragon"},
+ sk:[["Fireball","A projectile that explodes on impact."],["Heal","Restores about a third of your health."],["Steel whirlwind","Strikes every enemy around you."],["Meteor","A devastating meteor falls on the target."]],
+ q:{slimes:{n:"Slime invasion",desc:"Kill 6 slimes in the Whispering Woods, east of the village.",offer:"Welcome, {hero}! The slimes from the Whispering Woods are devouring our crops. Could you slay six of them?",prog:"The woods are to the east, along the main road. Slimes are slow, but don't underestimate them.",done:"Wonderful! The village is in your debt. Take these coins and some potions."},
+  mush:{n:"Moon mushrooms",desc:"Gather 5 moon mushrooms in the Whispering Woods.",offer:"I need moon mushrooms for a powerful remedy. They grow in the forest clearings and glow blue. Will you bring me five?",prog:"Look for the bluish glow between the trees.",done:"Perfect, still wet with dew! Take these potions, I made them with care."},
+  cat:{n:"The lost cat",desc:"Find Mochi, Pip's cat, somewhere in the woods.",offer:"Mochi ran into the woods chasing a butterfly and never came back! She's orange and fluffy... Will you help me find her? 😢",prog:"Mochi loves sunny clearings. Please find her!",done:"MOCHI! Thank you, {hero}! Take my lucky talisman — you need it more than I do."},
+  wolves:{n:"The eastern pack",desc:"Kill 5 grey wolves beyond the forest river.",offer:"Hunters say a wolf pack crossed the river and is closing in on the village. Stop them before they attack someone — five wolves should scare off the rest.",prog:"The wolves hunt in the eastern part of the woods, past the wooden bridge.",done:"You have the heart of a true hero. But I fear the wolves were fleeing from something worse..."},
+  crystal:{n:"Crystals for the smith",desc:"Bring Brom 6 crystal shards from the Crystal Cavern.",offer:"I want to forge a crystal blade, like my grandfather did. The bats and skeletons in the cavern carry crystal shards. Bring me six and the blade is yours!",prog:"The cavern is at the eastern end of the woods. Bring potions — it's pitch dark in there.",done:"Behold... the Crystal Blade! It sings when it cuts the air. Wield it with honor, {hero}."},
+  golem:{n:"Heart of the cavern",desc:"Defeat Kragmor, the Crystal Golem, deep in the cavern.",offer:"I've learned why the animals flee. Kragmor, a crystal golem, has awakened deep in the cavern and is poisoning the land. It's a hard task... but you are our only hope.",prog:"Kragmor waits in the great hall at the eastern end of the cavern. Beware when he raises his arms!",done:"Kragmor has fallen! The land breathes again. Guard Garrick will now open the northern gate for you."},
+  imps:{n:"Fire imps",desc:"Kill 8 fire imps in the Ember Ruins.",offer:"Now that the gate is open, fire imps come at night to burn our barns. Go to the ruins and slay eight of them.",prog:"Imps throw fire from afar. Close in on them fast!",done:"Not a single barn burned in three nights! Take these, you'll need them against the dragon."},
+  dragon:{n:"The Shadow of Vorthrax",desc:"Defeat Vorthrax, the Fire Dragon, in the arena north of the ruins.",offer:"Now I know the truth: Vorthrax, the ancient dragon, has awakened beneath the ruins. He is the one who woke Kragmor. Until Vorthrax falls, Eldoria will know no peace. Go, {hero}.",prog:"Vorthrax's arena lies north of the Ember Ruins. When he takes a deep breath, get out of the flames' path!",done:"Vorthrax... defeated? The bells will ring throughout Eldoria! Bards will sing the name of {hero} for a thousand years."}}},
+
+de:{flag:"🇩🇪",label:"Deutsch",title:"Chroniken von Eldoria",sub:"Der Schatten von Vorthrax",
+ intro:"Ein uralter Drache ist unter den nördlichen Ruinen erwacht, und Dunkelheit breitet sich über Grüntal aus. Hilf den Dorfbewohnern, erkunde Wald, Höhle und Ruinen — und stelle dich Vorthrax.",
+ ui:{newG:"✦ Neues Spiel",cont:"▶ Fortsetzen",heroName:"Name des Helden",lang:"Sprache",
+  qReady:"✔ {0} — kehre zu {1} zurück",qNew:"📜 Neue Quest: {0}",qDone:"🏆 Quest abgeschlossen: {0}",newSk:"✨ Neue Fähigkeit: {0}",skLock:"{0} wird ab Stufe {1} freigeschaltet",noMana:"Nicht genug Mana!",fullHp:"Deine Gesundheit ist voll.",noPot:"Keine Heiltränke!",noEther:"Keine Manaelixiere!",equipped:"Ausgerüstet: {0}",noWeapon:"Ohne Waffe kannst du nicht kämpfen!",lostGold:"Du hast {0} Goldmünzen verloren...",summon:"🔥 Vorthrax ruft Kobolde zu Hilfe!",found:"Gefunden: {0}",fountain:"💧 Das Wasser des Brunnens stellt dich vollständig wieder her.",healed:"Du fühlst dich vollkommen erholt!",bought:"Gekauft: {0}",hint:"💬 Ältester Eldrin erwartet dich auf dem Dorfplatz.",saved:"💾 Spiel gespeichert",noSave:"Speichern ist in diesem Browser nicht verfügbar.",welcome:"Willkommen zurück, {0}!",lvl:"Stufe {0}",lvlSub:"Gesundheit und Mana aufgefüllt",defeated:"{0} wurde besiegt!",reward:"Belohnung",gold:"Gold",
+  catFound:"Miau! 🐾 Mochi reibt sich an deinem Bein und flitzt dann Richtung Dorf. Sie kennt wohl den Weg nach Hause.",catGo:"Lauf nach Hause, Mochi!",catIdle:["Miau?","Schnurrrr... 🐾","Mochi wälzt sich glücklich in der Sonne."],catBye:"Tschüss, Kätzchen",
+  shop:"🛒 Laden",heal:"✨ Heile mich",bye:"Lebewohl",thanks:"Danke!",accept:"✔ Quest annehmen",later:"Vielleicht später",next:"Weiter",
+  invT:"Inventar & Ausrüstung",invHint:"Tippe auf einen Gegenstand, um ihn zu benutzen oder anzulegen.",qT:"Questbuch",shopT:"{0} — Laden",weapon:"Waffe",armor:"Rüstung",acc:"Schmuck",empty:"leer",
+  sLvl:"Stufe",sHp:"Gesundheit",sMp:"Mana",sAtk:"Angriff",sDef:"Verteidigung",sCrit:"Kritisch",sXp:"Erfahrung",sGold:"Gold",bagEmpty:"Dein Rucksack ist leer.",skills:"Fähigkeiten",lv:"St.",
+  qReadyP:"✔ Fertig! Kehre zu {0} zurück",progress:"Fortschritt",noQ:"Keine aktiven Quests. Sprich mit Figuren, die markiert sind mit",doneH:"Abgeschlossen",buy:"Kaufen",sell:"Verkaufen",have:"besitzt",nothingSell:"Du hast nichts zu verkaufen.",
+  potHp:"Heiltrank",potMp:"Manaelixier",dodge:"Ausweichen",lock:"St. {0}",trReturn:"✔ Kehre zu {0} zurück",open:"Truhe öffnen",drink:"Aus dem Brunnen trinken",talk:"Mit {0} sprechen",
+  deny:"Wächter Garrick: „Niemand betritt die Ruinen, bevor Kragmor, der Golem der Höhle, gefallen ist!“",
+  deadT:"Du bist gefallen...",deadP:"Doch Legenden sterben nicht so leicht. Du erwachst am Dorfbrunnen, ein wenig ärmer.",respawn:"✦ Wiederauferstehen",victory:"Sieg!",victorySub:"Eldoria ist frei",victoryP:"Vorthrax ist gefallen, das Feuer in den Ruinen erlischt und die Glocken läuten im ganzen Tal. {0}, du hast das Abenteuer auf Stufe <b>{1}</b> mit <b>{2}</b> abgeschlossenen Quests beendet.",goOn:"Weiter erkunden",
+  level:"STUFE",invB:"Inventar (I)",qB:"Quests (Q)",sndB:"Ton",saveB:"Speichern",langB:"Sprache"},
+ help:["<kbd>WASD</kbd>laufen","<kbd>Klick</kbd>/<kbd>Leertaste</kbd>Angriff","<kbd>1-4</kbd>Fähigkeiten","<kbd>Rechtsklick</kbd>Feuerball","<kbd>E</kbd>sprechen / öffnen","<kbd>Shift</kbd>ausweichen","<kbd>R</kbd>Heiltrank","<kbd>F</kbd>Manaelixier","<kbd>I</kbd>Inventar","<kbd>Q</kbd>Quests"],
+ helpT:["🕹️ Joystick links — laufen","⚔️ — Angriff","🔥✨🌀☄️ — Fähigkeiten","💬 — sprechen / öffnen","🧪💧 — Tränke","💨 — ausweichen"],
+ map:{sat:["Dorf Grüntal","Zuhause"],padure:["Flüsterwald","Schleime · Wölfe"],pestera:["Kristallhöhle","Fledermäuse · Skelette · Kragmor"],ruine:["Glutruinen","Kobolde · Dämonen · Vorthrax"]},
+ npc:{mirel:["Ältester Eldrin",["Unser Dorf war einst friedlich... bis die Dunkelheit unter der Erde erwachte.","Die Alten sagen, unter den Glutruinen schlafe ein Drache. Ich hoffe, das stimmt nicht."]],
+  dorin:["Schmied Brom",["Guter Stahl lügt nie. Brauchst du eine neue Klinge?","Mein Hammer hat mehr Schwerter geschmiedet, als du Sonnenaufgänge gesehen hast."]],
+  ilinca:["Heilerin Selene",["Kräuter heilen den Körper. Die Seele... das ist eine andere Geschichte.","Pass auf dich auf, {hero}. Tränke wachsen nicht auf Bäumen. Na ja, manche schon."]],
+  nelu:["Der kleine Pip",["Wenn ich groß bin, werde ich ein Held wie du!","Wusstest du, dass die Fische im Teich sprechen? Nur ganz, ganz leise."]],
+  radu:["Wächter Garrick",["Hinter diesem Tor liegen die Glutruinen. Nur wenige kehrten zurück.","Ich halte Tag und Nacht Wache. Wenigstens ist die Aussicht schön."]],
+  ana:["Lyra",["Hast du gehört? Nachts soll über den Nordbergen Feuer leuchten!","Der Brunnen auf dem Platz hat heilendes Wasser. Trink nur, es ist umsonst!"]],
+  toma:["Odo",["Die Ernte ist dieses Jahr schlecht. Diese verfluchten Schleime...","Schmied Brom macht die besten Schwerter im ganzen Land."]],
+  mitzi:["Mochi",[]],mitzi_f:["Mochi",[]],fountain:["Heilender Brunnen",[]],
+  vasile:["Förster Fennick",["Der Wald hat Augen, Fremder. Im Osten, hinter dem Fluss, jagen die Wölfe.","Mondpilze wachsen nur dort, wo das Mondlicht durch die Blätter fällt.","Ich verkaufe Tränke an Reisende. Ehrliche Preise, Försterehrenwort."]],
+  gica:["Bergmann Durgan",["Ich habe mich vor drei Tagen verirrt... oder drei Wochen? Hier unten geht nie die Sonne auf.","Kragmor, der Kristallgolem, bewacht die große Halle. Wenn er die Arme hebt — lauf!","Ich habe ein paar Tränke im Rucksack. Billig, wenn du nur diese Monster loswirst."]],
+  spirit:["Geist von König Aurelian",["Ich war König dieser Lande. Vorthrax verbrannte meinen Thron und meine Burg.","Lava fließt, wo einst Gärten blühten. Räche mein Volk, {hero}.","Komm zu mir, wann immer du willst. Die Kraft der Ahnen wird dich heilen."]]},
+ items:{potion_s:["Kleiner Trank"],potion_l:["Großer Trank"],ether:["Manaelixier"],sword_wood:["Holzschwert"],sword_iron:["Eisenschwert"],sword_steel:["Stahlschwert"],sword_crystal:["Kristallklinge"],sword_flame:["Flamberge"],tunic:["Stofftunika"],leather:["Lederrüstung"],chain:["Eisenkettenhemd"],plate:["Plattenrüstung"],ring_hp:["Ring der Lebenskraft"],amulet_mp:["Arkanes Amulett"],talisman:["Glückstalisman"],mushroom:["Mondpilz","Leuchtet schwach im Dunkeln. Selene braucht sie."],shard:["Kristallsplitter","Kalt und summend. Schmied Brom sucht danach."]},
+ st:{heal:"Stellt {0} LP her",mana:"Stellt {0} MP her",atk:"+{0} Angriff",def:"+{0} Verteidigung",hp:"+{0} max. LP",mp:"+{0} max. MP",crit:"+{0}% kritisch"},
+ mon:{slime:"Schleim",wolf:"Grauwolf",bat:"Fledermaus",skeleton:"Skelett",golem:"Kragmor, der Kristallgolem",imp:"Feuerkobold",demon:"Lavadämon",dragon:"Vorthrax, der Feuerdrache"},
+ sk:[["Feuerball","Ein Geschoss, das beim Aufprall explodiert."],["Heilung","Stellt etwa ein Drittel deiner Gesundheit her."],["Stahlwirbel","Trifft alle Gegner um dich herum."],["Meteor","Ein verheerender Meteor schlägt im Ziel ein."]],
+ q:{slimes:{n:"Schleiminvasion",desc:"Töte 6 Schleime im Flüsterwald östlich des Dorfes.",offer:"Willkommen, {hero}! Die Schleime aus dem Flüsterwald fressen unsere Ernte. Kannst du sechs von ihnen erledigen?",prog:"Der Wald liegt im Osten, an der Hauptstraße. Schleime sind langsam, aber unterschätze sie nicht.",done:"Wunderbar! Das Dorf steht in deiner Schuld. Nimm diese Münzen und ein paar Tränke."},
+  mush:{n:"Mondpilze",desc:"Sammle 5 Mondpilze im Flüsterwald.",offer:"Ich brauche Mondpilze für ein starkes Heilmittel. Sie wachsen auf den Waldlichtungen und leuchten blau. Bringst du mir fünf?",prog:"Halte Ausschau nach dem bläulichen Schimmer zwischen den Bäumen.",done:"Perfekt, noch taufrisch! Nimm diese Tränke, mit Liebe gebraut."},
+  cat:{n:"Die verlorene Katze",desc:"Finde Mochi, Pips Katze, irgendwo im Wald.",offer:"Mochi ist einem Schmetterling in den Wald nachgelaufen und nicht zurückgekommen! Sie ist orange und flauschig... Hilfst du mir, sie zu finden? 😢",prog:"Mochi liegt gern auf sonnigen Lichtungen. Bitte finde sie!",done:"MOCHI! Danke, {hero}! Nimm meinen Glückstalisman — du brauchst ihn mehr als ich."},
+  wolves:{n:"Das Rudel im Osten",desc:"Töte 5 Grauwölfe jenseits des Waldflusses.",offer:"Die Jäger sagen, ein Wolfsrudel hat den Fluss überquert und nähert sich dem Dorf. Halte sie auf, bevor sie jemanden angreifen — fünf Wölfe sollten den Rest verscheuchen.",prog:"Die Wölfe jagen im östlichen Teil des Waldes, hinter der Holzbrücke.",done:"Du hast das Herz eines wahren Helden. Doch ich fürchte, die Wölfe flohen vor etwas Schlimmerem..."},
+  crystal:{n:"Kristalle für den Schmied",desc:"Bring Brom 6 Kristallsplitter aus der Kristallhöhle.",offer:"Ich will eine Kristallklinge schmieden, wie mein Großvater. Die Fledermäuse und Skelette der Höhle tragen Kristallsplitter. Bring mir sechs, und die Klinge gehört dir!",prog:"Die Höhle liegt am östlichen Ende des Waldes. Nimm Tränke mit — dort ist es stockfinster.",done:"Sieh nur... die Kristallklinge! Sie singt, wenn sie die Luft schneidet. Trage sie mit Ehre, {hero}."},
+  golem:{n:"Das Herz der Höhle",desc:"Besiege Kragmor, den Kristallgolem, tief in der Höhle.",offer:"Ich weiß jetzt, warum die Tiere fliehen. Kragmor, ein Kristallgolem, ist tief in der Höhle erwacht und vergiftet das Land. Eine schwere Aufgabe... aber du bist unsere einzige Hoffnung.",prog:"Kragmor wartet in der großen Halle am östlichen Ende der Höhle. Hüte dich, wenn er die Arme hebt!",done:"Kragmor ist gefallen! Das Land atmet wieder. Wächter Garrick öffnet dir nun das Nordtor."},
+  imps:{n:"Feuerkobolde",desc:"Töte 8 Feuerkobolde in den Glutruinen.",offer:"Seit das Tor offen ist, kommen nachts Feuerkobolde und brennen unsere Scheunen nieder. Geh in die Ruinen und erledige acht von ihnen.",prog:"Kobolde werfen aus der Ferne mit Feuer. Komm ihnen schnell nahe!",done:"Drei Nächte ohne brennende Scheune! Nimm das, gegen den Drachen wirst du es brauchen."},
+  dragon:{n:"Der Schatten von Vorthrax",desc:"Besiege Vorthrax, den Feuerdrachen, in der Arena nördlich der Ruinen.",offer:"Jetzt kenne ich die Wahrheit: Vorthrax, der uralte Drache, ist unter den Ruinen erwacht. Er hat Kragmor geweckt. Solange Vorthrax lebt, findet Eldoria keinen Frieden. Geh, {hero}.",prog:"Die Arena von Vorthrax liegt im Norden der Glutruinen. Wenn er tief Luft holt, weich den Flammen aus!",done:"Vorthrax... besiegt? Die Glocken werden in ganz Eldoria läuten! Barden werden den Namen {hero} tausend Jahre lang besingen."}}},
+
+fr:{flag:"🇫🇷",label:"Français",title:"Chroniques d'Eldoria",sub:"L'Ombre de Vorthrax",
+ intro:"Un dragon ancestral s'est réveillé sous les ruines du nord, et les ténèbres s'étendent sur Valvert. Aide les villageois, explore la forêt, la caverne et les ruines — et affronte Vorthrax.",
+ ui:{newG:"✦ Nouvelle partie",cont:"▶ Continuer",heroName:"Nom du héros",lang:"Langue",
+  qReady:"✔ {0} — retourne voir {1}",qNew:"📜 Nouvelle quête : {0}",qDone:"🏆 Quête accomplie : {0}",newSk:"✨ Nouvelle compétence : {0}",skLock:"{0} se débloque au niveau {1}",noMana:"Pas assez de mana !",fullHp:"Ta santé est au maximum.",noPot:"Aucune potion de soin !",noEther:"Aucun élixir de mana !",equipped:"Équipé : {0}",noWeapon:"Impossible de combattre sans arme !",lostGold:"Tu as perdu {0} pièces d'or...",summon:"🔥 Vorthrax appelle des diablotins à l'aide !",found:"Trouvé : {0}",fountain:"💧 L'eau de la fontaine te restaure entièrement.",healed:"Tu te sens complètement rétabli !",bought:"Acheté : {0}",hint:"💬 Le vieil Eldrin t'attend sur la place du village.",saved:"💾 Partie sauvegardée",noSave:"La sauvegarde n'est pas disponible dans ce navigateur.",welcome:"Bon retour, {0} !",lvl:"Niveau {0}",lvlSub:"Santé et mana restaurées",defeated:"{0} a été vaincu !",reward:"Récompense",gold:"or",
+  catFound:"Miaou ! 🐾 Mochi se frotte contre ta jambe, puis file vers le village. On dirait qu'elle connaît le chemin.",catGo:"Rentre à la maison, Mochi !",catIdle:["Miaou ?","Rrrrr... 🐾","Mochi se roule de bonheur au soleil."],catBye:"Au revoir, minou",
+  shop:"🛒 Boutique",heal:"✨ Soigne-moi",bye:"Adieu",thanks:"Merci !",accept:"✔ Accepter la quête",later:"Plus tard peut-être",next:"Continuer",
+  invT:"Inventaire & Équipement",invHint:"Touche un objet pour l'utiliser ou l'équiper.",qT:"Journal de quêtes",shopT:"{0} — Boutique",weapon:"Arme",armor:"Armure",acc:"Accessoire",empty:"vide",
+  sLvl:"Niveau",sHp:"Santé",sMp:"Mana",sAtk:"Attaque",sDef:"Défense",sCrit:"Critique",sXp:"Expérience",sGold:"Or",bagEmpty:"Ton sac est vide.",skills:"Compétences",lv:"niv.",
+  qReadyP:"✔ Terminé ! Retourne voir {0}",progress:"Progression",noQ:"Aucune quête active. Parle aux personnages marqués d'un",doneH:"Accomplies",buy:"Acheter",sell:"Vendre",have:"possédé",nothingSell:"Tu n'as rien à vendre.",
+  potHp:"Potion de soin",potMp:"Élixir de mana",dodge:"Esquive",lock:"Niv. {0}",trReturn:"✔ Retourne voir {0}",open:"Ouvrir le coffre",drink:"Boire à la fontaine",talk:"Parler à {0}",
+  deny:"Le garde Garrick : « Personne ne passe vers les ruines tant que Kragmor, le golem de la caverne, n'est pas tombé ! »",
+  deadT:"Tu es tombé...",deadP:"Mais les légendes ne meurent pas si facilement. Tu te réveilleras près de la fontaine du village, un peu plus pauvre.",respawn:"✦ Renaître",victory:"Victoire !",victorySub:"Eldoria est libre",victoryP:"Vorthrax est tombé, le feu des ruines s'éteint et les cloches sonnent dans toute la vallée. {0}, tu as terminé l'aventure au niveau <b>{1}</b> avec <b>{2}</b> quêtes accomplies.",goOn:"Continuer l'exploration",
+  level:"NIVEAU",invB:"Inventaire (I)",qB:"Quêtes (Q)",sndB:"Son",saveB:"Sauvegarder",langB:"Langue"},
+ help:["<kbd>WASD</kbd>se déplacer","<kbd>Clic</kbd>/<kbd>Espace</kbd>attaque","<kbd>1-4</kbd>compétences","<kbd>Clic droit</kbd>boule de feu","<kbd>E</kbd>parler / ouvrir","<kbd>Shift</kbd>esquive","<kbd>R</kbd>potion de soin","<kbd>F</kbd>élixir de mana","<kbd>I</kbd>inventaire","<kbd>Q</kbd>quêtes"],
+ helpT:["🕹️ Joystick gauche — se déplacer","⚔️ — attaque","🔥✨🌀☄️ — compétences","💬 — parler / ouvrir","🧪💧 — potions","💨 — esquive"],
+ map:{sat:["Village de Valvert","Chez soi"],padure:["Bois des Murmures","Gelées · Loups"],pestera:["Caverne de Cristal","Chauves-souris · Squelettes · Kragmor"],ruine:["Ruines de Braise","Diablotins · Démons · Vorthrax"]},
+ npc:{mirel:["Le vieil Eldrin",["Notre village était paisible autrefois... jusqu'à ce que les ténèbres s'éveillent sous terre.","Les anciens disent qu'un dragon dort sous les Ruines de Braise. J'espère que c'est faux."]],
+  dorin:["Brom le forgeron",["Le bon acier ne ment jamais. Besoin d'une nouvelle lame ?","Mon marteau a forgé plus d'épées que tu n'as vu de levers de soleil."]],
+  ilinca:["Selene la guérisseuse",["Les herbes soignent le corps. L'âme... c'est une autre histoire.","Prends soin de toi, {hero}. Les potions ne poussent pas sur les arbres. Enfin, certaines si."]],
+  nelu:["Le petit Pip",["Quand je serai grand, je serai un héros comme toi !","Tu savais que les poissons de l'étang parlent ? Juste très, très doucement."]],
+  radu:["Le garde Garrick",["Au-delà de cette porte s'étendent les Ruines de Braise. Peu en sont revenus.","Je monte la garde jour et nuit. Au moins, la vue est belle."]],
+  ana:["Lyra",["Tu as entendu ? On dit qu'on voit du feu au-dessus des montagnes du nord la nuit !","La fontaine de la place a une eau guérisseuse. Bois, c'est gratuit !"]],
+  toma:["Odo",["La récolte est maigre cette année. Ces maudites gelées...","Brom le forgeron fait les meilleures épées du royaume."]],
+  mitzi:["Mochi",[]],mitzi_f:["Mochi",[]],fountain:["Fontaine de guérison",[]],
+  vasile:["Fennick le forestier",["La forêt a des yeux, étranger. Les loups chassent à l'est, après la rivière.","Les champignons de lune ne poussent que là où la lune perce le feuillage.","Je vends des potions aux voyageurs. Prix honnêtes, parole de forestier."]],
+  gica:["Durgan le mineur",["Je me suis perdu il y a trois jours... ou trois semaines ? Le soleil ne se lève jamais ici.","Kragmor, le golem de cristal, garde la grande salle. Quand il lève les bras — fuis !","J'ai quelques potions dans mon sac. Pas cher, débarrasse-nous juste de ces monstres."]],
+  spirit:["L'esprit du roi Aurelian",["J'étais le roi de ces terres. Vorthrax a brûlé mon trône et ma citadelle.","La lave coule là où fleurissaient des jardins. Venge mon peuple, {hero}.","Viens me voir quand tu veux. La force des ancêtres te guérira."]]},
+ items:{potion_s:["Petite potion"],potion_l:["Grande potion"],ether:["Élixir de mana"],sword_wood:["Épée en bois"],sword_iron:["Épée en fer"],sword_steel:["Épée en acier"],sword_crystal:["Lame de cristal"],sword_flame:["Flamberge"],tunic:["Tunique en toile"],leather:["Armure de cuir"],chain:["Cotte de mailles"],plate:["Armure de plates"],ring_hp:["Anneau de vitalité"],amulet_mp:["Amulette arcanique"],talisman:["Talisman porte-bonheur"],mushroom:["Champignon de lune","Luit faiblement dans le noir. Selene en a besoin."],shard:["Éclat de cristal","Froid et vibrant. Brom le forgeron en cherche."]},
+ st:{heal:"Rend {0} PV",mana:"Rend {0} PM",atk:"+{0} Attaque",def:"+{0} Défense",hp:"+{0} PV max",mp:"+{0} PM max",crit:"+{0}% critique"},
+ mon:{slime:"Gelée",wolf:"Loup gris",bat:"Chauve-souris",skeleton:"Squelette",golem:"Kragmor, le Golem de Cristal",imp:"Diablotin de feu",demon:"Démon de lave",dragon:"Vorthrax, le Dragon de Feu"},
+ sk:[["Boule de feu","Un projectile qui explose à l'impact."],["Soin","Rend environ un tiers de ta santé."],["Tourbillon d'acier","Frappe tous les ennemis autour de toi."],["Météore","Un météore dévastateur s'abat sur la cible."]],
+ q:{slimes:{n:"L'invasion des gelées",desc:"Tue 6 gelées dans le Bois des Murmures, à l'est du village.",offer:"Bienvenue, {hero} ! Les gelées du Bois des Murmures dévorent nos récoltes. Peux-tu en éliminer six ?",prog:"Le bois est à l'est, sur la grand-route. Les gelées sont lentes, mais ne les sous-estime pas.",done:"Merveilleux ! Le village a une dette envers toi. Prends ces pièces et quelques potions."},
+  mush:{n:"Les champignons de lune",desc:"Ramasse 5 champignons de lune dans le Bois des Murmures.",offer:"J'ai besoin de champignons de lune pour un remède puissant. Ils poussent dans les clairières et brillent en bleu. Tu m'en rapportes cinq ?",prog:"Cherche la lueur bleutée entre les arbres.",done:"Parfaits, encore couverts de rosée ! Prends ces potions, préparées avec soin."},
+  cat:{n:"La chatte perdue",desc:"Retrouve Mochi, la chatte de Pip, quelque part dans le bois.",offer:"Mochi a couru dans le bois après un papillon et n'est jamais revenue ! Elle est rousse et toute duveteuse... Tu m'aides à la retrouver ? 😢",prog:"Mochi adore les clairières ensoleillées. Retrouve-la, s'il te plaît !",done:"MOCHI ! Merci, {hero} ! Prends mon talisman porte-bonheur — tu en as plus besoin que moi."},
+  wolves:{n:"La meute de l'est",desc:"Tue 5 loups gris au-delà de la rivière du bois.",offer:"Les chasseurs disent qu'une meute a traversé la rivière et approche du village. Arrête-les avant qu'ils n'attaquent quelqu'un — cinq loups devraient effrayer les autres.",prog:"Les loups chassent dans la partie est du bois, après le pont en bois.",done:"Tu as le cœur d'un vrai héros. Mais je crains que les loups ne fuyaient quelque chose de pire..."},
+  crystal:{n:"Des cristaux pour le forgeron",desc:"Rapporte à Brom 6 éclats de cristal de la Caverne de Cristal.",offer:"Je veux forger une lame de cristal, comme mon grand-père. Les chauves-souris et les squelettes de la caverne portent des éclats. Rapporte-m'en six et la lame est à toi !",prog:"La caverne est au bout est du bois. Prends des potions, il y fait noir comme dans un four.",done:"La voici... la Lame de cristal ! Elle chante quand elle fend l'air. Porte-la avec honneur, {hero}."},
+  golem:{n:"Le cœur de la caverne",desc:"Vaincs Kragmor, le Golem de Cristal, au fond de la caverne.",offer:"J'ai compris pourquoi les animaux fuient. Kragmor, un golem de cristal, s'est réveillé au fond de la caverne et empoisonne la terre. C'est une lourde tâche... mais tu es notre seul espoir.",prog:"Kragmor attend dans la grande salle, au bout est de la caverne. Méfie-toi quand il lève les bras !",done:"Kragmor est tombé ! La terre respire à nouveau. Le garde Garrick va t'ouvrir la porte du nord."},
+  imps:{n:"Les diablotins de feu",desc:"Tue 8 diablotins de feu dans les Ruines de Braise.",offer:"Depuis que la porte est ouverte, des diablotins viennent la nuit brûler nos granges. Va dans les ruines et élimines-en huit.",prog:"Les diablotins lancent du feu à distance. Rapproche-toi vite !",done:"Pas une grange brûlée depuis trois nuits ! Prends ça, tu en auras besoin face au dragon."},
+  dragon:{n:"L'Ombre de Vorthrax",desc:"Vaincs Vorthrax, le Dragon de Feu, dans l'arène au nord des ruines.",offer:"Je connais enfin la vérité : Vorthrax, le dragon ancestral, s'est réveillé sous les ruines. C'est lui qui a réveillé Kragmor. Tant que Vorthrax vivra, Eldoria ne connaîtra pas la paix. Va, {hero}.",prog:"L'arène de Vorthrax se trouve au nord des Ruines de Braise. Quand il inspire profondément, écarte-toi des flammes !",done:"Vorthrax... vaincu ? Les cloches sonneront dans toute l'Eldoria ! Les bardes chanteront le nom de {hero} pendant mille ans."}}},
+
+es:{flag:"🇪🇸",label:"Español",title:"Crónicas de Eldoria",sub:"La Sombra de Vorthrax",
+ intro:"Un dragón ancestral ha despertado bajo las ruinas del norte y la oscuridad se extiende sobre Valleverde. Ayuda a los aldeanos, explora el bosque, la caverna y las ruinas — y enfréntate a Vorthrax.",
+ ui:{newG:"✦ Nueva partida",cont:"▶ Continuar",heroName:"Nombre del héroe",lang:"Idioma",
+  qReady:"✔ {0} — vuelve con {1}",qNew:"📜 Nueva misión: {0}",qDone:"🏆 Misión cumplida: {0}",newSk:"✨ Nueva habilidad: {0}",skLock:"{0} se desbloquea en el nivel {1}",noMana:"¡Maná insuficiente!",fullHp:"Tu salud está al máximo.",noPot:"¡No tienes pociones de salud!",noEther:"¡No tienes elixires de maná!",equipped:"Equipado: {0}",noWeapon:"¡No puedes luchar sin arma!",lostGold:"Has perdido {0} monedas de oro...",summon:"🔥 ¡Vorthrax invoca diablillos en su ayuda!",found:"Encontrado: {0}",fountain:"💧 El agua de la fuente te restaura por completo.",healed:"¡Te sientes completamente recuperado!",bought:"Comprado: {0}",hint:"💬 El anciano Eldrin te espera en la plaza de la aldea.",saved:"💾 Partida guardada",noSave:"El guardado no está disponible en este navegador.",welcome:"¡Bienvenido de nuevo, {0}!",lvl:"Nivel {0}",lvlSub:"Salud y maná restaurados",defeated:"¡{0} ha sido derrotado!",reward:"Recompensa",gold:"oro",
+  catFound:"¡Miau! 🐾 Mochi se frota contra tu pierna y luego sale corriendo hacia la aldea. Parece que conoce el camino a casa.",catGo:"¡Corre a casa, Mochi!",catIdle:["¿Miau?","Purrrr... 🐾","Mochi se revuelca feliz al sol."],catBye:"Adiós, gatita",
+  shop:"🛒 Tienda",heal:"✨ Cúrame",bye:"Adiós",thanks:"¡Gracias!",accept:"✔ Aceptar misión",later:"Quizá más tarde",next:"Continuar",
+  invT:"Inventario y equipo",invHint:"Toca un objeto para usarlo o equiparlo.",qT:"Diario de misiones",shopT:"{0} — Tienda",weapon:"Arma",armor:"Armadura",acc:"Accesorio",empty:"vacío",
+  sLvl:"Nivel",sHp:"Salud",sMp:"Maná",sAtk:"Ataque",sDef:"Defensa",sCrit:"Crítico",sXp:"Experiencia",sGold:"Oro",bagEmpty:"Tu mochila está vacía.",skills:"Habilidades",lv:"niv.",
+  qReadyP:"✔ ¡Listo! Vuelve con {0}",progress:"Progreso",noQ:"No hay misiones activas. Habla con los personajes marcados con",doneH:"Cumplidas",buy:"Comprar",sell:"Vender",have:"tienes",nothingSell:"No tienes nada que vender.",
+  potHp:"Poción de salud",potMp:"Elixir de maná",dodge:"Esquivar",lock:"Niv. {0}",trReturn:"✔ Vuelve con {0}",open:"Abrir cofre",drink:"Beber de la fuente",talk:"Hablar con {0}",
+  deny:"El guardia Garrick: «¡Nadie pasa a las ruinas hasta que caiga Kragmor, el gólem de la caverna!»",
+  deadT:"Has caído...",deadP:"Pero las leyendas no mueren tan fácilmente. Despertarás junto a la fuente de la aldea, un poco más pobre.",respawn:"✦ Renacer",victory:"¡Victoria!",victorySub:"Eldoria es libre",victoryP:"Vorthrax ha caído, el fuego de las ruinas se apaga y las campanas suenan por todo el valle. {0}, has terminado la aventura en el nivel <b>{1}</b> con <b>{2}</b> misiones cumplidas.",goOn:"Seguir explorando",
+  level:"NIVEL",invB:"Inventario (I)",qB:"Misiones (Q)",sndB:"Sonido",saveB:"Guardar",langB:"Idioma"},
+ help:["<kbd>WASD</kbd>moverse","<kbd>Clic</kbd>/<kbd>Espacio</kbd>atacar","<kbd>1-4</kbd>habilidades","<kbd>Clic der.</kbd>bola de fuego","<kbd>E</kbd>hablar / abrir","<kbd>Shift</kbd>esquivar","<kbd>R</kbd>poción de salud","<kbd>F</kbd>elixir de maná","<kbd>I</kbd>inventario","<kbd>Q</kbd>misiones"],
+ helpT:["🕹️ Joystick izquierdo — moverse","⚔️ — atacar","🔥✨🌀☄️ — habilidades","💬 — hablar / abrir","🧪💧 — pociones","💨 — esquivar"],
+ map:{sat:["Aldea Valleverde","Hogar"],padure:["Bosque de los Susurros","Limos · Lobos"],pestera:["Caverna de Cristal","Murciélagos · Esqueletos · Kragmor"],ruine:["Ruinas de Fuego","Diablillos · Demonios · Vorthrax"]},
+ npc:{mirel:["El anciano Eldrin",["Nuestra aldea fue tranquila una vez... hasta que la oscuridad despertó bajo la tierra.","Los ancianos dicen que un dragón duerme bajo las Ruinas de Fuego. Espero que no sea cierto."]],
+  dorin:["Brom el herrero",["El buen acero nunca miente. ¿Necesitas una hoja nueva?","Mi martillo ha forjado más espadas que amaneceres has visto tú."]],
+  ilinca:["Selene la curandera",["Las hierbas curan el cuerpo. El alma... esa es otra historia.","Cuídate, {hero}. Las pociones no crecen en los árboles. Bueno, algunas sí."]],
+  nelu:["El pequeño Pip",["¡Cuando sea mayor, seré un héroe como tú!","¿Sabías que los peces del estanque hablan? Solo que muy, muy bajito."]],
+  radu:["El guardia Garrick",["Tras esta puerta están las Ruinas de Fuego. Pocos han vuelto.","Hago guardia día y noche. Al menos la vista es bonita."]],
+  ana:["Lyra",["¿Te has enterado? ¡Dicen que de noche se ve fuego sobre las montañas del norte!","La fuente de la plaza tiene agua curativa. ¡Bebe, que es gratis!"]],
+  toma:["Odo",["La cosecha es pobre este año. Esos malditos limos...","Brom el herrero hace las mejores espadas de toda la comarca."]],
+  mitzi:["Mochi",[]],mitzi_f:["Mochi",[]],fountain:["Fuente curativa",[]],
+  vasile:["Fennick el guardabosques",["El bosque tiene ojos, forastero. Los lobos cazan al este, pasado el río.","Las setas lunares solo crecen donde la luz de la luna atraviesa las hojas.","Vendo pociones a los viajeros. Precios honrados, palabra de guardabosques."]],
+  gica:["Durgan el minero",["Me perdí hace tres días... ¿o tres semanas? Aquí abajo nunca sale el sol.","Kragmor, el gólem de cristal, guarda la gran sala. Cuando levante los brazos, ¡corre!","Tengo unas pociones en la mochila. Baratas, con tal de que acabes con estos monstruos."]],
+  spirit:["Espíritu del rey Aurelian",["Fui el rey de estas tierras. Vorthrax quemó mi trono y mi ciudadela.","Corre lava donde antes florecían jardines. Venga a mi pueblo, {hero}.","Ven a mí cuando quieras. La fuerza de los ancestros te sanará."]]},
+ items:{potion_s:["Poción pequeña"],potion_l:["Poción grande"],ether:["Elixir de maná"],sword_wood:["Espada de madera"],sword_iron:["Espada de hierro"],sword_steel:["Espada de acero"],sword_crystal:["Hoja de cristal"],sword_flame:["Flamberga"],tunic:["Túnica de tela"],leather:["Armadura de cuero"],chain:["Cota de malla"],plate:["Armadura de placas"],ring_hp:["Anillo de vitalidad"],amulet_mp:["Amuleto arcano"],talisman:["Talismán de la suerte"],mushroom:["Seta lunar","Brilla débilmente en la oscuridad. Selene las necesita."],shard:["Fragmento de cristal","Frío y vibrante. Brom el herrero los busca."]},
+ st:{heal:"Restaura {0} PS",mana:"Restaura {0} PM",atk:"+{0} Ataque",def:"+{0} Defensa",hp:"+{0} PS máx.",mp:"+{0} PM máx.",crit:"+{0}% crítico"},
+ mon:{slime:"Limo",wolf:"Lobo gris",bat:"Murciélago",skeleton:"Esqueleto",golem:"Kragmor, el Gólem de Cristal",imp:"Diablillo de fuego",demon:"Demonio de lava",dragon:"Vorthrax, el Dragón de Fuego"},
+ sk:[["Bola de fuego","Un proyectil que explota al impactar."],["Curación","Restaura aproximadamente un tercio de tu salud."],["Torbellino de acero","Golpea a todos los enemigos a tu alrededor."],["Meteoro","Un meteoro devastador cae sobre el objetivo."]],
+ q:{slimes:{n:"Invasión de limos",desc:"Mata 6 limos en el Bosque de los Susurros, al este de la aldea.",offer:"¡Bienvenido, {hero}! Los limos del Bosque de los Susurros devoran nuestras cosechas. ¿Podrías acabar con seis de ellos?",prog:"El bosque está al este, por el camino principal. Los limos son lentos, pero no los subestimes.",done:"¡Maravilloso! La aldea está en deuda contigo. Toma estas monedas y unas pociones."},
+  mush:{n:"Las setas lunares",desc:"Recoge 5 setas lunares en el Bosque de los Susurros.",offer:"Necesito setas lunares para un remedio poderoso. Crecen en los claros del bosque y brillan de azul. ¿Me traes cinco?",prog:"Busca el brillo azulado entre los árboles.",done:"¡Perfectas, aún húmedas de rocío! Toma estas pociones, hechas con cariño."},
+  cat:{n:"La gata perdida",desc:"Encuentra a Mochi, la gata de Pip, en algún lugar del bosque.",offer:"¡Mochi se metió en el bosque persiguiendo una mariposa y no ha vuelto! Es naranja y muy peluda... ¿Me ayudas a encontrarla? 😢",prog:"A Mochi le encantan los claros soleados. ¡Por favor, encuéntrala!",done:"¡MOCHI! ¡Gracias, {hero}! Toma mi talismán de la suerte, tú lo necesitas más que yo."},
+  wolves:{n:"La manada del este",desc:"Mata 5 lobos grises al otro lado del río del bosque.",offer:"Los cazadores dicen que una manada de lobos cruzó el río y se acerca a la aldea. Detenlos antes de que ataquen a alguien — cinco lobos deberían ahuyentar al resto.",prog:"Los lobos cazan en la parte este del bosque, pasado el puente de madera.",done:"Tienes el corazón de un verdadero héroe. Pero temo que los lobos huían de algo peor..."},
+  crystal:{n:"Cristales para el herrero",desc:"Lleva a Brom 6 fragmentos de cristal de la Caverna de Cristal.",offer:"Quiero forjar una hoja de cristal, como hacía mi abuelo. Los murciélagos y esqueletos de la caverna llevan fragmentos de cristal. ¡Tráeme seis y la hoja será tuya!",prog:"La caverna está al extremo este del bosque. Lleva pociones, allí está oscuro como boca de lobo.",done:"Mírala... ¡la Hoja de cristal! Canta al cortar el aire. Llévala con honor, {hero}."},
+  golem:{n:"El corazón de la caverna",desc:"Derrota a Kragmor, el Gólem de Cristal, en lo más hondo de la caverna.",offer:"Ya sé por qué huyen los animales. Kragmor, un gólem de cristal, ha despertado en lo más hondo de la caverna y envenena la tierra. Es una tarea difícil... pero eres nuestra única esperanza.",prog:"Kragmor espera en la gran sala, al extremo este de la caverna. ¡Cuidado cuando levante los brazos!",done:"¡Kragmor ha caído! La tierra respira de nuevo. El guardia Garrick te abrirá ahora la puerta del norte."},
+  imps:{n:"Diablillos de fuego",desc:"Mata 8 diablillos de fuego en las Ruinas de Fuego.",offer:"Desde que se abrió la puerta, los diablillos vienen de noche a quemar nuestros graneros. Ve a las ruinas y acaba con ocho.",prog:"Los diablillos lanzan fuego a distancia. ¡Acércate rápido!",done:"¡Ni un granero quemado en tres noches! Toma esto, lo necesitarás contra el dragón."},
+  dragon:{n:"La Sombra de Vorthrax",desc:"Derrota a Vorthrax, el Dragón de Fuego, en la arena al norte de las ruinas.",offer:"Ahora sé la verdad: Vorthrax, el dragón ancestral, ha despertado bajo las ruinas. Él despertó a Kragmor. Mientras Vorthrax viva, Eldoria no conocerá la paz. Ve, {hero}.",prog:"La arena de Vorthrax está al norte de las Ruinas de Fuego. ¡Cuando tome aire, apártate de las llamas!",done:"¿Vorthrax... derrotado? ¡Las campanas sonarán en toda Eldoria! Los bardos cantarán el nombre de {hero} durante mil años."}}},
+
+it:{flag:"🇮🇹",label:"Italiano",title:"Cronache di Eldoria",sub:"L'Ombra di Vorthrax",
+ intro:"Un drago ancestrale si è risvegliato sotto le rovine del nord e l'oscurità si diffonde su Valverde. Aiuta gli abitanti, esplora il bosco, la caverna e le rovine — e affronta Vorthrax.",
+ ui:{newG:"✦ Nuova partita",cont:"▶ Continua",heroName:"Nome dell'eroe",lang:"Lingua",
+  qReady:"✔ {0} — torna da {1}",qNew:"📜 Nuova missione: {0}",qDone:"🏆 Missione compiuta: {0}",newSk:"✨ Nuova abilità: {0}",skLock:"{0} si sblocca al livello {1}",noMana:"Mana insufficiente!",fullHp:"La tua salute è al massimo.",noPot:"Nessuna pozione di cura!",noEther:"Nessun elisir di mana!",equipped:"Equipaggiato: {0}",noWeapon:"Non puoi combattere senza un'arma!",lostGold:"Hai perso {0} monete d'oro...",summon:"🔥 Vorthrax evoca dei folletti in suo aiuto!",found:"Trovato: {0}",fountain:"💧 L'acqua della fontana ti ristora completamente.",healed:"Ti senti completamente rinvigorito!",bought:"Acquistato: {0}",hint:"💬 Il vecchio Eldrin ti aspetta nella piazza del villaggio.",saved:"💾 Partita salvata",noSave:"Il salvataggio non è disponibile in questo browser.",welcome:"Bentornato, {0}!",lvl:"Livello {0}",lvlSub:"Salute e mana ripristinati",defeated:"{0} è stato sconfitto!",reward:"Ricompensa",gold:"oro",
+  catFound:"Miao! 🐾 Mochi si strofina sulla tua gamba, poi corre verso il villaggio. Sembra conoscere la strada di casa.",catGo:"Corri a casa, Mochi!",catIdle:["Miao?","Purrrr... 🐾","Mochi si rotola felice al sole."],catBye:"Ciao, micetta",
+  shop:"🛒 Negozio",heal:"✨ Curami",bye:"Addio",thanks:"Grazie!",accept:"✔ Accetta la missione",later:"Forse più tardi",next:"Continua",
+  invT:"Inventario ed equipaggiamento",invHint:"Tocca un oggetto per usarlo o equipaggiarlo.",qT:"Diario delle missioni",shopT:"{0} — Negozio",weapon:"Arma",armor:"Armatura",acc:"Accessorio",empty:"vuoto",
+  sLvl:"Livello",sHp:"Salute",sMp:"Mana",sAtk:"Attacco",sDef:"Difesa",sCrit:"Critico",sXp:"Esperienza",sGold:"Oro",bagEmpty:"Lo zaino è vuoto.",skills:"Abilità",lv:"liv.",
+  qReadyP:"✔ Fatto! Torna da {0}",progress:"Progresso",noQ:"Nessuna missione attiva. Parla con i personaggi segnati con",doneH:"Completate",buy:"Compra",sell:"Vendi",have:"possiedi",nothingSell:"Non hai nulla da vendere.",
+  potHp:"Pozione di cura",potMp:"Elisir di mana",dodge:"Schivata",lock:"Liv. {0}",trReturn:"✔ Torna da {0}",open:"Apri il forziere",drink:"Bevi dalla fontana",talk:"Parla con {0}",
+  deny:"La guardia Garrick: «Nessuno passa verso le rovine finché Kragmor, il golem della caverna, non cade!»",
+  deadT:"Sei caduto...",deadP:"Ma le leggende non muoiono così facilmente. Ti risveglierai accanto alla fontana del villaggio, un po' più povero.",respawn:"✦ Rinasci",victory:"Vittoria!",victorySub:"Eldoria è libera",victoryP:"Vorthrax è caduto, il fuoco delle rovine si spegne e le campane suonano in tutta la valle. {0}, hai concluso l'avventura al livello <b>{1}</b> con <b>{2}</b> missioni compiute.",goOn:"Continua a esplorare",
+  level:"LIVELLO",invB:"Inventario (I)",qB:"Missioni (Q)",sndB:"Audio",saveB:"Salva",langB:"Lingua"},
+ help:["<kbd>WASD</kbd>muoversi","<kbd>Clic</kbd>/<kbd>Spazio</kbd>attacco","<kbd>1-4</kbd>abilità","<kbd>Clic destro</kbd>palla di fuoco","<kbd>E</kbd>parla / apri","<kbd>Shift</kbd>schivata","<kbd>R</kbd>pozione di cura","<kbd>F</kbd>elisir di mana","<kbd>I</kbd>inventario","<kbd>Q</kbd>missioni"],
+ helpT:["🕹️ Joystick sinistro — muoversi","⚔️ — attacco","🔥✨🌀☄️ — abilità","💬 — parla / apri","🧪💧 — pozioni","💨 — schivata"],
+ map:{sat:["Villaggio di Valverde","Casa"],padure:["Bosco dei Sussurri","Melme · Lupi"],pestera:["Caverna di Cristallo","Pipistrelli · Scheletri · Kragmor"],ruine:["Rovine di Fuoco","Folletti · Demoni · Vorthrax"]},
+ npc:{mirel:["Il vecchio Eldrin",["Il nostro villaggio era tranquillo un tempo... finché l'oscurità non si è risvegliata sotto terra.","Gli anziani dicono che un drago dorme sotto le Rovine di Fuoco. Spero non sia vero."]],
+  dorin:["Brom il fabbro",["Il buon acciaio non mente mai. Ti serve una lama nuova?","Il mio martello ha forgiato più spade di quante albe tu abbia visto."]],
+  ilinca:["Selene la guaritrice",["Le erbe curano il corpo. L'anima... è un'altra storia.","Abbi cura di te, {hero}. Le pozioni non crescono sugli alberi. Beh, alcune sì."]],
+  nelu:["Il piccolo Pip",["Da grande sarò un eroe come te!","Lo sapevi che i pesci dello stagno parlano? Solo molto, molto piano."]],
+  radu:["La guardia Garrick",["Oltre questo cancello ci sono le Rovine di Fuoco. Pochi sono tornati.","Sto di guardia giorno e notte. Almeno la vista è bella."]],
+  ana:["Lyra",["Hai sentito? Dicono che di notte si veda fuoco sopra le montagne del nord!","La fontana della piazza ha acqua curativa. Bevi pure, è gratis!"]],
+  toma:["Odo",["Il raccolto è scarso quest'anno. Quelle maledette melme...","Brom il fabbro fa le spade migliori di tutto il regno."]],
+  mitzi:["Mochi",[]],mitzi_f:["Mochi",[]],fountain:["Fontana curativa",[]],
+  vasile:["Fennick il guardaboschi",["Il bosco ha occhi, straniero. I lupi cacciano a est, oltre il fiume.","I funghi lunari crescono solo dove la luce della luna filtra tra le foglie.","Vendo pozioni ai viandanti. Prezzi onesti, parola di guardaboschi."]],
+  gica:["Durgan il minatore",["Mi sono perso tre giorni fa... o tre settimane? Quaggiù il sole non sorge mai.","Kragmor, il golem di cristallo, sorveglia la grande sala. Quando alza le braccia, scappa!","Ho qualche pozione nello zaino. Te le do a poco, basta che ci liberi da questi mostri."]],
+  spirit:["Spirito di re Aurelian",["Ero il re di queste terre. Vorthrax ha bruciato il mio trono e la mia cittadella.","Scorre lava dove un tempo fiorivano giardini. Vendica il mio popolo, {hero}.","Vieni da me quando vuoi. La forza degli antenati ti guarirà."]]},
+ items:{potion_s:["Pozione piccola"],potion_l:["Pozione grande"],ether:["Elisir di mana"],sword_wood:["Spada di legno"],sword_iron:["Spada di ferro"],sword_steel:["Spada d'acciaio"],sword_crystal:["Lama di cristallo"],sword_flame:["Flamberga"],tunic:["Tunica di stoffa"],leather:["Armatura di cuoio"],chain:["Cotta di maglia"],plate:["Armatura a piastre"],ring_hp:["Anello della vitalità"],amulet_mp:["Amuleto arcano"],talisman:["Talismano portafortuna"],mushroom:["Fungo lunare","Brilla debolmente al buio. Selene ne ha bisogno."],shard:["Frammento di cristallo","Freddo e vibrante. Brom il fabbro li cerca."]},
+ st:{heal:"Ripristina {0} PS",mana:"Ripristina {0} PM",atk:"+{0} Attacco",def:"+{0} Difesa",hp:"+{0} PS max",mp:"+{0} PM max",crit:"+{0}% critico"},
+ mon:{slime:"Melma",wolf:"Lupo grigio",bat:"Pipistrello",skeleton:"Scheletro",golem:"Kragmor, il Golem di Cristallo",imp:"Folletto di fuoco",demon:"Demone di lava",dragon:"Vorthrax, il Drago di Fuoco"},
+ sk:[["Palla di fuoco","Un proiettile che esplode all'impatto."],["Cura","Ripristina circa un terzo della salute."],["Turbine d'acciaio","Colpisce tutti i nemici intorno a te."],["Meteora","Una meteora devastante si abbatte sul bersaglio."]],
+ q:{slimes:{n:"L'invasione delle melme",desc:"Uccidi 6 melme nel Bosco dei Sussurri, a est del villaggio.",offer:"Benvenuto, {hero}! Le melme del Bosco dei Sussurri divorano i nostri raccolti. Puoi eliminarne sei?",prog:"Il bosco è a est, lungo la strada principale. Le melme sono lente, ma non sottovalutarle.",done:"Meraviglioso! Il villaggio è in debito con te. Prendi queste monete e qualche pozione."},
+  mush:{n:"I funghi lunari",desc:"Raccogli 5 funghi lunari nel Bosco dei Sussurri.",offer:"Mi servono funghi lunari per un rimedio potente. Crescono nelle radure del bosco e brillano di blu. Me ne porti cinque?",prog:"Cerca il bagliore azzurro tra gli alberi.",done:"Perfetti, ancora umidi di rugiada! Prendi queste pozioni, fatte con cura."},
+  cat:{n:"La gatta smarrita",desc:"Trova Mochi, la gatta di Pip, da qualche parte nel bosco.",offer:"Mochi è corsa nel bosco dietro a una farfalla e non è più tornata! È arancione e tutta soffice... Mi aiuti a trovarla? 😢",prog:"A Mochi piacciono le radure soleggiate. Ti prego, trovala!",done:"MOCHI! Grazie, {hero}! Prendi il mio talismano portafortuna, a te serve più che a me."},
+  wolves:{n:"Il branco dell'est",desc:"Uccidi 5 lupi grigi oltre il fiume del bosco.",offer:"I cacciatori dicono che un branco di lupi ha attraversato il fiume e si avvicina al villaggio. Fermali prima che attacchino qualcuno — cinque lupi dovrebbero spaventare gli altri.",prog:"I lupi cacciano nella parte est del bosco, oltre il ponte di legno.",done:"Hai il cuore di un vero eroe. Ma temo che i lupi fuggissero da qualcosa di peggio..."},
+  crystal:{n:"Cristalli per il fabbro",desc:"Porta a Brom 6 frammenti di cristallo dalla Caverna di Cristallo.",offer:"Voglio forgiare una lama di cristallo, come faceva mio nonno. I pipistrelli e gli scheletri della caverna portano frammenti di cristallo. Portamene sei e la lama sarà tua!",prog:"La caverna è all'estremità est del bosco. Porta pozioni, lì dentro è buio pesto.",done:"Eccola... la Lama di cristallo! Canta quando fende l'aria. Portala con onore, {hero}."},
+  golem:{n:"Il cuore della caverna",desc:"Sconfiggi Kragmor, il Golem di Cristallo, nel profondo della caverna.",offer:"Ho capito perché gli animali fuggono. Kragmor, un golem di cristallo, si è risvegliato nel profondo della caverna e avvelena la terra. È un compito arduo... ma sei la nostra unica speranza.",prog:"Kragmor attende nella grande sala, all'estremità est della caverna. Attento quando alza le braccia!",done:"Kragmor è caduto! La terra respira di nuovo. La guardia Garrick ora ti aprirà il cancello nord."},
+  imps:{n:"I folletti di fuoco",desc:"Uccidi 8 folletti di fuoco nelle Rovine di Fuoco.",offer:"Da quando il cancello è aperto, i folletti di fuoco vengono di notte a bruciare i nostri fienili. Va' nelle rovine ed eliminane otto.",prog:"I folletti lanciano fuoco da lontano. Avvicinati in fretta!",done:"Nessun fienile bruciato da tre notti! Prendi questi, ti serviranno contro il drago."},
+  dragon:{n:"L'Ombra di Vorthrax",desc:"Sconfiggi Vorthrax, il Drago di Fuoco, nell'arena a nord delle rovine.",offer:"Ora conosco la verità: Vorthrax, il drago ancestrale, si è risvegliato sotto le rovine. È stato lui a risvegliare Kragmor. Finché Vorthrax vivrà, Eldoria non conoscerà pace. Va', {hero}.",prog:"L'arena di Vorthrax si trova a nord delle Rovine di Fuoco. Quando prende fiato, togliti dalla traiettoria delle fiamme!",done:"Vorthrax... sconfitto? Le campane suoneranno in tutta Eldoria! I bardi canteranno il nome di {hero} per mille anni."}}}
+};
+
+let LANG=(()=>{try{const v=localStorage.getItem('eldoria_lang');if(v&&I18N[v])return v}catch(e){}const n=(navigator.language||'en').slice(0,2).toLowerCase();return I18N[n]?n:'en'})();
+const L=()=>I18N[LANG];
+function T(k,...a){let v=L().ui[k];if(v===undefined)v=I18N.en.ui[k];if(v===undefined)return k;if(typeof v==='string')a.forEach((x,i)=>{v=v.split('{'+i+'}').join(String(x))});return v}
+const HR=t=>String(t).replace(/\{hero\}/g,P.name||'Arin');
+function langMap(m){const l=L();[m.name,m.sub]=l.map[m.id];for(const e of m.exits){e.label=l.map[e.to][0];if(e.deny)e.deny=l.ui.deny}for(const n of m.npcDefs){const v=l.npc[n.id];if(v){n.name=v[0];n.lines=v[1]}}}
+function applyLang(){const l=L();for(const id in ITEMS){const v=l.items[id];ITEMS[id].n=v[0];if(v[1])ITEMS[id].d=v[1]}for(const k in MON)MON[k].n=l.mon[k];SKILLS.forEach((x,i)=>{x.n=l.sk[i][0];x.d=l.sk[i][1]});for(const k in QUESTS)Object.assign(QUESTS[k],l.q[k]);for(const k in MAPS)langMap(MAPS[k]);if(CM){for(const n of npcs){const v=l.npc[n.id];if(v){n.name=v[0];n.lines=v[1]}}$('mapName').textContent=CM.name}document.documentElement.lang=LANG;document.title=l.title;staticUI();trackerDirty=true;if(bossM)$('bossName').textContent=bossM.d.n;if(panelType)renderPanel()}
+function staticUI(){$('lvlB').querySelector('small').textContent=T('level');const ts={inv:'invB',quests:'qB',sound:'sndB',save:'saveB',lang:'langB'};document.querySelectorAll('#topBtns button').forEach(b=>b.title=T(ts[b.dataset.a]));slotEls.forEach((el,i)=>{const x=SLOTS[i];el.title=x.type==='skill'?SKILLS[x.i].n+' — '+SKILLS[x.i].d+' ('+SKILLS[x.i].mp+' MP)':x.type==='pot'?T('potHp'):x.type==='eth'?T('potMp'):T('dodge')})}
+
+
+// ================= MAP HELPERS =================
+const G=0,PATH=1,WATER=2,TREE=3,ROCK=4,FLOOR=5,BLOCK=6,FLOWER=7,SAND=8,LAVA=9,BRIDGE=10,FENCE=11,STONE=12,DGRASS=13,CRYSTAL=14,PILLAR=15,ASH=16;
+const SOLID=new Set([WATER,TREE,ROCK,BLOCK,FENCE,CRYSTAL,PILLAR,LAVA]);
+const GRASSY=new Set([G,DGRASS,FLOWER]);
+function newMap(w,h,f){return{w,h,t:new Uint8Array(w*h).fill(f),props:[],live:[],npcDefs:[],exits:[],spawns:[],items:[],chests:[],lights:[],chestPos:[]}}
+const gt=(m,x,y)=>(x<0||y<0||x>=m.w||y>=m.h)?ROCK:m.t[y*m.w+x];
+function put(m,x,y,v){if(x<0||y<0||x>=m.w||y>=m.h)return;const i=y*m.w+x;m.t[i]=typeof v==='function'?v(m.t[i]):v}
+function rect(m,x,y,w,h,v){for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)put(m,i,j,v)}
+function disc(m,cx,cy,r,v,rg,jit){for(let j=-r-2;j<=r+2;j++)for(let i=-r-2;i<=r+2;i++){const d=Math.hypot(i,j)+(rg?(rg()-.5)*(jit||0):0);if(d<=r+.3)put(m,cx+i,cy+j,v)}}
+function line(m,pts,wd,v){for(let k=0;k<pts.length-1;k++){const a=pts[k],b=pts[k+1];const n=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])*2)||1;for(let s=0;s<=n;s++){const x=Math.round(a[0]+(b[0]-a[0])*s/n),y=Math.round(a[1]+(b[1]-a[1])*s/n);for(let j=-wd;j<=wd;j++)for(let i=-wd;i<=wd;i++)put(m,x+i,y+j,v)}}}
+function house(m,x,y,w,h,roof,sign){rect(m,x,y,w,h,BLOCK);m.props.push({k:'house',x,y,w,h,roof,sign})}
+const edge=(m,x,y)=>Math.min(x,y,m.w-1-x,m.h-1-y);
+
+// ================= MAP: SAT =================
+function genSat(){const r=mulberry(11),m=newMap(50,40,G);m.id='sat';m.name='Satul Valea Verde';m.sub='Acasă';m.amb=0;m.start=[25,22];
+ for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){const e=edge(m,x,y);if(e<2||(e<4&&r()<.55))put(m,x,y,TREE);else if(r()<.035)put(m,x,y,FLOWER);else if(r()<.1)put(m,x,y,DGRASS)}
+ rect(m,22,1,7,8,G);
+ rect(m,19,15,12,10,STONE);
+ line(m,[[30,20],[49,20]],1,PATH);line(m,[[25,15],[25,0]],1,PATH);
+ house(m,13,9,5,3,'#b0423a');line(m,[[15,12],[15,16],[19,16]],0,PATH);
+ house(m,33,10,6,3,'#55637a','⚒️');line(m,[[36,13],[36,18]],0,PATH);
+ house(m,12,24,5,3,'#4f7a3a','⚗️');line(m,[[14,27],[14,28],[25,28],[25,24]],0,PATH);
+ house(m,34,25,6,3,'#7a4a8a');line(m,[[37,28],[37,29],[25,29],[25,28]],0,PATH);
+ disc(m,8,34,3,WATER,r,1.5);
+ for(let x=40;x<=46;x++){put(m,x,31,FENCE);put(m,x,36,FENCE)}for(let y=31;y<=36;y++){put(m,40,y,FENCE);put(m,46,y,FENCE)}put(m,43,31,G);
+ for(let y=32;y<=35;y++)for(let x=41;x<=45;x++){put(m,x,y,DGRASS);if(y%2===0)m.props.push({k:'crop',x,y})}
+ rect(m,24,19,2,2,BLOCK);m.props.push({k:'fountain',x:25*TS,y:20*TS+6});m.live.push({k:'spray',x:25*TS,y:20*TS-16});
+ put(m,40,13,BLOCK);m.props.push({k:'anvil',x:40,y:13});
+ put(m,31,18,BLOCK);m.props.push({k:'sign',x:31,y:18});
+ for(let y=4;y<m.h-4;y++)for(let x=4;x<m.w-4;x++){if(x>16&&x<34&&y>12&&y<27)continue;let ok=GRASSY.has(gt(m,x,y));for(let j=-1;j<=1&&ok;j++)for(let i=-1;i<=1;i++)if(!GRASSY.has(gt(m,x+i,y+j))){ok=false;break}if(ok&&r()<.035)put(m,x,y,TREE)}
+ m.exits=[{x:49,y:17,w:1,h:7,to:'padure',tx:2,ty:25,label:'Pădurea Șoaptelor'},{x:22,y:0,w:7,h:1,to:'ruine',tx:30,ty:47,label:'Ruinele de Foc',cond:()=>S.bossDead.golem,deny:'Străjerul Radu: „Nimeni nu trece spre Ruinele de Foc până nu cade Golemul din peșteră!”'}];
+ m.npcDefs=[
+  {id:'mirel',name:'Bătrânul Mirel',tx:22,ty:18,look:{skin:'#f0c8a0',hair:'#e8e8e8',shirt:'#5b3f8c',pants:'#3f2c63',robe:1,beard:1,hat:'hood',hatCol:'#4a2f78'},lines:['Satul nostru a fost liniștit odată... până când întunericul s-a trezit sub pământ.','Bătrânii spun că un dragon doarme sub Ruinele de Foc. Sper să nu fie adevărat.']},
+  {id:'dorin',name:'Fierarul Dorin',tx:38,ty:14,shop:['sword_iron','sword_steel','sword_flame','leather','chain','plate'],look:{skin:'#d9a57a',hair:'#2b1a10',shirt:'#7a4a2a',shirt2:'#d9a57a',pants:'#3a2a1e',beard:1,beardCol:'#2b1a10',hat:'band',hatCol:'#a8302a'},lines:['Oțelul bun nu minte niciodată. Ai nevoie de o lamă nouă?','Ciocanul meu a bătut mai multe săbii decât ai văzut tu răsărituri.']},
+  {id:'ilinca',name:'Vraciul Ilinca',tx:16,ty:28,heal:1,shop:['potion_s','potion_l','ether','ring_hp','amulet_mp'],look:{skin:'#f3d2b3',hair:'#b5402e',shirt:'#2f7a5a',pants:'#1f4f3a',long:1,robe:1},lines:['Ierburile vindecă trupul. Sufletul... asta e altă poveste.','Ai grijă de tine, aventurierule. Poțiunile nu cresc în copaci. Ei bine, unele da.']},
+  {id:'nelu',name:'Micul Nelu',tx:12,ty:32,scale:.78,look:{skin:'#f6d5b8',hair:'#e0a030',shirt:'#3a7ad0',pants:'#5a4a3a'},lines:['Când o să fiu mare, o să fiu erou ca tine!','Știai că peștii din iaz vorbesc? Doar că foarte încet.']},
+  {id:'radu',name:'Străjerul Radu',tx:27,ty:5,look:{skin:'#e2b48a',hair:'#3a2a1a',shirt:'#6b7a8f',shirt2:'#8a97a8',pants:'#3a3f4a',hat:'helm'},lines:['Dincolo de poarta asta sunt Ruinele de Foc. Puțini s-au mai întors.','Stau de strajă zi și noapte. Măcar am o priveliște frumoasă.']},
+  {id:'ana',name:'Ana',tx:21,ty:22,wander:1,look:{skin:'#f3d2b3',hair:'#5a3a22',shirt:'#c0507a',pants:'#7a3050',long:1,robe:1},lines:['Ai auzit? Se zice că noaptea se vede foc deasupra munților din nord!','Fântâna din piață are apă vindecătoare. Bea, că e gratis!']},
+  {id:'toma',name:'Toma',tx:29,ty:17,wander:1,look:{skin:'#d9a57a',hair:'#8a6a3a',shirt:'#8a7a3a',pants:'#4a3a22',hat:'band',hatCol:'#c9a24a'},lines:['Recolta e slabă anul ăsta. Blestemații ăia de slimi...','Fierarul Dorin face cele mai bune săbii din tot ținutul.']},
+  {id:'mitzi',name:'Mitzi',kind:'cat',tx:13,ty:33,cond:()=>S.flags.cat},
+  {id:'fountain',name:'Fântâna vindecătoare',kind:'fountain',px:25*TS,py:20*TS+4,ir:58}
+ ];return m}
+
+// ================= MAP: PADURE =================
+function genPadure(){const r=mulberry(22),m=newMap(70,50,G);m.id='padure';m.name='Pădurea Șoaptelor';m.sub='Slimi · Lupi';m.amb=.24;m.dark='rgba(6,22,16,A)';m.plight=240;m.start=[2,25];
+ for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){const e=edge(m,x,y);if(e<2||(e<4&&r()<.6)||r()<.3)put(m,x,y,TREE);else if(r()<.17)put(m,x,y,DGRASS);else if(r()<.05)put(m,x,y,FLOWER)}
+ const cl=[[12,24,5],[22,35,5],[20,14,4],[44,20,6],[50,37,6],[58,27,5],[40,41,5],[56,10,4],[10,40,4],[27,8,4]];
+ const path=[[0,25],[8,25],[14,23],[22,28],[30,27],[38,22],[46,22],[54,18],[62,12],[69,12]];
+ for(const c of cl){disc(m,c[0],c[1],c[2],()=>r()<.2?DGRASS:(r()<.08?FLOWER:G),r,1.6);let best=path[0],bd=1e9;for(const p of path){const d=Math.hypot(p[0]-c[0],p[1]-c[1]);if(d<bd){bd=d;best=p}}line(m,[[c[0],c[1]],best],1,o=>o===TREE?G:o)}
+ line(m,path,1,PATH);
+ line(m,[[33,0],[31,10],[34,19],[33,27],[36,38],[34,49]],1,o=>o===PATH||o===BRIDGE?BRIDGE:WATER);
+ for(let y=0;y<m.h;y++)for(let x=63;x<m.w;x++)if(Math.abs(y-12)>1||x>=m.w-1&&Math.abs(y-12)>1)put(m,x,y,ROCK);
+ for(let y=0;y<m.h;y++)for(let x=60;x<63;x++)if(Math.abs(y-12)>2&&r()<.5)put(m,x,y,ROCK);
+ m.props.push({k:'cavemouth',x:67,y:11});
+ m.exits=[{x:0,y:22,w:1,h:7,to:'sat',tx:47,ty:20,label:'Satul Valea Verde'},{x:69,y:10,w:1,h:5,to:'pestera',tx:2,ty:25,label:'Peștera de Cristal'}];
+ m.spawns=[{type:'slime',n:11,area:[3,3,32,47]},{type:'slime',n:3,area:[36,3,60,47]},{type:'wolf',n:7,area:[37,3,62,47]}];
+ m.npcDefs=[
+  {id:'vasile',name:'Pădurarul Vasile',tx:21,ty:14,shop:['potion_s','potion_l','ether'],look:{skin:'#d9a57a',hair:'#6a5a4a',shirt:'#4a6a3a',pants:'#3a3022',beard:1,beardCol:'#8a7a6a',hat:'band',hatCol:'#3a5a2a'},lines:['Pădurea are ochi, străine. Lupii vânează în est, după râu.','Ciupercile lunare cresc doar unde ajunge lumina lunii prin frunze.','Vând poțiuni drumeților. Prețuri cinstite, pe cuvânt de pădurar.']},
+  {id:'mitzi_f',name:'Mitzi',kind:'cat',tx:58,ty:27,cond:()=>!S.flags.cat}];
+ m.chestPos=[[50,37,{gold:60,items:[['potion_s',2]]}],[40,41,{gold:45,items:[['leather',1]]}],[10,40,{gold:70,items:[['ether',2]]}]];
+ m.itemGen=[['mushroom',7,'m']];return m}
+
+// ================= MAP: PESTERA =================
+function genPestera(){const r=mulberry(33),m=newMap(60,50,ROCK);m.id='pestera';m.name='Peștera de Cristal';m.sub='Lilieci · Schelete · Golemul';m.amb=.9;m.dark='rgba(3,3,10,A)';m.plight=190;m.start=[2,25];
+ const main=[[0,25],[7,25],[13,31],[20,24],[27,30],[34,22],[41,27],[50,25]];line(m,main,1,FLOOR);
+ const rooms=[];for(let i=0;i<10;i++){const cx=5+((r()*42)|0),cy=5+((r()*40)|0),rad=2+((r()*3)|0);disc(m,cx,cy,rad,FLOOR,r,1.4);rooms.push([cx,cy]);const tg=main[1+((r()*(main.length-2))|0)];line(m,[[cx,cy],[(cx+tg[0])>>1,cy],tg],r()<.5?1:0,FLOOR)}
+ for(let k=0;k<6;k++){const p=main[(r()*main.length)|0];let x=p[0],y=p[1];for(let s=0;s<220;s++){const d=(r()*4)|0;x+=[1,-1,0,0][d];y+=[0,0,1,-1][d];x=Math.max(2,Math.min(m.w-3,x));y=Math.max(2,Math.min(m.h-3,y));disc(m,x,y,r()<.3?1:0,FLOOR)}}
+ disc(m,50,25,7,FLOOR,r,1);
+ for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++)if(x<1||y<1||x>m.w-2||y>m.h-2)put(m,x,y,ROCK);
+ rect(m,0,23,3,5,FLOOR);
+ const adjF=(x,y)=>[[1,0],[-1,0],[0,1],[0,-1]].some(([i,j])=>gt(m,x+i,y+j)===FLOOR);
+ for(let y=1;y<m.h-1;y++)for(let x=1;x<m.w-1;x++){const t=gt(m,x,y);if(t===ROCK&&adjF(x,y)&&r()<.075){put(m,x,y,CRYSTAL);m.lights.push({x:x*TS+16,y:y*TS+8,r:80,a:.75,c:GL_CYAN})}
+  else if(t===FLOOR&&gt(m,x,y-1)===ROCK&&r()<.03&&x>4){m.live.push({k:'torch',x:x*TS+16,y:y*TS+12});m.lights.push({x:x*TS+16,y:y*TS,r:130,fl:1,c:GL_FIRE})}}
+ for(let i=0;i<8;i++){const a=i/8*Math.PI*2,x=Math.round(50+Math.cos(a)*6),y=Math.round(25+Math.sin(a)*6);if(gt(m,x,y)===FLOOR){m.live.push({k:'torch',x:x*TS+16,y:y*TS+12});m.lights.push({x:x*TS+16,y:y*TS,r:140,fl:1,c:GL_FIRE})}}
+ m.exits=[{x:0,y:23,w:1,h:5,to:'padure',tx:66,ty:12,label:'Pădurea Șoaptelor'}];
+ m.spawns=[{type:'bat',n:9,area:[6,2,44,48]},{type:'skeleton',n:8,area:[10,2,44,48]},{type:'golem',boss:1,x:50,y:25}];
+ m.npcDefs=[{id:'gica',name:'Minerul Gică',tx:5,ty:25,shop:['potion_s','potion_l','ether'],look:{skin:'#c99a70',hair:'#3a3a3a',shirt:'#6a5a3a',pants:'#3a3022',hat:'helm',beard:1,beardCol:'#4a4a4a'},lines:['M-am rătăcit acum trei zile... sau trei săptămâni? Aici nu răsare soarele.','Golemul de Cristal păzește sala cea mare. Când ridică brațele, fugi!','Am câteva poțiuni în rucsac. Ți le dau ieftin, doar să scapi de monștri.']}];
+ m.chestPos=[[rooms[2][0],rooms[2][1],{gold:150,items:[['potion_l',2]]}],[rooms[6][0],rooms[6][1],{gold:110,items:[['chain',1]]}]];return m}
+
+// ================= MAP: RUINE =================
+function genRuine(){const r=mulberry(44),m=newMap(60,50,ASH);m.id='ruine';m.name='Ruinele de Foc';m.sub='Spiriduși · Demoni · Ignis';m.amb=.5;m.dark='rgba(26,4,2,A)';m.plight=230;m.start=[30,47];
+ for(let k=0;k<30;k++)disc(m,(r()*60)|0,(r()*50)|0,1+((r()*3)|0),SAND,r,1.5);
+ for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){const e=edge(m,x,y);if(e<2||(e<3&&r()<.5))put(m,x,y,ROCK)}
+ line(m,[[30,49],[30,42],[25,34],[29,26],[30,17],[30,9]],1,STONE);disc(m,30,9,8,STONE,r,.8);
+ const lv=o=>o===STONE||o===BRIDGE?BRIDGE:(o===ROCK?ROCK:LAVA);
+ line(m,[[0,37],[12,35],[22,38],[34,34],[46,37],[59,35]],1,lv);line(m,[[0,21],[14,19],[26,22],[38,18],[50,21],[59,20]],1,lv);
+ for(let k=0;k<8;k++){const cx=3+((r()*54)|0),cy=3+((r()*44)|0);if(Math.abs(cx-30)>6&&cy<44)disc(m,cx,cy,1+((r()*2)|0),o=>o===STONE||o===BRIDGE?o:(o===ROCK?ROCK:LAVA),r,1)}
+ const nearRoad=(x,y)=>{for(let j=-1;j<=1;j++)for(let i=-1;i<=1;i++){const t=gt(m,x+i,y+j);if(t===STONE||t===BRIDGE)return true}return false};
+ for(let y=2;y<m.h-2;y++)for(let x=2;x<m.w-2;x++){const t=gt(m,x,y);if((t===ASH||t===SAND)&&!nearRoad(x,y)&&r()<.035)put(m,x,y,PILLAR)}
+ for(let k=0;k<7;k++){const x0=4+((r()*48)|0),y0=4+((r()*40)|0),len=4+((r()*4)|0),hz=r()<.5;for(let s=0;s<len;s++){if(r()<.25)continue;const x=hz?x0+s:x0,y=hz?y0:y0+s;const t=gt(m,x,y);if((t===ASH||t===SAND)&&!nearRoad(x,y))put(m,x,y,PILLAR)}}
+ for(let i=0;i<16;i++){const a=i/16*Math.PI*2;if(Math.sin(a)>.7)continue;put(m,Math.round(30+Math.cos(a)*9.6),Math.round(9+Math.sin(a)*9.6),PILLAR)}
+ for(const [x,y] of [[26,45],[34,45],[26,13],[34,13]]){m.live.push({k:'brazier',x:x*TS+16,y:y*TS+20});m.lights.push({x:x*TS+16,y:y*TS+4,r:150,fl:1,c:GL_FIRE})}
+ m.exits=[{x:27,y:49,w:7,h:1,to:'sat',tx:25,ty:2,label:'Satul Valea Verde'}];
+ m.spawns=[{type:'imp',n:6,area:[3,23,57,46]},{type:'imp',n:4,area:[3,3,57,32]},{type:'demon',n:3,area:[3,23,57,46]},{type:'demon',n:4,area:[3,3,57,32]},{type:'dragon',boss:1,x:30,y:8}];
+ m.npcDefs=[{id:'spirit',name:'Spiritul Regelui Vlad',kind:'ghost',tx:34,ty:44,heal:1,look:{skin:'#bfe6ff',hair:'#e8f6ff',shirt:'#8fc8f0',pants:'#6aa8d8',robe:1,beard:1,beardCol:'#e8f6ff',hat:'crown'},lines:['Eu am fost regele acestor ținuturi. Ignis mi-a ars tronul și cetatea.','Lavă curge unde odinioară erau grădini. Răzbună-mi poporul, războinicule.','Vino la mine oricând. Puterea străbunilor te va vindeca.']}];
+ m.chestPos=[[10,44,{gold:300,items:[['potion_l',3]]}],[50,28,{gold:220,items:[['plate',1]]}],[8,12,{gold:350,items:[['ether',3]]}]];return m}
+
+// ================= BUILD =================
+const GEN={sat:genSat,padure:genPadure,pestera:genPestera,ruine:genRuine};const MAPS={};
+function bfs(m,sx,sy){const R=new Uint8Array(m.w*m.h),q=[sx+sy*m.w];R[q[0]]=1;for(let h=0;h<q.length;h++){const i=q[h],x=i%m.w,y=(i/m.w)|0;for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=m.w||ny>=m.h)continue;const j=nx+ny*m.w;if(!R[j]&&!SOLID.has(m.t[j])){R[j]=1;q.push(j)}}}return R}
+function nearestReach(m,x,y){if(m.reach[x+y*m.w])return[x,y];for(let rad=1;rad<20;rad++)for(let j=-rad;j<=rad;j++)for(let i=-rad;i<=rad;i++){const nx=x+i,ny=y+j;if(nx>=0&&ny>=0&&nx<m.w&&ny<m.h&&m.reach[nx+ny*m.w])return[nx,ny]}return m.start}
+function getMap(id){if(MAPS[id])return MAPS[id];const m=GEN[id]();langMap(m);m.reach=bfs(m,m.start[0],m.start[1]);
+ for(const n of m.npcDefs){if(n.px)continue;const p=nearestReach(m,n.tx,n.ty);n.tx=p[0];n.ty=p[1]}
+ m.chestPos.forEach((c,i)=>{const p=nearestReach(m,c[0],c[1]);put(m,p[0],p[1],gt(m,p[0],p[1]));m.chests.push({uid:id+'_c'+i,x:p[0]*TS+16,y:p[1]*TS+22,loot:c[2]})});
+ const r=mulberry(id.length*977);
+ for(const g of (m.itemGen||[])){let placed=0,tries=0;while(placed<g[1]&&tries++<3000){const x=(r()*m.w)|0,y=(r()*m.h)|0;if(!m.reach[x+y*m.w]||!GRASSY.has(gt(m,x,y)))continue;if(Math.hypot(x-m.start[0],y-m.start[1])<8)continue;m.items.push({uid:id+'_'+g[2]+placed,id:g[0],x,y});placed++}}
+ prerender(m);buildMini(m);MAPS[id]=m;return m}
+
+// ================= PRERENDER =================
+function groundOf(m,t){if(t===TREE||t===FENCE)return G;if(t===BLOCK)return m.id==='sat'?G:FLOOR;if(t===PILLAR)return ASH;if(t===CRYSTAL)return ROCK;return t}
+const isRocky=t=>t===ROCK||t===CRYSTAL;
+function drawGround(c,m,x,y,r){const t=gt(m,x,y),px=x*TS,py=y*TS,g=groundOf(m,t);
+ const fill=col=>{c.fillStyle=col;c.fillRect(px,py,TS,TS)};
+ const sp=(cols,n,w,h)=>{for(let i=0;i<n;i++){c.fillStyle=cols[(r()*cols.length)|0];c.fillRect(px+((r()*(TS-w))|0),py+((r()*(TS-h))|0),w,h)}};
+ switch(g){
+ case G:fill('#4f9a3f');sp(['#5cab48','#448a36','#62b54e','#3f8232'],13,1,3);break;
+ case DGRASS:fill('#478e39');sp(['#3a7a2e','#55a245','#3f8434'],10,1,4);for(let i=0;i<2;i++){const tx=px+4+r()*22,ty=py+8+r()*18;c.fillStyle='#2f6a27';c.fillRect(tx,ty,1,5);c.fillRect(tx-2,ty+1,1,4);c.fillRect(tx+2,ty+1,1,4)}break;
+ case FLOWER:fill('#4f9a3f');sp(['#5cab48','#448a36'],8,1,3);for(let i=0;i<3;i++){const fx=px+5+r()*22,fy=py+5+r()*22;c.fillStyle='#2f7a2a';c.fillRect(fx,fy+2,1,4);c.fillStyle=['#ffd84a','#ff7ab0','#ffffff','#9fc4ff','#ff6a4a'][(r()*5)|0];circ(c,fx,fy,2.3);c.fillStyle='#fff8';circ(c,fx-.7,fy-.7,.8)}break;
+ case PATH:fill('#b89660');sp(['#a6844f','#c4a26c','#9c7a48'],12,2,2);sp(['#d8c29a','#8d6e44'],3,3,2);
+  {const gr='#4f9a3f';c.fillStyle=gr;const nb=[[0,-1],[0,1],[-1,0],[1,0]];nb.forEach(([dx,dy],k)=>{if(!GRASSY.has(groundOf(m,gt(m,x+dx,y+dy))))return;for(let i=0;i<7;i++){const a=r()*TS,l=2+r()*3;if(k===0)c.fillRect(px+a,py,2,l);if(k===1)c.fillRect(px+a,py+TS-l,2,l);if(k===2)c.fillRect(px,py+a,l,2);if(k===3)c.fillRect(px+TS-l,py+a,l,2)}})}break;
+ case STONE:fill(m.id==='ruine'?'#3e3430':'#7f7a72');for(let j=0;j<2;j++)for(let i=0;i<2;i++){const v=(r()*22-11)|0;const b=m.id==='ruine'?[120,104,96]:[162,157,147];c.fillStyle=`rgb(${b[0]+v},${b[1]+v},${b[2]+v})`;rr(c,px+i*16+1,py+j*16+1,14,14,3);c.fillStyle='rgba(255,255,255,.13)';c.fillRect(px+i*16+3,py+j*16+2,9,2)}break;
+ case WATER:{fill('#2d6fb4');sp(['#3a80c4','#2a64a6'],6,6,2);const wt=(dx,dy)=>gt(m,x+dx,y+dy)===WATER||gt(m,x+dx,y+dy)===BRIDGE;const sh=m.id==='pestera'?'#4a4250':'#d9c48d';
+  if(!wt(0,-1)){c.fillStyle=sh;c.fillRect(px,py,TS,4);c.fillStyle='rgba(255,255,255,.3)';c.fillRect(px,py+4,TS,2)}if(!wt(0,1)){c.fillStyle='#1d4f86';c.fillRect(px,py+TS-3,TS,3)}if(!wt(-1,0)){c.fillStyle=sh;c.fillRect(px,py,3,TS)}if(!wt(1,0)){c.fillStyle=sh;c.fillRect(px+TS-3,py,3,TS)}break}
+ case ROCK:{const pal=m.id==='padure'?['#77736a','#5f5b54','#8e897e','#45423c']:m.id==='ruine'?['#4a3c38','#3a2e2b','#5f4c45','#261d1b']:['#3d3644','#2f2935','#4f4757','#1e1a23'];
+  fill(pal[0]);for(let i=0;i<7;i++){c.fillStyle=pal[1+((r()*2)|0)];c.fillRect(px+r()*26,py+r()*26,4+r()*7,3+r()*4)}
+  if(!isRocky(gt(m,x,y+1))){c.fillStyle=pal[3];c.fillRect(px,py+TS-13,TS,13);c.fillStyle=pal[1];for(let i=0;i<4;i++)c.fillRect(px+i*8+2+r()*3,py+TS-13,2,5+r()*8);c.fillStyle=pal[2];c.fillRect(px,py+TS-14,TS,2)}
+  if(!isRocky(gt(m,x,y-1))){c.fillStyle='rgba(255,255,255,.1)';c.fillRect(px,py,TS,3)}break}
+ case FLOOR:fill('#463f4c');sp(['#514858','#3c3542','#5a5062'],13,3,2);if(r()<.18){c.strokeStyle='#2e2833';c.lineWidth=1;c.beginPath();c.moveTo(px+r()*30,py+r()*30);c.lineTo(px+r()*30,py+r()*30);c.stroke()}if(r()<.06){c.fillStyle='#e8e4d4';c.fillRect(px+8+r()*14,py+10+r()*12,7,2)}break;
+ case SAND:fill('#cdb07a');sp(['#c2a46c','#d9c08f','#b8996a'],11,2,1);break;
+ case ASH:fill('#4a3833');sp(['#5a4540','#3d2e2a','#614a3f'],13,3,2);if(r()<.25)sp(['#c8582c','#ff8a3a'],2,1,1);break;
+ case LAVA:{fill('#d9481a');sp(['#f0702a','#ff9a3a'],6,6,4);sp(['#8a2a10'],3,4,3);const lt=(dx,dy)=>gt(m,x+dx,y+dy)===LAVA;c.fillStyle='#4a1a0e';if(!lt(0,-1))c.fillRect(px,py,TS,4);if(!lt(0,1))c.fillRect(px,py+TS-4,TS,4);if(!lt(-1,0))c.fillRect(px,py,4,TS);if(!lt(1,0))c.fillRect(px+TS-4,py,4,TS);break}
+ case BRIDGE:if(m.id==='ruine'){fill('#6e655a');for(let i=0;i<4;i++){c.fillStyle=i%2?'#7d7468':'#857b6e';c.fillRect(px,py+i*8+1,TS,6)}}else{fill('#5a3a1c');for(let i=0;i<4;i++){c.fillStyle=i%2?'#8d5c30':'#9a6838';c.fillRect(px,py+i*8+1,TS,6);c.fillStyle='#3a2410';c.fillRect(px+4+r()*20,py+i*8+3,1.5,1.5)}}break;
+ default:fill('#4f9a3f');
+ }
+ if(t===FENCE){const cx=px+16;c.fillStyle='rgba(0,0,0,.2)';c.fillRect(px,py+24,TS,4);c.fillStyle='#8b5e34';const f=(dx,dy)=>gt(m,x+dx,y+dy)===FENCE;if(f(-1,0)){c.fillRect(px,py+11,16,3);c.fillRect(px,py+19,16,3)}if(f(1,0)){c.fillRect(cx,py+11,16,3);c.fillRect(cx,py+19,16,3)}if(f(0,-1))c.fillRect(cx-1.5,py,3,16);if(f(0,1))c.fillRect(cx-1.5,py+16,3,16);c.fillStyle='#6e4626';rr(c,cx-3,py+6,6,20,2);c.fillStyle='#a87a4a';c.fillRect(cx-3,py+6,6,2)}
+}
+function drawTree(c,px,py,r,pine){const cx=px+16+(r()*4-2);c.fillStyle='rgba(0,0,0,.28)';ell(c,cx+2,py+27,15,5);c.fillStyle='#5e3d22';rr(c,cx-4,py+8,8,21,2);c.fillStyle='#7a5230';c.fillRect(cx-3,py+10,2,17);
+ if(pine){for(const[col,yy,w]of[['#1d5530',py+16,17],['#28683a',py+4,14],['#34804a',py-8,10]]){c.fillStyle=col;c.beginPath();c.moveTo(cx-w,yy+8);c.lineTo(cx,yy-15);c.lineTo(cx+w,yy+8);c.closePath();c.fill()}c.fillStyle='rgba(255,255,255,.1)';c.beginPath();c.moveTo(cx,py-23);c.lineTo(cx-5,py-10);c.lineTo(cx,py-12);c.fill()}
+ else{c.fillStyle='#285f29';circ(c,cx,py+2,16);circ(c,cx-9,py+7,10);circ(c,cx+9,py+7,10);c.fillStyle='#378436';circ(c,cx-4,py-3,11);circ(c,cx+6,py,10);c.fillStyle='#52a446';circ(c,cx-6,py-7,6);circ(c,cx+5,py-5,4);c.fillStyle='rgba(255,255,255,.16)';circ(c,cx-7,py-9,2.5);if(r()<.22){c.fillStyle='#d8382a';for(let i=0;i<3;i++)circ(c,cx-9+r()*18,py-4+r()*12,1.8)}}}
+function drawPillar(c,px,py,r){const cx=px+16,broken=r()<.45,top=broken?py-4-r()*12:py-28;c.fillStyle='rgba(0,0,0,.35)';ell(c,cx+4,py+28,15,5);c.fillStyle='#5e564d';c.fillRect(px+4,py+21,24,9);c.fillStyle='#968c80';c.fillRect(cx-8,top,16,py+22-top);c.fillStyle='#766d62';c.fillRect(cx+3,top,5,py+22-top);c.fillStyle='#b3a99b';c.fillRect(cx-8,top,3,py+22-top);c.fillStyle='#857b6f';for(let i=0;i<3;i++)c.fillRect(cx-4+i*3.5,top+3,1,py+18-top);
+ if(!broken){c.fillStyle='#8c8378';c.fillRect(px+5,top-6,22,7);c.fillStyle='#a89e90';c.fillRect(px+5,top-6,22,2)}else{c.fillStyle='#968c80';c.beginPath();c.moveTo(cx-8,top);c.lineTo(cx-4,top-5);c.lineTo(cx,top-1);c.lineTo(cx+4,top-7);c.lineTo(cx+8,top);c.fill();c.fillStyle='#5e564d';c.fillRect(px+2+r()*6,py+24,5,4)}}
+function drawCrystal(c,px,py,r){const n=2+((r()*3)|0);for(let i=0;i<n;i++){const x=px+7+r()*18,h=12+r()*22,w=4+r()*5;const g=c.createLinearGradient(x-w,0,x+w,0);g.addColorStop(0,'#1e90c8');g.addColorStop(.5,'#c0f6ff');g.addColorStop(1,'#38b8e6');c.fillStyle=g;c.beginPath();c.moveTo(x-w,py+28);c.lineTo(x-w*.6,py+28-h);c.lineTo(x,py+22-h);c.lineTo(x+w*.6,py+28-h);c.lineTo(x+w,py+28);c.closePath();c.fill()}}
+function drawHouse(c,p){const x=p.x*TS,y=p.y*TS,w=p.w*TS,h=p.h*TS;c.fillStyle='rgba(0,0,0,.3)';c.fillRect(x+8,y+h-4,w,10);
+ c.fillStyle='#e8d6b2';c.fillRect(x,y,w,h);c.fillStyle='#d6c29c';for(let i=0;i<w;i+=7)c.fillRect(x+i,y+20+((i*13)%40),3,2);
+ c.fillStyle='#8f877a';c.fillRect(x,y+h-11,w,11);c.fillStyle='#a8a090';for(let i=0;i<w;i+=10)c.fillRect(x+i+1,y+h-10,8,4);
+ c.fillStyle='#6b4a2e';for(let i=0;i<=p.w;i++)c.fillRect(x+i*TS-(i===p.w?4:0),y+10,4,h-21);c.fillRect(x,y+12,w,4);c.fillRect(x,y+h-15,w,4);
+ const dc=Math.floor(p.w/2),dx=x+dc*TS;c.fillStyle='#3a2410';rr(c,dx+4,y+h-38,24,38,[10,10,0,0]);c.fillStyle='#8a5a2e';rr(c,dx+6,y+h-36,20,36,[9,9,0,0]);c.fillStyle='#6e4626';c.fillRect(dx+15,y+h-34,2,34);c.fillStyle='#e8c55a';circ(c,dx+21,y+h-18,1.8);
+ for(let i=0;i<p.w;i++){if(i===dc)continue;const wx=x+i*TS+7,wy=y+h-56;c.fillStyle='#4a2e16';c.fillRect(wx-2,wy-2,22,20);const gg=c.createLinearGradient(0,wy,0,wy+16);gg.addColorStop(0,'#fff3c0');gg.addColorStop(1,'#e8b860');c.fillStyle=gg;c.fillRect(wx,wy,18,16);c.fillStyle='#4a2e16';c.fillRect(wx+8,wy,2,16);c.fillRect(wx,wy+7,18,2);c.fillStyle='#7a4a22';c.fillRect(wx-3,wy+17,24,4);c.fillStyle=['#ff6a8a','#ffd84a','#c070ff'][i%3];for(let k=0;k<4;k++)circ(c,wx+1+k*5.5,wy+16,2.2)}
+ if(p.sign){c.fillStyle='#5a3a1e';c.fillRect(x+w-14,y+h-70,2,12);rr(c,x+w-26,y+h-60,26,22,3);c.font='15px serif';c.textAlign='center';c.textBaseline='middle';c.fillText(p.sign,x+w-13,y+h-48)}
+ const ry=y-32;c.fillStyle=shade(p.roof,-40);c.beginPath();c.moveTo(x-10,y+18);c.lineTo(x+4,ry-2);c.lineTo(x+w-4,ry-2);c.lineTo(x+w+10,y+18);c.closePath();c.fill();
+ c.fillStyle=p.roof;c.beginPath();c.moveTo(x-8,y+15);c.lineTo(x+6,ry);c.lineTo(x+w-6,ry);c.lineTo(x+w+8,y+15);c.closePath();c.fill();
+ for(let yy=ry+6,k=0;yy<y+15;yy+=7,k++){const f=(yy-ry)/(y+15-ry);const lx0=x+6-14*f,lx1=x+w-6+14*f;c.fillStyle=shade(p.roof,-22);c.fillRect(lx0,yy,lx1-lx0,1.5);c.fillStyle=shade(p.roof,-14);for(let s=lx0+(k%2)*6;s<lx1;s+=12)c.fillRect(s,yy-5,1.5,5)}
+ c.fillStyle=shade(p.roof,35);c.fillRect(x+6,ry,w-12,4);c.fillStyle='rgba(0,0,0,.28)';c.fillRect(x-8,y+15,w+16,3);
+ c.fillStyle='#7d5b4a';c.fillRect(x+w-34,ry-16,12,20);c.fillStyle='#5a3e30';c.fillRect(x+w-36,ry-18,16,4)}
+function drawProp(c,p){if(p.k==='fountain'){const x=p.x,y=p.y;c.fillStyle='rgba(0,0,0,.25)';ell(c,x+3,y+8,32,15);c.fillStyle='#8c877d';ell(c,x,y+2,31,20);c.fillStyle='#b8b2a6';ell(c,x,y-2,31,19);c.fillStyle='#3a86c8';ell(c,x,y-2,25,14);c.fillStyle='#6aaee4';ell(c,x-7,y-6,10,4);c.fillStyle='#a8a296';rr(c,x-5,y-24,10,22,2);c.fillStyle='#c9c3b6';ell(c,x,y-24,10,4);c.fillStyle='#3a86c8';ell(c,x,y-25,6,2)}
+ else if(p.k==='anvil'){const x=p.x*TS+16,y=p.y*TS+24;c.fillStyle='rgba(0,0,0,.3)';ell(c,x,y+2,14,4);c.fillStyle='#6b4a2e';c.fillRect(x-7,y-10,14,12);c.fillStyle='#4a4f58';c.beginPath();c.moveTo(x-14,y-18);c.lineTo(x+10,y-18);c.lineTo(x+16,y-14);c.lineTo(x+8,y-12);c.lineTo(x-10,y-12);c.closePath();c.fill();c.fillStyle='#7a828e';c.fillRect(x-14,y-18,24,2)}
+ else if(p.k==='sign'){const x=p.x*TS+16,y=p.y*TS+28;c.fillStyle='rgba(0,0,0,.3)';ell(c,x,y,10,3);c.fillStyle='#5a3a1e';c.fillRect(x-2,y-24,4,24);c.fillStyle='#8a5a2e';rr(c,x-14,y-30,28,13,2);c.fillStyle='#3a2410';c.font='bold 8px sans-serif';c.textAlign='center';c.textBaseline='middle';c.font='bold 11px sans-serif';c.fillText('→',x,y-23.5)}
+ else if(p.k==='crop'){const x=p.x*TS,y=p.y*TS;for(let i=0;i<3;i++){const cx=x+6+i*10;c.fillStyle='#2f6a27';c.fillRect(cx,y+12,2,14);c.fillStyle='#5cb84a';ell(c,cx-3,y+16,4,2);ell(c,cx+5,y+20,4,2);c.fillStyle='#ff8a2a';ell(c,cx+1,y+26,4,3)}}
+ else if(p.k==='cavemouth'){const x=p.x*TS,y=p.y*TS;const g=c.createLinearGradient(x,0,x+3*TS,0);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.95)');c.fillStyle=g;c.fillRect(x,y-4,3*TS,3*TS+8)}}
+function prerender(m){const g=document.createElement('canvas');g.width=m.w*TS;g.height=m.h*TS;const c=g.getContext('2d');const top=document.createElement('canvas');top.width=g.width;top.height=g.height;const tc=top.getContext('2d');const r=mulberry(m.id.length*131+7);
+ for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++)drawGround(c,m,x,y,r);
+ for(const p of m.props)if(p.k!=='house')drawProp(c,p);
+ const tall=[];for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){const t=gt(m,x,y),px=x*TS,py=y*TS,seed=x*7919+y*131;
+  if(t===TREE){const pine=m.id==='padure'&&mulberry(seed+3)()<.4;tall.push({y:py,f:cc=>drawTree(cc,px,py,mulberry(seed),pine)})}
+  else if(t===PILLAR)tall.push({y:py,f:cc=>drawPillar(cc,px,py,mulberry(seed))});
+  else if(t===CRYSTAL)tall.push({y:py,f:cc=>drawCrystal(cc,px,py,mulberry(seed))})}
+ for(const p of m.props)if(p.k==='house')tall.push({y:p.y*TS,f:cc=>drawHouse(cc,p)});
+ tall.sort((a,b)=>a.y-b.y);
+ for(const o of tall){o.f(c);tc.save();tc.beginPath();tc.rect(0,0,top.width,o.y);tc.clip();o.f(tc);tc.restore()}
+ m.gC=g;m.tC=top;
+ m.lava=[];m.water=[];for(let y=0;y<m.h;y++)for(let x=0;x<m.w;x++){const t=gt(m,x,y);if(t===LAVA)m.lava.push([x,y]);if(t===WATER)m.water.push([x,y])}}
+const MMC={[G]:'#4f9a3f',[DGRASS]:'#468c38',[FLOWER]:'#5aa648',[PATH]:'#c8a670',[WATER]:'#2f72b8',[TREE]:'#22501f',[ROCK]:'#2a2530',[FLOOR]:'#7a7080',[BLOCK]:'#c46a3a',[SAND]:'#d6bd86',[LAVA]:'#ff6a20',[BRIDGE]:'#9a6a3e',[FENCE]:'#8b5e34',[STONE]:'#b1aca2',[CRYSTAL]:'#5fd8ff',[PILLAR]:'#9c9388',[ASH]:'#5b4944'};
+function buildMini(m){const c=document.createElement('canvas');c.width=m.w;c.height=m.h;const x=c.getContext('2d');for(let j=0;j<m.h;j++)for(let i=0;i<m.w;i++){x.fillStyle=MMC[gt(m,i,j)]||'#000';x.fillRect(i,j,1,1)}m.mini=c}
+
+// ================= STATE =================
+const SK='eldoria_save_v1';
+let S={map:'sat',quests:{},flags:{},picked:{},bossDead:{}};
+const P={name:'Arin',x:0,y:0,r:11,dir:'down',walk:0,moving:false,lvl:1,xp:0,gold:30,hp:120,mp:48,inv:[],eq:{weapon:'sword_wood',armor:'tunic',acc:null},atkCd:0,swing:0,swingAng:0,cds:[0,0,0,0],inv_t:0,dashT:0,dashCd:0,dx:0,dy:1,faceT:0,potCd:0,combatT:0,whirlT:0};
+let ST=null;
+function stats(){const s={atk:4+P.lvl*2,def:1+P.lvl,mhp:100+P.lvl*20,mmp:40+P.lvl*8,crit:.08};for(const id of[P.eq.weapon,P.eq.armor,P.eq.acc]){if(!id)continue;const i=ITEMS[id];s.atk+=i.atk||0;s.def+=i.def||0;s.mhp+=i.hp||0;s.mmp+=i.mp||0;s.crit+=i.crit||0}return s}
+let CM=null,mons=[],projs=[],parts=[],texts=[],tels=[],drops=[],npcs=[],rq=[],flashes=[];
+let camX=0,camY=0,shakeT=0,shakeM=0,gT=0,mode='title',bossM=null,exitCd=0,denyT=0,autosaveT=0,pendingVictory=false;
+const keys={};let mx=0,my=0,lastMouse=-1e9,mouseDown=false,joyV={x:0,y:0},touchAtk=false;
+
+// ================= UTIL =================
+function toast(t){const d=document.createElement('div');d.className='toast';d.textContent=t;$('toasts').appendChild(d);setTimeout(()=>{d.style.transition='opacity .4s';d.style.opacity='0'},2600);setTimeout(()=>d.remove(),3100);while($('toasts').children.length>4)$('toasts').firstChild.remove()}
+let bannerTO=0;function banner(t,s){const b=$('banner');b.innerHTML='';b.append(t);if(s){const sm=document.createElement('small');sm.textContent=s;b.append(sm)}b.classList.add('show');clearTimeout(bannerTO);bannerTO=setTimeout(()=>b.classList.remove('show'),2200)}
+function ftext(x,y,t,c,s){texts.push({x,y,t,c,s:s||14,life:1.1,max:1.1})}
+function burst(x,y,n,cols,spd,life,g,sz){for(let i=0;i<n;i++){const a=Math.random()*7,v=rnd(spd*.3,spd);parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-(g?v*.5:0),life:rnd(life*.5,life),max:life,c:pick(cols),s:sz||rnd(2,4),g:g||0})}}
+function shake(t,m){shakeT=Math.max(shakeT,t);shakeM=Math.max(shakeM,m)}
+const solidAt=(px,py)=>SOLID.has(gt(CM,Math.floor(px/TS),Math.floor(py/TS)));
+function blocked(x,y,r){const h=r*.55;for(const ox of[-r,0,r])for(const oy of[-h,h*.5])if(solidAt(x+ox,y+oy))return true;return false}
+function moveE(e,dx,dy,r){let hit=false;if(dx){if(!blocked(e.x+dx,e.y,r))e.x+=dx;else hit=true}if(dy){if(!blocked(e.x,e.y+dy,r))e.y+=dy;else hit=true}return hit}
+const dirOf=(dx,dy)=>Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');
+const dirAng=d=>({right:0,down:Math.PI/2,left:Math.PI,up:-Math.PI/2})[d];
+function itemCount(id){const s=P.inv.find(i=>i.id===id);return s?s.n:0}
+function addItem(id,n){n=n||1;const s=P.inv.find(i=>i.id===id);if(s)s.n+=n;else P.inv.push({id,n});questRefresh()}
+function removeItem(id,n){const s=P.inv.find(i=>i.id===id);if(!s)return;s.n-=n;if(s.n<=0)P.inv.splice(P.inv.indexOf(s),1);questRefresh()}
+function nearestMon(range){let b=null,bd=range;for(const m of mons){const d=dist(m,P);if(d<bd){bd=d;b=m}}return b}
+function mouseAim(){return!TOUCH&&performance.now()-lastMouse<2500}
+function aimAngle(range){if(mouseAim()){const wx=camX+mx/ZOOM,wy=camY+my/ZOOM;return Math.atan2(wy-(P.y-14),wx-P.x)}const t=nearestMon(range);if(t)return Math.atan2(t.y-P.y,t.x-P.x);return dirAng(P.dir)}
+function faceAng(a){P.dir=dirOf(Math.cos(a),Math.sin(a));P.faceT=.3}
+
+// ================= MAP LOAD =================
+function loadMap(id,px,py){S.map=id;CM=getMap(id);P.x=px;P.y=py;mons=[];projs=[];tels=[];parts=[];texts=[];drops=[];rq=[];flashes=[];bossM=null;$('bossBar').classList.add('hide');
+ for(const sp of CM.spawns){if(sp.boss){if(!S.bossDead[sp.type])spawnMon(sp.type,sp.x*TS+16,sp.y*TS+16,sp)}else for(let i=0;i<sp.n;i++)spawnRandom(sp)}
+ for(const it of CM.items)if(!S.picked[it.uid])drops.push({x:it.x*TS+16,y:it.y*TS+20,id:it.id,n:1,uid:it.uid,t:Math.random()*6,glow:1});
+ refreshNPCs();$('mapName').textContent=CM.name;banner(CM.name,CM.sub);exitCd=.6;snapCam();musIdx=4}
+function refreshNPCs(){npcs=CM.npcDefs.filter(n=>!n.cond||n.cond()).map(n=>({...n,x:n.px!==undefined?n.px:n.tx*TS+16,y:n.py!==undefined?n.py:n.tx!==undefined?n.ty*TS+20:0,hx:0,hy:0,dir:'down',walk:0,moving:false,wt:rnd(1,3),wx:0,wy:0}));for(const n of npcs){n.hx=n.x;n.hy=n.y}}
+function spawnRandom(sp){const a=sp.area;for(let k=0;k<300;k++){const x=a[0]+((Math.random()*(a[2]-a[0]))|0),y=a[1]+((Math.random()*(a[3]-a[1]))|0);if(!CM.reach[x+y*CM.w])continue;const px=x*TS+16,py=y*TS+16;if(Math.hypot(px-P.x,py-P.y)<TS*9)continue;if(CM.exits.some(e=>Math.hypot(x-(e.x+e.w/2),y-(e.y+e.h/2))<6))continue;if(blocked(px,py,MON[sp.type].r*.7))continue;return spawnMon(sp.type,px,py,sp)}}
+function spawnMon(type,x,y,sp){const d=MON[type];const m={type,d,x,y,hx:x,hy:y,hp:d.hp,max:d.hp,r:d.r,cd:1,t:Math.random()*2,vx:0,vy:0,fx:1,walk:0,moving:false,flash:0,kx:0,ky:0,aggro:false,seed:Math.random()*10,sp,hopT:0,a1:2.5,a2:3,a3:5,wt:0,wx:0,wy:0,busy:0,slamT:0};mons.push(m);return m}
+function snapCam(){const vw=W/ZOOM,vh=H/ZOOM,mw=CM.w*TS,mh=CM.h*TS;camX=mw<vw?(mw-vw)/2:Math.max(0,Math.min(mw-vw,P.x-vw/2));camY=mh<vh?(mh-vh)/2:Math.max(0,Math.min(mh-vh,P.y-20-vh/2))}
+function goExit(e){mode='fade';$('fade').style.opacity='1';setTimeout(()=>{loadMap(e.to,e.tx*TS+16,e.ty*TS+16);save(true);$('fade').style.opacity='0';setTimeout(()=>{if(mode==='fade')mode='play'},250)},320)}
+
+// ================= QUESTS =================
+const qState=id=>S.quests[id]?S.quests[id].st:null;
+const qAvail=id=>{const q=QUESTS[id];return!S.quests[id]&&(!q.req||qState(q.req)==='done')};
+function npcQuest(nid){const L=Object.keys(QUESTS).filter(k=>QUESTS[k].giver===nid);for(const k of L)if(qState(k)==='ready')return[k,'ready'];for(const k of L)if(qAvail(k))return[k,'avail'];for(const k of L)if(qState(k)==='active')return[k,'active'];return null}
+function questRefresh(){for(const k in S.quests){const q=QUESTS[k],s=S.quests[k];if(s.st==='done')continue;const was=s.st;if(q.type==='collect'){s.n=Math.min(q.need,itemCount(q.target));s.st=s.n>=q.need?'ready':'active'}else if(q.type==='find'){s.n=S.flags[q.target]?1:0;s.st=s.n?'ready':'active'}else s.st=s.n>=q.need?'ready':'active';if(was==='active'&&s.st==='ready'){const g=npcName(q.giver);toast(T('qReady',q.n,g));SFX.quest()}}trackerDirty=true}
+function npcName(id){const v=L().npc[id];return v?v[0]:id}
+function acceptQuest(id){S.quests[id]={st:'active',n:0};questRefresh();toast(T('qNew',QUESTS[id].n));SFX.quest();save(true)}
+function questKill(type){for(const k in S.quests){const q=QUESTS[k],s=S.quests[k];if(s.st==='active'&&q.type==='kill'&&q.target===type)s.n++}questRefresh()}
+function completeQuest(id){const q=QUESTS[id],s=S.quests[id];if(q.type==='collect')removeItem(q.target,q.need);s.st='done';P.gold+=q.gold;for(const[it,n]of q.items)addItem(it,n);gainXP(q.xp);SFX.quest();toast(T('qDone',q.n));if(id==='dragon')pendingVictory=true;trackerDirty=true;save(true)}
+function rewardText(q){const p=[];if(q.xp)p.push(q.xp+' XP');if(q.gold)p.push(q.gold+' '+T('gold'));for(const[it,n]of q.items)p.push((n>1?n+'× ':'')+ITEMS[it].ic+' '+ITEMS[it].n);return p.length?'\n\n'+T('reward')+': '+p.join(', '):''}
+
+// ================= PLAYER ACTIONS =================
+function gainXP(x){P.xp+=x;ftext(P.x,P.y-58,'+'+x+' XP','#9fd0ff',13);while(P.xp>=need(P.lvl)){P.xp-=need(P.lvl);P.lvl++;ST=stats();P.hp=ST.mhp;P.mp=ST.mmp;SFX.lvl();banner(T('lvl',P.lvl),T('lvlSub'));burst(P.x,P.y-20,40,['#ffe48a','#fff','#ffd040'],160,1.2,0,3);flashes.push({x:P.x,y:P.y-20,r:220,t:.6,max:.6,c:GL_GOLD});const sk=SKILLS.find(s=>s.lvl===P.lvl);if(sk)toast(T('newSk',`${sk.ic} ${sk.n} [${sk.k}]`))}}
+function attack(){if(P.atkCd>0||P.dashT>0)return;const a=aimAngle(90);P.atkCd=.36;P.swing=.22;P.swingAng=a;faceAng(a);SFX.swing();let hit=0;for(const m of mons){const d=dist(m,P);if(d>m.r+58)continue;const am=Math.atan2(m.y-P.y,m.x-P.x);if(d>m.r+14&&angDiff(am,a)>1.05)continue;hurtMon(m,ST.atk,am,170);hit++}if(hit)P.combatT=4}
+function useSkill(i){if(mode!=='play')return;const s=SKILLS[i];if(P.lvl<s.lvl){toast(T('skLock',s.ic+' '+s.n,s.lvl));SFX.err();return}if(P.cds[i]>0)return;if(P.mp<s.mp){toast(T('noMana'));SFX.err();return}P.mp-=s.mp;P.cds[i]=s.cd;P.combatT=4;
+ if(i===0){const a=aimAngle(360);faceAng(a);shoot(P,a,'pfire',400,ST.atk*1.7,{r:8,aoe:44,life:1.4});SFX.fire()}
+ else if(i===1){const h=Math.round(ST.mhp*.35+P.lvl*5);P.hp=Math.min(ST.mhp,P.hp+h);ftext(P.x,P.y-50,'+'+h,'#7dff8a',17);for(let k=0;k<26;k++){const a=k/26*Math.PI*2;parts.push({x:P.x+Math.cos(a)*22,y:P.y-6+Math.sin(a)*8,vx:0,vy:-rnd(30,80),life:rnd(.6,1),max:1,c:pick(['#9dff9d','#ffffff','#d4ffb0']),s:3,g:0})}flashes.push({x:P.x,y:P.y-20,r:160,t:.5,max:.5,c:GL_GOLD});SFX.heal()}
+ else if(i===2){P.whirlT=.45;SFX.swing();setTimeout(()=>SFX.swing(),120);for(const m of mons){const d=dist(m,P);if(d<m.r+80){const am=Math.atan2(m.y-P.y,m.x-P.x);hurtMon(m,ST.atk*1.5,am,280)}}for(let k=0;k<30;k++){const a=k/30*Math.PI*2;parts.push({x:P.x+Math.cos(a)*30,y:P.y-12+Math.sin(a)*20,vx:Math.cos(a)*160,vy:Math.sin(a)*100,life:.4,max:.4,c:pick(['#ffffff','#cfe6ff','#9fd0ff']),s:3,g:0})}}
+ else if(i===3){let tx,ty;if(mouseAim()){tx=camX+mx/ZOOM;ty=camY+my/ZOOM}else{const t=nearestMon(380);if(t){tx=t.x;ty=t.y}else{const a=dirAng(P.dir);tx=P.x+Math.cos(a)*140;ty=P.y+Math.sin(a)*140}}faceAng(Math.atan2(ty-P.y,tx-P.x));tels.push({x:tx,y:ty,r:96,t:.7,max:.7,dmg:ST.atk*3.4,kind:'circle',from:'p'});SFX.fire()}}
+function usePotion(){if(P.potCd>0)return;const miss=ST.mhp-P.hp;if(miss<=0){toast(T('fullHp'));return}let id=null;if(itemCount('potion_l')&&(miss>=150||!itemCount('potion_s')))id='potion_l';else if(itemCount('potion_s'))id='potion_s';if(!id){toast(T('noPot'));SFX.err();return}useItem(id);P.potCd=.8}
+function useEther(){if(P.potCd>0)return;if(!itemCount('ether')){toast(T('noEther'));SFX.err();return}useItem('ether');P.potCd=.8}
+function useItem(id){const it=ITEMS[id];if(it.t==='use'){if(it.heal){const h=Math.min(it.heal,ST.mhp-P.hp);P.hp+=h;ftext(P.x,P.y-50,'+'+h,'#7dff8a',16)}if(it.mana){const h=Math.min(it.mana,ST.mmp-P.mp);P.mp+=h;ftext(P.x,P.y-50,'+'+h+' MP','#8fd2ff',15)}removeItem(id,1);SFX.heal();burst(P.x,P.y-20,12,it.heal?['#9dff9d','#fff']:['#8fd2ff','#fff'],60,.7)}else if(['weapon','armor','acc'].includes(it.t))equip(id)}
+function equip(id){const it=ITEMS[id],slot=it.t;const old=P.eq[slot];removeItem(id,1);P.eq[slot]=id;if(old)addItem(old,1);ST=stats();P.hp=Math.min(P.hp,ST.mhp);P.mp=Math.min(P.mp,ST.mmp);SFX.pick();toast(T('equipped',it.ic+' '+it.n))}
+function unequip(slot){const id=P.eq[slot];if(!id)return;if(slot==='weapon'){toast(T('noWeapon'));return}P.eq[slot]=null;addItem(id,1);ST=stats();P.hp=Math.min(P.hp,ST.mhp);P.mp=Math.min(P.mp,ST.mmp)}
+function dash(){if(P.dashCd>0||mode!=='play')return;let dx=P.dx,dy=P.dy;const l=Math.hypot(dx,dy)||1;P.ddx=dx/l;P.ddy=dy/l;P.dashT=.17;P.dashCd=.9;SFX.dash();burst(P.x,P.y-8,10,['#ffffff','#cfd8ff'],60,.4)}
+function shoot(src,a,kind,spd,dmg,o){o=o||{};const off=(src.r||10)*.8;projs.push({x:src.x+Math.cos(a)*off,y:src.y+Math.sin(a)*off,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,kind,dmg,from:src===P?'p':'e',r:o.r||7,life:o.life||2.4,aoe:o.aoe||0,h:kind==='rock'?22:18,rot:0})}
+function hurtMon(m,base,ang,kb){if(m.hp<=0)return;const crit=Math.random()<ST.crit;let dmg=Math.max(1,Math.round(base*(.85+Math.random()*.3)-m.d.def*.5));if(crit)dmg=Math.round(dmg*1.8);m.hp-=dmg;m.flash=.12;m.aggro=true;if(m.d.boss)showBoss(m);
+ if(!m.d.boss&&ang!==undefined){m.kx=Math.cos(ang)*kb;m.ky=Math.sin(ang)*kb}
+ ftext(m.x+rnd(-6,6),m.y-m.r*2-8,dmg+(crit?'!':''),crit?'#ffd84a':'#ffffff',crit?20:15);
+ const cols=m.type==='slime'?['#7fe87f','#3fb04f']:m.type==='skeleton'?['#f0ead8','#c8c0a8']:m.type==='golem'?['#8ff0ff','#6c7488']:m.type==='bat'?['#a070c0','#ff5050']:['#ff5050','#b02020','#ff9a5a'];
+ burst(m.x,m.y-m.r,7,cols,120,.5,300);SFX.hit();if(m.hp<=0)killMon(m)}
+function killMon(m){m.dead=true;const d=m.d;gainXP(d.xp);const g=rint(d.gold[0],d.gold[1]);const piles=d.boss?8:1;for(let i=0;i<piles;i++)drops.push({x:m.x+rnd(-20,20)*(d.boss?2:.4),y:m.y+rnd(-12,12)*(d.boss?2:.4),gold:Math.ceil(g/piles),t:0});
+ const dropI=id=>drops.push({x:m.x+rnd(-14,14),y:m.y+rnd(-10,10),id,n:1,t:Math.random()*6});
+ if(Math.random()<.1)dropI('potion_s');if(Math.random()<.045)dropI('ether');
+ for(const[id,ch]of(d.loot||[]))if(Math.random()<ch)dropI(id);
+ if(d.drop&&qState('crystal')!=='done'&&Math.random()<d.drop[1])dropI(d.drop[0]);
+ burst(m.x,m.y-m.r,d.boss?80:18,m.type==='slime'?['#7fe87f','#bfffbf']:['#ffffff','#cccccc','#ffd770'],d.boss?260:140,d.boss?1.4:.7,200);
+ questKill(m.type);
+ if(d.boss){S.bossDead[m.type]=1;$('bossBar').classList.add('hide');bossM=null;shake(.8,12);SFX.boom();banner(T('defeated',d.n),'');for(let i=0;i<4;i++)dropI(i%2?'potion_l':'ether');save(true)}
+ else if(m.sp)rq.push({sp:m.sp,t:rnd(18,30)})}
+function hurtPlayer(base){if(P.inv_t>0||P.hp<=0||P.dashT>0||mode!=='play')return;const dmg=Math.max(1,Math.round(base*(.85+Math.random()*.3)-ST.def*.6));P.hp-=dmg;P.inv_t=.45;P.combatT=5;ftext(P.x,P.y-46,'-'+dmg,'#ff5a5a',17);shake(.15,4);SFX.hurt();burst(P.x,P.y-16,8,['#ff4040','#a01010'],100,.5,300);if(P.hp<=0){P.hp=0;die()}}
+function die(){mode='dead';SFX.die();showOverlay('dead')}
+function respawn(){ST=stats();P.hp=ST.mhp;P.mp=ST.mmp;const lost=Math.floor(P.gold*.25);P.gold-=lost;P.inv_t=1.5;loadMap('sat',25*TS+16,22*TS+16);mode='play';hideOverlay();if(lost)toast(T('lostGold',lost));save(true)}
+function showBoss(m){bossM=m;$('bossBar').classList.remove('hide');$('bossName').textContent=m.d.n}
+function openChest(ch){S.picked[ch.uid]=1;SFX.chest();burst(ch.x,ch.y-14,24,['#ffd770','#fff','#ffb030'],140,.8,200);flashes.push({x:ch.x,y:ch.y-10,r:120,t:.5,max:.5,c:GL_GOLD});const L=ch.loot;for(let i=0;i<4;i++)drops.push({x:ch.x+rnd(-24,24),y:ch.y+rnd(8,22),gold:Math.ceil(L.gold/4),t:0});for(const[id,n]of L.items)for(let i=0;i<n;i++)drops.push({x:ch.x+rnd(-20,20),y:ch.y+rnd(10,24),id,n:1,t:Math.random()*6});save(true)}
+
+// ================= MONSTER AI =================
+function wander(m,dt){m.wt-=dt;if(m.wt<=0){m.wt=rnd(1.2,3.5);if(Math.random()<.45){m.wx=m.wy=0}else{let a=Math.random()*7;if(Math.hypot(m.x-m.hx,m.y-m.hy)>130)a=Math.atan2(m.hy-m.y,m.hx-m.x);m.wx=Math.cos(a)*m.d.spd*.4;m.wy=Math.sin(a)*m.d.spd*.4}}return[m.wx,m.wy]}
+function updateMon(m,dt){const d=m.d;m.flash=Math.max(0,m.flash-dt);m.cd-=dt;m.atkA=Math.max(0,(m.atkA||0)-dt);
+ if(Math.abs(m.kx)+Math.abs(m.ky)>4){moveE(m,m.kx*dt,m.ky*dt,m.r*.7);const f=Math.pow(.002,dt);m.kx*=f;m.ky*=f}else m.kx=m.ky=0;
+ const dx=P.x-m.x,dy=P.y-m.y,dd=Math.hypot(dx,dy);
+ if(!m.aggro&&dd<d.aggro&&P.hp>0){m.aggro=true;if(d.boss){showBoss(m);if(m.type==='dragon')SFX.thunder()}}
+ if(m.aggro&&dd>d.aggro*2.2){m.aggro=false}
+ let mv=[0,0];const reach=m.r+P.r+6,a=Math.atan2(dy,dx);
+ switch(d.ai){
+ case 'hop':m.t-=dt;if(m.hopT>0){m.hopT-=dt;mv=[m.vx,m.vy]}else if(m.t<=0){m.t=rnd(.5,1.1);if(!m.aggro&&Math.random()<.4){m.t=1.6;break}let aa=m.aggro?a+rnd(-.3,.3):Math.random()*7;if(!m.aggro&&Math.hypot(m.x-m.hx,m.y-m.hy)>120)aa=Math.atan2(m.hy-m.y,m.hx-m.x);m.vx=Math.cos(aa)*d.spd*2.4;m.vy=Math.sin(aa)*d.spd*2.4;m.hopT=.35}break;
+ case 'chase':case 'erratic':if(m.aggro){if(dd>reach-3){let aa=a;if(d.ai==='erratic')aa+=Math.sin(gT*4+m.seed)*1.1;mv=[Math.cos(aa)*d.spd,Math.sin(aa)*d.spd]}}else mv=wander(m,dt);break;
+ case 'ranged':if(m.aggro){if(dd>210)mv=[Math.cos(a)*d.spd,Math.sin(a)*d.spd];else if(dd<120)mv=[-Math.cos(a)*d.spd*.8,-Math.sin(a)*d.spd*.8];else{const s=Math.sin(gT*.8+m.seed)>0?1:-1;mv=[-Math.sin(a)*d.spd*.6*s,Math.cos(a)*d.spd*.6*s]}m.t-=dt;if(m.t<=0&&dd<340){m.t=rnd(1.5,2.2);m.atkA=.3;shoot(m,a,'fire',230,d.atk,{r:7})}}else mv=wander(m,dt);break;
+ case 'golem':mv=bossGolem(m,dt,dd,a);break;
+ case 'dragon':mv=bossDragon(m,dt,dd,a);break}
+ if(mv[0]||mv[1]){if(m.type==='dragon'){m.x+=mv[0]*dt;m.y+=mv[1]*dt}else if(moveE(m,mv[0]*dt,mv[1]*dt,m.r*.7)&&m.aggro){m.wt=0}m.moving=true;m.walk+=dt;if(Math.abs(mv[0])>3)m.fx=mv[0]>0?1:-1}else m.moving=false;
+ if(m.aggro&&dd<160&&d.ai!=='hop')m.fx=dx>0?1:-1;
+ if(d.ai!=='ranged'&&m.aggro&&dd<reach&&m.cd<=0&&P.hp>0){hurtPlayer(d.atk);m.cd=d.boss?1.3:1.0;m.atkA=.25}}
+function bossGolem(m,dt,dd,a){const d=m.d,enr=m.hp<m.max*.5;if(!m.aggro)return[0,0];m.a1-=dt;m.a2-=dt;m.a3-=dt;
+ if(m.slamT>0){m.slamT-=dt;return[0,0]}
+ if(m.a1<=0&&dd<180){m.a1=enr?2.6:3.6;m.slamT=.95;tels.push({x:m.x,y:m.y,r:130,t:.95,max:.95,dmg:d.atk*1.3,kind:'circle',from:'e'});return[0,0]}
+ if(m.a2<=0&&dd>90){m.a2=enr?1.6:2.4;shoot(m,a,'rock',270,d.atk*.8,{r:9});if(enr){shoot(m,a+.32,'rock',270,d.atk*.8,{r:9});shoot(m,a-.32,'rock',270,d.atk*.8,{r:9})}}
+ if(enr&&m.a3<=0){m.a3=6.5;for(let i=0;i<12;i++)shoot(m,i/12*Math.PI*2,'rock',210,d.atk*.7,{r:8});shake(.3,6);SFX.boom()}
+ if(dd>m.r+P.r+4){const s=d.spd*(enr?1.4:1);return[Math.cos(a)*s,Math.sin(a)*s]}return[0,0]}
+function bossDragon(m,dt,dd,a){const d=m.d;if(!m.aggro)return[0,0];const hpF=m.hp/m.max;
+ if(!m.sum1&&hpF<.6){m.sum1=1;summon(3)}if(!m.sum2&&hpF<.3){m.sum2=1;summon(4)}
+ m.a1-=dt;m.breathT=Math.max(0,(m.breathT||0)-dt);if(m.busy>0){m.busy-=dt;return[0,0]}
+ if(m.a1<=0){const pk=Math.random();
+  if(pk<.4&&dd<300){m.busy=1.3;m.breathT=1.3;m.a1=hpF<.5?2.2:3;tels.push({x:m.x,y:m.y-10,r:300,t:1,max:1,dmg:d.atk*1.4,kind:'cone',ang:a,spread:.5,from:'e'})}
+  else if(pk<.75){m.a1=hpF<.5?1.7:2.5;m.busy=.4;for(let i=-2;i<=2;i++)shoot(m,a+i*.17,'fire',300,d.atk*.8,{r:10});SFX.fire()}
+  else{m.a1=3.2;m.busy=.7;for(let i=0;i<16;i++)shoot(m,i/16*Math.PI*2+gT,'fire',210,d.atk*.7,{r:10});for(let i=0;i<4;i++)tels.push({x:P.x+rnd(-90,90),y:P.y+rnd(-70,70),r:62,t:1.15,max:1.15,dmg:d.atk*.9,kind:'circle',from:'e',meteor:1});SFX.fire()}}
+ let v=[0,0];if(dd>170)v=[Math.cos(a)*d.spd,Math.sin(a)*d.spd];const hd=Math.hypot(m.x-m.hx,m.y-m.hy);if(hd>200){const ha=Math.atan2(m.hy-m.y,m.hx-m.x);v=[Math.cos(ha)*d.spd,Math.sin(ha)*d.spd]}return v}
+function summon(n){for(let i=0;i<n;i++){const a=Math.random()*7,mm=spawnMon('imp',bossM?bossM.x+Math.cos(a)*90:P.x,bossM?bossM.y+Math.sin(a)*90:P.y,null);if(blocked(mm.x,mm.y,8)){mm.x=bossM.x;mm.y=bossM.y+50}mm.aggro=true;burst(mm.x,mm.y-10,20,['#ff8a3a','#ffd040'],140,.6)}toast(T('summon'))}
+
+// ================= UPDATE =================
+let trackerDirty=true,trackT=0;
+function update(dt){
+ let ix=0,iy=0;if(keys.a||keys.arrowleft)ix-=1;if(keys.d||keys.arrowright)ix+=1;if(keys.w||keys.arrowup)iy-=1;if(keys.s||keys.arrowdown)iy+=1;
+ if(joyV.x||joyV.y){ix=joyV.x;iy=joyV.y}
+ const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il}
+ if(il>.15){P.dx=ix;P.dy=iy;if(P.faceT<=0)P.dir=dirOf(ix,iy)}
+ P.faceT-=dt;P.atkCd-=dt;P.swing=Math.max(0,P.swing-dt);P.inv_t=Math.max(0,P.inv_t-dt);P.dashCd-=dt;P.potCd-=dt;P.combatT-=dt;P.whirlT=Math.max(0,P.whirlT-dt);for(let i=0;i<4;i++)P.cds[i]=Math.max(0,P.cds[i]-dt);
+ if(P.dashT>0){P.dashT-=dt;moveE(P,P.ddx*420*dt,P.ddy*420*dt,P.r*.8);if(Math.random()<.6)parts.push({x:P.x,y:P.y-14,vx:0,vy:0,life:.25,max:.25,c:'#cfd8ff',s:5,g:0});P.moving=true;P.walk+=dt}
+ else if(il>.15){const sp=128*Math.min(1,il);moveE(P,ix*sp*dt,iy*sp*dt,P.r*.8);P.moving=true;P.walk+=dt}else P.moving=false;
+ if(keys[' ']||mouseDown||touchAtk)attack();
+ ST=stats();P.mp=Math.min(ST.mmp,P.mp+(1.3+P.lvl*.12)*dt);if(P.combatT<=0)P.hp=Math.min(ST.mhp,P.hp+ST.mhp*.012*dt);
+ // separation from npcs and monsters
+ for(const n of npcs){if(n.kind==='fountain')continue;const d=dist(n,P),md=P.r+11;if(d<md&&d>0){const push=(md-d);moveE(P,(P.x-n.x)/d*push,(P.y-n.y)/d*push,P.r*.8)}}
+ for(const m of mons){const d=dist(m,P),md=P.r+m.r*.8;if(d<md&&d>0){const push=(md-d)*.5;if(m.type!=='dragon')moveE(m,(m.x-P.x)/d*push,(m.y-P.y)/d*push,m.r*.7);moveE(P,(P.x-m.x)/d*push,(P.y-m.y)/d*push,P.r*.8)}}
+ for(let i=0;i<mons.length;i++)for(let j=i+1;j<mons.length;j++){const a=mons[i],b=mons[j],d=dist(a,b),md=(a.r+b.r)*.7;if(d<md&&d>0){const p=(md-d)*.5;if(a.type!=='dragon')moveE(a,(a.x-b.x)/d*p,(a.y-b.y)/d*p,a.r*.7);if(b.type!=='dragon')moveE(b,(b.x-a.x)/d*p,(b.y-a.y)/d*p,b.r*.7)}}
+ // exits
+ exitCd-=dt;denyT-=dt;const tx=Math.floor(P.x/TS),ty=Math.floor(P.y/TS);
+ if(exitCd<=0)for(const e of CM.exits){if(tx>=e.x&&tx<e.x+e.w&&ty>=e.y&&ty<e.y+e.h){if(e.cond&&!e.cond()){if(denyT<=0){toast(e.deny);denyT=3;SFX.err()}const cx=(e.x+e.w/2)*TS,cy=(e.y+e.h/2)*TS;const a=Math.atan2(P.y-cy,P.x-cx);P.x+=Math.cos(a)*8;P.y+=Math.sin(a)*8;if(e.y===0)P.y=Math.max(P.y,TS*1.6)}else{goExit(e);return}}}
+ for(const m of mons)updateMon(m,dt);mons=mons.filter(m=>!m.dead);
+ for(const p of projs){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;p.rot+=dt*8;if(p.kind!=='rock'&&Math.random()<.7)parts.push({x:p.x+rnd(-3,3),y:p.y-p.h+rnd(-3,3),vx:rnd(-20,20),vy:rnd(-40,-10),life:.35,max:.35,c:p.from==='p'?pick(['#ffd040','#ff8a2a','#fff0a0']):pick(['#ff6a2a','#ff3a1a','#ffb040']),s:rnd(2,4),g:0});
+  if(p.life<=0||solidAt(p.x,p.y)&&gt(CM,Math.floor(p.x/TS),Math.floor(p.y/TS))!==WATER&&gt(CM,Math.floor(p.x/TS),Math.floor(p.y/TS))!==LAVA){explode(p);continue}
+  if(p.from==='p'){for(const m of mons){if(Math.hypot(p.x-m.x,p.y-(m.y-m.r*.5))<m.r+p.r+4){if(p.aoe)explode(p);else{hurtMon(m,p.dmg,Math.atan2(p.vy,p.vx),120);p.dead=1}break}}}
+  else if(Math.hypot(p.x-P.x,p.y-(P.y-8))<P.r+p.r){hurtPlayer(p.dmg);p.dead=1;burst(p.x,p.y-p.h,8,['#ff8a3a','#ffd040'],90,.4)}}
+ projs=projs.filter(p=>!p.dead);
+ for(const t of tels){t.t-=dt;if(t.t<=0){t.dead=1;if(t.from==='p'){for(const m of mons)if(Math.hypot(m.x-t.x,m.y-t.y)<t.r+m.r)hurtMon(m,t.dmg,Math.atan2(m.y-t.y,m.x-t.x),260);burst(t.x,t.y-6,46,['#ff8a2a','#ffd040','#ff4a1a','#fff0a0'],260,.9,120,4);flashes.push({x:t.x,y:t.y,r:260,t:.5,max:.5,c:GL_FIRE});shake(.35,9);SFX.boom()}
+  else{let hit=false;const d=Math.hypot(P.x-t.x,P.y-t.y);if(t.kind==='circle')hit=d<t.r+P.r*.5;else hit=d<t.r&&angDiff(Math.atan2(P.y-t.y,P.x-t.x),t.ang)<t.spread;if(hit)hurtPlayer(t.dmg);
+   if(t.kind==='cone'){for(let k=0;k<70;k++){const a=t.ang+rnd(-t.spread,t.spread),v=rnd(80,t.r*1.6);parts.push({x:t.x,y:t.y-10,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rnd(.4,.8),max:.8,c:pick(['#ff6a2a','#ffb040','#ffe070','#ff3a1a']),s:rnd(4,8),g:0})}flashes.push({x:t.x+Math.cos(t.ang)*120,y:t.y+Math.sin(t.ang)*120,r:300,t:.6,max:.6,c:GL_FIRE});SFX.fire()}
+   else{burst(t.x,t.y-4,t.meteor?36:40,t.meteor?['#ff8a2a','#ffd040','#ff4a1a']:['#8a8478','#b0a898','#6c7488','#8ff0ff'],t.meteor?200:220,.8,260,4);if(t.meteor)flashes.push({x:t.x,y:t.y,r:180,t:.4,max:.4,c:GL_FIRE});shake(.3,7);SFX.boom()}}}}
+ tels=tels.filter(t=>!t.dead);
+ for(const dr of drops){dr.t+=dt;const d=Math.hypot(dr.x-P.x,dr.y-P.y);if(dr.gold&&d<80&&dr.t>.35){const a=Math.atan2(P.y-dr.y,P.x-dr.x);dr.x+=Math.cos(a)*260*dt;dr.y+=Math.sin(a)*260*dt}
+  if(d<22&&dr.t>.3){dr.dead=1;if(dr.gold){P.gold+=dr.gold;SFX.coin();ftext(P.x,P.y-40,'+'+dr.gold+' 🪙','#ffd770',14)}else{addItem(dr.id,dr.n);SFX.pick();const it=ITEMS[dr.id];toast(T('found',`${it.ic} ${it.n}`)+(it.t==='quest'?` (${itemCount(dr.id)})`:''));if(dr.uid)S.picked[dr.uid]=1}}}
+ drops=drops.filter(d=>!d.dead);
+ for(const n of npcs){const d=dist(n,P);if(n.kind==='fountain')continue;if(d<90&&!n.wander){n.dir=dirOf(P.x-n.x,P.y-n.y);n.moving=false;continue}if(n.wander||n.kind==='cat'){if(d<60){n.moving=false;n.dir=dirOf(P.x-n.x,P.y-n.y);continue}n.wt-=dt;if(n.wt<=0){n.wt=rnd(1.5,4);if(Math.random()<.5){n.wx=n.wy=0}else{let a=Math.random()*7;if(Math.hypot(n.x-n.hx,n.y-n.hy)>70)a=Math.atan2(n.hy-n.y,n.hx-n.x);n.wx=Math.cos(a)*35;n.wy=Math.sin(a)*35}}if(n.wx||n.wy){moveE(n,n.wx*dt,n.wy*dt,8);n.moving=true;n.walk+=dt;n.dir=dirOf(n.wx,n.wy)}else n.moving=false}}
+ for(const q of rq){q.t-=dt;if(q.t<=0){q.dead=1;spawnRandom(q.sp)}}rq=rq.filter(q=>!q.dead);
+ const vw=W/ZOOM,vh=H/ZOOM,mw=CM.w*TS,mh=CM.h*TS;const tcx=mw<vw?(mw-vw)/2:Math.max(0,Math.min(mw-vw,P.x-vw/2)),tcy=mh<vh?(mh-vh)/2:Math.max(0,Math.min(mh-vh,P.y-20-vh/2));camX+=(tcx-camX)*Math.min(1,dt*8);camY+=(tcy-camY)*Math.min(1,dt*8);
+ autosaveT+=dt;if(autosaveT>45){autosaveT=0;save(true)}
+ if(bossM&&(bossM.dead||!bossM.aggro)){if(bossM.dead||!bossM.aggro)$('bossBar').classList.add('hide');if(!bossM.aggro)bossM=null}}
+function explode(p){p.dead=1;if(p.aoe){for(const m of mons)if(Math.hypot(m.x-p.x,m.y-p.y)<p.aoe+m.r)hurtMon(m,p.dmg,Math.atan2(m.y-p.y,m.x-p.x),180);burst(p.x,p.y-p.h,22,['#ffd040','#ff8a2a','#fff0a0','#ff4a1a'],170,.55,0,3);flashes.push({x:p.x,y:p.y-p.h,r:140,t:.3,max:.3,c:GL_FIRE});SFX.hit()}else burst(p.x,p.y-p.h,8,p.kind==='rock'?['#8a8478','#6c7488']:['#ff8a3a','#ffd040'],90,.4,200)}
+function updFx(dt){for(const p of parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=p.g*dt;p.vx*=1-dt*2;if(!p.g)p.vy*=1-dt*2;p.life-=dt}parts=parts.filter(p=>p.life>0);if(parts.length>900)parts.splice(0,parts.length-900);
+ for(const t of texts){t.y-=34*dt;t.life-=dt}texts=texts.filter(t=>t.life>0);for(const f of flashes)f.t-=dt;flashes=flashes.filter(f=>f.t>0);shakeT-=dt;if(shakeT<=0)shakeM=0}
+function interactTarget(){let best=null,bd=1e9;for(const n of npcs){const d=dist(n,P);if(d<(n.ir||46)&&d<bd){bd=d;best={type:'npc',o:n}}}for(const ch of CM.chests){if(S.picked[ch.uid])continue;const d=Math.hypot(ch.x-P.x,ch.y-P.y);if(d<44&&d<bd){bd=d;best={type:'chest',o:ch}}}return best}
+function interact(){const t=interactTarget();if(!t)return;if(t.type==='chest')openChest(t.o);else talkTo(t.o)}
+
+// ================= DIALOG =================
+let dlg=null;
+function openDialog(n,text,opts){mode='dialog';dlg={n,text:HR(text),shown:0,opts:opts&&opts.length?opts:[{t:T('next')}],rendered:false};$('dialog').classList.remove('hide');$('dName').textContent=n.name;$('dText').textContent='';$('dOpts').innerHTML='';drawPortrait(n)}
+function renderOpts(){const o=$('dOpts');o.innerHTML='';dlg.opts.forEach((op,i)=>{const b=document.createElement('button');b.textContent=(TOUCH?'':(i+1)+'. ')+op.t;b.onclick=()=>dlgPick(i);o.appendChild(b)});dlg.rendered=true}
+function dlgAdvance(){if(!dlg)return;if(dlg.shown<dlg.text.length){dlg.shown=dlg.text.length;$('dText').textContent=dlg.text;renderOpts()}else dlgPick(0)}
+function dlgPick(i){if(!dlg||!dlg.rendered)return;const op=dlg.opts[i];if(!op)return;closeDialog();if(op.f)op.f();if(mode==='play'&&pendingVictory){pendingVictory=false;setTimeout(()=>{mode='victory';showOverlay('victory')},600)}}
+function closeDialog(){dlg=null;$('dialog').classList.add('hide');if(mode==='dialog')mode='play'}
+function talkTo(n){if(n.kind!=='fountain')n.dir=dirOf(P.x-n.x,P.y-n.y);P.dir=dirOf(n.x-P.x,n.y-P.y);
+ if(n.kind==='fountain'){ST=stats();P.hp=ST.mhp;P.mp=ST.mmp;SFX.heal();burst(n.x,n.y-20,30,['#9fd0ff','#ffffff','#6aaee4'],100,.9);toast(T('fountain'));return}
+ if(n.kind==='cat'){if(qState('cat')==='active'&&!S.flags.cat){S.flags.cat=1;questRefresh();openDialog(n,T('catFound'),[{t:T('catGo'),f:()=>refreshNPCs()}])}else openDialog(n,pick(T('catIdle')),[{t:T('catBye')}]);return}
+ const ex=[];if(n.shop)ex.push({t:T('shop'),f:()=>openShop(n)});if(n.heal)ex.push({t:T('heal'),f:()=>{ST=stats();P.hp=ST.mhp;P.mp=ST.mmp;SFX.heal();burst(P.x,P.y-20,24,['#9dff9d','#fff'],90,.8);toast(T('healed'))}});ex.push({t:T('bye')});
+ const q=npcQuest(n.id);
+ if(q){const[id,st]=q,Q=QUESTS[id];
+  if(st==='ready'){completeQuest(id);openDialog(n,Q.done+rewardText(Q),[{t:T('thanks')}]);return}
+  if(st==='avail'){openDialog(n,Q.offer+rewardText(Q),[{t:T('accept'),f:()=>acceptQuest(id)},{t:T('later')}]);return}
+  if(st==='active'){const s=S.quests[id];openDialog(n,Q.prog+`  (${s.n}/${Q.need})`,ex);return}}
+ openDialog(n,pick(n.lines),ex)}
+function drawPortrait(n){const c=$('portrait').getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,96,96);const g=c.createRadialGradient(48,40,6,48,48,60);g.addColorStop(0,'#5a4478');g.addColorStop(1,'#1e1628');c.fillStyle=g;c.fillRect(0,0,96,96);
+ if(n.kind==='cat'){drawCat(c,44,74,0,'right',3.2)}else if(n.kind==='fountain'){c.font='54px serif';c.textAlign='center';c.textBaseline='middle';c.fillText('⛲',48,50)}else{c.save();if(n.kind==='ghost')c.globalAlpha=.8;drawHuman(c,48,118,{...n.look,dir:'down',scale:2.5,t:0});c.restore()}}
+
+// ================= PANELS =================
+let panelType=null,shopNpc=null,shopTab='buy',invInfo='';
+function openPanel(type,title){mode='panel';panelType=type;$('panel').classList.remove('hide');$('pTitle').textContent=title;renderPanel()}
+function closePanel(){$('panel').classList.add('hide');panelType=null;if(mode==='panel')mode='play'}
+function openInv(){invInfo=T('invHint');openPanel('inv',T('invT'))}
+function openQuests(){openPanel('quests',T('qT'))}
+function openShop(n){shopNpc=n;shopTab='buy';openPanel('shop',T('shopT',n.name))}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+function renderPanel(){const b=$('pBody');ST=stats();
+ if(panelType==='inv'){const slots=[['weapon',T('weapon')],['armor',T('armor')],['acc',T('acc')]];
+  b.innerHTML=`<div class="invg"><div><div class="eqs">${slots.map(([s,l])=>{const id=P.eq[s],it=id&&ITEMS[id];return`<div class="eq" data-uneq="${s}"><span class="ic">${it?it.ic:'▫️'}</span><div>${it?esc(it.n):'<i>'+T('empty')+'</i>'}<small>${l}${it?' · '+esc(itemDesc(id)):''}</small></div></div>`}).join('')}</div>
+  <div class="stats"><div><span>${T('sLvl')}</span><b>${P.lvl}</b></div><div><span>${T('sHp')}</span><b>${Math.ceil(P.hp)} / ${ST.mhp}</b></div><div><span>${T('sMp')}</span><b>${Math.floor(P.mp)} / ${ST.mmp}</b></div><div><span>${T('sAtk')}</span><b>${ST.atk}</b></div><div><span>${T('sDef')}</span><b>${ST.def}</b></div><div><span>${T('sCrit')}</span><b>${Math.round(ST.crit*100)}%</b></div><div><span>${T('sXp')}</span><b>${P.xp} / ${need(P.lvl)}</b></div><div><span>${T('sGold')}</span><b>🪙 ${P.gold}</b></div></div></div>
+  <div><div class="grid">${P.inv.map((s,i)=>`<div class="it" data-i="${i}" title="${esc(ITEMS[s.id].n)}">${ITEMS[s.id].ic}${s.n>1?`<span>${s.n}</span>`:''}</div>`).join('')||'<p>'+T('bagEmpty')+'</p>'}</div>
+  <div class="info" id="invInfo">${esc(invInfo)}</div>
+  <p style="margin-top:12px;font-size:13px;color:#bba">${T('skills')}: ${SKILLS.map(s=>`${s.ic} ${esc(s.n)} (${T('lv')} ${s.lvl}, ${s.mp} MP)`).join(' · ')}</p></div></div>`;
+  b.querySelectorAll('.it').forEach(el=>{const s=P.inv[+el.dataset.i];el.onmouseenter=()=>{$('invInfo').textContent=ITEMS[s.id].n+' — '+itemDesc(s.id)};el.onclick=()=>{const it=ITEMS[s.id];if(it.t==='quest'){invInfo=it.n+' — '+itemDesc(s.id);renderPanel();return}invInfo=it.n+' — '+itemDesc(s.id);useItem(s.id);renderPanel()}});
+  b.querySelectorAll('[data-uneq]').forEach(el=>el.onclick=()=>{unequip(el.dataset.uneq);renderPanel()})}
+ else if(panelType==='quests'){const act=Object.keys(S.quests).filter(k=>S.quests[k].st!=='done'),dn=Object.keys(S.quests).filter(k=>S.quests[k].st==='done');
+  b.innerHTML=(act.length?act.map(k=>{const q=QUESTS[k],s=S.quests[k];return`<div class="q"><b>${esc(q.n)}</b><p>${esc(q.desc)}</p><p class="pg" style="color:${s.st==='ready'?'#8dff8d':'#ffd770'}">${s.st==='ready'?esc(T('qReadyP',npcName(q.giver))):T('progress')+': '+s.n+' / '+q.need}</p></div>`}).join(''):'<p>'+T('noQ')+' <b style="color:#ffd770">!</b></p>')+(dn.length?'<h3 style="margin:14px 0 8px;font-family:Cinzel Decorative;color:#c9a24a;font-size:15px">'+T('doneH')+'</h3>'+dn.map(k=>`<div class="q done"><b>✔ ${esc(QUESTS[k].n)}</b></div>`).join(''):'')}
+ else if(panelType==='shop'){const goods=shopTab==='buy'?shopNpc.shop.map(id=>({id,price:ITEMS[id].price})):P.inv.filter(s=>ITEMS[s.id].t!=='quest').map(s=>({id:s.id,price:Math.floor(ITEMS[s.id].price/2),n:s.n}));
+  b.innerHTML=`<div class="tabs"><button data-t="buy" class="${shopTab==='buy'?'on':''}">${T('buy')}</button><button data-t="sell" class="${shopTab==='sell'?'on':''}">${T('sell')}</button><span style="margin-left:auto;font-weight:800;color:#ffd770;align-self:center">🪙 ${P.gold}</span></div>`+(goods.map((g,i)=>{const it=ITEMS[g.id];const own=itemCount(g.id)+([P.eq.weapon,P.eq.armor,P.eq.acc].includes(g.id)?1:0);return`<div class="row"><span class="ic">${it.ic}</span><div class="nm">${esc(it.n)}${g.n>1?' ×'+g.n:''}<small>${esc(itemDesc(g.id))}${shopTab==='buy'&&own?' · '+T('have')+': '+own:''}</small></div><span class="pr">${g.price} 🪙</span><button class="btn" data-g="${i}" ${shopTab==='buy'&&P.gold<g.price?'disabled style="opacity:.45"':''}>${shopTab==='buy'?T('buy'):T('sell')}</button></div>`}).join('')||'<p>'+T('nothingSell')+'</p>');
+  b.querySelectorAll('[data-t]').forEach(el=>el.onclick=()=>{shopTab=el.dataset.t;renderPanel()});
+  b.querySelectorAll('[data-g]').forEach(el=>el.onclick=()=>{const g=goods[+el.dataset.g];if(shopTab==='buy'){if(P.gold<g.price){SFX.err();return}P.gold-=g.price;addItem(g.id,1);SFX.coin();toast(T('bought',ITEMS[g.id].ic+' '+ITEMS[g.id].n))}else{P.gold+=g.price;removeItem(g.id,1);SFX.coin()}renderPanel()})}}
+$('pClose').onclick=closePanel;
+
+// ================= OVERLAYS =================
+function hasSave(){try{return!!localStorage.getItem(SK)}catch(e){return false}}
+function helpHTML(){const l=L();return`<div class="help">${(TOUCH?l.helpT:l.help).map(h=>`<div>${h}</div>`).join('')}</div>`}
+function langPicker(){return`<div class="langs">${Object.keys(I18N).map(k=>`<button class="lb${k===LANG?' on':''}" data-l="${k}"><span class="fl">${I18N[k].flag}</span>${I18N[k].label}</button>`).join('')}</div>`}
+function setLang(k){LANG=k;try{localStorage.setItem('eldoria_lang',k)}catch(e){}applyLang()}
+let ovT=null;
+function showOverlay(t){ovT=t;const o=$('overlay'),l=L();o.classList.remove('hide');
+ if(t==='title')o.innerHTML=`<div class="ocard gild"><h1>${l.title}</h1><h2>${l.sub}</h2><p>${l.intro}</p><label class="hn">${T('heroName')}<input id="heroIn" maxlength="14" value="${esc(P.name||'Arin')}" autocomplete="off" spellcheck="false"></label><div class="btns">${hasSave()?`<button class="btn" id="bCont">${T('cont')}</button>`:''}<button class="btn" id="bNew">${T('newG')}</button></div>${langPicker()}${helpHTML()}</div>`;
+ else if(t==='lang')o.innerHTML=`<div class="ocard gild"><h2>🌐 ${T('lang')}</h2>${langPicker()}<div class="btns"><button class="btn" id="bBack">✔ OK</button></div></div>`;
+ else if(t==='dead')o.innerHTML=`<div class="ocard gild"><h1 style="color:#ff9a8a">${T('deadT')}</h1><p>${T('deadP')}</p><div class="btns"><button class="btn" id="bRes">${T('respawn')}</button></div></div>`;
+ else if(t==='victory')o.innerHTML=`<div class="ocard gild"><h1>${T('victory')}</h1><h2>${T('victorySub')}</h2><p>${T('victoryP',esc(P.name),P.lvl,Object.values(S.quests).filter(q=>q.st==='done').length)}</p><div class="btns"><button class="btn" id="bGo">${T('goOn')}</button></div></div>`;
+ const bn=$('bNew'),bc=$('bCont'),br=$('bRes'),bg=$('bGo'),bb=$('bBack'),hi=$('heroIn');
+ const takeName=()=>{if(hi){const v=hi.value.trim().slice(0,14);P.name=v||'Arin'}};
+ if(bn)bn.onclick=()=>{initAudio();takeName();newGame()};
+ if(bc)bc.onclick=()=>{initAudio();const nm=hi?hi.value.trim():'';if(!loadGame()){takeName();newGame()}else if(nm&&nm!==P.name){P.name=nm.slice(0,14)}};
+ if(br)br.onclick=()=>{initAudio();respawn()};if(bg)bg.onclick=()=>{hideOverlay();mode='play'};if(bb)bb.onclick=()=>{hideOverlay();mode='play'};
+ o.querySelectorAll('.lb').forEach(b=>b.onclick=()=>{takeName();setLang(b.dataset.l);showOverlay(ovT)})}
+function hideOverlay(){$('overlay').classList.add('hide')}
+function showHUD(){for(const id of['hud','mmWrap','topBtns','skillbar'])$(id).classList.remove('hide');if(TOUCH){document.body.classList.add('touch');for(const id of['joyZone','tAtk'])$(id).classList.remove('hide')}}
+function newGame(){S={map:'sat',quests:{},flags:{},picked:{},bossDead:{}};Object.assign(P,{lvl:1,xp:0,gold:30,inv:[{id:'potion_s',n:3}],eq:{weapon:'sword_wood',armor:'tunic',acc:null},cds:[0,0,0,0],inv_t:0,dashT:0});ST=stats();P.hp=ST.mhp;P.mp=ST.mmp;loadMap('sat',25*TS+16,22*TS+16);hideOverlay();showHUD();mode='play';trackerDirty=true;setTimeout(()=>toast(T('hint')),1800)}
+function save(silent){try{localStorage.setItem(SK,JSON.stringify({v:1,P:{name:P.name,lvl:P.lvl,xp:P.xp,gold:P.gold,hp:P.hp,mp:P.mp,inv:P.inv,eq:P.eq,x:P.x,y:P.y},S}));if(!silent)toast(T('saved'))}catch(e){if(!silent)toast(T('noSave'))}}
+function loadGame(){try{const d=JSON.parse(localStorage.getItem(SK));if(!d||!d.P)return false;S=Object.assign({map:'sat',quests:{},flags:{},picked:{},bossDead:{}},d.S);Object.assign(P,d.P,{cds:[0,0,0,0],inv_t:1,dashT:0});ST=stats();loadMap(S.map||'sat',d.P.x,d.P.y);if(blocked(P.x,P.y,P.r*.8)){P.x=CM.start[0]*TS+16;P.y=CM.start[1]*TS+16}hideOverlay();showHUD();mode='play';trackerDirty=true;toast(T('welcome',P.name));return true}catch(e){return false}}
+
+// ================= HUD =================
+const SLOTS=[...SKILLS.map((s,i)=>({type:'skill',i,ic:s.ic,k:s.k})),{type:'pot',ic:'🧪',k:'R'},{type:'eth',ic:'💧',k:'F'},{type:'dash',ic:'💨',k:'⇧'}];
+$('skillbar').innerHTML=SLOTS.map((s,i)=>`<div class="slot${i===4?' sep':''}" data-s="${i}" title="${s.type==='skill'?esc(SKILLS[s.i].n+' — '+SKILLS[s.i].d+' ('+SKILLS[s.i].mp+' MP)'):s.type==='pot'?'Poțiune de viață':s.type==='eth'?'Elixir de mană':'Eschivă'}"><span>${s.ic}</span><span class="key">${s.k}</span><span class="cnt"></span><div class="cdv"></div><div class="lock hide"></div></div>`).join('');
+const slotEls=[...document.querySelectorAll('.slot')];
+slotEls.forEach((el,i)=>el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();initAudio();const s=SLOTS[i];if(s.type==='skill')useSkill(s.i);else if(s.type==='pot')usePotion();else if(s.type==='eth')useEther();else dash()}));
+const hudCache={};function setH(id,prop,v){const k=id+prop;if(hudCache[k]===v)return;hudCache[k]=v;const el=$(id);if(prop==='w')el.style.width=v;else el.textContent=v}
+function updHUD(dt){if(mode==='title'||!ST)return;setH('hpF','w',(P.hp/ST.mhp*100).toFixed(1)+'%');setH('hpT','t',Math.ceil(P.hp)+' / '+ST.mhp);setH('mpF','w',(P.mp/ST.mmp*100).toFixed(1)+'%');setH('mpT','t',Math.floor(P.mp)+' / '+ST.mmp);setH('xpF','w',(P.xp/need(P.lvl)*100).toFixed(1)+'%');setH('lvlT','t',String(P.lvl));setH('goldT','t',String(P.gold));setH('heroT','t',P.name||'');
+ SLOTS.forEach((s,i)=>{const el=slotEls[i];let cd=0,mx=1,lock='',cnt='';if(s.type==='skill'){const sk=SKILLS[s.i];cd=P.cds[s.i];mx=sk.cd;if(P.lvl<sk.lvl)lock=T('lock',sk.lvl);el.classList.toggle('nomp',!lock&&P.mp<sk.mp)}else if(s.type==='pot'){cnt=String(itemCount('potion_s')+itemCount('potion_l'));cd=Math.max(0,P.potCd);mx=.8}else if(s.type==='eth'){cnt=String(itemCount('ether'));cd=Math.max(0,P.potCd);mx=.8}else{cd=Math.max(0,P.dashCd);mx=.9}
+  const h=Math.round(cd/mx*100)+'%';if(el._h!==h){el._h=h;el.children[3].style.height=h}if(el._c!==cnt){el._c=cnt;el.children[2].textContent=cnt}if(el._l!==lock){el._l=lock;el.children[4].textContent=lock;el.children[4].classList.toggle('hide',!lock)}});
+ if(bossM&&!bossM.dead)setH('bossF','w',Math.max(0,bossM.hp/bossM.max*100).toFixed(1)+'%');
+ trackT-=dt;if(trackerDirty&&trackT<=0){trackT=.3;trackerDirty=false;const act=Object.keys(S.quests).filter(k=>S.quests[k].st!=='done').slice(0,4);$('tracker').innerHTML=act.map(k=>{const q=QUESTS[k],s=S.quests[k];return`<div><b>${esc(q.n)}</b>${s.st==='ready'?'<span class="ok">'+esc(T('trReturn',npcName(q.giver)))+'</span>':s.n+' / '+q.need}</div>`}).join('')}
+ // prompt
+ const pr=$('prompt');const t=mode==='play'?interactTarget():null;if(t){const o=t.o;pr.classList.remove('hide');const sx=(o.x-camX)*ZOOM,sy=(o.y-(t.type==='npc'&&o.kind!=='fountain'?(o.kind==='cat'?24:48*(o.scale||1)):34)-camY)*ZOOM;pr.style.left=sx+'px';pr.style.top=(sy-8)+'px';const lbl=t.type==='chest'?T('open'):o.kind==='fountain'?T('drink'):T('talk',o.name);const html=(TOUCH?'':'<kbd>E</kbd>')+esc(lbl);if(pr._h!==html){pr._h=html;pr.innerHTML=html}if(TOUCH)$('tE').classList.remove('hide')}else{pr.classList.add('hide');if(TOUCH)$('tE').classList.add('hide')}
+ drawMini()}
+const mmc=$('mm').getContext('2d');
+function drawMini(){if(!CM)return;const cw=$('mm').width,ch=$('mm').height;mmc.setTransform(1,0,0,1,0,0);mmc.fillStyle='#000';mmc.fillRect(0,0,cw,ch);const s=Math.min(cw/CM.w,ch/CM.h);const ox=(cw-CM.w*s)/2,oy=(ch-CM.h*s)/2;mmc.imageSmoothingEnabled=false;mmc.drawImage(CM.mini,ox,oy,CM.w*s,CM.h*s);
+ const pt=(x,y,c,r)=>{mmc.fillStyle=c;mmc.beginPath();mmc.arc(ox+x/TS*s,oy+y/TS*s,r,0,7);mmc.fill()};
+ for(const e of CM.exits){mmc.fillStyle=(!e.cond||e.cond())?'#ffd770':'#a05050';mmc.fillRect(ox+e.x*s,oy+e.y*s,Math.max(2,e.w*s),Math.max(2,e.h*s))}
+ for(const m of mons)pt(m.x,m.y,m.d.boss?'#ff3030':'#ff7070',m.d.boss?3.5:1.6);
+ for(const n of npcs){const q=npcQuest(n.id);pt(n.x,n.y,q&&q[1]!=='active'?'#ffe040':'#7fd0ff',2.2)}
+ for(const c of CM.chests)if(!S.picked[c.uid])pt(c.x,c.y,'#ffb030',1.8);
+ pt(P.x,P.y,'#ffffff',3);pt(P.x,P.y,'#3aa0ff',2)}
+
+// ================= DRAW ENTITIES =================
+function drawHuman(c,x,y,o){const mv=o.moving,ph=(o.walk||0)*11,step=mv?Math.sin(ph)*3:0,bob=mv?Math.abs(Math.cos(ph))*1.5:Math.sin((o.t||gT)*2)*.5;const s=o.scale||1,d=o.dir||'down',side=d==='left'||d==='right';
+ c.save();c.translate(x,y);c.scale(s,s);c.fillStyle='rgba(0,0,0,.28)';ell(c,0,0,10,4);
+ if(o.cape&&d!=='up'){c.fillStyle=K(o.cape);rr(c,-9,-24-bob,18,19,4)}
+ c.fillStyle=K(o.pants);if(side){rr(c,-3+step,-12,5,12,2);rr(c,-2-step,-12,5,12,2)}else{rr(c,-6,-12,5,12-Math.max(0,step),2);rr(c,1,-12,5,12-Math.max(0,-step),2)}
+ c.fillStyle=K(o.boots||'#3a2a1e');if(side){rr(c,-3+step,-3,6,3,1);rr(c,-2-step,-3,6,3,1)}else{rr(c,-6,-3-Math.max(0,step),5,3,1);rr(c,1,-3-Math.max(0,-step),5,3,1)}
+ if(o.robe){c.fillStyle=K(shade(o.shirt,-15));c.beginPath();c.moveTo(-8,-16-bob);c.lineTo(-10,-3);c.lineTo(10,-3);c.lineTo(8,-16-bob);c.fill()}
+ c.fillStyle=K(o.shirt);rr(c,-8,-25-bob,16,15,5);c.fillStyle=K(shade(o.shirt,25));c.fillRect(-6,-24-bob,4,2);
+ c.fillStyle=K(o.belt||'#3b2a1a');c.fillRect(-8,-13-bob,16,2);if(o.armorTrim){c.fillStyle=K(o.armorTrim);c.fillRect(-8,-25-bob,16,2)}
+ const as=mv?-step:0;c.fillStyle=K(o.shirt2||shade(o.shirt,-12));
+ if(!side){rr(c,-11,-23-bob+as*.5,4,10,2);rr(c,7,-23-bob-as*.5,4,10,2);c.fillStyle=K(o.skin);circ(c,-9,-13-bob+as*.5,2.3);circ(c,9,-13-bob-as*.5,2.3)}else{rr(c,-2+as,-23-bob,4,10,2);c.fillStyle=K(o.skin);circ(c,as,-13-bob,2.3)}
+ const hy=-32-bob;c.fillStyle=K(o.skin);circ(c,0,hy,9);
+ c.fillStyle=K(o.hair);if(d==='up'){circ(c,0,hy-1,9.6);if(o.long)rr(c,-9,hy,18,13,4)}else{c.beginPath();c.arc(0,hy-1,9.6,Math.PI,0);c.fill();if(d==='down')rr(c,-9.6,hy-2,19.2,4,2);else if(d==='right')rr(c,-9.6,hy-3,9,10,3);else rr(c,.6,hy-3,9,10,3);if(o.long){if(d!=='right')rr(c,-10,hy-2,4,15,2);if(d!=='left')rr(c,6,hy-2,4,15,2)}}
+ if(d!=='up'){c.fillStyle=K('#1d1420');const ex=d==='down'?[-3.5,3.5]:d==='right'?[4.2]:[-4.2];for(const e of ex)rr(c,e-1.2,hy+.5,2.4,3.2,1);if(!FL&&d==='down'){c.fillStyle='rgba(255,110,110,.32)';circ(c,-5.6,hy+4.6,1.7);circ(c,5.6,hy+4.6,1.7)}
+  if(o.beard){c.fillStyle=K(o.beardCol||'#e8e8e8');const bx=d==='down'?0:d==='right'?3:-3;c.beginPath();c.moveTo(bx-6.5,hy+3.5);c.quadraticCurveTo(bx,hy+17,bx+6.5,hy+3.5);c.fill()}}
+ if(o.hat==='hood'){c.fillStyle=K(o.hatCol);c.beginPath();c.arc(0,hy-1,10.8,Math.PI,0);c.fill();if(d!=='up'){rr(c,-10.8,hy-2,4,11,2);rr(c,6.8,hy-2,4,11,2)}else circ(c,0,hy+1,10.5)}
+ else if(o.hat==='helm'){c.fillStyle=K('#9aa6b5');c.beginPath();c.arc(0,hy-1,10.3,Math.PI,0);c.fill();c.fillStyle=K('#7a8696');c.fillRect(-10.3,hy-2.5,20.6,3);c.fillStyle=K('#c33');rr(c,-1.8,hy-15,3.6,7,1.5)}
+ else if(o.hat==='band'){c.fillStyle=K(o.hatCol);c.fillRect(-9.8,hy-6,19.6,3.2)}
+ else if(o.hat==='crown'){c.fillStyle=K('#ffe07a');c.beginPath();c.moveTo(-8,hy-6);c.lineTo(-8,hy-14);c.lineTo(-4,hy-9);c.lineTo(0,hy-16);c.lineTo(4,hy-9);c.lineTo(8,hy-14);c.lineTo(8,hy-6);c.closePath();c.fill()}
+ if(o.cape&&d==='up'){c.fillStyle=K(o.cape);rr(c,-9,-25-bob,18,21,4);c.fillStyle=K(shade(o.cape,-25));c.fillRect(-9,-8-bob,18,3)}
+ c.restore()}
+function drawSword(c,x,y,a,w){c.save();c.translate(x,y);c.rotate(a);c.fillStyle='#5a3a1e';c.fillRect(1,-1.6,7,3.2);c.fillStyle='#e8c55a';c.fillRect(8,-4.5,2.6,9);circ(c,0,0,2);c.fillStyle=w.col;c.beginPath();c.moveTo(10.6,-2.4);c.lineTo(10.6+w.len,-1.2);c.lineTo(14+w.len,0);c.lineTo(10.6+w.len,1.2);c.lineTo(10.6,2.4);c.closePath();c.fill();c.fillStyle='rgba(255,255,255,.55)';c.fillRect(11,-.6,w.len,1);c.restore()}
+const PLOOK={skin:'#f3cfac',hair:'#3a2418',shirt:'#3a5ea8',shirt2:'#2e4a88',pants:'#4a3a2e',cape:'#a8282e',belt:'#5a3a1e'};
+function drawPlayer(c){const w=ITEMS[P.eq.weapon];const look={...PLOOK,dir:P.dir,walk:P.walk,moving:P.moving,t:gT};const ar=P.eq.armor;if(ar==='leather')look.shirt='#7a5a3a';if(ar==='chain'){look.shirt='#8a96a8';look.shirt2='#6a7688';look.armorTrim='#c9ccd2'}if(ar==='plate'){look.shirt='#c9ccd6';look.shirt2='#9aa2b2';look.armorTrim='#e8c55a'}
+ c.save();if(P.inv_t>0&&Math.floor(P.inv_t*18)%2)c.globalAlpha=.45;
+ let a,px=P.x,py=P.y-16;if(P.whirlT>0){a=gT*28}else if(P.swing>0){const k=1-P.swing/.22;a=P.swingAng-1.25+k*2.5}else{a={down:1.95,up:-1.2,right:.75,left:Math.PI-.75}[P.dir];px+=P.dir==='left'?-7:P.dir==='right'?7:P.dir==='down'?8:-8;py=P.y-13}
+ const behind=P.dir==='up'&&P.swing<=0&&P.whirlT<=0;if(behind)drawSword(c,px,py,a,w);drawHuman(c,P.x,P.y,look);if(!behind)drawSword(c,px,py,a,w);
+ if(P.swing>0||P.whirlT>0){c.strokeStyle=`rgba(255,255,255,${P.whirlT>0?.5:P.swing/.22*.7})`;c.lineWidth=7;c.lineCap='round';c.beginPath();if(P.whirlT>0)c.arc(P.x,P.y-14,34,0,7);else{const k=1-P.swing/.22;c.arc(P.x,P.y-16,28+w.len*.6,P.swingAng-1.25,P.swingAng-1.25+k*2.5)}c.stroke()}
+ c.restore()}
+function drawCat(c,x,y,t,dir,s){s=s||1;c.save();c.translate(x,y);c.scale(dir==='left'?-s:s,s);c.fillStyle='rgba(0,0,0,.25)';ell(c,0,0,10,3);c.strokeStyle='#d67a28';c.lineWidth=3;c.lineCap='round';c.beginPath();c.moveTo(-8,-7);c.quadraticCurveTo(-16,-10,-14,-18+Math.sin(t*3)*2);c.stroke();c.fillStyle='#e8913a';ell(c,0,-7,9,6);c.fillStyle='#d67a28';c.fillRect(-4,-12,2,5);c.fillRect(0,-12.5,2,5);c.fillStyle='#e8913a';c.fillRect(-6,-3,3,3);c.fillRect(4,-3,3,3);circ(c,8,-13,5.5);c.beginPath();c.moveTo(4,-16);c.lineTo(5,-22);c.lineTo(8,-17);c.fill();c.beginPath();c.moveTo(9,-17);c.lineTo(12,-22);c.lineTo(13,-15);c.fill();c.fillStyle='#fff3e0';ell(c,10,-11,3,2);c.fillStyle='#2a7a2a';circ(c,7,-14,1.3);circ(c,11,-14,1.3);c.fillStyle='#ff8a9a';circ(c,12.5,-12,1);c.restore()}
+function drawSlime(c,m){const d=m.d,sq=m.hopT>0?Math.sin((1-m.hopT/.35)*Math.PI):0,idle=Math.sin(gT*4+m.seed)*.06;const h=m.r*(1+sq*.3+idle),w=m.r*(1.15-sq*.18-idle),lift=sq*10,y=m.y-lift;
+ c.fillStyle='rgba(0,0,0,.25)';ell(c,m.x,m.y,w*.9*(1-sq*.3),4);const g=c.createRadialGradient(m.x-w*.35,y-h*1.1,1,m.x,y-h*.5,w*1.3);g.addColorStop(0,K(d.hi));g.addColorStop(.45,K(d.col));g.addColorStop(1,K(d.col2));c.fillStyle=g;c.beginPath();c.moveTo(m.x-w,y);c.quadraticCurveTo(m.x-w*1.05,y-h*1.6,m.x,y-h*1.6);c.quadraticCurveTo(m.x+w*1.05,y-h*1.6,m.x+w,y);c.closePath();c.fill();
+ c.fillStyle='rgba(255,255,255,.5)';ell(c,m.x-w*.4,y-h*1.15,3,2);c.fillStyle='#fff';ell(c,m.x-4,y-h*.8,3,3.6);ell(c,m.x+4,y-h*.8,3,3.6);c.fillStyle='#123';circ(c,m.x-4+m.fx*.9,y-h*.75,1.7);circ(c,m.x+4+m.fx*.9,y-h*.75,1.7)}
+function drawWolf(c,m){c.save();c.translate(m.x,m.y);c.fillStyle='rgba(0,0,0,.25)';ell(c,0,0,17,5);if(m.fx<0)c.scale(-1,1);const lg=m.moving?Math.sin(m.walk*14)*4:0,lunge=m.atkA>0?5:0;c.translate(lunge,0);
+ c.strokeStyle=K('#55565f');c.lineWidth=3.5;c.lineCap='round';for(const[x,o]of[[-9,lg],[-5,-lg],[7,-lg],[11,lg]]){c.beginPath();c.moveTo(x,-11);c.lineTo(x+o,0);c.stroke()}
+ c.lineWidth=5;c.strokeStyle=K('#6d6f7a');c.beginPath();c.moveTo(-13,-15);c.quadraticCurveTo(-24,-19+Math.sin(gT*6+m.seed)*3,-23,-8);c.stroke();
+ c.fillStyle=K('#7d7f8c');ell(c,0,-15,15,8);c.fillStyle=K('#9a9ca8');ell(c,2,-11,10,4);c.fillStyle=K('#686a76');ell(c,-3,-20,10,3);
+ c.fillStyle=K('#7d7f8c');circ(c,14,-21,7);ell(c,20,-19,6,3.6);c.fillStyle='#222';circ(c,25,-19.5,1.7);c.fillStyle=K('#686a76');c.beginPath();c.moveTo(9,-25);c.lineTo(11,-33);c.lineTo(15,-26);c.fill();c.beginPath();c.moveTo(14,-26);c.lineTo(18,-32);c.lineTo(19,-24);c.fill();
+ c.fillStyle=m.aggro?'#ff3a2a':'#ffd23a';circ(c,16,-22,1.6);if(m.atkA>0){c.fillStyle='#fff';c.fillRect(19,-17,1.5,2.5);c.fillRect(22,-17,1.5,2.5)}c.restore()}
+function drawBat(c,m){const fy=m.y-24+Math.sin(gT*5+m.seed)*4;c.fillStyle='rgba(0,0,0,.2)';ell(c,m.x,m.y,8,3);c.save();c.translate(m.x,fy);const fl=Math.sin(gT*22+m.seed);c.fillStyle=K('#4b2f5e');for(const s of[-1,1]){c.save();c.scale(s,1);c.rotate(fl*.45);c.beginPath();c.moveTo(3,0);c.quadraticCurveTo(12,-13,23,-4);c.quadraticCurveTo(18,-1,17,4);c.quadraticCurveTo(13,0,10,6);c.quadraticCurveTo(6,2,3,4);c.fill();c.restore()}
+ c.fillStyle=K('#5e3a74');ell(c,0,0,6,7.5);c.beginPath();c.moveTo(-4,-5);c.lineTo(-5,-11);c.lineTo(-1,-6);c.fill();c.beginPath();c.moveTo(4,-5);c.lineTo(5,-11);c.lineTo(1,-6);c.fill();c.fillStyle='#ff4a4a';circ(c,-2.2,-1.5,1.4);circ(c,2.2,-1.5,1.4);c.fillStyle='#fff';c.fillRect(-1.6,2.5,1,2);c.fillRect(.6,2.5,1,2);c.restore()}
+function drawSkel(c,m){const st=m.moving?Math.sin(m.walk*10)*3:0;c.save();c.translate(m.x,m.y);c.fillStyle='rgba(0,0,0,.25)';ell(c,0,0,10,4);if(m.fx<0)c.scale(-1,1);const B=K('#e9e4d4');c.strokeStyle=B;c.lineWidth=3;c.lineCap='round';
+ c.beginPath();c.moveTo(-3,-12);c.lineTo(-3+st,0);c.moveTo(3,-12);c.lineTo(3-st,0);c.stroke();c.fillStyle=B;rr(c,-5,-14,10,3,1);c.lineWidth=2.5;c.beginPath();c.moveTo(0,-13);c.lineTo(0,-25);c.stroke();c.lineWidth=2;for(const yy of[-17,-20,-23]){c.beginPath();c.moveTo(-5,yy);c.quadraticCurveTo(0,yy-2,5,yy);c.stroke()}
+ c.lineWidth=2.5;c.beginPath();c.moveTo(-5,-24);c.lineTo(-8,-14-st*.4);c.stroke();const sa=m.atkA>0?-.2:.9;c.beginPath();c.moveTo(5,-24);c.lineTo(10,-16);c.stroke();c.save();c.translate(10,-16);c.rotate(sa-1.6);c.fillStyle=K('#8a8070');c.fillRect(-1,-2,4,4);c.fillStyle=K('#b8b0a0');c.fillRect(3,-1.5,15,3);c.restore();
+ c.fillStyle=B;circ(c,0,-31,7.5);rr(c,-4.5,-27,9,5,2);c.fillStyle='#1a1418';circ(c,-2.8,-31,2.1);circ(c,3,-31,2.1);c.fillStyle='#ff3b3b';circ(c,-2.8,-31,.9);circ(c,3,-31,.9);c.fillStyle='#1a1418';c.fillRect(-3,-25.5,1,2);c.fillRect(0,-25.5,1,2);c.fillRect(2.5,-25.5,1,2);c.restore()}
+function drawGolem(c,m){const s=m.r/30;c.save();c.translate(m.x,m.y);c.scale(s,s);c.fillStyle='rgba(0,0,0,.32)';ell(c,0,0,36,11);const st=m.moving?Math.sin(m.walk*6)*4:0,raise=m.slamT>0?(1-m.slamT/.95)*24:0,enr=m.hp<m.max*.5;
+ const R1=K('#6c7488'),R2=K('#525a6e'),R3=K('#8a93a8'),CR=K(enr?'#ff7ad8':'#7fefff');
+ c.fillStyle=R2;rr(c,-20,-26+st,13,26-st,3);rr(c,7,-26-st,13,26+st,3);
+ c.fillStyle=R1;c.beginPath();c.moveTo(-27,-30);c.lineTo(-22,-64);c.lineTo(0,-72);c.lineTo(23,-62);c.lineTo(28,-30);c.lineTo(12,-20);c.lineTo(-12,-20);c.closePath();c.fill();c.fillStyle=R3;c.beginPath();c.moveTo(-22,-64);c.lineTo(0,-72);c.lineTo(4,-60);c.lineTo(-16,-54);c.closePath();c.fill();
+ c.strokeStyle=R2;c.lineWidth=1.5;c.beginPath();c.moveTo(-10,-50);c.lineTo(-4,-38);c.lineTo(-12,-28);c.moveTo(12,-56);c.lineTo(8,-44);c.stroke();
+ for(const sd of[-1,1]){c.save();c.translate(sd*30,-58-raise);c.fillStyle=R2;c.beginPath();c.moveTo(-8,0);c.lineTo(8,-4);c.lineTo(10,28+raise*.3);c.lineTo(-6,32+raise*.3);c.closePath();c.fill();c.fillStyle=R1;rr(c,-9,26+raise*.3,18,14,4);c.fillStyle=CR;c.beginPath();c.moveTo(-4,-2);c.lineTo(0,-16);c.lineTo(4,-2);c.fill();c.restore()}
+ c.fillStyle=R1;rr(c,-11,-86,22,17,4);c.fillStyle=R3;c.fillRect(-11,-86,22,3);const pulse=.6+Math.sin(gT*5)*.4;c.fillStyle=CR;c.globalAlpha=.7+pulse*.3;c.fillRect(-7,-80,5,3);c.fillRect(3,-80,5,3);c.beginPath();c.moveTo(-6,-48);c.lineTo(0,-58);c.lineTo(6,-48);c.lineTo(0,-40);c.closePath();c.fill();c.globalAlpha=1;c.restore()}
+function drawImp(c,m,big){const sc=big?1.45:1;c.save();c.translate(m.x,m.y);c.fillStyle='rgba(0,0,0,.25)';ell(c,0,0,9*sc,3*sc);if(m.fx<0)c.scale(-1,1);c.scale(sc,sc);const hov=big?0:Math.sin(gT*6+m.seed)*2;const st=m.moving?Math.sin(m.walk*12)*2.5:0;c.translate(0,(big?0:-7)+hov);
+ const BODY=K(big?'#8a1e16':'#d8402f'),BEL=K(big?'#c04a20':'#f07a4a'),WING=K(big?'#3a0e0a':'#7a1d1d');
+ const fl=Math.sin(gT*(big?6:16)+m.seed)*.4;c.fillStyle=WING;for(const s of[-1,1]){c.save();c.translate(-2,-16);c.scale(s===1?1:-.7,1);c.rotate(-.4+fl*s);c.beginPath();c.moveTo(0,0);c.lineTo(-14,-10);c.lineTo(-12,-2);c.lineTo(-16,2);c.lineTo(-8,4);c.closePath();c.fill();c.restore()}
+ c.strokeStyle=BODY;c.lineWidth=2;c.beginPath();c.moveTo(-5,-6);c.quadraticCurveTo(-14,-4,-13,-14);c.stroke();c.fillStyle=BODY;c.beginPath();c.moveTo(-13,-17);c.lineTo(-16,-12);c.lineTo(-10,-13);c.fill();
+ if(big){c.fillStyle=BODY;rr(c,-6,-8,4,8,2);rr(c,2,-8,4,8,2)}else{c.strokeStyle=BODY;c.lineWidth=2.5;c.beginPath();c.moveTo(-3,-4);c.lineTo(-3+st,1);c.moveTo(3,-4);c.lineTo(3-st,1);c.stroke()}
+ c.fillStyle=BODY;ell(c,0,-11,7,8.5);c.fillStyle=BEL;ell(c,1,-9,4,5);c.fillStyle=BODY;circ(c,1,-23,7);c.fillStyle=K('#2b1a1a');c.beginPath();c.moveTo(-4,-28);c.lineTo(-7,-36);c.lineTo(-1,-29);c.fill();c.beginPath();c.moveTo(4,-28);c.lineTo(8,-36);c.lineTo(6,-27);c.fill();
+ c.fillStyle='#ffe14a';circ(c,0,-24,1.6);circ(c,4.5,-24,1.6);c.fillStyle='#2b0a0a';c.fillRect(0,-20,5,1.4);
+ if(!big){const fs=3+Math.sin(gT*14)*1;c.fillStyle='#ffb040';circ(c,9,-13,fs);c.fillStyle='#fff3a0';circ(c,9,-13,fs*.5)}else{c.fillStyle=K('#e8e0c0');for(const x of[7,9])c.fillRect(x,-10,1.2,3)}
+ c.restore()}
+function drawDragon(c,m){c.save();c.translate(m.x,m.y);c.fillStyle='rgba(0,0,0,.32)';ell(c,0,0,62,16);const face=m.fx<0?-1:1;c.scale(face,1);const fl=Math.sin(gT*3)*.3,R=K('#a8231c'),R2=K('#6e1410'),Y=K('#e0a24a'),hov=Math.sin(gT*2)*3;c.translate(0,hov);
+ const wing=(col,sc)=>{c.save();c.translate(-4,-58);c.scale(sc,1);c.rotate(-.25+fl);c.fillStyle=col;c.beginPath();c.moveTo(0,0);c.lineTo(-18,-58);c.lineTo(-48,-74);c.quadraticCurveTo(-52,-44,-80,-32);c.quadraticCurveTo(-58,-26,-52,-10);c.quadraticCurveTo(-30,-14,-24,2);c.closePath();c.fill();c.strokeStyle=K('#3a0806');c.lineWidth=2;c.beginPath();c.moveTo(-18,-58);c.lineTo(-24,2);c.moveTo(-48,-74);c.lineTo(-52,-10);c.stroke();c.restore()};
+ wing(R2,.85);
+ c.fillStyle=R;c.beginPath();c.moveTo(-30,-34);c.quadraticCurveTo(-70,-30+Math.sin(gT*2.4)*8,-92,-12+Math.sin(gT*2.4)*10);c.lineTo(-88,-6+Math.sin(gT*2.4)*10);c.quadraticCurveTo(-60,-18,-28,-22);c.fill();c.fillStyle=R2;c.beginPath();const tx=-92,ty=-12+Math.sin(gT*2.4)*10;c.moveTo(tx,ty);c.lineTo(tx-10,ty-8);c.lineTo(tx-4,ty+6);c.fill();
+ c.fillStyle=R2;rr(c,-26,-24,13,24,4);rr(c,14,-24,13,24,4);c.fillStyle=K('#f0e0c0');for(const x of[-26,-21,14,19])c.fillRect(x+1,-2,3,3);
+ c.fillStyle=R;ell(c,0,-38,40,24);c.fillStyle=Y;ell(c,6,-29,26,12);c.strokeStyle=K('#b07030');c.lineWidth=1.5;for(let i=-3;i<=3;i++){c.beginPath();c.moveTo(6+i*7,-40);c.lineTo(6+i*7,-19);c.stroke()}
+ c.fillStyle=R2;for(let i=0;i<6;i++){const x=-30+i*11;c.beginPath();c.moveTo(x,-56+Math.abs(i-2.5)*2);c.lineTo(x+5,-68+Math.abs(i-2.5)*2);c.lineTo(x+10,-56+Math.abs(i-2.5)*2);c.fill()}
+ c.fillStyle=R;c.beginPath();c.moveTo(18,-54);c.quadraticCurveTo(34,-80,46,-84);c.lineTo(54,-74);c.quadraticCurveTo(40,-66,32,-40);c.closePath();c.fill();
+ c.save();c.translate(52,-84);const open=m.breathT>0?.35:0;c.fillStyle=R;c.beginPath();c.moveTo(-8,-10);c.lineTo(18,-6);c.lineTo(26,0);c.lineTo(10,2);c.lineTo(-8,6);c.closePath();c.fill();c.save();c.rotate(open);c.fillStyle=R2;c.beginPath();c.moveTo(-6,4);c.lineTo(24,2);c.lineTo(8,10);c.lineTo(-6,8);c.closePath();c.fill();c.restore();
+ if(open){c.fillStyle='#ffd040';circ(c,22,3,5+Math.sin(gT*30)*2)}c.fillStyle=K('#3a0806');c.beginPath();c.moveTo(-4,-9);c.lineTo(-16,-24);c.lineTo(2,-11);c.fill();c.beginPath();c.moveTo(4,-8);c.lineTo(-4,-22);c.lineTo(8,-9);c.fill();c.fillStyle='#ffe040';ell(c,6,-4,3.5,2);c.fillStyle='#000';c.fillRect(6,-5.5,1.2,3);c.fillStyle='#1a0402';circ(c,23,-3,1.3);c.restore();
+ wing(R,1);c.restore()}
+function drawGhost(c,n){c.save();c.globalAlpha=.72+Math.sin(gT*2)*.1;const fy=n.y-6+Math.sin(gT*1.6)*3;drawHuman(c,n.x,fy,{...n.look,dir:n.dir,t:gT});c.restore()}
+function drawChest(c,ch){const x=ch.x,y=ch.y,open=S.picked[ch.uid];c.fillStyle='rgba(0,0,0,.3)';ell(c,x,y,15,4);c.fillStyle='#6a3e1c';rr(c,x-14,y-17,28,17,2);c.fillStyle='#8f5a2a';rr(c,x-12,y-15,24,13,2);c.fillStyle='#e0b040';c.fillRect(x-14,y-12,28,2);c.fillRect(x-2.5,y-14,5,7);
+ if(open){c.fillStyle='#2a1608';rr(c,x-13,y-22,26,6,2);c.fillStyle='#8f5a2a';rr(c,x-14,y-30,28,9,2)}else{c.fillStyle='#7a4a22';c.beginPath();c.moveTo(x-14,y-17);c.quadraticCurveTo(x,y-31,x+14,y-17);c.fill();c.fillStyle='#e0b040';c.fillRect(x-14,y-18,28,2);c.fillRect(x-2.5,y-23,5,8);if(Math.sin(gT*3+x)>.6){c.fillStyle='#fff';const sx=x-8+((gT*20)%16);c.fillRect(sx,y-26,2,2)}}}
+function drawLive(c,p){if(p.k==='torch'){c.fillStyle='rgba(0,0,0,.3)';ell(c,p.x,p.y+14,6,2);c.fillStyle='#5a3a1e';c.fillRect(p.x-2,p.y-6,4,20);c.fillStyle='#3a3a3a';rr(c,p.x-5,p.y-9,10,5,2);flame(c,p.x,p.y-10,1)}
+ else if(p.k==='brazier'){c.fillStyle='rgba(0,0,0,.35)';ell(c,p.x,p.y+2,14,4);c.fillStyle='#3a3230';c.fillRect(p.x-3,p.y-14,6,16);c.fillStyle='#5a4a44';c.beginPath();c.moveTo(p.x-13,p.y-22);c.lineTo(p.x+13,p.y-22);c.lineTo(p.x+8,p.y-13);c.lineTo(p.x-8,p.y-13);c.fill();flame(c,p.x,p.y-22,1.8)}
+ else if(p.k==='spray'){c.fillStyle='rgba(200,230,255,.75)';for(let i=0;i<10;i++){const k=((gT*1.2+i/10)%1),a=i/10*Math.PI*2;const x=p.x+Math.cos(a)*k*20,y=p.y-Math.sin(k*Math.PI)*12+k*14;c.fillRect(x-1,y-1,2,2.5)}}}
+function flame(c,x,y,s){const f=Math.sin(gT*18+x)*.15+1;c.fillStyle='#ff6a1a';c.beginPath();c.moveTo(x-4*s,y);c.quadraticCurveTo(x-5*s,y-8*s*f,x,y-14*s*f);c.quadraticCurveTo(x+5*s,y-8*s*f,x+4*s,y);c.closePath();c.fill();c.fillStyle='#ffd040';c.beginPath();c.moveTo(x-2*s,y);c.quadraticCurveTo(x-2.5*s,y-5*s,x,y-9*s*f);c.quadraticCurveTo(x+2.5*s,y-5*s,x+2*s,y);c.closePath();c.fill()}
+function drawDrop(c,d){const b=Math.sin(d.t*4)*2.5;c.fillStyle='rgba(0,0,0,.25)';ell(c,d.x,d.y,7,2.5);if(d.gold){c.fillStyle='#b8860b';circ(c,d.x,d.y-5+b,5);c.fillStyle='#ffd770';circ(c,d.x-.5,d.y-5.5+b,4);c.fillStyle='#fff6';c.fillRect(d.x-2,d.y-8+b,2,2);return}
+ if(d.id==='mushroom'){c.globalCompositeOperation='lighter';c.globalAlpha=.4+Math.sin(d.t*3)*.15;c.drawImage(GL_CYAN,d.x-22,d.y-30+b,44,44);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.fillStyle='#f0e8d8';c.fillRect(d.x-2,d.y-9+b,4,8);c.fillStyle='#4ab8ff';c.beginPath();c.arc(d.x,d.y-9+b,7,Math.PI,0);c.fill();c.fillStyle='#c8f0ff';circ(c,d.x-3,d.y-12+b,1.4);circ(c,d.x+2.5,d.y-13+b,1.1);return}
+ c.globalCompositeOperation='lighter';c.globalAlpha=.3;c.drawImage(GL_GOLD,d.x-18,d.y-28+b,36,36);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.font='16px serif';c.textAlign='center';c.textBaseline='middle';c.fillText(ITEMS[d.id].ic,d.x,d.y-10+b)}
+function drawProj(c,p){const y=p.y-p.h;if(p.kind==='rock'){c.fillStyle='rgba(0,0,0,.25)';ell(c,p.x,p.y,p.r,p.r*.4);c.save();c.translate(p.x,y);c.rotate(p.rot);c.fillStyle='#6c7488';c.beginPath();c.moveTo(-p.r,-p.r*.4);c.lineTo(-p.r*.2,-p.r);c.lineTo(p.r,-p.r*.3);c.lineTo(p.r*.6,p.r);c.lineTo(-p.r*.6,p.r*.8);c.closePath();c.fill();c.fillStyle='#8ff0ff';c.fillRect(-2,-2,4,4);c.restore();return}
+ c.globalCompositeOperation='lighter';c.globalAlpha=.75;c.drawImage(p.from==='p'?GL_FIRE:GL_RED,p.x-p.r*4,y-p.r*4,p.r*8,p.r*8);c.globalAlpha=1;c.globalCompositeOperation='source-over';c.fillStyle=p.from==='p'?'#ffb040':'#ff5a2a';circ(c,p.x,y,p.r);c.fillStyle='#fff3b0';circ(c,p.x,y,p.r*.5)}
+function drawTel(c,t){const k=1-t.t/t.max;if(t.from==='p'){c.strokeStyle='rgba(255,170,60,.7)';c.lineWidth=2;c.beginPath();c.ellipse(t.x,t.y,t.r,t.r*.55,0,0,7);c.stroke();c.fillStyle=`rgba(255,120,40,${.12+k*.2})`;ell(c,t.x,t.y,t.r*k,t.r*.55*k);const my=t.y-260*(1-k);c.globalCompositeOperation='lighter';c.drawImage(GL_FIRE,t.x-40,my-40,80,80);c.globalCompositeOperation='source-over';c.fillStyle='#ffd040';circ(c,t.x,my,10);c.fillStyle='#fff';circ(c,t.x,my,5);return}
+ if(t.kind==='circle'){c.fillStyle=`rgba(255,40,30,${.12+k*.18})`;ell(c,t.x,t.y,t.r,t.r*.6);c.fillStyle=`rgba(255,60,30,${.25+k*.25})`;ell(c,t.x,t.y,t.r*k,t.r*.6*k);c.strokeStyle='rgba(255,90,60,.8)';c.lineWidth=2;c.beginPath();c.ellipse(t.x,t.y,t.r,t.r*.6,0,0,7);c.stroke();if(t.meteor){const my=t.y-240*(1-k);c.fillStyle='#ff6a2a';circ(c,t.x,my,8);c.fillStyle='#ffe070';circ(c,t.x,my,4)}}
+ else{c.fillStyle=`rgba(255,70,20,${.12+k*.25})`;c.beginPath();c.moveTo(t.x,t.y);c.arc(t.x,t.y,t.r,t.ang-t.spread,t.ang+t.spread);c.closePath();c.fill();c.strokeStyle='rgba(255,120,60,.8)';c.lineWidth=2;c.stroke();c.fillStyle=`rgba(255,200,60,${.2+k*.3})`;c.beginPath();c.moveTo(t.x,t.y);c.arc(t.x,t.y,t.r*k,t.ang-t.spread,t.ang+t.spread);c.closePath();c.fill()}}
+const MDRAW={slime:drawSlime,wolf:drawWolf,bat:drawBat,skeleton:drawSkel,golem:drawGolem,imp:(c,m)=>drawImp(c,m,false),demon:(c,m)=>drawImp(c,m,true),dragon:drawDragon};
+
+// ================= RENDER =================
+function render(dt){ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#07050b';ctx.fillRect(0,0,cv.width,cv.height);if(!CM)return;
+ const z=DPR*ZOOM,vw=W/ZOOM,vh=H/ZOOM;let sx=0,sy=0;if(shakeT>0){sx=(Math.random()-.5)*shakeM;sy=(Math.random()-.5)*shakeM}
+ const cx=camX+sx,cy=camY+sy;ctx.setTransform(z,0,0,z,-Math.round(cx*z),-Math.round(cy*z));ctx.imageSmoothingEnabled=false;
+ const x0=Math.max(0,Math.floor(cx)),y0=Math.max(0,Math.floor(cy)),w=Math.min(CM.gC.width-x0,Math.ceil(vw)+2),h=Math.min(CM.gC.height-y0,Math.ceil(vh)+2);
+ if(w>0&&h>0)ctx.drawImage(CM.gC,x0,y0,w,h,x0,y0,w,h);
+ const tx0=Math.floor(cx/TS)-1,ty0=Math.floor(cy/TS)-1,tx1=tx0+Math.ceil(vw/TS)+3,ty1=ty0+Math.ceil(vh/TS)+3;const vis=(x,y)=>x>=tx0&&x<=tx1&&y>=ty0&&y<=ty1;
+ ctx.fillStyle='rgba(255,255,255,.14)';for(const[x,y]of CM.water)if(vis(x,y)){const ox=(Math.sin(gT*1.5+x*1.3+y)*5+8)|0,oy=((gT*6+y*11+x*5)%28)|0;ctx.fillRect(x*TS+ox,y*TS+oy,9,1.5)}
+ for(const[x,y]of CM.lava)if(vis(x,y)){const k=Math.sin(gT*2+x*.7+y*1.3);ctx.fillStyle=`rgba(255,${190+k*40|0},70,${.25+k*.15})`;circ(ctx,x*TS+10+k*4,y*TS+12,4+k*2);ctx.fillStyle='rgba(255,240,150,.35)';circ(ctx,x*TS+22-k*3,y*TS+22,2+Math.max(0,k)*2)}
+ for(const e of CM.exits){const open=!e.cond||e.cond();const ex=e.x*TS,ey=e.y*TS,ew=e.w*TS,eh=e.h*TS;const pulse=.25+Math.sin(gT*3)*.12;const g=e.x===0||e.x===CM.w-1?ctx.createLinearGradient(e.x===0?ex+ew:ex,0,e.x===0?ex:ex+ew,0):ctx.createLinearGradient(0,e.y===0?ey+eh:ey,0,e.y===0?ey:ey+eh);g.addColorStop(0,'rgba(255,215,112,0)');g.addColorStop(1,open?`rgba(255,215,112,${pulse})`:`rgba(255,60,60,${pulse})`);ctx.fillStyle=g;ctx.fillRect(ex,ey,ew,eh)}
+ for(const d of drops)if(vis(d.x/TS|0,d.y/TS|0))drawDrop(ctx,d);
+ for(const t of tels)drawTel(ctx,t);
+ const L=[];for(const n of npcs)L.push({y:n.y,f:()=>{if(n.kind==='fountain')return;if(n.kind==='cat')drawCat(ctx,n.x,n.y,gT,n.dir);else if(n.kind==='ghost')drawGhost(ctx,n);else drawHuman(ctx,n.x,n.y,{...n.look,dir:n.dir,walk:n.walk,moving:n.moving,scale:n.scale,t:gT+n.x})}});
+ for(const m of mons)if(vis(m.x/TS|0,m.y/TS|0)||m.d.boss)L.push({y:m.y,f:()=>{FL=m.flash>0;MDRAW[m.type](ctx,m);FL=false}});
+ for(const ch of CM.chests)if(vis(ch.x/TS|0,ch.y/TS|0))L.push({y:ch.y,f:()=>drawChest(ctx,ch)});
+ for(const p of CM.live)if(vis(p.x/TS|0,p.y/TS|0))L.push({y:p.y+(p.k==='spray'?40:14),f:()=>drawLive(ctx,p)});
+ L.push({y:P.y,f:()=>drawPlayer(ctx)});L.sort((a,b)=>a.y-b.y);for(const o of L)o.f();
+ if(w>0&&h>0)ctx.drawImage(CM.tC,x0,y0,w,h,x0,y0,w,h);
+ for(const p of projs)drawProj(ctx,p);
+ for(const p of parts){ctx.globalAlpha=Math.max(0,Math.min(1,p.life/p.max*1.4));ctx.fillStyle=p.c;ctx.fillRect(p.x-p.s/2,p.y-p.s/2,p.s,p.s)}ctx.globalAlpha=1;
+ ctx.globalCompositeOperation='lighter';for(const l of CM.lights){if(!l.c||!vis(l.x/TS|0,l.y/TS|0))continue;const r=l.r*.55*(l.fl?1+Math.sin(gT*9+l.x)*.08:1);ctx.globalAlpha=.32;ctx.drawImage(l.c,l.x-r,l.y-r,r*2,r*2)}for(const f of flashes){const k=f.t/f.max;ctx.globalAlpha=.55*k;ctx.drawImage(f.c,f.x-f.r/2,f.y-f.r/2,f.r,f.r)}
+ if(CM.id==='ruine'){ctx.globalAlpha=.18;for(const[x,y]of CM.lava)if(vis(x,y)&&(x+y)%2===0)ctx.drawImage(GL_FIRE,x*TS-24,y*TS-24,80,80)}
+ ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+ if(CM.amb>0){lx.setTransform(1,0,0,1,0,0);lx.globalCompositeOperation='source-over';lx.clearRect(0,0,lc.width,lc.height);lx.fillStyle=CM.dark.replace('A',CM.amb);lx.fillRect(0,0,lc.width,lc.height);lx.globalCompositeOperation='destination-out';
+  const Lt=(x,y,r,a)=>{const X=(x-cx)*z,Y=(y-cy)*z,R=r*z;if(X+R<0||Y+R<0||X-R>lc.width||Y-R>lc.height)return;lx.globalAlpha=a;lx.drawImage(GLOW,X-R,Y-R,R*2,R*2)};
+  Lt(P.x,P.y-16,CM.plight*(1+Math.sin(gT*3)*.02),1);for(const l of CM.lights)Lt(l.x,l.y,l.r*(l.fl?1+Math.sin(gT*9+l.x)*.07:1),l.a||1);for(const p of projs)if(p.kind!=='rock')Lt(p.x,p.y-p.h,90,.85);for(const f of flashes)Lt(f.x,f.y,f.r,f.t/f.max);for(const t of tels)if(t.from==='p'||t.meteor)Lt(t.x,t.y,100,.6);for(const d of drops)if(d.id==='mushroom')Lt(d.x,d.y-8,50,.6);
+  if(CM.id==='ruine')for(const[x,y]of CM.lava)if(vis(x,y))Lt(x*TS+16,y*TS+16,46,.35);for(const m of mons)if(m.type==='imp'||m.type==='golem')Lt(m.x,m.y-20,m.type==='golem'?110:50,.6);
+  lx.globalAlpha=1;lx.globalCompositeOperation='source-over';ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(lc,0,0);ctx.setTransform(z,0,0,z,-Math.round(cx*z),-Math.round(cy*z))}
+ // overlays: hp bars, markers, names, texts
+ ctx.textAlign='center';ctx.textBaseline='middle';
+ for(const m of mons){if(m.d.boss||m.hp>=m.max)continue;const bw=Math.max(22,m.r*2),by=m.y-(m.type==='bat'?50:m.r*2.4+(m.type==='wolf'?14:m.type==='demon'?28:18));ctx.fillStyle='#000a';ctx.fillRect(m.x-bw/2-1,by-1,bw+2,5);ctx.fillStyle='#e03a2a';ctx.fillRect(m.x-bw/2,by,bw*m.hp/m.max,3)}
+ for(const n of npcs){if(n.kind==='fountain')continue;const q=npcQuest(n.id);const hy=n.y-(n.kind==='cat'?26:50*(n.scale||1))-(n.kind==='ghost'?6:0);if(q){const ch=q[1]==='avail'?'!':'?',col=q[1]==='active'?'#b8b8b8':'#ffe040';const bb=Math.sin(gT*4)*2;ctx.font='900 20px Alegreya Sans,sans-serif';ctx.lineWidth=4;ctx.strokeStyle='#2a1a05';ctx.strokeText(ch,n.x,hy-12+bb);ctx.fillStyle=col;ctx.fillText(ch,n.x,hy-12+bb)}
+  if(dist(n,P)<130){ctx.font='700 10px Alegreya Sans,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='#000c';ctx.strokeText(n.name,n.x,hy+2);ctx.fillStyle=n.shop?'#9fd0ff':'#fff2d0';ctx.fillText(n.name,n.x,hy+2)}}
+ for(const e of CM.exits){const ecx=(e.x+e.w/2)*TS,ecy=(e.y+e.h/2)*TS;if(Math.hypot(ecx-P.x,ecy-P.y)<TS*6){ctx.font='700 11px Alegreya Sans,sans-serif';const lb=(e.y===0?'▲ ':e.y>=CM.h-1?'▼ ':e.x===0?'◀ ':'▶ ')+e.label;const lxp=Math.max(cx+60,Math.min(cx+vw-60,ecx)),lyp=Math.max(cy+20,Math.min(cy+vh-20,ecy+(e.y===0?30:e.y>=CM.h-1?-20:-20)));ctx.lineWidth=3;ctx.strokeStyle='#000c';ctx.strokeText(lb,lxp,lyp);ctx.fillStyle=(!e.cond||e.cond())?'#ffe08a':'#ff9a8a';ctx.fillText(lb,lxp,lyp)}}
+ for(const t of texts){ctx.globalAlpha=Math.min(1,t.life/t.max*2);ctx.font=`800 ${t.s}px Alegreya Sans,sans-serif`;ctx.lineWidth=3;ctx.strokeStyle='#000';ctx.strokeText(t.t,t.x,t.y);ctx.fillStyle=t.c;ctx.fillText(t.t,t.x,t.y)}ctx.globalAlpha=1;
+ if(P.hp<ST.mhp*.3&&mode==='play'){ctx.setTransform(1,0,0,1,0,0);const g=ctx.createRadialGradient(cv.width/2,cv.height/2,Math.min(cv.width,cv.height)*.3,cv.width/2,cv.height/2,Math.max(cv.width,cv.height)*.7);g.addColorStop(0,'rgba(120,0,0,0)');g.addColorStop(1,`rgba(160,0,0,${.35+Math.sin(gT*5)*.12})`);ctx.fillStyle=g;ctx.fillRect(0,0,cv.width,cv.height)}}
+
+// ================= LOOP =================
+let last=performance.now();
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;gT+=dt;
+ if(mode==='play')update(dt);if(mode!=='panel'&&mode!=='dialog')updFx(mode==='play'?dt:dt*.3);
+ if(mode==='title'&&CM){camX+=Math.sin(gT*.15)*.4;camY+=Math.cos(gT*.12)*.25}
+ if(dlg&&dlg.shown<dlg.text.length){const before=dlg.shown|0;dlg.shown=Math.min(dlg.text.length,dlg.shown+dt*60);if((dlg.shown|0)!==before){$('dText').textContent=dlg.text.slice(0,dlg.shown|0);if((dlg.shown|0)%3===0)SFX.talk()}if(dlg.shown>=dlg.text.length)renderOpts()}
+ render(dt);updHUD(dt);musicTick();requestAnimationFrame(frame)}
+
+// ================= INPUT =================
+addEventListener('keydown',e=>{if(e.target&&e.target.tagName==='INPUT')return;initAudio();const k=e.key.toLowerCase();keys[k]=true;if(k===' '||k.startsWith('arrow')||k==='tab')e.preventDefault();if(e.repeat&&k!==' ')return;
+ if(mode==='dialog'){if(k==='e'||k==='enter'||k===' '){keys[' ']=false;dlgAdvance()}else if(/^[1-4]$/.test(k))dlgPick(+k-1);else if(k==='escape'&&dlg&&dlg.rendered)dlgPick(dlg.opts.length-1);return}
+ if(mode==='panel'){if(k==='escape'||(k==='i'&&panelType==='inv')||(k==='q'&&panelType==='quests'))closePanel();return}
+ if(mode!=='play')return;
+ if(k==='e'||k==='enter')interact();else if(k>='1'&&k<='4')useSkill(+k-1);else if(k==='r')usePotion();else if(k==='f')useEther();else if(k==='shift')dash();else if(k==='i')openInv();else if(k==='q')openQuests();else if(k==='escape')openInv()});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
+addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouseDown=false});
+cv.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;lastMouse=performance.now()});
+cv.addEventListener('mousedown',e=>{initAudio();mx=e.clientX;my=e.clientY;lastMouse=performance.now();if(mode!=='play')return;if(e.button===0){mouseDown=true;attack()}else if(e.button===2)useSkill(0)});
+addEventListener('mouseup',()=>{mouseDown=false});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+$('dText').onclick=()=>dlgAdvance();
+document.querySelectorAll('#topBtns button').forEach(b=>b.onclick=()=>{initAudio();const a=b.dataset.a;if(a==='inv'){if(mode==='play')openInv();else if(panelType==='inv')closePanel()}else if(a==='quests'){if(mode==='play')openQuests();else if(panelType==='quests')closePanel()}else if(a==='sound'){muted=!muted;b.textContent=muted?'🔇':'🔊'}else if(a==='save')save(false);else if(a==='lang'&&mode==='play'){mode='lang';showOverlay('lang')}});
+// touch joystick
+let joyId=null,joyO={x:0,y:0};const jz=$('joyZone'),joy=$('joy'),knob=$('knob');
+jz.addEventListener('pointerdown',e=>{initAudio();e.preventDefault();joyId=e.pointerId;jz.setPointerCapture(e.pointerId);joyO={x:e.clientX,y:e.clientY};joy.style.left=e.clientX+'px';joy.style.top=e.clientY+'px';joy.classList.remove('hide');knob.style.transform='translate(0,0)'});
+jz.addEventListener('pointermove',e=>{if(e.pointerId!==joyId)return;let dx=e.clientX-joyO.x,dy=e.clientY-joyO.y;const l=Math.hypot(dx,dy),mxl=50;if(l>mxl){dx=dx/l*mxl;dy=dy/l*mxl}knob.style.transform=`translate(${dx}px,${dy}px)`;joyV={x:dx/mxl,y:dy/mxl};if(Math.hypot(joyV.x,joyV.y)<.15)joyV={x:0,y:0}});
+const joyEnd=e=>{if(e.pointerId!==joyId)return;joyId=null;joyV={x:0,y:0};joy.classList.add('hide')};jz.addEventListener('pointerup',joyEnd);jz.addEventListener('pointercancel',joyEnd);
+$('tAtk').addEventListener('pointerdown',e=>{e.preventDefault();initAudio();touchAtk=true;attack()});for(const ev of['pointerup','pointercancel','pointerleave'])$('tAtk').addEventListener(ev,()=>{touchAtk=false});
+$('tE').addEventListener('pointerdown',e=>{e.preventDefault();if(mode==='play')interact()});
+
+// ================= START =================
+applyLang();ST=stats();loadMap('sat',25*TS+16,22*TS+16);mode='title';showOverlay('title');$('banner').classList.remove('show');
+requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
