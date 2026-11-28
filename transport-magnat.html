@@ -1005,7 +1005,7 @@ cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerdown',e=>{
  audioInit();cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
  if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y),z:cam.z,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2,camx:cam.x,camy:cam.y};UI.drag=null;preview=null;pan=null;return;}
- const panMode=e.button===2||e.button===1||(e.button===0&&UI.tool==='info');
+ const panMode=e.button===2||e.button===1||(e.button===0&&(UI.tool==='info'||UI.tool==='order'));
  pan={sx:e.clientX,sy:e.clientY,cx:cam.x,cy:cam.y,moved:false,btn:e.button,panMode};
  if(!panMode&&e.button===0){const t=screenTile(e.clientX,e.clientY);if(t>=0){UI.drag={a:t,b:t};preview=UI.tool==='order'?null:planFor(UI.tool,t,t);}}
 });
@@ -1021,7 +1021,7 @@ cv.addEventListener('pointermove',e=>{
 function endPtr(e){
  ptrs.delete(e.pointerId);
  if(pinch){if(ptrs.size<2)pinch=null;pan=null;return;}
- if(pan&&pan.panMode){if(!pan.moved){if(pan.btn===2){setTool('info');}else clickInfo(e.clientX,e.clientY);}pan=null;return;}
+ if(pan&&pan.panMode){if(!pan.moved){if(pan.btn===2){setTool('info');}else if(UI.tool==='order')pickOrder(screenTile(e.clientX,e.clientY));else clickInfo(e.clientX,e.clientY);}pan=null;return;}
  pan=null;
  if(UI.drag){const {a,b}=UI.drag;UI.drag=null;preview=null;
    if(UI.tool==='order')pickOrder(b);else doBuild(UI.tool,a,b);}
@@ -1031,7 +1031,7 @@ cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',e=>{
 cv.addEventListener('wheel',e=>{e.preventDefault();const f=Math.pow(1.0015,-e.deltaY);const nz=Math.max(0.35,Math.min(2.5,cam.z*f));const wx=(e.clientX-CW/2)/cam.z+cam.x,wy=(e.clientY-CH/2)/cam.z+cam.y;cam.z=nz;cam.x=wx-(e.clientX-CW/2)/nz;cam.y=wy-(e.clientY-CH/2)/nz;},{passive:false});
 function updateTip(x,y){const tip=$('tip');let txt='';
  if(preview&&preview.cost!=null&&UI.drag)txt=(preview.ok?'Cost: ':'✖ ')+(preview.ok?fmt(preview.cost):(preview.msg||'Imposibil'));
- else if(UI.tool==='order'){const v=G&&G.veh.find(q=>q.id===UI.orderFor);txt=v?'Click pe stațiile pentru '+v.name+' (Esc = gata)':'';}
+ else if(UI.tool==='order'){const v=G&&G.veh.find(q=>q.id===UI.orderFor);txt=v?'Click pe stațiile pentru '+v.name+' · trage = mută harta · Esc = gata':'';}
  else if(UI.tool!=='info'&&UI.hover>=0){const p=planFor(UI.tool,UI.hover,UI.hover);if(p&&UI.tool!=='rail')txt=(p.ok?fmt(p.cost):(p.msg||''));}
  if(txt){tip.style.display='block';tip.textContent=txt;tip.style.left=(x+16)+'px';tip.style.top=(y+16)+'px';}else tip.style.display='none';}
 function setTool(t){UI.tool=t;preview=null;UI.drag=null;document.querySelectorAll('#tools .btn').forEach(b=>b.classList.toggle('on',b.dataset.tool===t||(t==='order'&&b.dataset.tool==='info')));if(t!=='order')UI.orderFor=null;$('tip').style.display='none';}
