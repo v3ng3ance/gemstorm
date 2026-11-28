@@ -15,9 +15,19 @@ body{margin:0;overflow:hidden;background:#000;font:13px/1.35 'Trebuchet MS',Verd
 .btn:active,.btn.on{background:linear-gradient(#e7bb45,#c9951f);color:#1b1200;border-color:#5a4100 #fff1b8 #fff1b8 #5a4100;text-shadow:none}
 .btn:disabled{opacity:.45;cursor:default}
 .btn.sm{padding:1px 6px;min-height:22px;font-size:12px}
-#tools{top:46px;left:4px;display:flex;flex-direction:column;gap:3px;padding:4px}
-#tools .btn{width:46px;height:42px;font-size:20px;padding:0;position:relative}
-#tools .btn small{position:absolute;bottom:1px;right:2px;font-size:9px;font-weight:normal}
+#tools{bottom:6px;left:6px;display:flex;gap:3px;padding:4px;max-width:calc(100vw - 272px);overflow-x:auto}
+#tools .btn{width:66px;height:56px;padding:3px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;flex:none}
+#tools .btn .ic{font-size:21px;line-height:1}
+#tools .btn .lb{font-size:10px;white-space:nowrap}
+#tools .btn kbd{position:absolute;top:1px;right:3px;font:9px sans-serif;opacity:.65}
+#tools .sep{width:2px;background:#22272e;border-right:1px solid #7b8594;margin:3px 2px;flex:none}
+#hint{position:fixed;left:6px;bottom:76px;background:rgba(18,23,30,.94);border:2px solid #c9a43a;padding:6px 10px;z-index:14;display:none;max-width:min(600px,92vw);font-size:13px;line-height:1.4}
+#hint b{color:#ffd76a}
+#goal{position:fixed;top:46px;left:6px;z-index:11;background:rgba(18,23,30,.92);border:2px solid #4a7fb5;padding:6px 10px;max-width:min(330px,60vw);cursor:pointer;font-size:12px}
+#goal .gt{font-weight:bold;color:#ffd76a;font-size:13px}
+#goal .gh{color:#bcd;margin-top:2px}
+.pb{height:7px;background:#222;border:1px solid #555;margin-top:4px}.pb i{display:block;height:100%;background:linear-gradient(90deg,#3c9,#9e6)}
+.goalrow{padding:5px 0;border-bottom:1px solid #4a5260}.goalrow.done{opacity:.6}
 .info{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1;padding:0 6px}
 #date{font-weight:bold;color:#ffe28a}
 #money{font-weight:bold;font-size:15px;color:#9fff9f}
@@ -39,7 +49,7 @@ body{margin:0;overflow:hidden;background:#000;font:13px/1.35 'Trebuchet MS',Verd
 select,input[type=number]{background:#222831;color:#fff;border:1px solid #778;padding:2px;font:12px sans-serif}
 .bar2{height:8px;background:#222;border:1px solid #555;width:60px;display:inline-block;vertical-align:middle}
 .bar2 i{display:block;height:100%}
-#news{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);max-width:min(620px,70vw);background:rgba(20,24,30,.92);border:2px solid #c9a43a;padding:6px 12px;color:#fff;z-index:15;display:none;cursor:pointer;text-align:center}
+#news{position:fixed;top:48px;left:50%;transform:translateX(-50%);max-width:min(620px,70vw);background:rgba(20,24,30,.92);border:2px solid #c9a43a;padding:6px 12px;color:#fff;z-index:15;display:none;cursor:pointer;text-align:center}
 #mini{position:fixed;right:6px;bottom:6px;border:2px solid;border-color:#929eae #1f242b #1f242b #929eae;background:#000;width:250px;height:125px;z-index:12;image-rendering:pixelated;cursor:crosshair}
 #tip{position:fixed;pointer-events:none;background:rgba(0,0,0,.8);padding:3px 7px;border:1px solid #888;font-size:12px;z-index:30;display:none;white-space:nowrap}
 #intro{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#2b3a52,#0a0d12);z-index:50;display:flex;align-items:center;justify-content:center}
@@ -47,7 +57,7 @@ select,input[type=number]{background:#222831;color:#fff;border:1px solid #778;pa
 #intro h1{margin:0 0 4px;font-size:38px;letter-spacing:3px;color:#ffd76a;text-shadow:3px 3px 0 #7a4b00,0 0 18px rgba(255,200,80,.35)}
 #intro p{color:#cdd;margin:6px 0 14px}
 #intro .row{justify-content:center}
-@media (max-width:700px){#mini{width:160px;height:80px}#tools .btn{width:40px;height:36px;font-size:17px}.win .bd{max-height:48vh}}
+@media (max-width:700px){#top .t{display:none}#top{gap:2px;padding:0 3px}#top .btn{padding:3px 5px}#money{font-size:13px}#top [data-spd='8'],#top [data-spd='4']{display:none}#mini{width:150px;height:75px}#tools{max-width:calc(100vw - 168px)}#tools .btn{width:54px;height:50px}#tools .btn .ic{font-size:18px}#goal{top:auto;bottom:140px;max-width:70vw}.win .bd{max-height:48vh}#hint{bottom:66px}}
 </style>
 </head>
 <body>
@@ -59,24 +69,30 @@ select,input[type=number]{background:#222831;color:#fff;border:1px solid #778;pa
   <button class="btn" data-spd="4" title="Viteză x4">⏩</button>
   <button class="btn" data-spd="8" title="Viteză x8">⏭</button>
   <span class="grow"></span>
-  <button class="btn" onclick="A.finance()" title="Finanțe">💰 Finanțe</button>
-  <button class="btn" onclick="A.vehList()" title="Vehicule">🚍 Vehicule</button>
-  <button class="btn" onclick="A.stList()" title="Stații">🚉 Stații</button>
-  <button class="btn" onclick="A.townList()" title="Orașe">🏘 Orașe</button>
+  <button class="btn" onclick="A.finance()" title="Finanțe">💰<span class="t"> Finanțe</span></button>
+  <button class="btn" onclick="A.vehList()" title="Vehicule">🚍<span class="t"> Vehicule</span></button>
+  <button class="btn" onclick="A.stList()" title="Stații">🚉<span class="t"> Stații</span></button>
+  <button class="btn" onclick="A.townList()" title="Orașe">🏘<span class="t"> Orașe</span></button>
+  <button class="btn" onclick="A.goals()" title="Obiective" id="bGoals">🎯<span class="t"> Obiective</span></button>
   <button class="btn" onclick="A.newsLog()" title="Știri">📰</button>
   <button class="btn" onclick="A.menu()" title="Meniu">☰</button>
   <div class="info"><span id="date">1 Ian 1950</span><span id="money">0 lei</span></div>
 </div>
 <div id="tools" class="bar">
-  <button class="btn on" data-tool="info" title="Informații / selectare (Esc)">🔍</button>
-  <button class="btn" data-tool="road" title="Construiește drum (trage)">🛣<small>D</small></button>
-  <button class="btn" data-tool="rail" title="Construiește cale ferată (trage)">🛤<small>C</small></button>
-  <button class="btn" data-tool="roadstop" title="Stație auto (autobuz/camion) pe drum">🚏<small>S</small></button>
-  <button class="btn" data-tool="railst" title="Gară – peron (trage pe lungime)">🚉<small>G</small></button>
-  <button class="btn" data-tool="rdepot" title="Depou auto">🚌<small>A</small></button>
-  <button class="btn" data-tool="tdepot" title="Depou de trenuri">🚂<small>T</small></button>
-  <button class="btn" data-tool="demolish" title="Demolare (trage zonă)">🧨<small>X</small></button>
+  <button class="btn on" data-tool="info"><span class="ic">🔍</span><span class="lb">Selectează</span></button>
+  <span class="sep"></span>
+  <button class="btn" data-tool="road"><kbd>D</kbd><span class="ic">🛣</span><span class="lb">Drum</span></button>
+  <button class="btn" data-tool="roadstop"><kbd>S</kbd><span class="ic">🚏</span><span class="lb">Stație auto</span></button>
+  <button class="btn" data-tool="rdepot"><kbd>A</kbd><span class="ic">🚌</span><span class="lb">Depou auto</span></button>
+  <span class="sep"></span>
+  <button class="btn" data-tool="rail"><kbd>C</kbd><span class="ic">🛤</span><span class="lb">Cale ferată</span></button>
+  <button class="btn" data-tool="railst"><kbd>G</kbd><span class="ic">🚉</span><span class="lb">Gară</span></button>
+  <button class="btn" data-tool="tdepot"><kbd>T</kbd><span class="ic">🚂</span><span class="lb">Depou tren</span></button>
+  <span class="sep"></span>
+  <button class="btn" data-tool="demolish"><kbd>X</kbd><span class="ic">🧨</span><span class="lb">Demolare</span></button>
 </div>
+<div id="hint"></div>
+<div id="goal" onclick="A.goals()"></div>
 <div id="news"></div>
 <canvas id="mini" width="192" height="96"></canvas>
 <div id="tip"></div>
@@ -154,7 +170,7 @@ const LOCO=[
  {id:'d2',n:'Diesel Turbo 3000',spd:160,maxW:12,cost:110000,run:8500,y0:1988,y1:9999,col:'#2a5fb2'}
 ];
 const WAG={cost:4000,run:350};
-const COST={road:400,rail:700,tree:150,roadstop:1200,railst:2000,rdepot:3000,tdepot:5000,clearInfra:200,house:[1500,2500,6000,4500,12000,5000],ind:40000};
+const COST={bridgeR:1500,bridgeT:2500,road:400,rail:700,tree:150,roadstop:1200,railst:2000,rdepot:3000,tdepot:5000,clearInfra:200,house:[1500,2500,6000,4500,12000,5000],ind:40000};
 const TOWN_NAMES=['Valea Mare','Pădureni','Dealu Mare','Răchițeni','Fântânele','Bradu','Stejaru','Lunca Verde','Câmpeni','Sălcioara','Morărești','Podeni','Izvoru','Cetățuia','Brătești','Florești','Piatra Albă','Vadu Crișului','Ulmeni','Măgura','Târgu Nou','Sânmihai','Poiana','Cireșoaia'];
 
 // ================= UTILITARE =================
@@ -181,7 +197,7 @@ function newTile(){return{t:0,v:0,tr:0,rd:0,rl:0,h:-1,hv:0,tn:-1,ind:-1,st:-1,dp
 // ================= GENERARE HARTĂ =================
 function genMap(seed){
  rng=mulberry32(seed);
- G={seed,tiles:[],towns:[],inds:[],stations:[],depots:[],veh:[],day:1,month:0,year:1950,days:0,money:150000,loan:150000,maxLoan:500000,fin:{cur:{},last:{}},cnt:{bus:0,mail:0,truck:0,train:0},news:[],nid:1,firsts:{}};
+ G={seed,tiles:[],towns:[],inds:[],stations:[],depots:[],veh:[],day:1,month:0,year:1950,days:0,money:150000,loan:150000,maxLoan:500000,fin:{cur:{},last:{}},cnt:{bus:0,mail:0,truck:0,train:0},news:[],nid:1,firsts:{},hist:[],fm:{inc:0,exp:0,del:0},tot:{},yd:{},goalsDone:{}};
  const n1=noiseGrid(5),n2=noiseGrid(11),n3=noiseGrid(23),nf=noiseGrid(9),nf2=noiseGrid(19);
  const vals=[];
  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const t=newTile();t.v=RI(0,3);const e=sampleN(n1,x/MW,y/MH)*0.6+sampleN(n2,x/MW,y/MH)*0.3+sampleN(n3,x/MW,y/MH)*0.1;t.e=e;vals.push(e);G.tiles.push(t);}
@@ -311,14 +327,16 @@ function planLine(kind,a,b){ // kind 'road' | 'rail'
    const ok=t.t!==1&&t.h<0&&t.ind<0&&t.dp<0&&t.st<0&&!t.rl;
    res.tiles.push({i,ok});res.ok=ok;if(ok)res.cost=(t.rd?0:COST.road)+(t.tr?COST.tree:0);return res;
  }
- for(const i of list){const t=G.tiles[i];const ok=kind==='road'?roadTileOK(t,axis):railTileOK(t,axis);
+ for(const i of list){const t=G.tiles[i];const k=list.indexOf(i);const water=t.t===1;
+   const ok=water?(k>0&&k<list.length-1&&!(kind==='road'?t.rl:t.rd)&&!(t[key]&&axOfBits(t[key])!==axis)):(kind==='road'?roadTileOK(t,axis):railTileOK(t,axis));
    res.tiles.push({i,ok});if(!ok)res.ok=false;
    const need=list.length;let newBits=false;
-   const k=list.indexOf(i);const bits=(k>0?1<<OPP(d):0)|(k<need-1?1<<d:0);
+   const bits=(k>0?1<<OPP(d):0)|(k<need-1?1<<d:0);
    if((t[key]&bits)!==bits)newBits=true;
-   if(newBits)res.cost+=kind==='road'?COST.road:COST.rail;
+   if(water)res.bridge=true;
+   if(newBits)res.cost+=water?(kind==='road'?COST.bridgeR:COST.bridgeT):(kind==='road'?COST.road:COST.rail);
    if(t.tr)res.cost+=COST.tree;}
- if(!res.ok)res.msg='Teren ocupat sau nepotrivit';
+ if(!res.ok)res.msg=list.some(i=>G.tiles[i].t===1)&&(G.tiles[list[0]].t===1||G.tiles[list[list.length-1]].t===1)?'Podul trebuie să înceapă și să se termine pe uscat':'Teren ocupat sau nepotrivit';
  return res;
 }
 function applyLine(kind,res){
@@ -329,7 +347,7 @@ function applyLine(kind,res){
      else if(n.dp>=0&&(n.rd&(1<<OPP(dd))))t.rd|=1<<dd;}
    if(!t.rd)t.rd=10; // drum izolat: segment drept E-V
    return;}
- for(let k=0;k<list.length;k++){const t=G.tiles[list[k]];t.tr=0;
+ for(let k=0;k<list.length;k++){const t=G.tiles[list[k]];t.tr=0;if(t.t===1)t.br=1;
    if(k>0)t[key]|=1<<OPP(d);if(k<list.length-1)t[key]|=1<<d;}
  // capete: conectare in prelungire
  const ends=[[list[0],OPP(d)],[list[list.length-1],d]];
@@ -426,7 +444,7 @@ function clearNeighborBits(i,key){const x=ix(i),y=iy(i);for(let d=0;d<4;d++){con
 function applyDemolish(res){
  let stChanged=false,townChanged=false;
  for(const id of res.inds||[]){const ind=G.inds[id];if(!ind)continue;for(let y=ind.y;y<ind.y+ind.h;y++)for(let x=ind.x;x<ind.x+ind.w;x++)G.tiles[idx(x,y)].ind=-1;G.inds[id]=null;news(ind.name+' a fost demolată.');stChanged=true;}
- for(const {i,ok} of res.tiles){const t=G.tiles[i];if(t.t===1)continue;
+ for(const {i,ok} of res.tiles){const t=G.tiles[i];if(t.t===1&&!t.br)continue;if(t.br){if(t.rd){clearNeighborBits(i,'rd');t.rd=0;}if(t.rl){clearNeighborBits(i,'rl');t.rl=0;}t.br=0;continue;}
    if(t.dp>=0){if(!ok)continue;G.depots[t.dp]=null;t.dp=-1;t.rd=0;t.rl=0;continue;}
    if(t.st>=0){const s=G.stations[t.st];s.tiles=s.tiles.filter(k=>k!==i);t.st=-1;
      if(t.rd){clearNeighborBits(i,'rd');t.rd=0;}if(t.rl){clearNeighborBits(i,'rl');t.rl=0;}
@@ -443,8 +461,8 @@ function deleteStation(id){const s=G.stations[id];if(!s)return;G.stations[id]=nu
  news('Stația '+s.name+' a fost desființată.');}
 
 // ================= FINANȚE =================
-function spend(amt,cat){if(amt>0&&G.money<amt){news('Fonduri insuficiente! Necesari '+fmt(amt)+'.');sfx('err');return false;}G.money-=amt;G.fin.cur[cat]=(G.fin.cur[cat]||0)-amt;return true;}
-function earn(amt,cat){G.money+=amt;G.fin.cur[cat]=(G.fin.cur[cat]||0)+amt;}
+function spend(amt,cat){if(amt>0&&G.money<amt){news('Fonduri insuficiente! Necesari '+fmt(amt)+'.');sfx('err');return false;}G.money-=amt;if(amt>0)G.fm.exp+=amt;else G.fm.inc-=amt;G.fin.cur[cat]=(G.fin.cur[cat]||0)-amt;return true;}
+function earn(amt,cat){G.money+=amt;G.fm.inc+=amt;G.fin.cur[cat]=(G.fin.cur[cat]||0)+amt;}
 
 function doBuild(tool,a,b){
  let res;
@@ -467,7 +485,7 @@ function planFor(tool,a,b){
 
 // ================= PATHFINDING =================
 function connected(key,a,b){const ax=ix(a),ay=iy(a),bx=ix(b),by=iy(b);let d=-1;for(let k=0;k<4;k++)if(ax+DX[k]===bx&&ay+DY[k]===by)d=k;if(d<0)return a===b;return !!(G.tiles[a][key]&(1<<d))&&!!(G.tiles[b][key]&(1<<OPP(d)));}
-function astar(key,s,goals,back){
+function astar(key,s,goals,back,avoid){
  if(!G.tiles[s][key])return null;
  if(goals.has(s))return[s];
  const gA=[...goals].map(i=>[ix(i),iy(i)]);
@@ -483,6 +501,7 @@ function astar(key,s,goals,back){
    for(let d=0;d<4;d++){if(!(t[key]&(1<<d)))continue;const nx=x+DX[d],ny=y+DY[d];if(!inb(nx,ny))continue;const j=idx(nx,ny);const nt=G.tiles[j];
      if(!(nt[key]&(1<<OPP(d))))continue;if(closed.has(j))continue;
      if(nt.dp>=0&&!goals.has(j))continue; // nu trece prin depouri
+     if(avoid&&avoid(j))continue;
      let cost=1;if(c===s&&j===back)cost+=8;
      if(key==='rl'&&came.has(c)){const pr=came.get(c);if(ix(pr)!==nx&&iy(pr)!==ny)cost+=0.4;}
      const ng=gc+cost;if(ng<(gs.has(j)?gs.get(j):1e9)){gs.set(j,ng);came.set(j,c);push(ng+h(j),j);}}}
@@ -514,8 +533,12 @@ function makeTrain(loco,wcargo,n,depot){
  const v={id:G.nid++,kind:'rail',type:'train',model:loco,name:'Tren '+G.cnt.train,comps,run:L.run+WAG.run*n,value:L.cost+WAG.cost*n,col:L.col,steam:L.steam,orders:[],cur:0,state:'depot',stopped:true,depot,head:tc(idx(dep.x,dep.y)),trail:[],path:null,pi:0,load:[],wait:0,pY:0,pLY:0,goDepot:false,dir:{x:DX[dep.face],y:DY[dep.face]},born:G.year};
  G.veh.push(v);return v;
 }
+let resv=new Map();
+function trainHeld(v){const s=new Set();const len=v.comps.length*CAR;for(let d=0;d<=len+0.01;d+=0.25)s.add(tileOf(sampleBack(v,d)));return s;}
+function releaseTrain(v){for(const [k,val] of resv)if(val===v.id)resv.delete(k);}
+function reserveTrain(v){releaseTrain(v);if(v.kind!=='rail'||v.state==='depot')return;for(const t of trainHeld(v))if(G.tiles[t]&&G.tiles[t].dp<0)resv.set(t,v.id);if(v.state==='move'&&v.path)for(let k=Math.max(0,v.pi-1);k<v.path.length;k++)if(G.tiles[v.path[k]].dp<0)resv.set(v.path[k],v.id);}
 function pushTrail(v,p){
- const tr=v.trail;const last=tr[tr.length-1];if(last&&last.x===p.x&&last.y===p.y)return;tr.push({x:p.x,y:p.y});
+ const tr=v.trail;const last=tr[tr.length-1];if(last&&last.x===p.x&&last.y===p.y)return;tr.push({x:p.x,y:p.y});if(v.kind==='rail')v._rs=1;
  const need=(v.comps.length)*CAR+2;let acc=Math.hypot(v.head.x-tr[tr.length-1].x,v.head.y-tr[tr.length-1].y);
  for(let k=tr.length-1;k>0;k--){acc+=Math.hypot(tr[k].x-tr[k-1].x,tr[k].y-tr[k-1].y);if(acc>need){tr.splice(0,k-1);break;}}
 }
@@ -536,14 +559,20 @@ function planPath(v){
  const goals=v.goDepot?depotGoals(v.kind):stationGoals(v);
  if(!goals||!goals.size){v.state='nopath';v.retry=4;return;}
  let start=tileOf(v.head),back=backTile(v);
- let p=astar(key,start,goals,back);
- if(v.kind==='rail'&&p&&p.length>1&&p[1]===back){reverseTrain(v);start=tileOf(v.head);back=backTile(v);p=astar(key,start,goals,back);}
+ const avoid=v.kind==='rail'?(j=>{const r=resv.get(j);return r!=null&&r!==v.id&&!G.tiles[j].dp;}):null;
+ let p=astar(key,start,goals,back,avoid);
+ if(v.kind==='rail'&&p&&p.length>1&&p[1]===back){reverseTrain(v);start=tileOf(v.head);back=backTile(v);const p2=astar(key,start,goals,back,avoid);if(p2)p=p2;else{reverseTrain(v);p=null;}}
+ if(!p&&avoid&&astar(key,tileOf(v.head),goals,backTile(v),null)){ // linie ocupata de alt tren
+   v.state='wait';v.retry=0.25;reserveTrain(v);
+   if((v.waitD||0)>25&&!v.warnedWait){v.warnedWait=true;news('⏳ '+v.name+' așteaptă de mult: linia sau peronul sunt ocupate. Fă o linie de evitare sau încă un peron.',v.head.x,v.head.y);}
+   return;}
  if(!p){v.state='nopath';v.retry=4;if(!v.warned){const o=v.orders[v.cur];const s=o&&G.stations[o.st];news(v.name+' nu găsește drum spre '+(v.goDepot?'depou':(s?s.name:'destinație'))+'!',v.head.x,v.head.y);v.warned=true;}return;}
  v.warned=false;
  if(v.kind==='rail'&&!v.goDepot&&p.length>=2){ // continua pana la capatul peronului
    const a=p[p.length-2],b=p[p.length-1];const sid=G.tiles[b].st;let d=-1;for(let k=0;k<4;k++)if(ix(a)+DX[k]===ix(b)&&iy(a)+DY[k]===iy(b))d=k;
    let c=b;for(let n=0;n<10&&d>=0;n++){const nx=ix(c)+DX[d],ny=iy(c)+DY[d];if(!inb(nx,ny))break;const j=idx(nx,ny);if(G.tiles[j].st!==sid||!connected('rl',c,j))break;p.push(j);c=j;}}
- v.path=p;v.pi=0;v.state='move';
+ v.path=p;v.pi=0;v.state='move';v.waitD=0;v.warnedWait=false;
+ if(v.kind==='rail')reserveTrain(v);
 }
 function startVeh(v){
  if(!v.orders.length){news(v.name+': adaugă întâi ordine (stații).');sfx('err');return;}
@@ -564,12 +593,12 @@ function moveVeh(v,dist){
  if(v.state==='move'&&v.pi>=v.path.length)arrive(v);
 }
 function arrive(v){
- if(v.goDepot){const t=G.tiles[tileOf(v.head)];if(t.dp>=0){v.state='depot';v.stopped=true;v.depot=t.dp;v.goDepot=false;v.path=null;v.trail=[];news(v.name+' a ajuns în depou.');refreshAll();return;}planPath(v);return;}
+ if(v.goDepot){const t=G.tiles[tileOf(v.head)];if(t.dp>=0){v.state='depot';v.stopped=true;v.depot=t.dp;v.goDepot=false;v.path=null;v.trail=[];releaseTrain(v);news(v.name+' a ajuns în depou.');refreshAll();return;}planPath(v);return;}
  const o=v.orders[v.cur];const s=o&&G.stations[o.st];
  if(!s||G.tiles[tileOf(v.head)].st!==s.id){depart(v);return;}
  unload(v,s);
  const moved=tryLoad(v,s);
- v.state='load';v.atSt=s.id;v.wait=1+moved/(v.kind==='rail'?80:30);
+ v.state='load';v.atSt=s.id;v.wait=1+moved/(v.kind==='rail'?80:30);if(v.kind==='rail')reserveTrain(v);
  const fk=v.type;if(!s.first[fk]){s.first[fk]=1;const lbl={bus:'Primul autobuz',mail:'Prima dubă poștală',truck:'Primul camion',train:'Primul tren'}[fk];news('🎉 Locuitorii sărbătoresc! '+lbl+' a sosit în '+s.name+'!',s.x+0.5,s.y+0.5);sfx(v.kind==='rail'?'horn':'cash');}
 }
 function unload(v,s){
@@ -577,7 +606,7 @@ function unload(v,s){
  for(const p of v.load){
    if(s.acc[p.t]&&p.src!==s.id){const src=G.stations[p.src];const dist=src?Math.abs(src.x-s.x)+Math.abs(src.y-s.y):5;const C=CARGO[p.t];
      const tf=p.d<=C.fast?1:Math.max(0.25,1-(p.d-C.fast)/(C.fast*4));
-     const pay=p.a*Math.max(1,dist)*C.price*tf/PAYDIV;inc+=pay;
+     const pay=p.a*Math.max(1,dist)*C.price*tf/PAYDIV;inc+=pay;G.tot[p.t]=(G.tot[p.t]||0)+p.a;G.yd[p.t]=(G.yd[p.t]||0)+p.a;G.fm.del+=p.a;
      // livrare la industrie
      for(const id of s.inds){const ind=G.inds[id];if(ind&&INDS[ind.type].acc.includes(p.t)){ind.inBuf+=p.a;ind.del[p.t]=(ind.del[p.t]||0)+p.a;break;}}
      // statistici oras
@@ -598,8 +627,9 @@ function vehUpdate(v,dd){
  if(v.state==='load'){v.wait-=dd;if(v.wait>0)return;const s=G.stations[v.atSt];const o=v.orders[v.cur];
    if(s){const m=tryLoad(v,s);if(m>0){v.wait=m/(v.kind==='rail'?80:30);return;}if(o&&o.full&&!isFull(v)){v.wait=0.4;return;}}
    depart(v);return;}
+ if(v.state==='wait'){v.retry-=dd;v.waitD=(v.waitD||0)+dd;if(v.retry<=0)planPath(v);return;}
  if(v.state==='nopath'||v.state==='noorders'){v.retry-=dd;if(v.retry<=0){v.retry=4;planPath(v);}return;}
- if(v.state==='move'){const spd=vSpeedKmh(v)/28;moveVeh(v,spd*dd);}
+ if(v.state==='move'){const spd=vSpeedKmh(v)/28;moveVeh(v,spd*dd);if(v._rs){v._rs=0;if(v.state==='move')reserveTrain(v);}}
 }
 
 // ================= ECONOMIE / TIMP =================
@@ -627,17 +657,19 @@ function weekTick(){
 }
 function dayTick(){
  G.days++;
- for(const v of G.veh){if(v.state!=='depot'){const c=v.run/365;G.money-=c;G.fin.cur.run=(G.fin.cur.run||0)-c;v.pY-=c;}for(const p of v.load)p.d++;}
+ for(const v of G.veh){if(v.state!=='depot'){const c=v.run/365;G.money-=c;G.fm.exp+=c;G.fin.cur.run=(G.fin.cur.run||0)-c;v.pY-=c;}for(const p of v.load)p.d++;}
  for(const s of G.stations){if(!s)continue;for(const c in s.cg){const cg=s.cg[c];if(!cg.act)continue;cg.dsp++;
    let tg=0.22+(cg.dsp<=7?0.35:cg.dsp<=14?0.25:cg.dsp<=30?0.12:0)+Math.max(0,Math.min(0.15,(cg.spd-40)/500))+(cg.w<=100?0.15:cg.w<=300?0.07:0);
    tg=Math.max(0.05,Math.min(0.96,tg));cg.r+=(tg-cg.r)*0.06;
    if(cg.w>300&&cg.r<0.5)cg.w*=0.995;if(cg.w>4000)cg.w=4000;}}
  if(G.day===1||G.day===8||G.day===15||G.day===22)weekTick();
+ checkGoals();
  G.day++;
  if(G.day>MD[G.month]){G.day=1;monthTick();G.month++;if(G.month>11){G.month=0;G.year++;yearTick();}}
 }
 function monthTick(){
- const it=G.loan*0.04/12;G.money-=it;G.fin.cur.int=(G.fin.cur.int||0)-it;
+ const it=G.loan*0.04/12;G.money-=it;G.fm.exp+=it;G.fin.cur.int=(G.fin.cur.int||0)-it;
+ G.hist.push({m:G.month,y:G.year,inc:Math.round(G.fm.inc),exp:Math.round(G.fm.exp),val:Math.round(companyValue()),del:G.fm.del});if(G.hist.length>36)G.hist.shift();G.fm={inc:0,exp:0,del:0};
  for(const ind of G.inds)if(ind){ind.pm=ind.cm;ind.cm={prod:{},tr:{}};}
  for(const t of G.towns){t.pm=t.cm;t.cm={gen:{},tr:{}};}
  for(const t of G.towns)growTown(t);
@@ -647,6 +679,7 @@ function monthTick(){
 function yearTick(){
  G.fin.last=G.fin.cur;G.fin.cur={};
  for(const v of G.veh){v.pLY=v.pY;v.pY=0;}
+ const yd=G.yd;G.yd={};setTimeout(()=>A.annual(G.year-1,yd),50);
  for(const ind of G.inds){if(!ind)continue;const def=INDS[ind.type];if(!def.prod.length)continue;const r=Math.random();
    if(r<0.08){for(const c of def.prod)ind.rate[c]=Math.min(250,ind.rate[c]*2);news('📈 '+ind.name+' își dublează producția!',ind.x+1,ind.y+1);}
    else if(r<0.14){for(const c of def.prod)ind.rate[c]=Math.max(10,Math.floor(ind.rate[c]/2));news('📉 '+ind.name+' își înjumătățește producția.',ind.x+1,ind.y+1);}}
@@ -876,7 +909,7 @@ addEventListener('resize',resize);
 const WP=(fx,fy,z)=>[(fx-fy)*32,(fx+fy)*16-(z||0)];
 function worldBox(x,y,u0,v0,u1,v1,z0,z1,col,o){box(ctx,(u,v,z)=>WP(x+u,y+v,z),u0,v0,u1,v1,z0,z1,col,o);}
 function orientBox(cx,cy,dx,dy,len,wid,z0,z1,col,topCol){
- const px=-dy,py=dx,l=len/2,w=wid/2;
+ z0+=ZO;z1+=ZO;const px=-dy,py=dx,l=len/2,w=wid/2;
  const c=[[cx+dx*l+px*w,cy+dy*l+py*w],[cx+dx*l-px*w,cy+dy*l-py*w],[cx-dx*l-px*w,cy-dy*l-py*w],[cx-dx*l+px*w,cy-dy*l+py*w]];
  const nrm=[[dx,dy],[-px,-py],[-dx,-dy],[px,py]];
  for(let k=0;k<4;k++){const n=nrm[k];if(n[0]+n[1]<=0.001)continue;const a=c[k],b=c[(k+1)&3];const f=n[0]>n[1]?0.68:0.88;
@@ -906,12 +939,15 @@ function render(){
      if(x<MW-1&&G.tiles[idx(x+1,y)].t!==1){ctx.moveTo(px+32,py+16);ctx.lineTo(px,py+32);}
      if(y<MH-1&&G.tiles[idx(x,y+1)].t!==1){ctx.moveTo(px-32,py+16);ctx.lineTo(px,py+32);}
      if(x>0&&G.tiles[idx(x-1,y)].t!==1){ctx.moveTo(px,py);ctx.lineTo(px-32,py+16);}ctx.stroke();}
+   if(UI.grid){ctx.strokeStyle='rgba(0,0,0,.14)';ctx.lineWidth=1/z;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+32,py+16);ctx.lineTo(px,py+32);ctx.lineTo(px-32,py+16);ctx.closePath();ctx.stroke();}
+   if(t.br)continue;
    if(t.rd)ctx.drawImage(SPR.road[t.rd],px-32,py,64,32);
    if(t.rl)ctx.drawImage(SPR.rail[t.rl],px-32,py,64,32);
  }
  // vehicule pe diagonale
  const vb=new Map();
- for(const v of G.veh){if(v.state==='depot')continue;const parts=vehParts(v);for(const p of parts){if(G.tiles[tileOf(p)]&&G.tiles[tileOf(p)].dp>=0&&v.state!=='depot'&&p.hideInDepot)continue;const s=Math.floor(p.x)+Math.floor(p.y);let a=vb.get(s);if(!a)vb.set(s,a=[]);a.push(p);}}
+ for(const v of G.veh){if(v.state==='depot')continue;const parts=vehParts(v);for(const p of parts){if(G.tiles[tileOf(p)]&&G.tiles[tileOf(p)].dp>=0&&v.state!=='depot'&&p.hideInDepot)continue;p.zo=(G.tiles[tileOf(p)]||{}).br?6:0;const s=Math.floor(p.x)+Math.floor(p.y);let a=vb.get(s);if(!a)vb.set(s,a=[]);a.push(p);}}
+ for(const c of amb){const p={x:c.x-c.dy*0.15,y:c.y+c.dx*0.15,dx:c.dx,dy:c.dy,amb:c,zo:0};const s=Math.floor(p.x)+Math.floor(p.y);let a=vb.get(s);if(!a)vb.set(s,a=[]);a.push(p);}
  // pas 2: obiecte
  for(let s=V.tx0+V.ty0;s<=V.tx1+V.ty1;s++){
    for(let x=Math.max(V.tx0,s-V.ty1);x<=Math.min(V.tx1,s-V.ty0);x++){const y=s-x;const px=(x-y)*32,py=(x+y)*16;if(px<V.x0||px>V.x1||py<V.y0||py>V.y1)continue;
@@ -919,6 +955,11 @@ function render(){
    const a=vb.get(s);if(a)for(const p of a)drawPart(p);}
  // fum
  for(const p of smoke){ctx.globalAlpha=Math.max(0,0.5*(1-p.t/p.life));ctx.fillStyle=p.dark?'#555':'#ddd';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
+ // umbre de nori
+ for(const c of clouds){const [a,b]=WP(c.x,c.y);if(a<V.x0-400||a>V.x1+400||b<V.y0-300||b>V.y1+300)continue;ctx.save();ctx.translate(a,b);ctx.scale(1,0.5);const R=c.r*45;const g=ctx.createRadialGradient(0,0,R*0.15,0,0,R);g.addColorStop(0,'rgba(10,20,40,.13)');g.addColorStop(1,'rgba(10,20,40,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,R,0,Math.PI*2);ctx.fill();ctx.restore();}
+ // traseul vehiculului selectat
+ const selV=UI.sel&&UI.sel.k==='veh'?G.veh.find(q=>q.id===UI.sel.id):null;
+ if(selV&&selV.orders.length>1){const pts=selV.orders.map(o=>G.stations[o.st]).filter(Boolean).map(s=>WP(s.x+0.5,s.y+0.5));ctx.setLineDash([10/z,7/z]);ctx.lineDashOffset=-animT*30/z;ctx.lineWidth=3/z;ctx.strokeStyle='rgba(255,222,58,.85)';ctx.beginPath();pts.forEach((p,k)=>k?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.stroke();ctx.setLineDash([]);}
  // previzualizare
  if(preview){for(const {i,ok} of preview.tiles){const x=ix(i),y=iy(i),px=(x-y)*32,py=(x+y)*16;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+32,py+16);ctx.lineTo(px,py+32);ctx.lineTo(px-32,py+16);ctx.closePath();ctx.fillStyle=ok&&preview.ok?'rgba(80,255,80,.28)':'rgba(255,60,60,.35)';ctx.fill();ctx.strokeStyle=ok&&preview.ok?'#7f7':'#f66';ctx.lineWidth=1.5/z;ctx.stroke();}
    if(preview.face!=null&&preview.tiles[0]){const c=tc(preview.tiles[0].i);const [x1,y1]=WP(c.x,c.y),[x2,y2]=WP(c.x+DX[preview.face]*0.7,c.y+DY[preview.face]*0.7);ctx.strokeStyle='#ff0';ctx.lineWidth=3/z;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}}
@@ -935,6 +976,7 @@ function render(){
  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.font='bold 12px Trebuchet MS';ctx.textAlign='center';ctx.textBaseline='middle';
  const toS=(fx,fy,zz)=>{const [a,b]=WP(fx,fy,zz);return[(a-cam.x)*z+CW/2,(b-cam.y)*z+CH/2];};
  for(const t of G.towns){const [sx,sy]=toS(t.x+0.5,t.y+0.5,40);if(sx<-100||sx>CW+100||sy<-30||sy>CH+30)continue;label(t.name+' ('+t.pop.toLocaleString('ro-RO')+')',sx,sy,'rgba(30,40,60,.82)','#fff');}
+ if(selV)selV.orders.forEach((o,k)=>{const s=G.stations[o.st];if(!s)return;const [sx,sy]=toS(s.x+0.5,s.y+0.5,0);ctx.fillStyle=k===selV.cur?'#ffde3a':'#fff';ctx.strokeStyle='#000';ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx-26,sy-30,9,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#000';ctx.fillText(k+1,sx-26,sy-29.5);});
  if(z>=0.55)for(const s of G.stations){if(!s)continue;const [sx,sy]=toS(s.x+0.5,s.y+0.5,22);if(sx<-100||sx>CW+100||sy<-30||sy>CH+30)continue;label(s.name,sx,sy,UI.sel&&UI.sel.k==='st'&&UI.sel.id===s.id?'rgba(200,140,20,.95)':'rgba(140,30,30,.88)','#fff',11);}
  if(z>=0.8)for(const ind of G.inds){if(!ind)continue;const [sx,sy]=toS(ind.x+ind.w/2,ind.y+ind.h/2,0);if(sx<-100||sx>CW+100||sy<-30||sy>CH+30)continue;label(ind.name,sx,sy+18,'rgba(0,0,0,.55)','#ffd76a',10);}
 }
@@ -942,6 +984,7 @@ function drawArea(x0,y0,x1,y1,col){const a=WP(x0,y0),b=WP(x1+1,y0),c=WP(x1+1,y1+
 function label(txt,x,y,bg,fg,fs){ctx.font='bold '+(fs||12)+'px Trebuchet MS';const w=ctx.measureText(txt).width+10;ctx.fillStyle=bg;ctx.fillRect(x-w/2,y-8,w,16);ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=1;ctx.strokeRect(x-w/2+0.5,y-7.5,w-1,15);ctx.fillStyle=fg;ctx.fillText(txt,x,y+0.5);}
 function drawObj(x,y,px,py){
  const t=G.tiles[idx(x,y)];
+ if(t.br){drawBridge(x,y,px,py,t);return;}
  if(t.h>=0){ctx.drawImage(SPR.houses[t.h][t.hv],px-32,py-H0);return;}
  if(t.ind>=0){const ind=G.inds[t.ind];const dx=x-ind.x,dy=y-ind.y;const s=indSpr(ind.type,dx,dy);ctx.drawImage(s,px-32,py-H0);
    if(ind.type==='oil'&&s.pj){pumpjack(ctx,(u,v,z)=>WP(x+u,y+v,z),0.5,0.5,animT*3+dx+dy*2);}
@@ -960,6 +1003,7 @@ function drawObj(x,y,px,py){
    if(t.rl){const ax=axOfBits(t.rl);
      if(ax===1){box(ctx,P,0,0,1,0.17,0,4,'#b8b0a0');box(ctx,P,0,0.83,1,1,0,4,'#b8b0a0');for(const u of [0.15,0.85]){box(ctx,P,u-0.02,0.07,u+0.02,0.11,4,18,'#555');}box(ctx,P,0.02,0.0,0.98,0.2,18,20,'#5d7a96');}
      else{box(ctx,P,0,0,0.17,1,0,4,'#b8b0a0');box(ctx,P,0.83,0,1,1,0,4,'#b8b0a0');for(const v of [0.15,0.85]){box(ctx,P,0.07,v-0.02,0.11,v+0.02,4,18,'#555');}box(ctx,P,0.0,0.02,0.2,0.98,18,20,'#5d7a96');}}
+   drawWaiting(x,y,t);
  }
 }
 function vehParts(v){
@@ -968,7 +1012,30 @@ function vehParts(v){
  for(let k=0;k<v.comps.length;k++){const dc=k*CAR+0.25;const a=sampleBack(v,Math.max(0,dc-0.18)),b=sampleBack(v,dc+0.18),c=sampleBack(v,dc);let dx=a.x-b.x,dy=a.y-b.y;const L=Math.hypot(dx,dy);if(L<1e-4){dx=v.dir.x;dy=v.dir.y;}else{dx/=L;dy/=L;}parts.push({x:c.x,y:c.y,dx,dy,v,k,hideInDepot:true});}
  return parts;
 }
+function drawBridge(x,y,px,py,t){const BZ=6;const ax=axOfBits(t.rd||t.rl);const P=(u,v,z)=>WP(x+u,y+v,z);const st='#8a8378';
+ if(ax===1){box(ctx,P,0.44,0.26,0.56,0.36,-4,BZ,st);box(ctx,P,0.44,0.64,0.56,0.74,-4,BZ,st);box(ctx,P,0,0.2,1,0.8,BZ-3,BZ,'#6f675c',{edge:false});}
+ else{box(ctx,P,0.26,0.44,0.36,0.56,-4,BZ,st);box(ctx,P,0.64,0.44,0.74,0.56,-4,BZ,st);box(ctx,P,0.2,0,0.8,1,BZ-3,BZ,'#6f675c',{edge:false});}
+ ctx.drawImage(t.rd?SPR.road[t.rd]:SPR.rail[t.rl],px-32,py-BZ,64,32);
+ ctx.strokeStyle='#c9c2b2';ctx.lineWidth=1.2;ctx.beginPath();
+ for(const b of [0.2,0.8]){const a1=ax===1?P(0,b,BZ+4):P(b,0,BZ+4),a2=ax===1?P(1,b,BZ+4):P(b,1,BZ+4);ctx.moveTo(...a1);ctx.lineTo(...a2);for(const q of [0.1,0.5,0.9]){const f=ax===1?P(q,b,BZ):P(b,q,BZ),g=ax===1?P(q,b,BZ+4):P(b,q,BZ+4);ctx.moveTo(...f);ctx.lineTo(...g);}}ctx.stroke();}
+function person(px,py,j){const cols=['#c0392b','#2e86c1','#27ae60','#8e44ad','#d35400','#f1c40f'];ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(px-1.5,py-0.5,4,1.2);ctx.fillStyle=cols[j%6];ctx.fillRect(px-1.3,py-5,2.6,4.5);ctx.fillStyle='#f0c8a0';ctx.fillRect(px-1,py-7.2,2,2.2);}
+function drawWaiting(x,y,t){const s=G.stations[t.st];if(!s)return;const k=Math.max(0,s.tiles.indexOf(idx(x,y)));const nT=s.tiles.length;const P=(u,v,z)=>WP(x+u,y+v,z);
+ const rail=!!t.rl;const ax=axOfBits(rail?t.rl:t.rd);const z0=rail?4:0;
+ const pw=s.cg.P&&s.cg.P.act?s.cg.P.w:0;const np=Math.min(7,Math.ceil(pw/(10*nT)));
+ for(let j=0;j<np;j++){const a=0.14+((j*37+k*23)%72)/100;const b=rail?0.09:0.18;const [qx,qy]=ax===1?P(a,b,z0):P(b,a,z0);person(qx,qy,j+k);}
+ let fw=0,fc=null;for(const c of FREIGHT){const cg=s.cg[c];if(cg&&cg.act&&cg.w>fw){fw=cg.w;fc=c;}}
+ const mw=s.cg.M&&s.cg.M.act?s.cg.M.w:0;if(!fc&&mw>=5){fc='M';fw=mw;}
+ if(fc&&fw>=5){const n=Math.min(4,Math.ceil(fw/(40*nT)));let col=CARGO[fc].col;if(fc==='C'||fc==='T')col='#4a4a4a';const b0=rail?0.85:0.83;
+   for(let j=0;j<n;j++){const a=0.15+j*0.19,h=4+((j+k)%2)*2;if(ax===1)box(ctx,P,a,b0,a+0.13,b0+0.12,z0,z0+h,col);else box(ctx,P,b0,a,b0+0.12,a+0.13,z0,z0+h,col);}}
+}
 function drawPart(p){
+ const rot=Math.atan2((p.dx+p.dy)*16,(p.dx-p.dy)*32);const [shx,shy]=WP(p.x+0.03,p.y+0.03,p.zo||0);ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(shx,shy,p.amb?9:14,p.amb?4:6,rot,0,Math.PI*2);ctx.fill();
+ ZO=p.zo||0;
+ if(p.amb){orientBox(p.x,p.y,p.dx,p.dy,0.26,0.15,1,6,p.amb.col,shade(p.amb.col,1.2));orientBox(p.x-p.dx*0.02,p.y-p.dy*0.02,p.dx,p.dy,0.13,0.155,4,7.5,'#9fc4d8','#3a4a58');}
+ else drawPart0(p);
+ ZO=0;}
+let ZO=0;
+function drawPart0(p){
  const v=p.v;const sel=UI.sel&&UI.sel.k==='veh'&&UI.sel.id===v.id;
  if(v.kind==='road'){
    if(v.type==='bus'){orientBox(p.x,p.y,p.dx,p.dy,0.44,0.2,1.5,10,v.col,shade(v.col,1.3));orientBox(p.x,p.y,p.dx,p.dy,0.4,0.205,6,8.5,'#cfe6f5');}
@@ -992,7 +1059,7 @@ function drawPart(p){
 const mini=$('mini'),mctx=mini.getContext('2d');
 function drawMini(){if(!G)return;mctx.fillStyle='#000';mctx.fillRect(0,0,192,96);
  for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const t=G.tiles[idx(x,y)];let c;
-   if(t.t===1)c='#2f6fb0';else if(t.ind>=0)c=INDS[G.inds[t.ind].type].col;else if(t.st>=0)c='#ff3';else if(t.rl)c='#ddd';else if(t.rd)c='#777';else if(t.h>=0)c='#c77';else if(t.tr)c='#2e5a22';else c='#4d8a33';
+   if(t.br)c=t.rl?'#ddd':'#888';else if(t.t===1)c='#2f6fb0';else if(t.ind>=0)c=INDS[G.inds[t.ind].type].col;else if(t.st>=0)c='#ff3';else if(t.rl)c='#ddd';else if(t.rd)c='#777';else if(t.h>=0)c='#c77';else if(t.tr)c='#2e5a22';else c='#4d8a33';
    mctx.fillStyle=c;mctx.fillRect(x-y+MW-1,Math.floor((x+y)/2),2,1);}
  for(const v of G.veh){if(v.state==='depot')continue;mctx.fillStyle=v.kind==='rail'?'#f0f':'#fff';mctx.fillRect(v.head.x-v.head.y+MW-1,(v.head.x+v.head.y)/2,2,2);}
  const z=cam.z;const x0=(cam.x-CW/2/z)/32+MW,x1=(cam.x+CW/2/z)/32+MW,y0=(cam.y-CH/2/z)/32,y1=(cam.y+CH/2/z)/32;mctx.strokeStyle='#fff';mctx.lineWidth=1;mctx.strokeRect(x0,y0,x1-x0,y1-y0);}
@@ -1029,16 +1096,36 @@ function endPtr(e){
 }
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',e=>{ptrs.delete(e.pointerId);pinch=null;pan=null;UI.drag=null;preview=null;});
 cv.addEventListener('wheel',e=>{e.preventDefault();const f=Math.pow(1.0015,-e.deltaY);const nz=Math.max(0.35,Math.min(2.5,cam.z*f));const wx=(e.clientX-CW/2)/cam.z+cam.x,wy=(e.clientY-CH/2)/cam.z+cam.y;cam.z=nz;cam.x=wx-(e.clientX-CW/2)/nz;cam.y=wy-(e.clientY-CH/2)/nz;},{passive:false});
+function vStatus(v){const o=v.orders[v.cur];const so=o&&G.stations[o.st];return({depot:'Oprit în depou',move:v.goDepot?'Merge la depou':'Spre '+(so?so.name:'?'),load:'Încarcă/descarcă la '+((G.stations[v.atSt]||{}).name||'?')+(o&&o.full&&!isFull(v)?' (așteaptă încărcare completă)':''),nopath:'⚠ Nu găsește drum!',noorders:'Fără ordine',wait:'⏳ Așteaptă linie liberă'}[v.state]||v.state);}
+function hoverInfo(sx,sy){const v=vehAt(sx,sy);if(v)return(v.kind==='rail'?'🚂 ':'🚌 ')+v.name+' · '+vTypes(v).map(c=>loadOf(v,c)+'/'+capOf(v,c)+' '+CARGO[c].n.toLowerCase()).join(', ')+' · '+vStatus(v);
+ const i=screenTile(sx,sy);if(i<0)return'';const t=G.tiles[i];
+ if(t.st>=0){const s=G.stations[t.st];const w=CORDER.filter(c=>s.cg[c]&&s.cg[c].act&&s.cg[c].w>=1).map(c=>Math.floor(s.cg[c].w)+' '+CARGO[c].n.toLowerCase());return '🚉 '+s.name+(w.length?' · așteaptă: '+w.join(', '):'');}
+ if(t.dp>=0)return(G.depots[t.dp].kind==='road'?'🚌 ':'🚂 ')+G.depots[t.dp].name+' · click pentru a cumpăra vehicule';
+ if(t.ind>=0){const ind=G.inds[t.ind];const def=INDS[ind.type];return '🏭 '+ind.name+(def.prod.length?' · produce '+def.prod.map(c=>CARGO[c].n.toLowerCase()).join(', '):'')+(def.acc.length?' · acceptă '+def.acc.map(c=>CARGO[c].n.toLowerCase()).join(', '):'')+(def.out?' → '+CARGO[def.out].n.toLowerCase():'');}
+ if(t.h>=0)return HOUSES[t.h].n+(t.tn>=0?' · '+G.towns[t.tn].name:'');
+ if(t.br)return 'Pod';return'';}
+const HINTS={road:'🛣 <b>Drum</b> — trage în linie dreaptă (400 lei/dală). Colțurile se fac din două segmente. Peste apă se face pod automat.',
+ rail:'🛤 <b>Cale ferată</b> — trage în linie dreaptă (700 lei/dală). Pornește un segment nou din capătul altuia pentru curbe și ramificații.',
+ roadstop:'🚏 <b>Stație auto</b> — click pe un drum drept sau pe teren liber. Zona luminată arată ce clădiri/industrii deservește.',
+ railst:'🚉 <b>Gară</b> — trage pe lungime (max 8 dale). Un peron lipit de altul se unește cu aceeași gară.',
+ rdepot:'🚌 <b>Depou auto</b> — click pe teren liber lângă un drum (săgeata galbenă arată ieșirea).',
+ tdepot:'🚂 <b>Depou de trenuri</b> — click pe teren liber lângă o șină (săgeata galbenă arată ieșirea).',
+ demolish:'🧨 <b>Demolare</b> — click pe o dală sau trage o zonă.',
+ order:'📍 <b>Ordine pentru {v}</b> — click pe stații în ordinea traseului. Trage cu mouse-ul ca să muți harta.'};
+function showHint(){const h=$('hint');if(!h)return;let t=HINTS[UI.tool];if(UI.tool==='order'){const v=G&&G.veh.find(q=>q.id===UI.orderFor);t=HINTS.order.replace('{v}',v?v.name:'');}if(!t){h.style.display='none';return;}h.innerHTML=t+' <span style="color:#9ab">· Esc / click dreapta = gata</span>';h.style.display='block';}
+cv.addEventListener('pointerleave',()=>{$('tip').style.display='none';UI.hover=-1;});
 function updateTip(x,y){const tip=$('tip');let txt='';
  if(preview&&preview.cost!=null&&UI.drag)txt=(preview.ok?'Cost: ':'✖ ')+(preview.ok?fmt(preview.cost):(preview.msg||'Imposibil'));
- else if(UI.tool==='order'){const v=G&&G.veh.find(q=>q.id===UI.orderFor);txt=v?'Click pe stațiile pentru '+v.name+' · trage = mută harta · Esc = gata':'';}
+ else if(UI.tool==='order'){const i=screenTile(x,y);const t=i>=0&&G.tiles[i];txt=t&&t.st>=0?'➕ '+G.stations[t.st].name:'';}
+ else if(UI.tool==='info'&&G&&!(pan&&pan.moved)&&!UI.drag)txt=hoverInfo(x,y);
  else if(UI.tool!=='info'&&UI.hover>=0){const p=planFor(UI.tool,UI.hover,UI.hover);if(p&&UI.tool!=='rail')txt=(p.ok?fmt(p.cost):(p.msg||''));}
  if(txt){tip.style.display='block';tip.textContent=txt;tip.style.left=(x+16)+'px';tip.style.top=(y+16)+'px';}else tip.style.display='none';}
-function setTool(t){UI.tool=t;preview=null;UI.drag=null;document.querySelectorAll('#tools .btn').forEach(b=>b.classList.toggle('on',b.dataset.tool===t||(t==='order'&&b.dataset.tool==='info')));if(t!=='order')UI.orderFor=null;$('tip').style.display='none';}
+function setTool(t){UI.tool=t;preview=null;UI.drag=null;document.querySelectorAll('#tools .btn').forEach(b=>b.classList.toggle('on',b.dataset.tool===t||(t==='order'&&b.dataset.tool==='info')));if(t!=='order')UI.orderFor=null;$('tip').style.display='none';showHint();}
 document.querySelectorAll('#tools .btn').forEach(b=>b.addEventListener('click',()=>{audioInit();setTool(UI.tool===b.dataset.tool&&b.dataset.tool!=='info'?'info':b.dataset.tool);}));
 addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;const k=e.key.toLowerCase();
  if(k==='escape')setTool('info');else if(k===' '){togglePause();e.preventDefault();}
  else{const m={d:'road',c:'rail',s:'roadstop',g:'railst',a:'rdepot',t:'tdepot',x:'demolish'}[k];if(m)setTool(m);}
+ if(k==='h'){UI.grid=!UI.grid;}
  if(k==='+'||k==='=')cam.z=Math.min(2.5,cam.z*1.2);if(k==='-')cam.z=Math.max(0.35,cam.z/1.2);});
 function vehAt(sx,sy){let best=null,bd=18;for(const v of G.veh){if(v.state==='depot')continue;for(const p of vehParts(v)){const [a,b]=WP(p.x,p.y,6);const x=(a-cam.x)*cam.z+CW/2,y=(b-cam.y)*cam.z+CH/2;const d=Math.hypot(x-sx,y-sy)/Math.max(0.6,cam.z);if(d<bd){bd=d;best=v;}}}return best;}
 function clickInfo(sx,sy){
@@ -1066,7 +1153,7 @@ function pickOrder(i){
 const wins={};let zTop=20;
 function openWin(key,title,fn,opt){opt=opt||{};let w=wins[key];
  if(!w){const el=document.createElement('div');el.className='win';el.innerHTML='<div class="hd"><span class="tt"></span><span class="x">✕</span></div><div class="bd"></div>';document.body.appendChild(el);
-   const n=Object.keys(wins).length;el.style.left=Math.min(innerWidth-300,70+n*26)+'px';el.style.top=Math.min(innerHeight-200,54+n*22)+'px';
+   const n=Object.keys(wins).length%8;el.style.left=Math.max(4,innerWidth-(innerWidth<700?innerWidth-8:450)-4-n*24)+'px';el.style.top=Math.min(innerHeight-200,50+n*22)+'px';
    const hd=el.querySelector('.hd');hd.addEventListener('pointerdown',e=>{if(e.target.classList.contains('x'))return;const r=el.getBoundingClientRect();const ox=e.clientX-r.left,oy=e.clientY-r.top;el.style.zIndex=++zTop;const mv=ev=>{el.style.left=Math.max(0,Math.min(innerWidth-60,ev.clientX-ox))+'px';el.style.top=Math.max(40,Math.min(innerHeight-30,ev.clientY-oy))+'px';};const up=()=>{removeEventListener('pointermove',mv);removeEventListener('pointerup',up);};addEventListener('pointermove',mv);addEventListener('pointerup',up);});
    el.addEventListener('pointerdown',()=>el.style.zIndex=++zTop);
    el.querySelector('.x').addEventListener('click',()=>closeWin(key));
@@ -1087,6 +1174,7 @@ const A={
    const prov=new Set();for(const iid of s.inds){const ind=G.inds[iid];if(ind)for(const c of INDS[ind.type].prod.concat(INDS[ind.type].out?[INDS[ind.type].out]:[]))prov.add(c);}if(s.nh)prov.add('P'),prov.add('M');
    h+='<h4>Furnizează (în zonă)</h4><div>'+cargoList(CORDER.filter(c=>prov.has(c)))+'</div>';
    const vs=G.veh.filter(v=>v.orders.some(o=>o.st===id));h+='<h4>Vehicule care deservesc stația ('+vs.length+')</h4>'+vs.map(v=>`<span class="lnk" onclick="A.veh(${v.id})">${v.name}</span>`).join(', ');
+   const hasR=s.tiles.some(i=>G.tiles[i].rd),hasT=s.tiles.some(i=>G.tiles[i].rl);h+='<div class="row">'+(hasR?`<button class="btn sm" onclick="A.buyFor(${id},'road')">🚌 Vehicul nou de aici</button>`:'')+(hasT?`<button class="btn sm" onclick="A.buyFor(${id},'rail')">🚂 Tren nou de aici</button>`:'')+'</div>';
    h+=`<div class="row"><button class="btn sm" onclick="A.goto(${s.x+0.5},${s.y+0.5})">👁 Centrează</button><button class="btn sm" onclick="A.rename('st',${id})">✏ Redenumește</button></div>`;return h;},{onClose:()=>{if(UI.sel&&UI.sel.k==='st'&&UI.sel.id===id)UI.sel=null;}});},
  industry(id){const ind=G.inds[id];if(!ind)return;openWin('ind'+id,'🏭 '+ind.name,()=>{const ind=G.inds[id];if(!ind)return null;const def=INDS[ind.type];
    let h='';const outs=def.prod.concat(def.out?[def.out]:[]);
@@ -1114,47 +1202,66 @@ const A={
    }
    const inside=G.veh.filter(v=>v.state==='depot'&&v.depot===id);
    h+='<h4>În depou ('+inside.length+')</h4>'+(inside.length?inside.map(v=>`<div class="row"><span class="lnk" onclick="A.veh(${v.id})">${v.name}</span><button class="btn sm" onclick="A.startStop(${v.id})">▶ Pornește</button><button class="btn sm" onclick="A.sell(${v.id})">Vinde (${fmt(v.value*0.6)})</button></div>`).join(''):'<i>gol</i>');
-   return h;},{live:false});},
+   return h;},{live:false,onClose:()=>{UI.pendFirst=null;}});},
  trainCost(id){const L=LOCO.find(l=>l.id===$('selLoco'+id).value);const n=Math.max(1,Math.min(12,+$('selN'+id).value||1));const c=$('selWag'+id).value;const el=$('tcost'+id);if(!el)return;
    const spd=Math.round(L.spd*Math.max(0.6,1-0.035*Math.max(0,n-2)));
    el.innerHTML=`Cost: <b>${fmt(L.cost+WAG.cost*n)}</b> · Capacitate: ${n*WAGCAP[c]} ${CARGO[c].u} · Viteză: ${spd} km/h · Întreținere: ${fmt(L.run+WAG.run*n)}/an`+(n>L.maxW?' <span class="neg">(prea multe vagoane pentru această locomotivă — max '+L.maxW+')</span>':'');},
  buyRV(model,dep){const m=RV.find(r=>r.id===model);let cargo=m.cargo;if(cargo==='*'){cargo=$('trkCargo'+dep).value;UI.lastTruck=cargo;}
-   if(!spend(m.cost,'veh'))return;const v=makeRV(model,cargo,dep);sfx('cash');refreshWin('dep'+dep);A.veh(v.id);A.orderMode(v.id);news(v.name+' cumpărat. Click pe stații pentru a-i da ordine, apoi Pornește.');},
+   if(!spend(m.cost,'veh'))return;const v=makeRV(model,cargo,dep);sfx('cash');A._pend(v);refreshWin('dep'+dep);A.veh(v.id);A.orderMode(v.id);news(v.name+' cumpărat. Click pe stații pentru a-i da ordine, apoi Pornește.');},
  buyTrain(dep){const L=LOCO.find(l=>l.id===$('selLoco'+dep).value);const n=Math.max(1,Math.min(L.maxW,+$('selN'+dep).value||1));const c=$('selWag'+dep).value;UI.lastLoco=L.id;UI.lastWag=c;UI.lastN=n;
-   if(!spend(L.cost+WAG.cost*n,'veh'))return;const v=makeTrain(L.id,c,n,dep);sfx('horn');refreshWin('dep'+dep);A.veh(v.id);A.orderMode(v.id);news(v.name+' cumpărat. Click pe gări pentru ordine, apoi Pornește.');},
+   if(!spend(L.cost+WAG.cost*n,'veh'))return;const v=makeTrain(L.id,c,n,dep);sfx('horn');A._pend(v);refreshWin('dep'+dep);A.veh(v.id);A.orderMode(v.id);news(v.name+' cumpărat. Click pe gări pentru ordine, apoi Pornește.');},
  veh(id){const v0=G.veh.find(q=>q.id===id);if(!v0)return;UI.sel={k:'veh',id};openWin('veh'+id,(v0.kind==='rail'?'🚂 ':'🚌 ')+v0.name,()=>{const v=G.veh.find(q=>q.id===id);if(!v)return null;
    const model=v.kind==='rail'?LOCO.find(l=>l.id===v.model):RV.find(r=>r.id===v.model);
    const o=v.orders[v.cur];const so=o&&G.stations[o.st];
-   const status={depot:'Oprit în depou',move:v.goDepot?'Merge la depou':'Spre '+(so?so.name:'?'),load:'Încarcă/descarcă la '+((G.stations[v.atSt]||{}).name||'?')+(o&&o.full&&!isFull(v)?' (așteaptă încărcare completă)':''),nopath:'⚠ Nu găsește drum!',noorders:'Fără ordine'}[v.state]||v.state;
+   const status=vStatus(v);
    let h=`<div>${model.n}${v.kind==='rail'?' + '+(v.comps.length-1)+' vagoane':''}</div><div>Viteză: ${vSpeedKmh(v)} km/h · Întreținere: ${fmt(v.run)}/an</div>`;
-   h+=`<div>Stare: <b class="${v.state==='nopath'?'neg':''}">${v.stopped&&v.state!=='depot'?'⏸ Oprit – ':''}${status}</b></div>`;
+   h+=`<div>Stare: <b class="${v.state==='nopath'||v.state==='wait'?'neg':''}">${v.stopped&&v.state!=='depot'?'⏸ Oprit – ':''}${status}</b></div>`;
    h+='<div>Încărcătură: '+vTypes(v).map(c=>`${loadOf(v,c)}/${capOf(v,c)} ${CARGO[c].n.toLowerCase()}`).join(', ')+'</div>';
    h+=`<div>Profit anul acesta: <b class="${v.pY>=0?'pos':'neg'}">${fmt(v.pY)}</b> · anul trecut: <span class="${v.pLY>=0?'pos':'neg'}">${fmt(v.pLY)}</span></div>`;
    h+='<h4>Ordine</h4>';
    if(!v.orders.length)h+='<i>Niciun ordin. Apasă „+ Ordin” și dă click pe stații.</i>';
    v.orders.forEach((od,k)=>{const s=G.stations[od.st];h+=`<div class="ord ${k===v.cur?'cur':''}"><b>${k+1}.</b><span class="lnk" style="flex:1" onclick="A.station(${od.st})">${s?s.name:'?'}</span><label><input type="checkbox" ${od.full?'checked':''} onchange="A.full(${v.id},${k},this.checked)"> încarcă complet</label><button class="btn sm" onclick="A.delOrder(${v.id},${k})">✕</button></div>`;});
-   h+=`<div class="row"><button class="btn sm ${UI.tool==='order'&&UI.orderFor===v.id?'on':''}" onclick="A.orderMode(${v.id})">+ Ordin</button>`;
+   h+=`<div class="row"><button class="btn sm ${UI.tool==='order'&&UI.orderFor===v.id?'on':''}" onclick="A.orderMode(${v.id})">📍 + Ordin</button>`+(v.orders.length>1&&v.state!=='depot'?`<button class="btn sm" onclick="A.skip(${v.id})">⏭ Sari la următorul</button>`:'');
    h+=v.state==='depot'||v.stopped?`<button class="btn sm" onclick="A.startStop(${v.id})">▶ Pornește</button>`:`<button class="btn sm" onclick="A.startStop(${v.id})">⏸ Oprește</button>`;
    if(v.state!=='depot')h+=`<button class="btn sm" onclick="A.toDepot(${v.id})">🏠 La depou</button><button class="btn sm" onclick="A.follow(${v.id})">👁 Urmărește</button>`;
    else h+=`<button class="btn sm" onclick="A.sell(${v.id})">💲 Vinde (${fmt(v.value*0.6)})</button>`;
-   h+=`<button class="btn sm" onclick="A.rename('veh',${v.id})">✏</button></div>`;return h;},{onClose:()=>{if(UI.sel&&UI.sel.k==='veh'&&UI.sel.id===id)UI.sel=null;if(UI.orderFor===id)setTool('info');}});},
- orderMode(id){UI.orderFor=id;setTool('order');UI.orderFor=id;refreshWin('veh'+id);},
+   h+=`<button class="btn sm" onclick="A.clone(${v.id})" title="Cumpără un vehicul identic, cu aceleași ordine, și îl pornește">⧉ Clonează (${fmt(v.value)})</button><button class="btn sm" onclick="A.rename('veh',${v.id})">✏</button></div>`;return h;},{onClose:()=>{if(UI.sel&&UI.sel.k==='veh'&&UI.sel.id===id)UI.sel=null;if(UI.orderFor===id)setTool('info');}});},
+ orderMode(id){UI.orderFor=id;setTool('order');UI.orderFor=id;showHint();refreshWin('veh'+id);},
  full(id,k,val){const v=G.veh.find(q=>q.id===id);if(v&&v.orders[k])v.orders[k].full=val;},
  delOrder(id,k){const v=G.veh.find(q=>q.id===id);if(!v)return;v.orders.splice(k,1);if(v.cur>=v.orders.length)v.cur=0;else if(k<v.cur)v.cur--;if(v.state!=='depot'&&!v.goDepot&&v.state!=='load')planPath(v);refreshWin('veh'+id);},
  startStop(id){const v=G.veh.find(q=>q.id===id);if(!v)return;if(v.state==='depot')startVeh(v);else v.stopped=!v.stopped;if(v.state==='depot'||!v.stopped)if(UI.tool==='order'&&UI.orderFor===id)setTool('info');refreshAll();for(const k in wins)if(k.startsWith('dep'))refreshWin(k);},
  toDepot(id){const v=G.veh.find(q=>q.id===id);if(!v)return;v.goDepot=true;v.stopped=false;if(v.state!=='load')planPath(v);else{v.state='move';planPath(v);}refreshWin('veh'+id);},
- sell(id){const v=G.veh.find(q=>q.id===id);if(!v||v.state!=='depot')return;earn(v.value*0.6,'veh');G.veh=G.veh.filter(q=>q!==v);closeWin('veh'+id);sfx('cash');for(const k in wins)if(k.startsWith('dep'))refreshWin(k);},
+ sell(id){const v=G.veh.find(q=>q.id===id);if(!v||v.state!=='depot')return;releaseTrain(v);earn(v.value*0.6,'veh');G.veh=G.veh.filter(q=>q!==v);closeWin('veh'+id);sfx('cash');for(const k in wins)if(k.startsWith('dep'))refreshWin(k);},
  follow(id){UI.follow=id;},
  goto(x,y){const [a,b]=WP(x,y);cam.x=a;cam.y=b;UI.follow=null;},
  rename(k,id){const o=k==='st'?G.stations[id]:G.veh.find(q=>q.id===id);if(!o)return;openWin('ren','✏ Redenumește',()=>`<div class="row"><input id="renIn" maxlength="30" style="flex:1;background:#222831;color:#fff;border:1px solid #778;padding:4px;font:14px sans-serif"><button class="btn sm" onclick="A.doRename('${k}',${id})">OK</button></div>`,{live:false});const inp=$('renIn');inp.value=o.name;inp.focus();inp.select();inp.onkeydown=e=>{if(e.key==='Enter')A.doRename(k,id);};},
  doRename(k,id){const o=k==='st'?G.stations[id]:G.veh.find(q=>q.id===id);const n=$('renIn').value.trim();if(o&&n){o.name=n.slice(0,30);const w=wins[(k==='st'?'st':'veh')+id];if(w)w.tt.textContent=(k==='st'?'🚉 ':'🚍 ')+o.name;}closeWin('ren');refreshAll();},
- finance(){openWin('fin','💰 Finanțe',()=>{const rows=[['incR','Venituri transport rutier'],['incT','Venituri transport feroviar'],['run','Costuri de funcționare'],['veh','Vehicule noi'],['constr','Construcții'],['int','Dobândă împrumut']];
+ finance(){openWin('fin','💰 Finanțe',()=>{const rows=[['incR','Venituri transport rutier'],['incT','Venituri transport feroviar'],['run','Costuri de funcționare'],['veh','Vehicule noi'],['constr','Construcții'],['int','Dobândă împrumut'],['goal','Recompense obiective']];
    const f=G.fin;let h=`<table><tr><th></th><th class="r">${G.year}</th><th class="r">${G.year-1}</th></tr>`;let t1=0,t2=0;
    for(const [k,n] of rows){const a=f.cur[k]||0,b=f.last[k]||0;t1+=a;t2+=b;h+=`<tr><td>${n}</td><td class="r ${a<0?'neg':a>0?'pos':''}">${fmt(a)}</td><td class="r ${b<0?'neg':b>0?'pos':''}">${fmt(b)}</td></tr>`;}
    h+=`<tr><th>Total</th><th class="r ${t1<0?'neg':'pos'}">${fmt(t1)}</th><th class="r ${t2<0?'neg':'pos'}">${fmt(t2)}</th></tr></table>`;
    h+=`<h4>Bancă</h4><div>Sold: <b class="${G.money<0?'neg':'pos'}">${fmt(G.money)}</b></div><div>Împrumut: <b>${fmt(G.loan)}</b> din maxim ${fmt(G.maxLoan)} (dobândă 4%/an)</div>`;
    h+=`<div class="row"><button class="btn sm" onclick="A.loan(1)">+10.000 împrumut</button><button class="btn sm" onclick="A.loan(-1)">−10.000 rambursează</button><button class="btn sm" onclick="A.loan(9)">Max</button></div>`;
-   const val=G.veh.reduce((s,v)=>s+v.value*0.6,0);h+=`<div>Valoare companie (estimată): ${fmt(G.money-G.loan+val)}</div>`;return h;});},
+   const cv=companyValue();h+=`<div>Valoarea companiei: <b>${fmt(cv)}</b> · Rang: <b style="color:#ffd76a">${companyTitle(cv)}</b></div>`;
+   const hs=G.hist.slice(-24);
+   h+='<h4>Venituri și cheltuieli pe lună</h4>'+chartSVG(hs,[{k:'inc',col:'#4cc46a',type:'bar'},{k:'exp',col:'#d9534f',type:'bar'}])+'<div style="font-size:11px;color:#9ab"><span style="color:#4cc46a">■</span> venituri &nbsp; <span style="color:#d9534f">■</span> cheltuieli</div>';
+   h+='<h4>Valoarea companiei</h4>'+chartSVG(hs,[{k:'val',col:'#ffd76a',type:'line'}]);
+   h+='<h4>Marfă livrată pe lună</h4>'+chartSVG(hs,[{k:'del',col:'#5bc0de',type:'bar'}],90);
+   return h;});},
+ _pend(v){if(UI.pendFirst!=null&&G.stations[UI.pendFirst]&&G.stations[UI.pendFirst].tiles.some(i=>G.tiles[i][vKey(v)]))v.orders.push({st:UI.pendFirst,full:false});UI.pendFirst=null;},
+ buyFor(sid,kind){const s=G.stations[sid];if(!s)return;let best=null,bd=1e9;for(const d of G.depots){if(!d||d.kind!==kind)continue;const dd=Math.abs(d.x-s.x)+Math.abs(d.y-s.y);if(dd<bd){bd=dd;best=d;}}
+   if(!best){news('Nu ai niciun '+(kind==='road'?'depou auto':'depou de trenuri')+'. Construiește unul lângă '+(kind==='road'?'drum':'șină')+'.');setTool(kind==='road'?'rdepot':'tdepot');return;}
+   A.depot(best.id);UI.pendFirst=sid;news('Alege vehiculul din '+best.name+'. Prima stație va fi '+s.name+'.');},
+ skip(id){const v=G.veh.find(q=>q.id===id);if(!v||!v.orders.length)return;v.cur=(v.cur+1)%v.orders.length;if(v.state!=='depot'&&!v.goDepot){planPath(v);}refreshWin('veh'+id);},
+ clone(id){const v=G.veh.find(q=>q.id===id);if(!v)return;let dep=G.depots[v.depot];if(!dep||dep.kind!==v.kind)dep=G.depots.find(d=>d&&d.kind===v.kind);if(!dep){news('Ai nevoie de un depou pentru a clona.');return;}
+   if(!spend(v.value,'veh'))return;const n=v.kind==='road'?makeRV(v.model,v.comps[0].t,dep.id):makeTrain(v.model,v.comps[1].t,v.comps.length-1,dep.id);
+   n.orders=v.orders.map(o=>({...o}));sfx('cash');if(n.orders.length)startVeh(n);A.veh(n.id);news(n.name+' (clonă a '+v.name+') a pornit din '+dep.name+'.');refreshAll();},
+ goals(){openWin('goals','🎯 Obiective',()=>GOALS.map(g=>{const d=G.goalsDone[g.id];const pr=Math.max(0,Math.min(1,g.f()));return `<div class="goalrow ${d?'done':''}"><b>${d?'✅':'⬜'} ${g.t}</b> <span style="float:right;color:#9f9">+${fmt(g.r)}</span><div style="color:#bcd;font-size:12px">${d?'Îndeplinit în '+d:g.h}</div>${d?'':`<div class="pb"><i style="width:${Math.round(pr*100)}%"></i></div>`}</div>`;}).join('')+`<div class="row"><button class="btn sm" onclick="UI.hideGoal=!UI.hideGoal;refreshWin('goals')">${UI.hideGoal?'Arată':'Ascunde'} panoul „Următorul obiectiv”</button></div>`);},
+ annual(year,yd){const f=G.fin.last;const prof=yearProfit(f);const inc=(f.incR||0)+(f.incT||0);const best=G.veh.slice().sort((a,b)=>b.pLY-a.pLY)[0];const val=companyValue();
+   openWin('annual','📜 Raport anual '+year,()=>`<div style="text-align:center"><div style="font-size:12px;color:#bcd">Compania ta este considerată</div><div style="font-size:22px;color:#ffd76a;font-weight:bold;margin:4px 0 8px">${companyTitle(val)}</div></div>
+   <table><tr><td>Venituri din transport</td><td class="r pos">${fmt(inc)}</td></tr><tr><td>Profit net</td><td class="r ${prof>=0?'pos':'neg'}">${fmt(prof)}</td></tr><tr><td>Valoarea companiei</td><td class="r">${fmt(val)}</td></tr><tr><td>Vehicule</td><td class="r">${G.veh.length}</td></tr></table>
+   ${best&&best.pLY>0?`<h4>🏆 Cel mai profitabil vehicul</h4><div><span class="lnk" onclick="A.veh(${best.id})">${best.name}</span>: <b class="pos">${fmt(best.pLY)}</b></div>`:''}
+   <h4>Marfă livrată în ${year}</h4><div>${CORDER.filter(c=>yd[c]).map(c=>`${CARGO[c].n}: <b>${yd[c].toLocaleString('ro-RO')}</b> ${CARGO[c].u}`).join('<br>')||'<i>Nimic livrat.</i>'}</div>`,{live:false});sfx('fanfare');},
  loan(d){if(d===9){const x=G.maxLoan-G.loan;G.loan+=x;G.money+=x;}else if(d>0){if(G.loan+10000>G.maxLoan){news('Limita de împrumut atinsă.');return;}G.loan+=10000;G.money+=10000;}else{if(G.loan<=0)return;if(G.money<10000){news('Nu ai bani să rambursezi.');return;}G.loan-=10000;G.money-=10000;}refreshAll();},
  vehList(){openWin('vl','🚍 Vehicule',()=>{if(!G.veh.length)return'<i>Nu ai vehicule. Construiește un depou și cumpără unul.</i>';
    let h='<table><tr><th>Vehicul</th><th>Stare</th><th class="r">Profit an</th><th class="r">An trecut</th></tr>';
@@ -1166,7 +1273,7 @@ const A={
  townList(){openWin('tl','🏘 Orașe',()=>{let h='<table><tr><th>Oraș</th><th class="r">Populație</th></tr>';for(const t of G.towns.slice().sort((a,b)=>b.pop-a.pop))h+=`<tr><td><span class="lnk" onclick="A.town(${t.id});A.goto(${t.x+0.5},${t.y+0.5})">${t.name}</span></td><td class="r">${t.pop.toLocaleString('ro-RO')}</td></tr>`;h+='</table><h4>Industrii</h4><table>';
    for(const ind of G.inds.filter(Boolean))h+=`<tr><td><span class="lnk" onclick="A.industry(${ind.id});A.goto(${ind.x+ind.w/2},${ind.y+ind.h/2})">${ind.name}</span></td></tr>`;return h+'</table>';});},
  newsLog(){openWin('news','📰 Știri',()=>G.news.length?G.news.slice().reverse().map(n=>`<div style="border-bottom:1px solid #4a5260;padding:3px 0"><small style="color:#ffd76a">${n.d}</small> ${n.x!=null?`<span class="lnk" onclick="A.goto(${n.x},${n.y})">${n.t}</span>`:n.t}</div>`).join(''):'<i>Nicio știre.</i>');},
- menu(){openWin('menu','☰ Meniu',()=>`<div class="row"><button class="btn" onclick="A.save()">💾 Salvează</button><button class="btn" onclick="A.load()">📂 Încarcă</button></div><div class="row"><button class="btn" onclick="A.restart()">🆕 Joc nou</button><button class="btn" onclick="A.help()">❓ Ajutor</button><button class="btn" onclick="UI.sound=!UI.sound;refreshWin('menu')">${UI.sound?'🔊 Sunet: DA':'🔇 Sunet: NU'}</button></div><div style="color:#bcd">Seed hartă: ${G.seed}</div>`);},
+ menu(){openWin('menu','☰ Meniu',()=>`<div class="row"><button class="btn" onclick="A.save()">💾 Salvează</button><button class="btn" onclick="A.load()">📂 Încarcă</button></div><div class="row"><button class="btn" onclick="A.restart()">🆕 Joc nou</button><button class="btn" onclick="A.help()">❓ Ajutor</button><button class="btn" onclick="UI.grid=!UI.grid;refreshWin('menu')">${UI.grid?'▦ Grilă: DA':'▢ Grilă: NU'}</button><button class="btn" onclick="UI.sound=!UI.sound;refreshWin('menu')">${UI.sound?'🔊 Sunet: DA':'🔇 Sunet: NU'}</button></div><div style="color:#bcd">Seed hartă: ${G.seed}</div>`);},
  save(){try{localStorage.setItem('tmagnat_save',JSON.stringify(G));news('💾 Joc salvat.');}catch(e){news('Eroare la salvare: '+e.message);}},
  load(){const s=LS('tmagnat_save')||LS('tmagnat_auto');if(!s){news('Nu există salvare.');return;}loadState(JSON.parse(s));news('📂 Joc încărcat.');},
  restart(){for(const k in wins)closeWin(k);$('bBack').style.display='';$('bCont').style.display=(LS('tmagnat_save')||LS('tmagnat_auto'))?'':'none';$('intro').style.display='flex';$('seedIn').value=Math.floor(Math.random()*999999);},
@@ -1176,7 +1283,10 @@ const A={
  <h4>Trenuri și marfă</h4>Construiește 🚉 <b>gări</b> lângă o mină și lângă o termocentrală, leagă-le cu 🛤 <b>cale ferată</b>, pune un 🚂 depou lângă șină, cumpără un tren cu vagoane de cărbune. Bifează <i>„încarcă complet”</i> la mină.
  <h4>Lanțuri economice</h4>Cărbune → Termocentrală · Lemn → Cherestea → Bunuri · Cereale/Oțel → Fabrică → Bunuri · Minereu → Oțelărie → Oțel · Petrol → Rafinărie → Bunuri. Bunurile se livrează în orașe mari.
  <h4>Plata</h4>Depinde de cantitate, distanța dintre stații și cât de repede livrezi.
- <h4>Scurtături</h4>D drum · C cale ferată · S stație auto · G gară · A depou auto · T depou tren · X demolare · Space pauză · Esc anulează.</div>`,{live:false});}
+ <h4>Mai multe trenuri pe aceeași rețea</h4>Fiecare tren își rezervă linia până la destinație și așteaptă (⏳) dacă e ocupată. Pentru trafic mare fă <b>linie dublă</b> (două linii paralele) sau <b>linii de evitare</b>, iar la gări pune <b>peroane paralele</b> lipite — trenul alege singur peronul liber.
+ <h4>Poduri</h4>Trage drumul sau calea ferată peste apă: podul se face automat (capetele trebuie să fie pe uscat).
+ <h4>Sfaturi</h4>Din fereastra unei stații poți cumpăra direct un vehicul care pornește de acolo. Vehiculele profitabile se pot <b>clona</b> (⧉). În fereastra unui vehicul, traseul apare desenat pe hartă.
+ <h4>Scurtături</h4>D drum · C cale ferată · S stație auto · G gară · A depou auto · T depou tren · X demolare · H grilă · Space pauză · Esc anulează.</div>`,{live:false});}
 };
 window.A=A;
 function togglePause(){UI.paused=!UI.paused;updSpeedBtns();}
@@ -1186,21 +1296,73 @@ let newsTimer=0;
 function news(t,x,y){if(!G)return;const n={t,d:G.day+' '+LUNI[G.month]+' '+G.year,x,y};G.news.push(n);if(G.news.length>80)G.news.shift();const el=$('news');el.textContent=t;el.style.display='block';el.onclick=()=>{if(x!=null)A.goto(x,y);};newsTimer=6;if(wins.news)refreshWin('news');}
 function updHud(){$('date').textContent=G.day+' '+LUNI[G.month]+' '+G.year;const m=$('money');m.textContent=fmt(G.money);m.classList.toggle('neg',G.money<0);}
 
+// ================= OBIECTIVE / STATISTICI =================
+function companyValue(){return G.money-G.loan+G.veh.reduce((s,v)=>s+v.value*0.6,0);}
+function yearProfit(f){return Object.values(f||{}).reduce((a,b)=>a+b,0);}
+function companyTitle(v){return v<250000?'Firmă la început de drum':v<700000?'Antreprenor de transport':v<1500000?'Companie regională':v<3000000?'Industriaș':v<6000000?'Magnat al transporturilor':'Legendă a transporturilor';}
+function servedTowns(){let n=0;for(const tw of G.towns)if(G.stations.some(s=>s&&Math.abs(s.x-tw.x)+Math.abs(s.y-tw.y)<=tw.r+2&&s.cg.P&&s.cg.P.act&&s.cg.P.dsp<=60))n++;return n;}
+const GOALS=[
+ {id:'st1',t:'Construiește prima stație',h:'Alege 🚏 Stație auto (jos) și dă click pe un drum din centrul unui oraș.',f:()=>G.stations.some(Boolean)?1:0,r:5000},
+ {id:'veh1',t:'Pornește primul vehicul',h:'Pune 🚌 un depou lângă drum, cumpără un autobuz, dă click pe 2 stații, apoi ▶ Pornește.',f:()=>G.veh.some(v=>v.state!=='depot')?1:0,r:5000},
+ {id:'pax',t:'Transportă 500 de pasageri',h:'Leagă cu drum două orașe mari și pune 2–3 autobuze între ele.',f:()=>(G.tot.P||0)/500,r:10000},
+ {id:'train',t:'Pune un tren în circulație',h:'Două 🚉 gări legate cu 🛤 cale ferată și un 🚂 depou lângă șină.',f:()=>G.veh.some(v=>v.kind==='rail'&&v.state!=='depot')?1:0,r:15000},
+ {id:'coal',t:'Livrează 1.000 t de cărbune',h:'Gară lângă o mină de cărbune și gară lângă o termocentrală. Bifează „încarcă complet” la mină.',f:()=>(G.tot.C||0)/1000,r:25000},
+ {id:'towns',t:'Deservește 4 orașe cu pasageri',h:'Pune stații și autobuze în cât mai multe orașe.',f:()=>servedTowns()/4,r:30000},
+ {id:'goods',t:'Livrează 300 de lăzi de bunuri',h:'Du lemn la cherestea, petrol la rafinărie sau cereale la fabrică, apoi bunurile produse într-un oraș mare.',f:()=>(G.tot.G||0)/300,r:40000},
+ {id:'fleet',t:'Ajungi la 15 vehicule',h:'Clonează vehiculele profitabile cu butonul ⧉ din fereastra lor.',f:()=>G.veh.length/15,r:40000},
+ {id:'profit',t:'Profit anual de 150.000 lei',h:'Rutele lungi și încărcarea completă la marfă aduc cei mai mulți bani.',f:()=>yearProfit(G.fin.last)/150000,r:60000},
+ {id:'value',t:'Valoarea companiei: 2.000.000 lei',h:'Devino magnat! Reinvestește profitul în trenuri rapide.',f:()=>companyValue()/2e6,r:100000}];
+function checkGoals(){for(const g of GOALS){if(G.goalsDone[g.id])continue;if(g.f()>=1){G.goalsDone[g.id]=G.year;earn(g.r,'goal');news('🎯 Obiectiv îndeplinit: '+g.t+'! Recompensă: '+fmt(g.r));sfx('fanfare');if(wins.goals)refreshWin('goals');}}}
+let goalHtml='';
+function updGoalPanel(){const el=$('goal');if(!G||$('intro').style.display!=='none'){el.style.display='none';return;}const done=GOALS.filter(g=>G.goalsDone[g.id]).length;$('bGoals').innerHTML='🎯<span class="t"> '+done+'/'+GOALS.length+'</span>';
+ const g=GOALS.find(q=>!G.goalsDone[q.id]);if(!g||UI.hideGoal){el.style.display='none';return;}
+ const h=`<span style="float:right;color:#9ab" onclick="event.stopPropagation();UI.hideGoal=true;">✕</span><div class="gt">🎯 ${g.t}</div><div class="gh">${g.h}</div><div class="pb"><i style="width:${Math.round(Math.max(0,Math.min(1,g.f()))*100)}%"></i></div><div style="color:#9f9;margin-top:3px;font-size:11px">Recompensă: ${fmt(g.r)} · ${done}/${GOALS.length} îndeplinite</div>`;
+ if(h!==goalHtml){el.innerHTML=h;goalHtml=h;}el.style.display='block';}
+const shortN=v=>Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?Math.round(v/1e3)+'k':String(Math.round(v));
+function chartSVG(data,series,H){H=H||130;const W=420,pad=34,n=data.length;if(!n)return'<div style="color:#9ab;font-size:12px"><i>Graficul apare după prima lună încheiată.</i></div>';
+ let mx=1,mn=0;for(const d of data)for(const s of series){mx=Math.max(mx,d[s.k]);mn=Math.min(mn,d[s.k]);}
+ const y=v=>H-16-(v-mn)/(mx-mn)*(H-26);const bw=(W-pad)/Math.max(n,12);
+ let o=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="background:#262c35;border:1px solid #555;display:block">`;
+ for(let k=0;k<=2;k++){const v=mn+(mx-mn)*k/2;o+=`<line x1="${pad}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="#3d4450"/><text x="${pad-3}" y="${y(v)+3}" fill="#9ab" font-size="9" text-anchor="end">${shortN(v)}</text>`;}
+ const bars=series.filter(s=>s.type==='bar');
+ bars.forEach((s,si)=>data.forEach((d,i)=>{const bwi=(bw-2)/bars.length;const x=pad+i*bw+1+si*bwi;const y0=y(0),y1=y(d[s.k]);o+=`<rect x="${x.toFixed(1)}" y="${Math.min(y0,y1).toFixed(1)}" width="${Math.max(1,bwi-0.5).toFixed(1)}" height="${Math.max(0.5,Math.abs(y1-y0)).toFixed(1)}" fill="${s.col}"><title>${LUNI[d.m]} ${d.y}: ${Math.round(d[s.k]).toLocaleString('ro-RO')}</title></rect>`;}));
+ series.filter(s=>s.type==='line').forEach(s=>{o+=`<polyline fill="none" stroke="${s.col}" stroke-width="2" points="${data.map((d,i)=>(pad+i*bw+bw/2).toFixed(1)+','+y(d[s.k]).toFixed(1)).join(' ')}"/>`;});
+ data.forEach((d,i)=>{if(d.m%3===0)o+=`<text x="${pad+i*bw+bw/2}" y="${H-4}" fill="#9ab" font-size="9" text-anchor="middle">${LUNI[d.m]}${d.m===0?" '"+String(d.y).slice(2):''}</text>`;});
+ return o+'</svg>';}
+// mașini în orașe (ambient) și nori
+const amb=[],clouds=[];const AMBC=['#c0392b','#2980b9','#ecf0f1','#f1c40f','#16a085','#7f8c8d','#2c3e50','#d35400','#8e44ad'];
+function ambOK(i){const t=G.tiles[i];return !!(t&&t.rd&&t.tn>=0&&t.dp<0&&!t.br&&!t.rl);}
+function ambUpdate(dt){if(!G)return;if(UI.paused)return;
+ const want=Math.min(80,G.towns.reduce((s,t)=>s+Math.round(t.pop/280),0));
+ if(amb.length<want&&Math.random()<0.25){const tw=G.towns[MR(0,G.towns.length-1)];for(let a=0;a<12;a++){const x=tw.x+MR(-tw.r,tw.r),y=tw.y+MR(-tw.r,tw.r);if(!inb(x,y))continue;const i=idx(x,y);if(ambOK(i)){amb.push({x:x+.5,y:y+.5,cur:i,prev:-1,nxt:-1,dx:1,dy:0,col:AMBC[MR(0,AMBC.length-1)],life:15+Math.random()*40});break;}}}
+ const sp=dt*Math.min(UI.speed,3)*0.9;
+ for(let k=amb.length-1;k>=0;k--){const c=amb[k];c.life-=dt;
+   if(c.nxt<0){if(c.life<0||!ambOK(c.cur)){amb.splice(k,1);continue;}
+     const t=G.tiles[c.cur],opts=[];for(let d=0;d<4;d++){if(!(t.rd&(1<<d)))continue;const nx=ix(c.cur)+DX[d],ny=iy(c.cur)+DY[d];if(!inb(nx,ny))continue;const j=idx(nx,ny);if(ambOK(j)&&connected('rd',c.cur,j))opts.push(j);}
+     let ch=opts.filter(j=>j!==c.prev);if(!ch.length)ch=opts;if(!ch.length){amb.splice(k,1);continue;}c.nxt=ch[MR(0,ch.length-1)];}
+   if(!G.tiles[c.nxt]||!ambOK(c.nxt)){amb.splice(k,1);continue;}
+   const tg=tc(c.nxt),dx=tg.x-c.x,dy=tg.y-c.y,L=Math.hypot(dx,dy);
+   if(L<=sp){c.x=tg.x;c.y=tg.y;c.prev=c.cur;c.cur=c.nxt;c.nxt=-1;}else{c.x+=dx/L*sp;c.y+=dy/L*sp;c.dx=dx/L;c.dy=dy/L;}}
+ if(!clouds.length)for(let k=0;k<7;k++)clouds.push({x:Math.random()*MW,y:Math.random()*MH,r:4+Math.random()*5});
+ for(const c of clouds){c.x+=dt*0.25*Math.min(UI.speed,2);c.y+=dt*0.05;if(c.x>MW+12||c.y>MH+12){c.x=-12;c.y=Math.random()*MH;}}
+}
+
 // ================= SUNET =================
 let AC=null;function audioInit(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}}
 function tone(f,d,type,vol,slide){if(!AC||!UI.sound)return;const o=AC.createOscillator(),g=AC.createGain();o.type=type||'square';o.frequency.value=f;if(slide)o.frequency.exponentialRampToValueAtTime(slide,AC.currentTime+d);g.gain.value=vol||0.05;g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d);}
 function noise(d,vol){if(!AC||!UI.sound)return;const b=AC.createBuffer(1,AC.sampleRate*d,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=(Math.random()*2-1)*(1-i/a.length);const s=AC.createBufferSource();s.buffer=b;const g=AC.createGain();g.gain.value=vol;s.connect(g);g.connect(AC.destination);s.start();}
 let lastCash=0;
-function sfx(k){if(!AC)return;if(k==='build'){noise(0.08,0.15);tone(180,0.08,'square',0.04);}else if(k==='cash'){const n=performance.now();if(n-lastCash<250)return;lastCash=n;tone(1318,0.08,'square',0.035);setTimeout(()=>tone(1760,0.14,'square',0.035),70);}else if(k==='err')tone(140,0.18,'sawtooth',0.05);else if(k==='horn'){tone(392,0.5,'sawtooth',0.035);tone(494,0.5,'sawtooth',0.03);}else if(k==='boom'){noise(0.45,0.35);tone(90,0.4,'sine',0.15,30);}else if(k==='click')tone(900,0.04,'square',0.03);}
+function sfx(k){if(!AC)return;if(k==='build'){noise(0.08,0.15);tone(180,0.08,'square',0.04);}else if(k==='cash'){const n=performance.now();if(n-lastCash<250)return;lastCash=n;tone(1318,0.08,'square',0.035);setTimeout(()=>tone(1760,0.14,'square',0.035),70);}else if(k==='err')tone(140,0.18,'sawtooth',0.05);else if(k==='horn'){tone(392,0.5,'sawtooth',0.035);tone(494,0.5,'sawtooth',0.03);}else if(k==='boom'){noise(0.45,0.35);tone(90,0.4,'sine',0.15,30);}else if(k==='click')tone(900,0.04,'square',0.03);else if(k==='fanfare'){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,0.2,'square',0.04),i*120));}}
 
 // ================= BUCLA =================
-function loadState(s){G=s;rng=Math.random;if(!G.cnt)G.cnt={bus:0,mail:0,truck:0,train:0};countTowns();recomputeStations();for(const k in wins)closeWin(k);$('intro').style.display='none';const t=G.towns[0];A.goto(t.x+0.5,t.y+0.5);updHud();}
+function loadState(s){G=s;rng=Math.random;if(!G.cnt)G.cnt={bus:0,mail:0,truck:0,train:0};G.hist=G.hist||[];G.fm=G.fm||{inc:0,exp:0,del:0};G.tot=G.tot||{};G.yd=G.yd||{};G.goalsDone=G.goalsDone||{};amb.length=0;resv=new Map();for(const v of G.veh)if(v.kind==='rail'&&v.state!=='depot')reserveTrain(v);countTowns();recomputeStations();for(const k in wins)closeWin(k);$('intro').style.display='none';const t=G.towns[0];A.goto(t.x+0.5,t.y+0.5);updHud();}
 let last=performance.now(),dayAcc=0,miniT=0;
 function frame(now){
  const dt=Math.min(0.1,(now-last)/1000);last=now;animT+=dt;
  if(G&&!UI.paused&&$('intro').style.display==='none'){
    const dd=dt*UI.speed/DAYLEN;dayAcc+=dd;
    for(const v of G.veh)vehUpdate(v,dd);
+   ambUpdate(dt);
    let n=0;while(dayAcc>=1&&n<10){dayAcc-=1;dayTick();n++;}
    updHud();}
  if(G&&UI.follow!=null){const v=G.veh.find(q=>q.id===UI.follow);if(v&&v.state!=='depot'){const [a,b]=WP(v.head.x,v.head.y);cam.x+=(a-cam.x)*0.15;cam.y+=(b-cam.y)*0.15;}else UI.follow=null;}
@@ -1208,10 +1370,10 @@ function frame(now){
  for(let k=fx.length-1;k>=0;k--){fx[k].t+=dt;if(fx[k].t>2.5)fx.splice(k,1);}
  if(newsTimer>0){newsTimer-=dt;if(newsTimer<=0)$('news').style.display='none';}
  render();
- miniT-=dt;if(miniT<=0){drawMini();miniT=0.5;}
+ miniT-=dt;if(miniT<=0){drawMini();updGoalPanel();miniT=0.5;}
  requestAnimationFrame(frame);
 }
-function startNew(seed){genMap(seed);for(const k in wins)closeWin(k);$('intro').style.display='none';
+function startNew(seed){genMap(seed);amb.length=0;resv=new Map();for(const k in wins)closeWin(k);$('intro').style.display='none';
  const t=G.towns.slice().sort((a,b)=>b.pop-a.pop)[0];A.goto(t.x+0.5,t.y+0.5);cam.z=1;updHud();
  news('Bine ai venit, director! Ai '+fmt(G.money)+'. Apasă ❓ în meniu pentru ajutor.');setTool('info');}
 resize();buildSprites();
